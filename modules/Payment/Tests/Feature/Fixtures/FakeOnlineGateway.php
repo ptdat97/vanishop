@@ -8,22 +8,23 @@ use Illuminate\Http\Request;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayCapabilities;
 use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
-use Modules\Payment\Contracts\Data\GatewayResult;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
+use Modules\Payment\Contracts\Data\RefundOutcome;
+use Modules\Payment\Contracts\Data\RefundResult;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Payment\Contracts\QueriesStatus;
 use Modules\Payment\Contracts\ReceivesCallbacks;
-use Modules\Payment\Contracts\RefundsPayments;
+use Modules\Payment\Contracts\TracksRefunds;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Cổng giả kiểu redirect + IPN ký HMAC — mô phỏng plugin cổng online trong test.
  */
-final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, ReceivesCallbacks, RefundsPayments
+final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, ReceivesCallbacks, TracksRefunds
 {
     public const SECRET = 'fake-secret';
 
@@ -31,6 +32,11 @@ final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, Receives
     public static array $refunds = [];
 
     public static ?GatewayStatus $queryResult = null;
+
+    /** Kết quả lệnh hoàn (mặc định thành công); `refundStatus()` trả `$refundStatus` khi đặt. */
+    public static RefundOutcome $refundOutcome = RefundOutcome::Succeeded;
+
+    public static ?RefundResult $refundStatus = null;
 
     /** Giả lập cổng lỗi khi tra cứu (timeout…). */
     public static ?\Throwable $queryException = null;
@@ -79,11 +85,16 @@ final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, Receives
         return self::$queryResult ?? new GatewayStatus(GatewayPaymentStatus::Pending);
     }
 
-    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult
+    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): RefundResult
     {
         self::$refunds[$idempotencyKey] ??= 'RF-'.(count(self::$refunds) + 1);
 
-        return new GatewayResult(true, self::$refunds[$idempotencyKey]);
+        return new RefundResult(self::$refundOutcome, self::$refundOutcome === RefundOutcome::Failed ? null : self::$refunds[$idempotencyKey]);
+    }
+
+    public function refundStatus(PaymentData $payment, string $idempotencyKey, ?string $gatewayReference): RefundResult
+    {
+        return self::$refundStatus ?? RefundResult::pending($gatewayReference);
     }
 
     /**

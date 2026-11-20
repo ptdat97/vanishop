@@ -15,6 +15,8 @@ use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayStatus;
+use Modules\Payment\Contracts\Data\RefundOutcome;
+use Modules\Payment\Contracts\Data\RefundResult;
 use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Tests\Feature\Fixtures\FakeCollectOnDeliveryGateway;
@@ -31,6 +33,8 @@ beforeEach(function () {
     app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
     FakeOnlineGateway::$refunds = [];
     FakeOnlineGateway::$queryResult = null;
+    FakeOnlineGateway::$refundOutcome = RefundOutcome::Succeeded;
+    FakeOnlineGateway::$refundStatus = null;
     config(['vani.bank-transfer.account' => ['bank' => 'Vietcombank', 'account_number' => '0123456789', 'account_name' => 'CONG TY VANI']]);
 
     ['brand' => $this->brand, 's' => $this->s] = C::store();
@@ -347,4 +351,49 @@ it('online: khoản đã hoàn hết, cổng gửi thêm IPN "đã trả" mã gi
 
     expect($payment->fresh()->status->value)->toBe('refunded')
         ->and(($this->orderRow)()->payment_status)->toBe('refunded');
+});
+
+it('hoàn qua cổng bất đồng bộ: cổng báo đang xử lý → giữ "đang hoàn"; vani:payment:refunds hỏi lại → hoàn xong hoặc chuyển hoàn tay', function () {
+    $paymentId = ($this->order)('fake_online')->assertCreated()->json('data.payment.id');
+    ($this->callback)($paymentId, 'TXN-1')->assertOk();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    FakeOnlineGateway::$refundOutcome = RefundOutcome::Pending;
+    $refund = fn (int $amount, string $key) => app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Payments::class)->refund($payment->id, Money::vnd($amount), 'test', $key));
+    $status = fn (string $key) => DB::table('refunds')->where('idempotency_key', $key)->first();
+
+    $refund(100_000, 'refund-async-1');
+    expect($status('refund-async-1')->status)->toBe('processing')
+        ->and($status('refund-async-1')->gateway_reference)->toBe('RF-1')
+        ->and(DB::table('payment_transactions')->where('type', 'refund')->count())->toBe(0);
+
+    $this->artisan('vani:payment:refunds')->assertSuccessful();
+    $this->travel(11)->minutes();
+    $this->artisan('vani:payment:refunds')->assertSuccessful();
+    expect($status('refund-async-1')->status)->toBe('processing');
+
+    FakeOnlineGateway::$refundStatus = RefundResult::succeeded('RF-DONE');
+    $this->travel(11)->minutes();
+    $this->artisan('vani:payment:refunds')->assertSuccessful();
+    expect($status('refund-async-1')->status)->toBe('completed')
+        ->and($status('refund-async-1')->gateway_reference)->toBe('RF-DONE')
+        ->and(DB::table('payment_transactions')->where('type', 'refund')->where('gateway_transaction_id', 'RF-DONE')->count())->toBe(1);
+
+    $refund(50_000, 'refund-async-2');
+    FakeOnlineGateway::$refundStatus = RefundResult::failed('Ngân hàng từ chối');
+    $this->travel(11)->minutes();
+    $this->artisan('vani:payment:refunds')->assertSuccessful();
+    expect($status('refund-async-2')->status)->toBe('requested')
+        ->and($payment->fresh()->refunded_amount)->toBe(150_000);
+});
+
+it('hoàn qua cổng: cổng từ chối → chờ hoàn tay, không ghi giao dịch hoàn', function () {
+    $paymentId = ($this->order)('fake_online')->assertCreated()->json('data.payment.id');
+    ($this->callback)($paymentId, 'TXN-1')->assertOk();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    FakeOnlineGateway::$refundOutcome = RefundOutcome::Failed;
+
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Payments::class)->refund($payment->id, Money::vnd(100_000), 'test', 'refund-fail-1'));
+
+    expect(DB::table('refunds')->value('status'))->toBe('requested')
+        ->and(DB::table('payment_transactions')->where('type', 'refund')->count())->toBe(0);
 });

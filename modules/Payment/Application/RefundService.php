@@ -14,9 +14,12 @@ use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Payment\Contracts\Data\PayoutResult;
 use Modules\Payment\Contracts\Data\RefundData;
+use Modules\Payment\Contracts\Data\RefundOutcome;
+use Modules\Payment\Contracts\Data\RefundResult;
 use Modules\Payment\Contracts\PaymentRejected;
 use Modules\Payment\Contracts\RefundPayout;
 use Modules\Payment\Contracts\RefundsPayments;
+use Modules\Payment\Contracts\TracksRefunds;
 use Modules\Payment\Domain\CodRules;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Domain\RefundDecision;
@@ -223,28 +226,72 @@ final class RefundService
         }
     }
 
-    private function executeGatewayRefund(Refund $refund, Payment $payment): void
+    /**
+     * Chốt các khoản hoàn còn "đang hoàn" quá `$olderThanMinutes` phút (`vani:payment:refunds`): cổng hoàn bất đồng bộ báo
+     * `Pending`, hoặc tiến trình chết trước khi gọi cổng. Cổng `TracksRefunds` → tra trạng thái; cổng khác → gọi lại
+     * `refund()` cùng khoá idempotency. Trả số khoản hoàn đã chốt (xong hoặc chuyển sang hoàn tay).
+     */
+    public function syncProcessing(int $olderThanMinutes = 10): int
+    {
+        $settled = 0;
+        Refund::query()->where('status', RefundStatus::Processing->value)->where('updated_at', '<', now()->subMinutes($olderThanMinutes))
+            ->orderBy('id')->chunkById(100, function ($batch) use (&$settled): void {
+                foreach ($batch as $refund) {
+                    $payment = Payment::query()->whereKey($refund->payment_id)->firstOrFail();
+                    $gateway = $this->gateways->get($payment->gateway_code);
+                    $settled += $this->executeGatewayRefund($refund, $payment, $gateway instanceof TracksRefunds) === RefundOutcome::Pending ? 0 : 1;
+                }
+            });
+
+        return $settled;
+    }
+
+    /**
+     * Gọi cổng (ngoài transaction) rồi ghi kết quả: `Succeeded` → đã hoàn; `Pending` → giữ "đang hoàn" kèm tham chiếu;
+     * `Failed`/lỗi/cổng không còn → chờ nhân viên hoàn tay (số đã cam kết hoàn giữ nguyên).
+     */
+    private function executeGatewayRefund(Refund $refund, Payment $payment, bool $track = false): RefundOutcome
     {
         $gateway = $this->gateways->get($payment->gateway_code);
         ExternalCalls::guard("payment.refund:{$payment->gateway_code}");
 
         try {
-            $result = $gateway instanceof RefundsPayments ? $gateway->refund($this->records->toData($payment), Money::of((int) $refund->amount, $payment->currency_code), $refund->idempotency_key) : null;
+            $data = $this->records->toData($payment);
+            $result = match (true) {
+                $track && $gateway instanceof TracksRefunds => $gateway->refundStatus($data, $refund->idempotency_key, $refund->gateway_reference),
+                $gateway instanceof RefundsPayments => $gateway->refund($data, Money::of((int) $refund->amount, $payment->currency_code), $refund->idempotency_key),
+                default => RefundResult::failed(),
+            };
         } catch (Throwable $exception) {
             Log::error('Hoàn tiền qua cổng lỗi — chờ nhân viên xử lý.', ['refund' => $refund->public_id, 'exception' => $exception]);
-            $result = null;
+            $result = RefundResult::failed($exception->getMessage());
         }
 
-        DB::transaction(function () use ($refund, $payment, $result): void {
-            if ($result?->successful) {
-                $refund->update(['status' => RefundStatus::Completed->value, 'gateway_reference' => $result->gatewayReference]);
-                $this->records->recordTransaction($payment, 'refund', $result->gatewayReference ?? "refund:{$refund->public_id}", -1 * (int) $refund->amount, 'completed', []);
-                event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount, $refund->public_id, $payment->public_id));
-            } else {
-                // Không hoàn được tự động → chuyển sang chờ nhân viên hoàn thủ công (số đã cam kết hoàn giữ nguyên).
-                $refund->update(['status' => RefundStatus::Requested->value]);
+        return DB::transaction(function () use ($refund, $payment, $result): RefundOutcome {
+            $locked = Refund::query()->whereKey($refund->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status !== RefundStatus::Processing->value) {
+                return RefundOutcome::Succeeded; // Lần chạy khác đã chốt.
             }
+
+            match ($result->outcome) {
+                RefundOutcome::Succeeded => $this->completeGatewayRefund($locked, $payment, $result->gatewayReference),
+                RefundOutcome::Pending => $locked->update(['gateway_reference' => $result->gatewayReference ?? $locked->gateway_reference, 'updated_at' => now()]),
+                RefundOutcome::Failed => $locked->update(['status' => RefundStatus::Requested->value]),
+            };
+            if ($result->outcome === RefundOutcome::Failed && $result->message !== null) {
+                $this->audit->record('payment.refund_gateway_failed', 'refund', $locked->id, ['message' => mb_substr($result->message, 0, 255)]);
+            }
+
+            return $result->outcome;
         });
+    }
+
+    private function completeGatewayRefund(Refund $refund, Payment $payment, ?string $gatewayReference): void
+    {
+        $reference = $gatewayReference ?? $refund->gateway_reference;
+        $refund->update(['status' => RefundStatus::Completed->value, 'gateway_reference' => $reference]);
+        $this->records->recordTransaction($payment, 'refund', $reference ?? "refund:{$refund->public_id}", -1 * (int) $refund->amount, 'completed', []);
+        event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount, $refund->public_id, $payment->public_id));
     }
 
     /** Chuyển trạng thái khoản hoàn có điều kiện (giành/nhả quyền chuyển trả); trả số dòng đổi. */

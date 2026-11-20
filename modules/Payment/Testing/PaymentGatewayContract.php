@@ -14,11 +14,14 @@ use Modules\Payment\Contracts\Data\GatewayResult;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\InitiationType;
 use Modules\Payment\Contracts\Data\PaymentData;
+use Modules\Payment\Contracts\Data\RefundOutcome;
+use Modules\Payment\Contracts\Data\RefundResult;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Payment\Contracts\QueriesStatus;
 use Modules\Payment\Contracts\ReceivesCallbacks;
 use Modules\Payment\Contracts\RefundsPayments;
+use Modules\Payment\Contracts\TracksRefunds;
 use Modules\Shared\Domain\Money\Money;
 
 /**
@@ -29,7 +32,7 @@ use Modules\Shared\Domain\Money\Money;
  *       tamperedCallback: fn (PaymentData $p) => Request::create(...));   // callback bị sửa
  *
  * Kiểm tra: mã hợp lệ; initiate idempotent; callback đúng chữ ký được chấp nhận và khớp payment/số tiền;
- * callback sai bị từ chối (ReceivesCallbacks); query trả trạng thái (QueriesStatus); refund idempotent theo key (RefundsPayments);
+ * callback sai bị từ chối (ReceivesCallbacks); query trả trạng thái (QueriesStatus); refund idempotent theo key, cùng kết quả (RefundsPayments/TracksRefunds);
  * cổng giữ tiền (CapturesLater): capture/void idempotent theo key.
  */
 final class PaymentGatewayContract
@@ -107,9 +110,12 @@ final class PaymentGatewayContract
                 $data = $payment($instance);
                 $first = $instance->refund($data, Money::vnd(100_000), 'contract-refund-1');
                 $second = $instance->refund($data, Money::vnd(100_000), 'contract-refund-1');
-                expect($first->successful)->toBeTrue()
-                    ->and($second->successful)->toBeTrue()
+                expect($first)->toBeInstanceOf(RefundResult::class)
+                    ->and($second->outcome)->toBe($first->outcome)
                     ->and($second->gatewayReference)->toBe($first->gatewayReference);
+                if ($first->outcome === RefundOutcome::Pending && $instance instanceof TracksRefunds) {
+                    expect($instance->refundStatus($data, 'contract-refund-1', $first->gatewayReference))->toBeInstanceOf(RefundResult::class);
+                }
             });
 
             it('giữ tiền: capture/void idempotent theo key (nếu CapturesLater)', function () use ($gateway, $payment): void {

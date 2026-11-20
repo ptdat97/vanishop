@@ -13,6 +13,7 @@ use Modules\Payment\Contracts\Data\GatewayResult;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
+use Modules\Payment\Contracts\Data\RefundResult;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Payment\Contracts\ReceivesCallbacks;
@@ -67,9 +68,9 @@ final class FakeCardGateway implements CapturesLater, PaymentGateway, ReceivesCa
         return new GatewayCallback($fields['payment_id'], $fields['txn'], GatewayPaymentStatus::tryFrom($fields['status']) ?? throw new InvalidCallback('Trạng thái lạ.'), Money::vnd((int) $fields['amount']));
     }
 
-    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult
+    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): RefundResult
     {
-        return new GatewayResult(true, "RF-{$idempotencyKey}");
+        return RefundResult::succeeded("RF-{$idempotencyKey}");
     }
 
     public function capture(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult

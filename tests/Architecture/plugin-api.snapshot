@@ -1,4 +1,4 @@
-Extension API 1.18.0
+Extension API 1.19.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -786,6 +786,18 @@ class Modules\Payment\Contracts\Data\PayoutResult [experimental]
   __construct(bool $successful, ?string $reference = NULL, ?string $message = NULL)
 class Modules\Payment\Contracts\Data\RefundData [experimental]
   __construct(string $refundPublicId, string $paymentPublicId, string $orderNumber, int $amount, string $currencyCode, string $reason, array $customer)
+enum Modules\Payment\Contracts\Data\RefundOutcome
+  const Succeeded = \Modules\Payment\Contracts\Data\RefundOutcome::Succeeded
+  const Pending = \Modules\Payment\Contracts\Data\RefundOutcome::Pending
+  const Failed = \Modules\Payment\Contracts\Data\RefundOutcome::Failed
+  static cases(): array
+  static from(string|int $value): static
+  static tryFrom(string|int $value): ?static
+class Modules\Payment\Contracts\Data\RefundResult
+  __construct(Modules\Payment\Contracts\Data\RefundOutcome $outcome, ?string $gatewayReference = NULL, ?string $message = NULL)
+  static succeeded(?string $gatewayReference = NULL): self
+  static pending(?string $gatewayReference = NULL, ?string $message = NULL): self
+  static failed(?string $message = NULL): self
 class Modules\Payment\Contracts\InvalidCallback extends RuntimeException
 interface Modules\Payment\Contracts\PaymentGateway
   const TAG = 'vani.payment.gateways'
@@ -838,7 +850,9 @@ interface Modules\Payment\Contracts\RefundPayout [experimental]
   label(): string
   payout(Modules\Payment\Contracts\Data\RefundData $refund): Modules\Payment\Contracts\Data\PayoutResult
 interface Modules\Payment\Contracts\RefundsPayments
-  refund(Modules\Payment\Contracts\Data\PaymentData $payment, Modules\Shared\Domain\Money\Money $amount, string $idempotencyKey): Modules\Payment\Contracts\Data\GatewayResult
+  refund(Modules\Payment\Contracts\Data\PaymentData $payment, Modules\Shared\Domain\Money\Money $amount, string $idempotencyKey): Modules\Payment\Contracts\Data\RefundResult
+interface Modules\Payment\Contracts\TracksRefunds
+  refundStatus(Modules\Payment\Contracts\Data\PaymentData $payment, string $idempotencyKey, ?string $gatewayReference): Modules\Payment\Contracts\Data\RefundResult
 interface Modules\Pricing\Contracts\BulkPriceMode [experimental]
   const TAG = 'vani.pricing.bulk_modes'
   code(): string

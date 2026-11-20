@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.61 — 2026-11-20 · Extension API 1.19.0
+
+Hoàn tiền qua cổng có ba kết quả, hỗ trợ cổng hoàn bất đồng bộ.
+
+### Đổi (phá vỡ — plugin cổng hoàn tiền cập nhật theo)
+- `RefundsPayments::refund()` trả `Contracts\Data\RefundResult` (`outcome: RefundOutcome`, `gatewayReference`, `message`; `RefundResult::succeeded()/pending()/failed()`) thay cho `GatewayResult`. `RefundOutcome`: `Succeeded` (đã hoàn), `Pending` (cổng đã nhận lệnh, tiền về sau), `Failed` (chờ hoàn tay).
+
+### Thêm
+- Interface tuỳ chọn `TracksRefunds extends RefundsPayments`: `refundStatus(PaymentData, string $idempotencyKey, ?string $gatewayReference): RefundResult`.
+- Lệnh `vani:payment:refunds` (5 phút/lần, `--older-than=10`): khoản hoàn "đang hoàn" quá hạn → cổng `TracksRefunds` tra trạng thái, cổng khác gọi lại `refund()` cùng khoá idempotency. Xong → `completed` + giao dịch `refund`; thất bại → `requested` (audit `payment.refund_gateway_failed`). Ghi kết quả khoá dòng refund — hai lần chạy không chốt hai lần.
+- `PaymentGatewayContract`: refund gọi lại cùng key trả cùng kết quả và tham chiếu.
+
 ## 0.5.60 — 2026-11-20 · Extension API 1.18.0
 
 Payment abstraction: interface lõi tối thiểu, khả năng là interface tuỳ chọn, trạng thái là enum.

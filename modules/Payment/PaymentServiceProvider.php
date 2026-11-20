@@ -30,6 +30,7 @@ use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Application\ReconciliationLedger;
 use Modules\Payment\Console\ExpirePaymentsCommand;
 use Modules\Payment\Console\ReconcilePaymentsCommand;
+use Modules\Payment\Console\SyncRefundsCommand;
 use Modules\Payment\Console\VerifyPaymentsCommand;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Payment\Contracts\Payments;
@@ -101,11 +102,12 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:payment:expire')->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command('vani:payment:reconcile')->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:payment:refunds')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
             $schedule->command('vani:payment:verify')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
         });
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ExpirePaymentsCommand::class, ReconcilePaymentsCommand::class, VerifyPaymentsCommand::class]);
+            $this->commands([ExpirePaymentsCommand::class, ReconcilePaymentsCommand::class, SyncRefundsCommand::class, VerifyPaymentsCommand::class]);
         }
 
         if (! $this->app->routesAreCached()) {

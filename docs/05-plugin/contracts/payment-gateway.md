@@ -20,7 +20,8 @@ interface PaymentGateway
 interface ReceivesCallbacks { /** @throws InvalidCallback */ public function verifyCallback(Request $request): GatewayCallback; }
 interface CallbackResponder extends ReceivesCallbacks { public function callbackResponse(CallbackOutcome $outcome, ?GatewayCallback $callback): array; }
 interface QueriesStatus     { public function query(PaymentData $payment): GatewayStatus; }
-interface RefundsPayments   { public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult; }
+interface RefundsPayments   { public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): RefundResult; }
+interface TracksRefunds extends RefundsPayments { public function refundStatus(PaymentData $payment, string $idempotencyKey, ?string $gatewayReference): RefundResult; }
 interface CapturesLater     { public function capture(...): GatewayResult; public function void(...): GatewayResult; }
 ```
 
@@ -40,7 +41,8 @@ Cổng không có khả năng nào thì không cài interface đó (COD, chuyể
 | Phản hồi cổng | Trả `GatewayCallback::$acknowledgement` dạng JSON | Điền đúng định dạng cổng mong đợi |
 | Giao dịch treo | `vani:payment:reconcile` mỗi phút gọi `query()` nếu cổng `QueriesStatus` | Trả `GatewayStatus` |
 | Hết hạn | `vani:payment:expire` theo `paymentTtlSeconds` | Khai báo TTL trong capabilities |
-| Hoàn tiền | Kiểm tra số tiền hoàn được, tạo refund; cổng `RefundsPayments` (và `partialRefund` khi hoàn một phần) → gọi `refund()` sau commit, không thì chờ hoàn tay/`RefundPayout` | Idempotent theo `$idempotencyKey` |
+| Hoàn tiền | Kiểm tra số tiền hoàn được, tạo refund; cổng `RefundsPayments` (và `partialRefund` khi hoàn một phần) → gọi `refund()` sau commit, không thì chờ hoàn tay/`RefundPayout`. `RefundResult`: `Succeeded` → đã hoàn; `Pending` → giữ "đang hoàn"; `Failed` → chờ hoàn tay | Idempotent theo `$idempotencyKey`; **không trả `Succeeded` khi tiền chưa đi** |
+| Hoàn bất đồng bộ | `vani:payment:refunds` (5 phút/lần) với khoản hoàn "đang hoàn" > 10 phút: cổng `TracksRefunds` → `refundStatus()`; cổng khác → gọi lại `refund()` cùng key (cũng cứu khoản hoàn kẹt khi tiến trình chết trước khi gọi cổng) | Trả trạng thái lệnh hoàn |
 
 Return URL (trình duyệt quay về) **không** xác nhận thanh toán; chỉ callback đã xác minh mới được.
 
@@ -115,7 +117,7 @@ Cổng xác nhận thu bằng IPN `paid` sau đó cũng được: Core bỏ qua 
 - [ ] `isAvailable()` nhanh, không ném lỗi với cấu hình thiếu (trả `false`)
 - [ ] `initiate()` idempotent, chạy được sau commit
 - [ ] `verifyCallback()` xác minh chữ ký bằng `hash_equals`, ném `InvalidCallback` khi sai, không ghi DB
-- [ ] `refund()` idempotent theo `$idempotencyKey`
+- [ ] `refund()` idempotent theo `$idempotencyKey`, trả `RefundResult` đúng sự thật (`Pending` nếu tiền chưa về; cổng hoàn bất đồng bộ cài `TracksRefunds`)
 - [ ] Secret qua `settings()` (secret) hoặc `.env`; không log dữ liệu thẻ/tài khoản
 - [ ] Chạy `PaymentGatewayContract` + test callback trùng/sai chữ ký/sai số tiền
 
