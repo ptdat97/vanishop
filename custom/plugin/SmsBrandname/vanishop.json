@@ -4,7 +4,7 @@
         "vi": "SMS Brandname (eSMS)",
         "en": "SMS Brandname (eSMS)"
     },
-    "version": "0.1.1",
+    "version": "0.1.2",
     "kind": "notification_channel",
     "provider": "Plugin\\SmsBrandname\\SmsBrandnameServiceProvider",
     "requires": {

@@ -19,7 +19,7 @@ Hyperscaler quốc tế: nhiều dịch vụ managed hơn nhưng phải làm h�
 
 ## Consequences
 - (+) Tuân thủ lưu trữ trong nước, độ trễ thấp.
-- (−) Cần năng lực DevOps; tự host một số công cụ (Sentry, Meilisearch).
+- (−) Cần năng lực DevOps; tự host một số công cụ (Sentry). *(Ghi chú 2026-11: Meilisearch đã gỡ — tìm kiếm chỉ dùng SQL.)*
 
 ## Trade-offs
 Tự vận hành nhiều hơn để đổi lấy tuân thủ và độ trễ thấp.

@@ -4,7 +4,7 @@
         "vi": "Thanh toán khi nhận hàng (COD)",
         "en": "Cash on delivery (COD)"
     },
-    "version": "1.3.1",
+    "version": "1.3.2",
     "kind": "payment_gateway",
     "provider": "Plugin\\Cod\\CodServiceProvider",
     "bundled": true,
