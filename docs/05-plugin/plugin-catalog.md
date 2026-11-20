@@ -97,7 +97,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.tracking-pixels` ✅ (GA4, Meta, GTM; server-side Meta CAPI + GA4 MP; đồng ý cookie) | Slot storefront, `OrderPlaced`, sự kiện `vani:cart-updated` | **Implemented** 2026-10-14 |
 | `vani.feed-export` (Google Merchant, Meta, TikTok catalog) | `CatalogReader`, scheduled task | P2 |
 | ~~`vani.search-meilisearch`~~ ⛔ đã gỡ 2026-11-12 | `SearchProvider` + `ConfigurableSearchIndex` | Không cần: dự án tìm kiếm bằng SQL (provider `database`) |
-| `vani.search-algolia` / `vani.search-elastic` | `SearchProvider` | Later |
+| `vani.search-algolia` / `vani.search-elastic` | — (không có extension point tìm kiếm từ 0.5.60) | Không làm — dự án chỉ tìm bằng SQL |
 | `vani.recommendation` | Hook listing, `StorefrontBlock` | Later |
 
 ### Tích hợp hệ thống

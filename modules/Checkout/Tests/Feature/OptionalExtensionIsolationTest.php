@@ -1,9 +1,5 @@
 <?php
 
-use Modules\Catalog\Contracts\Data\ProductDocument;
-use Modules\Catalog\Contracts\Data\ProductSearchQuery;
-use Modules\Catalog\Contracts\Data\ProductSearchResult;
-use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Checkout\Contracts\Data\TotalsContext;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -56,23 +52,6 @@ final class BrokenGateway implements PaymentGateway
     }
 }
 
-final class BrokenSearch implements SearchProvider
-{
-    public function code(): string
-    {
-        return 'broken_search';
-    }
-
-    public function index(ProductDocument $document): void {}
-
-    public function remove(int $styleId): void {}
-
-    public function search(ProductSearchQuery $query): ProductSearchResult
-    {
-        throw new RuntimeException('search sập');
-    }
-}
-
 beforeEach(function () {
     ['s' => $this->s] = C::store();
     $this->headers = [];
@@ -90,11 +69,4 @@ it('hãng báo cước lỗi và cổng thanh toán lỗi health check → quote
     expect(array_column($quote->json('data.shipping_options'), 'code'))->toBe(['standard'])
         ->and(array_column($quote->json('data.payment_methods'), 'code'))->not->toContain('broken_gateway')
         ->and(array_column($quote->json('data.payment_methods'), 'code'))->toContain('cod');
-});
-
-it('search provider cấu hình bị lỗi → danh sách sản phẩm dùng provider database', function () {
-    app(Extensions::class)->tag([BrokenSearch::class], SearchProvider::TAG);
-    config(['vanishop.search.provider' => 'broken_search']);
-
-    $this->getJson('/api/storefront/v1/products', $this->headers)->assertOk()->assertJsonCount(1, 'data');
 });

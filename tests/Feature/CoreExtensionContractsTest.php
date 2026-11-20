@@ -4,13 +4,7 @@ use App\Observability\MailAlertChannel;
 use Illuminate\Support\Facades\Mail;
 use Modules\Cart\Application\CartedVariants;
 use Modules\Cart\Contracts\Data\CartKey;
-use Modules\Catalog\Application\Search\DatabaseSearchProvider;
-use Modules\Catalog\Application\Search\ProductDocumentBuilder;
-use Modules\Catalog\Contracts\Data\ProductSearchQuery;
-use Modules\Catalog\Persistence\Models\Style;
-use Modules\Catalog\Testing\SearchProviderContract;
 use Modules\Catalog\Testing\VariantUsageContract;
-use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Application\Calculators\GuardCalculator;
 use Modules\Checkout\Application\Calculators\SubtotalCalculator;
 use Modules\Checkout\Application\Tax\NoTax;
@@ -75,14 +69,6 @@ PricingStrategyContract::define('core price_list_priority', fn () => app(PriceLi
 
     return [[$s->id, $m->id], new PricingContext(time())];
 });
-
-SearchProviderContract::define('core database', fn () => app(DatabaseSearchProvider::class), function (): array {
-    ['brand' => $brand] = C::store();
-    $style = T::seed(fn () => Style::query()->where('brand_id', $brand->id)->firstOrFail());
-    $document = T::seed(fn () => app(ProductDocumentBuilder::class)->build($style));
-
-    return [$document, new ProductSearchQuery(brandIds: [$brand->id], now: time())];
-}, removeHidesFromSearch: false);
 
 NotificationChannelContract::define(
     'core mail',

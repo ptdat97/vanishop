@@ -6,6 +6,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.60 — 2026-11-20 · Extension API 1.18.0
+
+Rà soát kiến trúc 2026-11-20 (đề xuất 1, 3, 6).
+
+### Bỏ (phá vỡ — plugin/test cập nhật theo)
+- Extension point tìm kiếm: `Catalog\Contracts\SearchProvider`, `ConfigurableSearchIndex`, `Data\ProductDocument`, `Catalog\Testing\SearchProviderContract`, `SearchManager`, `ProductDocumentBuilder`, listener `SyncProductSearchIndex`, lệnh `vani:search:reindex`, cấu hình `vanishop.search.provider` / `VANI_SEARCH_PROVIDER`. Dự án chỉ tìm bằng SQL: `Catalog\Application\Search\ProductSearch` (trước là `DatabaseSearchProvider`). Lưu sản phẩm không còn dựng tài liệu tìm kiếm rồi bỏ đi.
+
+### Sửa
+- Xuất file sản phẩm không N+1: nạp sẵn trục/giá trị tuỳ chọn; `VariantFieldProvider::values()` được gọi một lần cho mỗi lô 200 sản phẩm (`$styleId` = 0, `$variantIds` thuộc nhiều sản phẩm — đã ghi trong contract). 10.000 sản phẩm / 50.000 SKU: 10.501 truy vấn (+ khoảng 20.000 khi có cột giá) → 551; 8,4 s → 5,7 s.
+
+### Thêm
+- `Extension\Application\PendingMigrations`: `/health` có mục `migrations` (degraded khi còn migration chưa chạy), `vani:security:check` báo lỗi, Tổng quan → Việc cần làm "Migration chưa chạy".
 ## 0.5.62 — 2026-11-20 · Extension API 1.20.0
 
 Cổng thanh toán nhận đủ ngữ cảnh; Return URL chung trong Core.

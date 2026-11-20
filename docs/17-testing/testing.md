@@ -117,7 +117,6 @@ NotificationChannelContract::define('vani.sms-brandname', fn () => app(SmsChanne
 | `Returns\Testing\ReturnPolicyContract` | hàng chưa giao không bao giờ đủ điều kiện; từ chối có lý do |
 | `Inventory\Testing\InventoryStrategyContract` | chỉ **giảm** ATS, không âm |
 | `Pricing\Testing\PricingStrategyContract` | giá dương; giá gốc > giá bán; % giảm 1–99 |
-| `Catalog\Testing\SearchProviderContract` | index/remove idempotent; tìm thấy sau index |
 | `Notification\Testing\NotificationChannelContract` | canReach đúng; lỗi tạm thời → retryable; tin rỗng → permanent; không ném exception |
 | `Customer\Testing\OtpSenderContract` | lỗi nhà cung cấp chỉ ném `OtpDeliveryFailed` (để Core chuyển kênh) |
 | `Integration\Testing\ConnectorContract` | phân loại ok/retryable/permanent; `Idempotency-Key = messageId` |

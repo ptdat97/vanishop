@@ -8,10 +8,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Modules\Catalog\Contracts\Data\ProductDocument;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\ProductSearchResult;
-use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
@@ -19,23 +17,12 @@ use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 /**
- * Tìm kiếm trực tiếp trên MySQL (không cần index ngoài). Phù hợp dev và catalog vừa/nhỏ;
- * tìm không dấu nhờ cột styles.search_text đã chuẩn hoá.
+ * Tìm kiếm sản phẩm cho storefront bằng truy vấn SQL (dự án chỉ tìm bằng SQL — không có chỉ mục ngoài): tìm không dấu
+ * qua cột `styles.search_text` (ProductService ghi khi lưu), lọc danh mục/thuộc tính/tuỳ chọn/giá, facet, sắp xếp.
+ * Đo 10.000 sản phẩm / 50.000 SKU: 5–16 ms mỗi truy vấn (2026-11-20).
  */
-final class DatabaseSearchProvider implements SearchProvider
+final class ProductSearch
 {
-    public function code(): string
-    {
-        return 'database';
-    }
-
-    public function index(ProductDocument $document): void
-    {
-        // Đọc trực tiếp từ bảng nghiệp vụ — không có chỉ mục riêng cần cập nhật.
-    }
-
-    public function remove(int $styleId): void {}
-
     public function search(ProductSearchQuery $query): ProductSearchResult
     {
         $base = $this->baseQuery($query);

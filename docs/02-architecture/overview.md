@@ -101,7 +101,7 @@ Cấu trúc bên trong module: [bounded-contexts §4](bounded-contexts.md). Cấ
 | Hook | `tormjens/eventy`, bọc bởi facade `Modules\Extension\Facades\Hook` | Implemented |
 | CSDL | MySQL 8.4 LTS, InnoDB, `utf8mb4` ([ADR-016](../19-adr/ADR-016-mysql.md)) | Implemented (dev: MySQL 9.7; CI: 8.4) |
 | Cache / Queue / Lock | Database mặc định; Horizon có trong dependencies và dùng Redis khi được cấu hình | Partially Implemented |
-| Tìm kiếm | `SearchProvider`; dự án dùng `database` (truy vấn SQL), không cần Meilisearch — plugin `vani.search-meilisearch` đã gỡ 2026-11-12 | Implemented |
+| Tìm kiếm | Truy vấn SQL trong Core (`ProductSearch`); không có provider thay thế (0.5.60: gỡ extension point `SearchProvider` — dự án chỉ tìm bằng SQL) | Implemented |
 | File | Local/public disk mặc định; có cấu hình S3-compatible cho production, CDN tuỳ deployment | Partially Implemented |
 | Admin | Inertia v3 + Vue 3 + TypeScript 5.9 + Tailwind 4 ([ADR-017](../19-adr/ADR-017-admin-ui-inertia.md)) | Implemented; độ phủ capability xem [status](../00-overview/status.md) |
 | Storefront | Blade SSR + JavaScript thuần + Tailwind 4, theme `custom/theme/vani-base` | Partially Implemented |

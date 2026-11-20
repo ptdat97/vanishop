@@ -27,7 +27,6 @@ return [
         'manage_media_library_upload_folders' => 'Quản lý Thư viện ảnh (tải lên, thư mục, đổi tên, xoá ảnh không dùng)',
         'media_library' => 'Thư viện ảnh',
         'placeholder_image' => 'Ảnh thay thế',
-        'product_search' => 'Tìm kiếm sản phẩm',
         'products' => 'Sản phẩm',
         'shown_products_without_images_product' => 'Hiện thay cho sản phẩm chưa có ảnh (thẻ sản phẩm, Storefront API) và cho vani_image() khi thiếu ảnh. Để trống: khung trống của theme.',
         'style_code_digits' => 'Số chữ số của mã gợi ý',

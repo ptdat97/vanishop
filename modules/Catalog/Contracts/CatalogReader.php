@@ -54,7 +54,7 @@ interface CatalogReader
     public function discontinuedProduct(string $slug, string $locale): ?array;
 
     /**
-     * Gợi ý tìm kiếm (0.3.71, reference-parity §3.5-4): sản phẩm khớp (tối đa $products, theo SearchProvider), danh mục
+     * Gợi ý tìm kiếm (0.3.71, reference-parity §3.5-4): sản phẩm khớp (tối đa $products, tìm bằng SQL), danh mục
      * và thương hiệu đang hiện có tên khớp (tối đa 3 mỗi loại, không phân biệt hoa thường/dấu).
      *
      * @return array{products: list<array{id: int, slug: string, name: string|null, image_url: string|null}>, categories: list<array{id: int, slug: string, name: string}>, brands: list<array{slug: string, name: string, logo_url: ?string}>}

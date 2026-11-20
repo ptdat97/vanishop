@@ -27,7 +27,6 @@ return [
         'manage_media_library_upload_folders' => 'Manage the Media library (upload, folders, rename, delete unused images)',
         'media_library' => 'Media library',
         'placeholder_image' => 'Placeholder image',
-        'product_search' => 'Product search',
         'products' => 'Products',
         'shown_products_without_images_product' => 'Shown for products without images (product cards, Storefront API) and for vani_image() when an image is missing. Leave empty: the theme\'s empty frame.',
         'style_code_digits' => 'Digits in suggested code',

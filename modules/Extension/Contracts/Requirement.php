@@ -18,6 +18,6 @@ enum Requirement: string
     /** Ít nhất một implementation đang bật (vd. cổng thanh toán, phí giao). */
     case AtLeastOne = 'at_least_one';
 
-    /** Đúng một implementation có hiệu lực — chọn qua cấu hình khi có nhiều (vd. TaxCalculator, SearchProvider). */
+    /** Đúng một implementation có hiệu lực — chọn qua cấu hình khi có nhiều (vd. TaxCalculator). */
     case ExactlyOne = 'exactly_one';
 }

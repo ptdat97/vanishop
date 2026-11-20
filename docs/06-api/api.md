@@ -84,7 +84,7 @@ Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác
 | POST | `/orders/{id}/returns/{returnId}/photos` | Khách gửi thêm ảnh (0.5.30): multipart `photos[]` (jpg/png/webp, ≤ 5 MB/ảnh, tổng ≤ 5 ảnh mỗi yêu cầu), chỉ khi `returns[].can_add_photos` (chờ duyệt/đã duyệt). Trả đơn |
 | POST | `/me/returns` | Tạo yêu cầu đổi trả (khi có tài khoản khách) |
 | GET | `/address/provinces`, `/address/provinces/{code}/wards` | Địa giới hành chính (khi có `AddressDirectory`, vd. `vani.provinces-vn`). **Implemented** (0.3.11) |
-| GET | `/search?q=&filter[...]` | Tìm kiếm qua `SearchProvider` (facet màu, size còn hàng, giá) |
+| GET | `/search?q=&filter[...]` | Tìm kiếm bằng SQL (`Catalog\Application\Search\ProductSearch`; facet màu, size còn hàng, giá) |
 | GET | `/x/vani-cms/pages/{slug}`, `/x/vani-cms/posts`, `/x/vani-cms/posts/{slug}` | Nội dung (plugin `vani.cms`). **Implemented** (0.3.14); menu tuỳ biến: chưa |
 
 ## 4. Admin API: nhóm tài nguyên

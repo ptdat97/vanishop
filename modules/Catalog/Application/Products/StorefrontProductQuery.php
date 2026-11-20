@@ -6,7 +6,7 @@ namespace Modules\Catalog\Application\Products;
 
 use Illuminate\Support\Collection;
 use Modules\Catalog\Application\Media\ImageSizes;
-use Modules\Catalog\Application\Search\SearchManager;
+use Modules\Catalog\Application\Search\ProductSearch;
 use Modules\Catalog\Contracts\Data\DefaultWeight;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\SellableVariant;
@@ -34,7 +34,7 @@ use Modules\Tenancy\Contracts\Settings;
 final class StorefrontProductQuery
 {
     public function __construct(
-        private readonly SearchManager $search,
+        private readonly ProductSearch $search,
         private readonly StyleLinkService $links,
         private readonly VideoDrivers $videos,
         private readonly Settings $settings,

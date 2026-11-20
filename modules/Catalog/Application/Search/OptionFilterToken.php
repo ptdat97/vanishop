@@ -23,7 +23,7 @@ final class OptionFilterToken
         return $type->display_type === OptionDisplayType::Swatch ? $value->family : $value->code;
     }
 
-    /** Phần tử của `ProductDocument::$options`: `<mã loại>:<mã lọc>`. */
+    /** Token lọc tuỳ chọn: `<mã loại>:<mã lọc>`. */
     public static function document(string $typeCode, string $token): string
     {
         return "{$typeCode}:{$token}";

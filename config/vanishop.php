@@ -429,12 +429,6 @@ return [
         'signature_tolerance' => (int) env('VANI_INTEGRATION_SIGNATURE_TOLERANCE', 300),
     ],
 
-    'search' => [
-        // database (mặc định — truy vấn SQL, không cần hạ tầng; dự án hiện chỉ dùng provider này, đã gỡ plugin Meilisearch)
-        // | mã provider do plugin đăng ký qua extension point SearchProvider. Provider chưa bật → dùng database.
-        'provider' => env('VANI_SEARCH_PROVIDER', 'database'),
-    ],
-
     'hooks' => [
         // Gọi hook chưa khai báo sẽ ném lỗi (local/testing) thay vì bị bỏ qua.
         'strict' => (bool) env('VANI_HOOKS_STRICT', in_array(env('APP_ENV'), ['local', 'testing'], true)),

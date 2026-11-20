@@ -102,8 +102,6 @@ interface Modules\Catalog\Contracts\CatalogReader
   sellableVariants(array $variantIds, string $locale, int $now): array
 interface Modules\Catalog\Contracts\CollectionDirectory
   slugsForStyles(array $styleIds): array
-interface Modules\Catalog\Contracts\ConfigurableSearchIndex
-  setupIndex(): void
 class Modules\Catalog\Contracts\Data\DefaultWeight
   const SETTING = 'catalog.default_weight_gram'
   static grams(Modules\Tenancy\Contracts\Settings $settings): int
@@ -120,10 +118,6 @@ class Modules\Catalog\Contracts\Data\MediaData
   isVideo(): bool
   urlFor(?int $width = NULL): string
   srcset(): string
-class Modules\Catalog\Contracts\Data\ProductDocument
-  __construct(int $id, ?int $brandId, string $styleCode, string $slug, string $status, ?int $publishedFrom, ?int $publishedTo, array $names, string $searchText, array $categoryIds, array $collectionIds, array $attributeValueIds, int $createdAt, ?int $listPriceMin = NULL, array $options = array (
-))
-  toArray(): array
 class Modules\Catalog\Contracts\Data\ProductDraft
   __construct(?int $brandId, ?int $styleId, string $styleCode, string $slug, string $status, array $translations, array $categoryIds, array $attributes)
 class Modules\Catalog\Contracts\Data\ProductFilters
@@ -199,12 +193,6 @@ interface Modules\Catalog\Contracts\ProductViewStatistics
   record(int $styleId, string $viewer, ?int $customerId): bool
   counts(array $styleIds, int $days = 30): array
   top(int $days = 30, int $limit = 10): array
-interface Modules\Catalog\Contracts\SearchProvider
-  const TAG = 'vani.search.providers'
-  code(): string
-  index(Modules\Catalog\Contracts\Data\ProductDocument $document): void
-  remove(int $styleId): void
-  search(Modules\Catalog\Contracts\Data\ProductSearchQuery $query): Modules\Catalog\Contracts\Data\ProductSearchResult
 interface Modules\Catalog\Contracts\VariantDirectory
   ofStyleCode(string $styleCode): array
   find(array $variantIds): array

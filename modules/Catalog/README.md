@@ -60,14 +60,12 @@ Sản phẩm (style), SKU (variant) theo 1–3 trục tuỳ chọn, danh mục, 
 | `CatalogLookup` | interface | plugin |
 | `CatalogReader` | interface | plugin |
 | `CollectionDirectory` | interface | plugin |
-| `ConfigurableSearchIndex` | interface | plugin |
 | `ImageFormat` | interface | tag `catalog.image-format`, plugin |
 | `ImageSizeProvider` | interface | tag `vani.catalog.image_sizes`, plugin |
 | `ListPrices` | interface | giữa module |
 | `MediaDirectory` | interface | plugin |
 | `MediaUrls` | interface | plugin |
 | `ProductViewStatistics` | interface | giữa module |
-| `SearchProvider` | interface | tag `vani.search.providers`, plugin |
 | `VariantDirectory` | interface | plugin |
 | `VariantFieldProvider` | interface | tag `vani.catalog.variant_fields`, plugin |
 | `VariantUsage` | interface | tag `vani.catalog.variant_usage`, plugin |

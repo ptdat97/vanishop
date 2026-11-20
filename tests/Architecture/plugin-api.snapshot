@@ -45,8 +45,6 @@ interface Modules\Catalog\Contracts\CatalogReader
   sellableVariants(array $variantIds, string $locale, int $now): array
 interface Modules\Catalog\Contracts\CollectionDirectory
   slugsForStyles(array $styleIds): array
-interface Modules\Catalog\Contracts\ConfigurableSearchIndex
-  setupIndex(): void
 class Modules\Catalog\Contracts\Data\ImageSize
   const MIN = 16
   const MAX = 4000
@@ -58,10 +56,6 @@ class Modules\Catalog\Contracts\Data\MediaData
   isVideo(): bool
   urlFor(?int $width = NULL): string
   srcset(): string
-class Modules\Catalog\Contracts\Data\ProductDocument
-  __construct(int $id, ?int $brandId, string $styleCode, string $slug, string $status, ?int $publishedFrom, ?int $publishedTo, array $names, string $searchText, array $categoryIds, array $collectionIds, array $attributeValueIds, int $createdAt, ?int $listPriceMin = NULL, array $options = array (
-))
-  toArray(): array
 class Modules\Catalog\Contracts\Data\ProductFilters
   __construct(int $now, string $text = '', ?string $categorySlug = NULL, ?string $collectionSlug = NULL, array $attributes = array (
 ), string $sort = 'newest', int $page = 1, int $perPage = 24, array $brandSlugs = array (
@@ -127,12 +121,6 @@ interface Modules\Catalog\Contracts\MediaUrls
   image(?int $mediaId, string|int|null $size = NULL, ?string $group = NULL): ?string
   srcset(?int $mediaId, ?string $group = NULL): string
   productRatio(): ?array
-interface Modules\Catalog\Contracts\SearchProvider
-  const TAG = 'vani.search.providers'
-  code(): string
-  index(Modules\Catalog\Contracts\Data\ProductDocument $document): void
-  remove(int $styleId): void
-  search(Modules\Catalog\Contracts\Data\ProductSearchQuery $query): Modules\Catalog\Contracts\Data\ProductSearchResult
 interface Modules\Catalog\Contracts\VariantDirectory
   ofStyleCode(string $styleCode): array
   find(array $variantIds): array
