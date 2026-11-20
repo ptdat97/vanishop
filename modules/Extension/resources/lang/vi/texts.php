@@ -24,6 +24,10 @@ return [
     'manifest_repository' => [
         'duplicate_id_id' => 'trùng id [:id]',
     ],
+    'pending_migrations' => [
+        'hint' => 'Chạy php artisan migrate trên máy chủ — thiếu bảng/cột có thể làm trang lỗi.',
+        'label' => 'Migration chưa chạy',
+    ],
     'permissions' => [
         'plugin_settings' => 'Sửa cài đặt của plugin :plugin',
         'settings_appearance' => 'Sửa Cài đặt hệ thống: Giao diện',

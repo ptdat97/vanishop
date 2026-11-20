@@ -9,6 +9,7 @@ use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -23,6 +24,7 @@ use Modules\Extension\Application\Hooks\Points\EventHooks;
 use Modules\Extension\Application\Hooks\Points\HookedInertiaFactory;
 use Modules\Extension\Application\Hooks\Points\ResponseHooks;
 use Modules\Extension\Application\Hooks\Points\ViewHooks;
+use Modules\Extension\Application\PendingMigrations;
 use Modules\Extension\Application\Plugins\DeprecationScanner;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginActivation;
@@ -65,6 +67,7 @@ use Modules\Extension\Contracts\PluginViews;
 use Modules\Extension\Contracts\SettingActions;
 use Modules\Extension\Contracts\SettingPermissions;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
+use Modules\Extension\Facades\Hook;
 use Modules\Extension\Http\Middleware\EnsurePluginActive;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\AuditLogger;
@@ -173,6 +176,16 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
             $permissions->register(SettingPermissions::forGroup($group), "extension::texts.permissions.settings_{$group->value}",
                 in_array($group, [SettingGroup::Seo, SettingGroup::Appearance], true) ? [PermissionRegistry::PRESET_CONTENT] : []);
         }
+
+        // Tổng quan → Việc cần làm: DB chưa chạy hết migration (người quản trị cài đặt thấy; chạy `php artisan migrate`).
+        Hook::onSlot('vani.admin.dashboard.tasks', function (): array {
+            $pending = Gate::allows(SettingPermissions::ALL) ? count($this->app->make(PendingMigrations::class)->names()) : 0;
+
+            return $pending === 0 ? [] : [[
+                'key' => 'system.pending_migrations', 'label' => __('extension::texts.pending_migrations.label'), 'count' => $pending,
+                'url' => route('admin.dashboard'), 'tone' => 'danger', 'hint' => __('extension::texts.pending_migrations.hint'), 'order' => 1,
+            ]];
+        });
 
         $navigation = $this->app->make(AdminNavigation::class);
         $navigation->group('system', 'extension::texts.extension_service_provider.system', 800);

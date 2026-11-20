@@ -6,6 +6,7 @@ namespace App\Observability;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Modules\Extension\Application\PendingMigrations;
 use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
@@ -23,7 +24,7 @@ final class HealthCheck
 
     private const SCHEDULER_STALE_SECONDS = 300;
 
-    public function __construct(private readonly RequiredExtensions $required) {}
+    public function __construct(private readonly RequiredExtensions $required, private readonly PendingMigrations $migrations) {}
 
     /**
      * @return array{status: string, checks: array<string, array{status: string, detail?: string}>}
@@ -35,6 +36,12 @@ final class HealthCheck
                 DB::select('select 1');
 
                 return ['status' => 'ok'];
+            }),
+            // Deploy quên `php artisan migrate`: trang có thể lỗi 500 (thiếu bảng/cột).
+            'migrations' => $this->check(function (): array {
+                $pending = $this->migrations->names();
+
+                return $pending === [] ? ['status' => 'ok'] : ['status' => 'degraded', 'detail' => count($pending).' migration chưa chạy'];
             }),
             'cache' => $this->check(function (): array {
                 // Chuỗi (không phải số): Redis trả số nguyên về dạng chuỗi, so sánh `=== 1` luôn sai trên production.

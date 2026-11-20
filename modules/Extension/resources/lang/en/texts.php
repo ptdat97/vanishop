@@ -24,6 +24,10 @@ return [
     'manifest_repository' => [
         'duplicate_id_id' => 'duplicate id [:id]',
     ],
+    'pending_migrations' => [
+        'hint' => 'Run php artisan migrate on the server — missing tables/columns can break pages.',
+        'label' => 'Pending migrations',
+    ],
     'permissions' => [
         'plugin_settings' => 'Edit settings of plugin :plugin',
         'settings_appearance' => 'Edit system settings: Appearance',

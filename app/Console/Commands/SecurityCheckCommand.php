@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
+use Modules\Extension\Application\PendingMigrations;
 use Modules\Notification\Application\Mail\MailSettings;
 use Throwable;
 
@@ -48,6 +49,7 @@ final class SecurityCheckCommand extends Command
         $https = str_starts_with((string) config('app.url'), 'https://');
 
         return [
+            ['error', 'Còn migration chưa chạy (php artisan migrate) — trang có thể lỗi 500', app(PendingMigrations::class)->names() !== []],
             ['error', 'APP_ENV phải là production', ! app()->isProduction()],
             ['error', 'APP_DEBUG phải tắt (lộ stack trace, biến môi trường)', (bool) config('app.debug')],
             ['error', 'APP_KEY chưa đặt', (string) config('app.key') === ''],
