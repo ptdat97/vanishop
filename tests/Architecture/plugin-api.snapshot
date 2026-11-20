@@ -1,4 +1,4 @@
-Extension API 1.19.0
+Extension API 1.20.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -177,7 +177,7 @@ class Modules\Checkout\Contracts\Data\CheckoutIssue
   __construct(string $code, string $message, ?string $field = NULL)
 class Modules\Checkout\Contracts\Data\CheckoutRequest
   __construct(Modules\Cart\Contracts\Data\CartKey $cart, ?array $contact, ?array $shippingAddress, ?string $shippingMethod, ?string $paymentMethod, ?array $voucherCodes, ?string $note, ?int $expectedTotal, array $extra = array (
-), string $source = 'web')
+), string $source = 'web', ?string $clientIp = NULL)
   fingerprint(): string
 class Modules\Checkout\Contracts\Data\ShippingOption
   __construct(string $code, string $label, Modules\Shared\Domain\Money\Money $fee, string $source = 'core')
@@ -769,9 +769,12 @@ enum Modules\Payment\Contracts\Data\InitiationType
   static from(string|int $value): static
   static tryFrom(string|int $value): ?static
 class Modules\Payment\Contracts\Data\PaymentContext
-  __construct(Modules\Shared\Domain\Money\Money $amount)
+  __construct(Modules\Shared\Domain\Money\Money $amount, ?string $provinceCode = NULL, ?string $wardCode = NULL, ?string $shippingMethod = NULL, ?string $shippingSource = NULL, int $itemCount = 0, string $channel = 'web')
 class Modules\Payment\Contracts\Data\PaymentData
-  __construct(string $publicId, string $gatewayCode, string $orderNumber, Modules\Shared\Domain\Money\Money $amount, string $status, ?string $gatewayReference, ?DateTimeImmutable $expiresAt)
+  __construct(string $publicId, string $gatewayCode, string $orderNumber, Modules\Shared\Domain\Money\Money $amount, string $status, ?string $gatewayReference, ?DateTimeImmutable $expiresAt, ?string $returnUrl = NULL, array $customer = array (
+  'full_name' => '',
+  'phone' => '',
+), ?string $clientIp = NULL, ?string $locale = NULL)
 class Modules\Payment\Contracts\Data\PaymentInitiation
   const NONE = \Modules\Payment\Contracts\Data\InitiationType::None
   const REDIRECT = \Modules\Payment\Contracts\Data\InitiationType::Redirect
@@ -798,6 +801,11 @@ class Modules\Payment\Contracts\Data\RefundResult
   static succeeded(?string $gatewayReference = NULL): self
   static pending(?string $gatewayReference = NULL, ?string $message = NULL): self
   static failed(?string $message = NULL): self
+class Modules\Payment\Contracts\Data\ReturnResult
+  __construct(?string $paymentPublicId, Modules\Payment\Contracts\Data\GatewayPaymentStatus $status = \Modules\Payment\Contracts\Data\GatewayPaymentStatus::Pending)
+  static invalid(): self
+interface Modules\Payment\Contracts\HandlesReturn
+  parseReturn(Illuminate\Http\Request $request): Modules\Payment\Contracts\Data\ReturnResult
 class Modules\Payment\Contracts\InvalidCallback extends RuntimeException
 interface Modules\Payment\Contracts\PaymentGateway
   const TAG = 'vani.payment.gateways'
@@ -819,14 +827,15 @@ class Modules\Payment\Contracts\PaymentRejected extends Modules\Shared\Domain\Bu
   status(): int
   details(): array
 interface Modules\Payment\Contracts\Payments
-  availableMethods(Modules\Shared\Domain\Money\Money $amount): array
+  availableMethods(Modules\Payment\Contracts\Data\PaymentContext $context): array
   paymentTtl(string $gatewayCode): ?int
   collectsOnDelivery(string $gatewayCode): bool
   collectOnDeliveryGateway(): ?string
   offlineGateways(): array
-  createForOrder(Modules\Ordering\Contracts\Data\PlacedOrder $order, string $gatewayCode): array
+  createForOrder(Modules\Ordering\Contracts\Data\PlacedOrder $order, string $gatewayCode, ?string $clientIp = NULL): array
   initiate(string $paymentPublicId): Modules\Payment\Contracts\Data\PaymentView
   view(string $paymentPublicId): ?Modules\Payment\Contracts\Data\PaymentView
+  resolveReturn(string $gatewayCode, Illuminate\Http\Request $request): ?Modules\Payment\Contracts\Data\ReturnResult
   latestForOrder(int $orderId): ?Modules\Payment\Contracts\Data\PaymentView
   retry(int $orderId, ?string $gatewayCode = NULL): Modules\Payment\Contracts\Data\PaymentView
   confirmManually(int $paymentId, string $note): void

@@ -18,6 +18,7 @@ use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
+use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Payments;
 use Modules\Shared\Contracts\AddressDirectory;
 use Modules\Shared\Contracts\ShippingAddresses;
@@ -80,7 +81,7 @@ final class OrderSeeder extends Seeder
                     $carts->addLine($cart->key, $variantId, 1);
                 }
                 // Chuyển khoản cần tài khoản ngân hàng trong cấu hình plugin; chưa có thì dùng COD.
-                $methods = array_column($payments->availableMethods(Money::vnd(500_000)), 'code');
+                $methods = array_column($payments->availableMethods(new PaymentContext(Money::vnd(500_000))), 'code');
                 $payment = in_array($payment, $methods, true) ? $payment : 'cod';
                 $result = $checkout->placeOrder(new CheckoutRequest(
                     cart: $cart->key,

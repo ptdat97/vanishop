@@ -35,6 +35,8 @@ beforeEach(function () {
     FakeOnlineGateway::$queryResult = null;
     FakeOnlineGateway::$refundOutcome = RefundOutcome::Succeeded;
     FakeOnlineGateway::$refundStatus = null;
+    FakeOnlineGateway::$lastContext = null;
+    FakeOnlineGateway::$lastInitiated = null;
     config(['vani.bank-transfer.account' => ['bank' => 'Vietcombank', 'account_number' => '0123456789', 'account_name' => 'CONG TY VANI']]);
 
     ['brand' => $this->brand, 's' => $this->s] = C::store();
@@ -396,4 +398,36 @@ it('hoàn qua cổng: cổng từ chối → chờ hoàn tay, không ghi giao d�
 
     expect(DB::table('refunds')->value('status'))->toBe('requested')
         ->and(DB::table('payment_transactions')->where('type', 'refund')->count())->toBe(0);
+});
+
+it('cổng nhận đủ ngữ cảnh: tỉnh/phường giao, phương thức giao, số món, kênh; khoản gửi cổng có Return URL, người nhận, IP khách, ngôn ngữ', function () {
+    ($this->order)('fake_online')->assertCreated();
+
+    $context = FakeOnlineGateway::$lastContext;
+    expect([$context->amount->amount, $context->provinceCode, $context->wardCode, $context->shippingMethod, $context->itemCount, $context->channel])
+        ->toBe([330_000, '29', '70101065', 'standard', 1, 'web']);
+
+    $data = FakeOnlineGateway::$lastInitiated;
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    expect($data->returnUrl)->toBe(url('/_vani/payments/fake_online/return'))
+        ->and($data->customer['full_name'])->toBe('Nguyễn Thị Lan')
+        ->and($data->clientIp)->toBe('127.0.0.1')
+        ->and($payment->meta['client_ip'])->toBe('127.0.0.1')
+        ->and($data->locale)->not->toBeNull();
+});
+
+it('Return URL chung: cổng HandlesReturn đọc kết quả → về trang đơn kèm thông báo, không ghi nhận thanh toán; sai chữ ký/cổng không hỗ trợ → trang chủ', function () {
+    $paymentId = ($this->order)('fake_online')->assertCreated()->json('data.payment.id');
+    $order = ($this->orderRow)();
+    $query = fn (string $status) => http_build_query(FakeOnlineGateway::callbackPayload($paymentId, 'TXN-R', $status, 330_000));
+
+    $this->get("/_vani/payments/fake_online/return?{$query('paid')}")
+        ->assertRedirect(route('storefront.order', $order->public_id))->assertSessionHas('status', __('storefront::messages.payment_return_paid'));
+    expect(Payment::query()->withoutGlobalScopes()->sole()->status->value)->toBe('pending')
+        ->and(($this->orderRow)()->payment_status)->toBe('unpaid');
+
+    $this->get("/_vani/payments/fake_online/return?{$query('failed')}")
+        ->assertRedirect(route('storefront.order', $order->public_id))->assertSessionHasErrors('business');
+    $this->get("/_vani/payments/fake_online/return?{$query('paid')}&amount=1")->assertRedirect(route('storefront.home'))->assertSessionHasErrors('business');
+    $this->get("/_vani/payments/cod/return?{$query('paid')}")->assertRedirect(route('storefront.home'))->assertSessionHasErrors('business');
 });

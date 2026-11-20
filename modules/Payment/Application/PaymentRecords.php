@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Payment\Contracts\Data\InitiationType;
 use Modules\Payment\Contracts\Data\PaymentData;
@@ -25,6 +26,9 @@ use Modules\Shared\Support\StoreClock;
  */
 final class PaymentRecords
 {
+    /** Return URL chung của cổng (`HandlesReturn`), do Storefront đăng ký; không có Storefront (headless) → null. */
+    private const RETURN_ROUTE = 'storefront.payment.return';
+
     public function __construct(
         private readonly GatewayRegistry $gateways,
         private readonly OrderReader $orders,
@@ -82,6 +86,10 @@ final class PaymentRecords
             publicId: $payment->public_id, gatewayCode: $payment->gateway_code, orderNumber: $order->number ?? '',
             amount: Money::of($payment->amount, $payment->currency_code), status: $payment->status->value,
             gatewayReference: $payment->gateway_reference, expiresAt: $payment->expires_at === null ? null : new DateTimeImmutable($payment->expires_at->toIso8601String()),
+            returnUrl: Route::has(self::RETURN_ROUTE) ? route(self::RETURN_ROUTE, $payment->gateway_code) : null,
+            customer: $order->recipient ?? ['full_name' => '', 'phone' => ''],
+            clientIp: isset($payment->meta['client_ip']) ? (string) $payment->meta['client_ip'] : null,
+            locale: $order?->locale,
         );
     }
 

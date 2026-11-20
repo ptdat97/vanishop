@@ -23,6 +23,7 @@ interface QueriesStatus     { public function query(PaymentData $payment): Gatew
 interface RefundsPayments   { public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): RefundResult; }
 interface TracksRefunds extends RefundsPayments { public function refundStatus(PaymentData $payment, string $idempotencyKey, ?string $gatewayReference): RefundResult; }
 interface CapturesLater     { public function capture(...): GatewayResult; public function void(...): GatewayResult; }
+interface HandlesReturn     { public function parseReturn(Request $request): ReturnResult; }   // Return URL chung
 ```
 
 Cổng không có khả năng nào thì không cài interface đó (COD, chuyển khoản tay chỉ cài `PaymentGateway`). Trạng thái là enum: `GatewayPaymentStatus` (`Paid`, `Failed`, `Pending`, `Authorized`) cho callback/tra cứu, `InitiationType` (`None`, `Redirect`, `Qr`, `Instructions`) cho `PaymentInitiation::$type` (hằng `PaymentInitiation::REDIRECT`… là viết tắt của các case).
@@ -44,7 +45,9 @@ Cổng không có khả năng nào thì không cài interface đó (COD, chuyể
 | Hoàn tiền | Kiểm tra số tiền hoàn được, tạo refund; cổng `RefundsPayments` (và `partialRefund` khi hoàn một phần) → gọi `refund()` sau commit, không thì chờ hoàn tay/`RefundPayout`. `RefundResult`: `Succeeded` → đã hoàn; `Pending` → giữ "đang hoàn"; `Failed` → chờ hoàn tay | Idempotent theo `$idempotencyKey`; **không trả `Succeeded` khi tiền chưa đi** |
 | Hoàn bất đồng bộ | `vani:payment:refunds` (5 phút/lần) với khoản hoàn "đang hoàn" > 10 phút: cổng `TracksRefunds` → `refundStatus()`; cổng khác → gọi lại `refund()` cùng key (cũng cứu khoản hoàn kẹt khi tiến trình chết trước khi gọi cổng) | Trả trạng thái lệnh hoàn |
 
-Return URL (trình duyệt quay về) **không** xác nhận thanh toán; chỉ callback đã xác minh mới được.
+Return URL (trình duyệt quay về) **không** xác nhận thanh toán; chỉ callback đã xác minh mới được. Cổng `HandlesReturn` dùng Return URL chung của Core `PaymentData::$returnUrl` (`/_vani/payments/{code}/return`, route `storefront.payment.return`): `parseReturn()` xác minh tham số, trả `ReturnResult(paymentPublicId, GatewayPaymentStatus)`; Core kiểm tra khoản thuộc đúng cổng rồi đưa khách về trang đơn kèm thông báo — plugin không cần route/controller riêng.
+
+**Ngữ cảnh và dữ liệu gửi cổng (0.5.62).** `PaymentContext` (cho `isAvailable()`): `amount`, `provinceCode`, `wardCode`, `shippingMethod`, `shippingSource` (mã hãng nếu phí do hãng báo), `itemCount`, `channel` (web | app | zalo | admin) — quote và kiểm tra lúc đặt dùng cùng ngữ cảnh. `PaymentData` (cho `initiate()`, `refund()`…): thêm `returnUrl`, `customer` (người nhận: `full_name`, `phone`, `email?`), `clientIp` (IP khách lúc đặt, giữ qua "thanh toán lại"; null với đơn tạo trong Admin), `locale`.
 
 ## 3. `GatewayCapabilities`
 

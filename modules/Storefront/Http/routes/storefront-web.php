@@ -9,6 +9,7 @@ use Modules\Storefront\Http\Controllers\Web\CatalogController;
 use Modules\Storefront\Http\Controllers\Web\CheckoutController;
 use Modules\Storefront\Http\Controllers\Web\HomeController;
 use Modules\Storefront\Http\Controllers\Web\OrderController;
+use Modules\Storefront\Http\Controllers\Web\PaymentReturnController;
 use Modules\Storefront\Http\Controllers\Web\ProductController;
 use Modules\Storefront\Http\Controllers\Web\ReturnController;
 use Modules\Storefront\Http\Controllers\Web\SeoController;
@@ -42,6 +43,8 @@ foreach (StoreLocale::supported() as $locale) {
             });
             if ($locale === StoreLocale::default()) {
                 Route::get('/_vani/phien', SessionController::class)->name('session');
+                // Return URL chung của cổng thanh toán (`HandlesReturn`): chỉ đưa khách về trang đơn, không ghi nhận thanh toán.
+                Route::get('/_vani/payments/{gateway}/return', PaymentReturnController::class)->where('gateway', '[a-z0-9_.-]+')->name('payment.return');
             }
 
             // Ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`): giỏ và checkout chuyển sang đăng nhập.

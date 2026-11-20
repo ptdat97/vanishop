@@ -79,7 +79,7 @@ final class CheckoutService implements Checkout
         $context = $this->context($cart, $request, $this->signedInCustomer());
         $totals = $this->pipeline->run($context);
 
-        return vani_filter('vani.service.checkout.quote', new CheckoutQuote($totals, $this->shipping->for($context), $this->payments->available($totals), $cart->isCheckoutReady()), $request);
+        return vani_filter('vani.service.checkout.quote', new CheckoutQuote($totals, $this->shipping->for($context), $this->payments->available($totals, $request), $cart->isCheckoutReady()), $request);
     }
 
     public function placeOrder(CheckoutRequest $request, string $idempotencyKey): PlaceOrderResult
@@ -143,7 +143,7 @@ final class CheckoutService implements Checkout
                 ));
 
                 $placed = $this->orders->create($this->draft($publicId, $reservationKey, $cart, $request, $totals, $customerId, $this->orderMeta($request, $totals)));
-                $payment = $this->paymentService->createForOrder($placed, (string) $request->paymentMethod);
+                $payment = $this->paymentService->createForOrder($placed, (string) $request->paymentMethod, $request->clientIp);
                 $this->promotions->recordUsage($placed->id, $customerId, $totals->currencyCode, $totals->promotions ?? new PromotionResult([], []));
                 Hook::action('vani.order.after_create', $placed);
                 // Dòng đã vào đơn rời giỏ; dòng chưa chọn ở lại (giỏ chỉ đóng khi hết dòng).

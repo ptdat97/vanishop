@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Contracts;
 
+use Illuminate\Http\Request;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
+use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentView;
+use Modules\Payment\Contracts\Data\ReturnResult;
 use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
@@ -18,7 +21,7 @@ interface Payments
     /**
      * @return list<array{code: string, label: string}>
      */
-    public function availableMethods(Money $amount): array;
+    public function availableMethods(PaymentContext $context): array;
 
     /**
      * Thời gian chờ thanh toán của cổng (giây); null = không hết hạn (COD). Checkout dùng để giữ hàng.
@@ -47,9 +50,11 @@ interface Payments
     /**
      * Tạo payment cho đơn — TRONG transaction PlaceOrder. Trả thời gian giữ hàng (giây, null = không hết hạn).
      *
+     * `$clientIp`: IP của khách lúc đặt (cổng cần cho chống gian lận); null với đơn tạo trong Admin.
+     *
      * @return array{public_id: string, ttl: int|null}
      */
-    public function createForOrder(PlacedOrder $order, string $gatewayCode): array;
+    public function createForOrder(PlacedOrder $order, string $gatewayCode, ?string $clientIp = null): array;
 
     /**
      * Khởi tạo với cổng — SAU commit. Idempotent. Lỗi cổng không làm mất đơn: trả view kèm actionError.
@@ -57,6 +62,12 @@ interface Payments
     public function initiate(string $paymentPublicId): PaymentView;
 
     public function view(string $paymentPublicId): ?PaymentView;
+
+    /**
+     * Return URL chung (`/payments/{gateway}/return`): cổng `HandlesReturn` đọc tham số trả về; Core chỉ nhận kết quả trỏ tới
+     * khoản thanh toán của đúng cổng đó. Không ghi nhận thanh toán. null = cổng không có/không hợp lệ/không thấy khoản.
+     */
+    public function resolveReturn(string $gatewayCode, Request $request): ?ReturnResult;
 
     /**
      * Khoản thanh toán mới nhất của đơn (0.3.75) — trang đơn hiện trạng thái thanh toán không cần phiên vừa đặt.

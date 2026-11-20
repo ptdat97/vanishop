@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Application;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -15,6 +16,8 @@ use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentView;
+use Modules\Payment\Contracts\Data\ReturnResult;
+use Modules\Payment\Contracts\HandlesReturn;
 use Modules\Payment\Contracts\PaymentRejected;
 use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Contracts\RefundPayout;
@@ -41,9 +44,8 @@ final class PaymentService implements Payments
         private readonly RefundService $refunds,
     ) {}
 
-    public function availableMethods(Money $amount): array
+    public function availableMethods(PaymentContext $context): array
     {
-        $context = new PaymentContext($amount);
         $methods = [];
         foreach ($this->gateways->all() as $gateway) {
             // Cổng đang ngừng (plugin draining) → không nhận thanh toán mới; cổng lỗi khi kiểm tra → ẩn (không hỏng checkout).
@@ -88,7 +90,7 @@ final class PaymentService implements Payments
         return $codes;
     }
 
-    public function createForOrder(PlacedOrder $order, string $gatewayCode): array
+    public function createForOrder(PlacedOrder $order, string $gatewayCode, ?string $clientIp = null): array
     {
         $gateway = $this->gateways->get($gatewayCode) ?? throw PaymentRejected::gatewayUnavailable($gatewayCode);
         $ttl = $gateway->capabilities()->paymentTtlSeconds;
@@ -97,6 +99,7 @@ final class PaymentService implements Payments
             'public_id' => (string) Str::ulid(), 'order_id' => $order->id,
             'gateway_code' => $gatewayCode, 'amount' => $order->totalAmount, 'currency_code' => $order->currencyCode,
             'status' => PaymentStatus::Pending, 'expires_at' => $ttl === null ? null : now()->addSeconds($ttl),
+            'meta' => $clientIp === null ? null : ['client_ip' => $clientIp],
         ]);
 
         return ['public_id' => $payment->public_id, 'ttl' => $ttl];
@@ -136,6 +139,20 @@ final class PaymentService implements Payments
         return $payment === null ? null : $this->records->toView($payment);
     }
 
+    public function resolveReturn(string $gatewayCode, Request $request): ?ReturnResult
+    {
+        $gateway = $this->gateways->get($gatewayCode);
+        if (! $gateway instanceof HandlesReturn) {
+            return null;
+        }
+        $result = $this->extensions->call($gateway, fn (): ReturnResult => $gateway->parseReturn($request), ReturnResult::invalid(), 'payment.parse_return');
+        if ($result->paymentPublicId === null) {
+            return null;
+        }
+
+        return Payment::query()->where('public_id', $result->paymentPublicId)->where('gateway_code', $gatewayCode)->exists() ? $result : null;
+    }
+
     public function latestForOrder(int $orderId): ?PaymentView
     {
         $payment = Payment::query()->where('order_id', $orderId)->latest('id')->first();
@@ -167,7 +184,7 @@ final class PaymentService implements Payments
             $next = Payment::query()->create([
                 'public_id' => (string) Str::ulid(), 'order_id' => $current->order_id, 'gateway_code' => $target,
                 'amount' => $current->amount, 'currency_code' => $current->currency_code, 'status' => PaymentStatus::Pending,
-                'expires_at' => $current->expires_at, 'meta' => ['retry_of' => $current->public_id],
+                'expires_at' => $current->expires_at, 'meta' => array_filter(['retry_of' => $current->public_id, 'client_ip' => $current->meta['client_ip'] ?? null]),
             ]);
             $this->audit->record('payment.retried', 'payment', $next->id, ['from' => $current->public_id, 'gateway' => $target]);
 

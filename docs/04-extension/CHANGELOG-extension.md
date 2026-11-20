@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.62 — 2026-11-20 · Extension API 1.20.0
+
+Cổng thanh toán nhận đủ ngữ cảnh; Return URL chung trong Core.
+
+### Đổi (phá vỡ)
+- `Payments::availableMethods(PaymentContext $context)` thay cho `availableMethods(Money $amount)`. `PaymentContext` thêm `provinceCode`, `wardCode`, `shippingMethod`, `shippingSource`, `itemCount`, `channel` (Checkout dựng từ địa chỉ giao, phương thức giao đã chọn, dòng đơn, nguồn đơn — cổng quyết định COD theo vùng/hãng…).
+- `Checkout\Application\PaymentMethods::available(Totals, CheckoutRequest)` (trước: chỉ `Totals`).
+
+### Thêm
+- `PaymentData`: `returnUrl` (Return URL chung, null khi không có Storefront), `customer` (người nhận), `clientIp`, `locale`.
+- `CheckoutRequest::$clientIp` (Storefront điền IP khách; không tính vào fingerprint idempotency); `Payments::createForOrder(..., ?string $clientIp = null)` lưu `payments.meta.client_ip`, "thanh toán lại" giữ IP.
+- Interface tuỳ chọn `HandlesReturn::parseReturn(Request): ReturnResult` + `Contracts\Data\ReturnResult` (`paymentPublicId`, `status: GatewayPaymentStatus`; `ReturnResult::invalid()`); `Payments::resolveReturn(string $gatewayCode, Request)`.
+- Route Storefront `GET /_vani/payments/{gateway}/return` (`storefront.payment.return`): về trang đơn kèm thông báo theo kết quả (không ghi nhận thanh toán); không hợp lệ/cổng không hỗ trợ → trang chủ kèm lỗi.
+
 ## 0.5.61 — 2026-11-20 · Extension API 1.19.0
 
 Hoàn tiền qua cổng có ba kết quả, hỗ trợ cổng hoàn bất đồng bộ.

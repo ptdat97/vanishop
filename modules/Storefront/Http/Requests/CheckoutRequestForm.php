@@ -72,7 +72,7 @@ final class CheckoutRequestForm extends FormRequest
 
     public function toCheckoutRequest(CartKey $cart): CheckoutRequest
     {
-        return self::build($this->validated(), $cart, (string) $this->attributes->get('order_source', 'web'));
+        return self::build($this->validated(), $cart, (string) $this->attributes->get('order_source', 'web'), $this->ip());
     }
 
     /**
@@ -82,7 +82,7 @@ final class CheckoutRequestForm extends FormRequest
      *
      * @param  array<string, mixed>  $data
      */
-    public static function build(array $data, CartKey $cart, string $source = 'web'): CheckoutRequest
+    public static function build(array $data, CartKey $cart, string $source = 'web', ?string $clientIp = null): CheckoutRequest
     {
         $contact = is_array($data['contact'] ?? null) ? $data['contact'] : null;
         $address = is_array($data['shipping_address'] ?? null) ? $data['shipping_address'] : null;
@@ -110,6 +110,7 @@ final class CheckoutRequestForm extends FormRequest
             expectedTotal: isset($data['expected_total']) && $data['expected_total'] !== '' ? (int) $data['expected_total'] : null,
             extra: array_filter((array) ($data['extra'] ?? []), fn (mixed $fields, mixed $plugin): bool => is_string($plugin) && is_array($fields), ARRAY_FILTER_USE_BOTH),
             source: $source,
+            clientIp: $clientIp,
         );
     }
 }

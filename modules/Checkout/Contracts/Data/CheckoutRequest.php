@@ -37,6 +37,8 @@ final readonly class CheckoutRequest
         public array $extra = [],
         /** Nguồn đơn: web | app | zalo | admin (báo cáo). */
         public string $source = 'web',
+        /** IP của khách gửi yêu cầu (cổng thanh toán cần cho chống gian lận); null với đơn tạo trong Admin. */
+        public ?string $clientIp = null,
     ) {}
 
     /**

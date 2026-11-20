@@ -14,6 +14,8 @@ use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\Data\RefundOutcome;
 use Modules\Payment\Contracts\Data\RefundResult;
+use Modules\Payment\Contracts\Data\ReturnResult;
+use Modules\Payment\Contracts\HandlesReturn;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Payment\Contracts\QueriesStatus;
@@ -24,7 +26,7 @@ use Modules\Shared\Domain\Money\Money;
 /**
  * Cổng giả kiểu redirect + IPN ký HMAC — mô phỏng plugin cổng online trong test.
  */
-final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, ReceivesCallbacks, TracksRefunds
+final class FakeOnlineGateway implements HandlesReturn, PaymentGateway, QueriesStatus, ReceivesCallbacks, TracksRefunds
 {
     public const SECRET = 'fake-secret';
 
@@ -32,6 +34,11 @@ final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, Receives
     public static array $refunds = [];
 
     public static ?GatewayStatus $queryResult = null;
+
+    /** Ngữ cảnh lần gọi isAvailable() gần nhất; khoản gửi initiate() gần nhất. */
+    public static ?PaymentContext $lastContext = null;
+
+    public static ?PaymentData $lastInitiated = null;
 
     /** Kết quả lệnh hoàn (mặc định thành công); `refundStatus()` trả `$refundStatus` khi đặt. */
     public static RefundOutcome $refundOutcome = RefundOutcome::Succeeded;
@@ -58,11 +65,15 @@ final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, Receives
 
     public function isAvailable(PaymentContext $context): bool
     {
+        self::$lastContext = $context;
+
         return true;
     }
 
     public function initiate(PaymentData $payment): PaymentInitiation
     {
+        self::$lastInitiated = $payment;
+
         return new PaymentInitiation(PaymentInitiation::REDIRECT, url: "https://pay.example/checkout/{$payment->publicId}", gatewayReference: "FAKE-{$payment->publicId}");
     }
 
@@ -95,6 +106,19 @@ final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, Receives
     public function refundStatus(PaymentData $payment, string $idempotencyKey, ?string $gatewayReference): RefundResult
     {
         return self::$refundStatus ?? RefundResult::pending($gatewayReference);
+    }
+
+    /**
+     * @param  array<string, string>  $fields
+     */
+    public function parseReturn(Request $request): ReturnResult
+    {
+        $fields = ['payment_id' => (string) $request->query('payment_id'), 'txn' => (string) $request->query('txn'), 'status' => (string) $request->query('status'), 'amount' => (string) $request->query('amount')];
+        if (in_array('', $fields, true) || ! hash_equals(self::sign($fields), (string) $request->query('sig'))) {
+            return ReturnResult::invalid();
+        }
+
+        return new ReturnResult($fields['payment_id'], GatewayPaymentStatus::tryFrom($fields['status']) ?? GatewayPaymentStatus::Pending);
     }
 
     /**
