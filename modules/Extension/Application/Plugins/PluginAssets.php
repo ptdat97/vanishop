@@ -36,13 +36,17 @@ final class PluginAssets
      */
     public function publish(PluginManifest $manifest): int
     {
-        $this->remove($manifest->id);
         $source = $manifest->assets === null ? null : $manifest->path.'/'.$manifest->assets;
         if ($source === null || ! is_dir($source)) {
+            $this->remove($manifest->id);
+
             return 0;
         }
 
-        $target = $this->directory($manifest->id);
+        // Chép vào thư mục tạm riêng của tiến trình rồi đổi tên: hai lệnh publish song song (deploy, test chạy song song)
+        // không xoá file của nhau giữa chừng.
+        $final = $this->directory($manifest->id);
+        $target = $final.'.tmp-'.bin2hex(random_bytes(6));
         $map = [];
         foreach (File::allFiles($source) as $file) {
             $extension = strtolower($file->getExtension());
@@ -58,6 +62,11 @@ final class PluginAssets
         ksort($map);
         self::ensureDirectory($target);
         File::put($target.'/'.self::MANIFEST, (string) json_encode($map, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        File::deleteDirectory($final);
+        // Tiến trình khác vừa publish xong (cùng nội dung) → giữ bản của nó, bỏ bản tạm.
+        if (! @rename($target, $final)) {
+            File::deleteDirectory($target);
+        }
         unset($this->loaded[$manifest->id]);
 
         return count($map);

@@ -55,6 +55,21 @@ describe('tài nguyên tĩnh plugin', function () {
         expect(is_dir("{$this->public}/fixture.widget"))->toBeFalse();
     });
 
+    it('publish lại: thay trọn bản cũ (file đổi → hash mới, file cũ biến mất), không để lại thư mục tạm', function () {
+        $this->plugins->install('fixture.widget');
+        $this->plugins->enable('fixture.widget');
+        $old = vani_asset('fixture.widget', 'css/widget.css');
+        File::put("{$this->root}/Widget/public/css/widget.css", 'body{color:blue}');
+
+        $this->artisan('vani:plugin:cache')->assertSuccessful();
+
+        $hash = substr(hash('sha256', 'body{color:blue}'), 0, 10);
+        expect(File::files("{$this->public}/fixture.widget/css"))->toHaveCount(1)
+            ->and(is_file("{$this->public}/fixture.widget/css/widget.{$hash}.css"))->toBeTrue()
+            ->and(vani_asset('fixture.widget', 'css/widget.css'))->not->toBe($old)
+            ->and(File::glob("{$this->public}/*.tmp-*"))->toBe([]);
+    });
+
     it('release mới chưa có public/plugins: vani:plugin:cache publish lại cho plugin được nạp, xoá thư mục plugin khác', function () {
         $this->plugins->install('fixture.widget');
         $this->plugins->enable('fixture.widget');
