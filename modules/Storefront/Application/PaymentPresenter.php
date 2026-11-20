@@ -20,7 +20,7 @@ final class PaymentPresenter
             'amount' => ['amount' => $view->amount, 'currency' => $view->currencyCode],
             'expires_at' => $view->expiresAt,
             'action' => $view->action === null ? null : [
-                'type' => $view->action->type,
+                'type' => $view->action->type->value,
                 'url' => $view->action->url,
                 'qr' => $view->action->qrPayload,
                 'instructions' => $view->action->instructions === [] ? null : $view->action->instructions,

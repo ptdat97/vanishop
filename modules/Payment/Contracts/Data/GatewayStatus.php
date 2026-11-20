@@ -7,14 +7,17 @@ namespace Modules\Payment\Contracts\Data;
 use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
+/**
+ * Kết quả tra cứu giao dịch ở cổng (`QueriesStatus`).
+ */
 #[PluginApi]
 final readonly class GatewayStatus
 {
     public function __construct(
-        public string $status,
+        public GatewayPaymentStatus $status,
         public ?string $gatewayTransactionId = null,
         public ?Money $amount = null,
-        /** 0.3.22: tổng đã hoàn phía cổng (nếu cổng tra được) — đối soát khoản đã thu (vani:payment:verify). */
+        /** Tổng đã hoàn phía cổng (nếu cổng tra được) — đối soát khoản đã thu (vani:payment:verify). */
         public ?Money $refunded = null,
     ) {}
 }

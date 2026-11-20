@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Modules\Catalog\Contracts\Data\ProductDocument;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\ProductSearchResult;
@@ -9,15 +8,11 @@ use Modules\Checkout\Contracts\Data\TotalsContext;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
-use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayCapabilities;
-use Modules\Payment\Contracts\Data\GatewayResult;
-use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\PaymentGateway;
-use Modules\Shared\Domain\Money\Money;
 
 require_once __DIR__.'/CheckoutTestHelpers.php';
 
@@ -56,21 +51,6 @@ final class BrokenGateway implements PaymentGateway
     }
 
     public function initiate(PaymentData $payment): PaymentInitiation
-    {
-        throw new LogicException;
-    }
-
-    public function verifyCallback(Request $request): GatewayCallback
-    {
-        throw new LogicException;
-    }
-
-    public function query(PaymentData $payment): GatewayStatus
-    {
-        throw new LogicException;
-    }
-
-    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult
     {
         throw new LogicException;
     }

@@ -14,12 +14,17 @@ interface PaymentGateway
     public function capabilities(): GatewayCapabilities;
     public function isAvailable(PaymentContext $context): bool;
     public function initiate(PaymentData $payment): PaymentInitiation;
-    /** @throws InvalidCallback */
-    public function verifyCallback(Request $request): GatewayCallback;
-    public function query(PaymentData $payment): GatewayStatus;
-    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult;
 }
+
+// Khả năng tuỳ chọn — Core kiểm tra bằng instanceof (0.5.60, Extension API 1.18.0)
+interface ReceivesCallbacks { /** @throws InvalidCallback */ public function verifyCallback(Request $request): GatewayCallback; }
+interface CallbackResponder extends ReceivesCallbacks { public function callbackResponse(CallbackOutcome $outcome, ?GatewayCallback $callback): array; }
+interface QueriesStatus     { public function query(PaymentData $payment): GatewayStatus; }
+interface RefundsPayments   { public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult; }
+interface CapturesLater     { public function capture(...): GatewayResult; public function void(...): GatewayResult; }
 ```
+
+Cổng không có khả năng nào thì không cài interface đó (COD, chuyển khoản tay chỉ cài `PaymentGateway`). Trạng thái là enum: `GatewayPaymentStatus` (`Paid`, `Failed`, `Pending`, `Authorized`) cho callback/tra cứu, `InitiationType` (`None`, `Redirect`, `Qr`, `Instructions`) cho `PaymentInitiation::$type` (hằng `PaymentInitiation::REDIRECT`… là viết tắt của các case).
 
 Đăng ký: `$this->contribute(PaymentGateway::TAG, MyGateway::class);` trong `boot()`. Không cần view theo quy ước tên, không cần route riêng cho callback.
 
@@ -30,12 +35,12 @@ interface PaymentGateway
 | Liệt kê phương thức ở checkout | Gọi `isAvailable()` của mọi cổng bật trong scope, **bọc lỗi** (`Extensions::call`, circuit breaker 5 lỗi/phút → bỏ qua 5 phút); rồi hook `vani.checkout.payment_methods` | Trả `false` khi thiếu cấu hình, ngoài hạn mức số tiền, health check lỗi |
 | Tạo payment | Trong transaction đặt hàng | — |
 | Khởi tạo thanh toán | Gọi `initiate()` **sau commit**; trả `payment.action` cho client | Trả `PaymentInitiation`: `none` / `redirect(url)` / `qr(qrPayload)` / `instructions([...])`. **Idempotent**: gọi lại cho cùng payment trả cùng kết quả |
-| Callback/IPN | Route chung `/api/payments/{code}/callback` (GET/POST, 600/phút/IP, không phiên/CSRF) → gọi `verifyCallback()` | **Chỉ xác minh chữ ký + chuẩn hoá**, không ghi DB |
+| Callback/IPN | Route chung `/api/payments/{code}/callback` (GET/POST, 600/phút/IP, không phiên/CSRF) → gọi `verifyCallback()` nếu cổng `ReceivesCallbacks`, không thì 404 | **Chỉ xác minh chữ ký + chuẩn hoá**, không ghi DB |
 | Ghi nhận tiền | Khoá payment → insert transaction (unique theo mã giao dịch cổng: IPN trùng bị bỏ) → **so số tiền và tiền tệ** (lệch → không ghi nhận, log) → cập nhật payment + trạng thái thanh toán của đơn, cùng transaction | — |
 | Phản hồi cổng | Trả `GatewayCallback::$acknowledgement` dạng JSON | Điền đúng định dạng cổng mong đợi |
-| Giao dịch treo | `vani:payment:reconcile` mỗi phút gọi `query()` nếu `capabilities()->query` | Trả `GatewayStatus` |
+| Giao dịch treo | `vani:payment:reconcile` mỗi phút gọi `query()` nếu cổng `QueriesStatus` | Trả `GatewayStatus` |
 | Hết hạn | `vani:payment:expire` theo `paymentTtlSeconds` | Khai báo TTL trong capabilities |
-| Hoàn tiền | Kiểm tra số tiền hoàn được, tạo refund, gọi `refund()` | Idempotent theo `$idempotencyKey`; từ chối hoàn một phần nếu `partialRefund = false` |
+| Hoàn tiền | Kiểm tra số tiền hoàn được, tạo refund; cổng `RefundsPayments` (và `partialRefund` khi hoàn một phần) → gọi `refund()` sau commit, không thì chờ hoàn tay/`RefundPayout` | Idempotent theo `$idempotencyKey` |
 
 Return URL (trình duyệt quay về) **không** xác nhận thanh toán; chỉ callback đã xác minh mới được.
 
@@ -43,9 +48,7 @@ Return URL (trình duyệt quay về) **không** xác nhận thanh toán; chỉ 
 
 | Cờ | Ý nghĩa với Core |
 |---|---|
-| `callbacks` | `false` → route callback trả 404 cho cổng này |
-| `query` | Tham gia đối soát giao dịch treo |
-| `refund`, `partialRefund` | Hoàn tự động qua cổng; không có → hoàn thủ công |
+| `partialRefund` | Hoàn một phần qua cổng (cổng `RefundsPayments`); không có → hoàn một phần thành hoàn tay |
 | `manualConfirmation` | Nhân viên xác nhận đã nhận tiền (chuyển khoản tay) |
 | `paymentTtlSeconds` | Hạn thanh toán; `null` = không hết hạn |
 | `collectsOnDelivery` | Thu tiền khi giao: đơn bắt đầu `cod_pending`, vận đơn đầu mang số tiền thu hộ, tiền ghi nhận khi giao thành công. Core **đọc cờ này**, không so mã `'cod'` |
@@ -63,7 +66,7 @@ public function verifyCallback(Request $request): GatewayCallback
     return new GatewayCallback(
         paymentPublicId: $data['order_ref'],                          // public id của payment Core đã gửi ở initiate()
         gatewayTransactionId: $data['transaction_id'],                // unique → chống ghi nhận trùng
-        status: GatewayCallback::PAID,                                // PAID | FAILED | PENDING
+        status: GatewayPaymentStatus::Paid,                           // Paid | Failed | Pending (Authorized: chỉ CapturesLater)
         amount: Money::vnd((int) $data['amount']),                    // Core so với số tiền payment
         maskedPayload: Arr::except($data, ['card_number']),           // lưu vết, đã che dữ liệu nhạy cảm
         acknowledgement: ['RspCode' => '00'],                         // phản hồi cổng mong đợi
@@ -108,7 +111,7 @@ Cổng xác nhận thu bằng IPN `paid` sau đó cũng được: Core bỏ qua 
 ## 6. Checklist
 
 - [ ] `code()` ổn định, trùng với phần `{gateway}` URL cổng gọi về
-- [ ] `capabilities()` khai báo đúng (callbacks, query, refund, TTL, collectsOnDelivery)
+- [ ] Cài đúng interface tuỳ chọn (`ReceivesCallbacks`, `QueriesStatus`, `RefundsPayments`, `CapturesLater`); `capabilities()` khai TTL, `partialRefund`, `manualConfirmation`, `collectsOnDelivery`
 - [ ] `isAvailable()` nhanh, không ném lỗi với cấu hình thiếu (trả `false`)
 - [ ] `initiate()` idempotent, chạy được sau commit
 - [ ] `verifyCallback()` xác minh chữ ký bằng `hash_equals`, ném `InvalidCallback` khi sai, không ghi DB

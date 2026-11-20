@@ -12,6 +12,7 @@ use Modules\Ordering\Application\OrderCommands;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Contracts\Data\GatewayCallback;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
 use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
@@ -56,7 +57,7 @@ function cancelAndPayTasks(int $orderId, string $paymentId): array
     };
     $tasks[] = static function () use ($paymentId): string {
         try {
-            $callback = new GatewayCallback($paymentId, "TXN-{$paymentId}", GatewayCallback::PAID, Money::vnd(330_000));
+            $callback = new GatewayCallback($paymentId, "TXN-{$paymentId}", GatewayPaymentStatus::Paid, Money::vnd(330_000));
 
             return app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PaymentService::class)->applyCallback('fake_online', $callback)) ? 'paid' : 'duplicate';
         } catch (Throwable $exception) {

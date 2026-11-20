@@ -14,6 +14,7 @@ use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Payment\Contracts\CapturesLater;
 use Modules\Payment\Contracts\Data\CallbackOutcome;
 use Modules\Payment\Contracts\Data\GatewayCallback;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\PaymentRejected;
 use Modules\Payment\Domain\CodRules;
 use Modules\Payment\Domain\PaymentAmount;
@@ -54,12 +55,11 @@ final class PaymentSettlement
             // Đã từng thu (kể cả đã hoàn hết) → IPN "đã trả" khác mã giao dịch là bản trùng, không ghi nhận lại.
             $collectedBefore = $payment->status->everCollected();
 
-            if (! $this->records->recordTransaction($payment, $type, $callback->gatewayTransactionId, $callback->amount->amount, $callback->status, $callback->maskedPayload)) {
+            if (! $this->records->recordTransaction($payment, $type, $callback->gatewayTransactionId, $callback->amount->amount, $callback->status->value, $callback->maskedPayload)) {
                 return CallbackOutcome::Duplicate;
             }
 
-            $settles = in_array($callback->status, [GatewayCallback::PAID, GatewayCallback::AUTHORIZED], true);
-            if ($settles && ! PaymentAmount::matches((int) $payment->amount, $payment->currency_code, $callback->amount)) {
+            if ($callback->status->settles() && ! PaymentAmount::matches((int) $payment->amount, $payment->currency_code, $callback->amount)) {
                 Log::warning('Số tiền thanh toán không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $payment->amount, 'received' => $callback->amount->amount]);
 
                 return CallbackOutcome::AmountMismatch;
@@ -69,10 +69,10 @@ final class PaymentSettlement
             }
 
             match ($callback->status) {
-                GatewayCallback::PAID => $this->capture($payment, $callback->amount, "gateway:{$gatewayCode}"),
-                GatewayCallback::AUTHORIZED => $this->authorize($payment, $callback->amount, "gateway:{$gatewayCode}"),
-                GatewayCallback::FAILED => $this->fail($payment, "gateway:{$gatewayCode}"),
-                default => null,
+                GatewayPaymentStatus::Paid => $this->capture($payment, $callback->amount, "gateway:{$gatewayCode}"),
+                GatewayPaymentStatus::Authorized => $this->authorize($payment, $callback->amount, "gateway:{$gatewayCode}"),
+                GatewayPaymentStatus::Failed => $this->fail($payment, "gateway:{$gatewayCode}"),
+                GatewayPaymentStatus::Pending => null,
             };
 
             return CallbackOutcome::Applied;
@@ -104,7 +104,7 @@ final class PaymentSettlement
 
         DB::transaction(function () use ($paymentId, $amount, $result, $source): void {
             $payment = Payment::query()->whereKey($paymentId)->lockForUpdate()->firstOrFail();
-            if ($this->records->recordTransaction($payment, 'capture', $result->gatewayReference ?? "capture:{$payment->public_id}", $amount->amount, GatewayCallback::PAID, [])) {
+            if ($this->records->recordTransaction($payment, 'capture', $result->gatewayReference ?? "capture:{$payment->public_id}", $amount->amount, GatewayPaymentStatus::Paid->value, [])) {
                 $this->capture($payment, $amount, $source);
             }
         });
@@ -122,7 +122,7 @@ final class PaymentSettlement
                 throw PaymentRejected::invalidState($payment->status->value);
             }
 
-            $this->records->recordTransaction($payment, 'confirm', "manual:{$payment->public_id}", $payment->amount, GatewayCallback::PAID, ['note' => $note]);
+            $this->records->recordTransaction($payment, 'confirm', "manual:{$payment->public_id}", $payment->amount, GatewayPaymentStatus::Paid->value, ['note' => $note]);
             $this->capture($payment, Money::of($payment->amount, $payment->currency_code), 'staff');
             $this->audit->record('payment.confirmed_manually', 'payment', $payment->id, ['amount' => $payment->amount, 'note' => $note]);
         });
@@ -143,7 +143,7 @@ final class PaymentSettlement
                 return;
             }
             $collected = (int) DB::table('payment_transactions')->where('payment_id', $payment->id)
-                ->where('type', 'cod_collected')->where('status', GatewayCallback::PAID)->sum('amount');
+                ->where('type', 'cod_collected')->where('status', GatewayPaymentStatus::Paid->value)->sum('amount');
             $expected ??= (int) $payment->amount - $collected;
             if ($amount !== $expected) {
                 // Hãng thu thiếu/thừa so với kiện (hoặc so với phần còn phải thu): không ghi nhận, vào "Đối soát lệch".
@@ -152,7 +152,7 @@ final class PaymentSettlement
 
                 return;
             }
-            if (! $this->records->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
+            if (! $this->records->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayPaymentStatus::Paid->value, [])) {
                 return;
             }
             if ($collected + $amount < (int) $payment->amount) {
@@ -179,7 +179,7 @@ final class PaymentSettlement
                 throw PaymentRejected::invalidState($payment->status->value);
             }
 
-            $this->records->recordTransaction($payment, 'cod_collected', "manual:{$payment->public_id}", $payment->amount, GatewayCallback::PAID, ['note' => $note]);
+            $this->records->recordTransaction($payment, 'cod_collected', "manual:{$payment->public_id}", $payment->amount, GatewayPaymentStatus::Paid->value, ['note' => $note]);
             $this->capture($payment, Money::of($payment->amount, $payment->currency_code), 'staff', 'cod_collected');
             $this->audit->record('payment.cod_collected_manually', 'payment', $payment->id, ['amount' => $payment->amount, 'note' => $note]);
         });

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Contracts\Data\GatewayCallback;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
+use Modules\Payment\Contracts\QueriesStatus;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Shared\Context\ContextScope;
@@ -32,13 +34,13 @@ final class ReconcilePaymentsCommand extends Command
                 ->orderBy('id')->chunkById(100, function ($batch) use ($gateways, $payments): void {
                     foreach ($batch as $payment) {
                         $gateway = $gateways->get($payment->gateway_code);
-                        if ($gateway === null || ! $gateway->capabilities()->query) {
+                        if (! $gateway instanceof QueriesStatus) {
                             continue;
                         }
 
                         try {
                             $status = $gateway->query($payments->toData($payment));
-                            if (in_array($status->status, [GatewayCallback::PAID, GatewayCallback::FAILED], true) && $status->gatewayTransactionId !== null && $status->amount !== null) {
+                            if (in_array($status->status, [GatewayPaymentStatus::Paid, GatewayPaymentStatus::Failed], true) && $status->gatewayTransactionId !== null && $status->amount !== null) {
                                 $payments->applyCallback($payment->gateway_code, new GatewayCallback($payment->public_id, $status->gatewayTransactionId, $status->status, $status->amount), 'query');
                             }
                         } catch (Throwable $exception) {

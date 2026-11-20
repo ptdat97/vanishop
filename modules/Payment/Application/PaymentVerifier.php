@@ -7,7 +7,8 @@ namespace Modules\Payment\Application;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Modules\Payment\Contracts\Data\GatewayCallback;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
+use Modules\Payment\Contracts\QueriesStatus;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Shared\Contracts\Metrics;
@@ -43,7 +44,7 @@ final class PaymentVerifier
             ->chunkById(100, function ($batch) use ($runId, &$checked, &$skipped, &$issues): void {
                 foreach ($batch as $payment) {
                     $gateway = $this->gateways->get($payment->gateway_code);
-                    if ($gateway === null || ! $gateway->capabilities()->query || $gateway->capabilities()->collectsOnDelivery || $gateway->capabilities()->manualConfirmation) {
+                    if (! $gateway instanceof QueriesStatus || $gateway->capabilities()->collectsOnDelivery || $gateway->capabilities()->manualConfirmation) {
                         continue; // COD/chuyển khoản tay: không có giao dịch phía cổng để đối chiếu
                     }
 
@@ -58,8 +59,8 @@ final class PaymentVerifier
                     $checked++;
 
                     $found = [];
-                    if ($status->status !== GatewayCallback::PAID) {
-                        $found[] = ['gateway_not_captured', $payment->status->value, $status->status];
+                    if ($status->status !== GatewayPaymentStatus::Paid) {
+                        $found[] = ['gateway_not_captured', $payment->status->value, $status->status->value];
                     }
                     if ($status->amount !== null && $status->amount->amount !== (int) $payment->amount) {
                         $found[] = ['amount_mismatch', (string) $payment->amount, (string) $status->amount->amount];

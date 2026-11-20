@@ -8,19 +8,21 @@ use Illuminate\Http\Request;
 use Modules\Payment\Contracts\CapturesLater;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayCapabilities;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayResult;
-use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
+use Modules\Payment\Contracts\ReceivesCallbacks;
+use Modules\Payment\Contracts\RefundsPayments;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Cổng thẻ giả: IPN báo `authorized` (giữ tiền), Core thu sau qua CapturesLater.
  */
-final class FakeCardGateway implements CapturesLater, PaymentGateway
+final class FakeCardGateway implements CapturesLater, PaymentGateway, ReceivesCallbacks, RefundsPayments
 {
     /** @var array<string, string> khoá idempotency → mã giao dịch */
     public static array $captures = [];
@@ -42,7 +44,7 @@ final class FakeCardGateway implements CapturesLater, PaymentGateway
 
     public function capabilities(): GatewayCapabilities
     {
-        return new GatewayCapabilities(callbacks: true, refund: true, paymentTtlSeconds: 900);
+        return new GatewayCapabilities(paymentTtlSeconds: 900);
     }
 
     public function isAvailable(PaymentContext $context): bool
@@ -62,12 +64,7 @@ final class FakeCardGateway implements CapturesLater, PaymentGateway
             throw new InvalidCallback('Chữ ký không hợp lệ.');
         }
 
-        return new GatewayCallback($fields['payment_id'], $fields['txn'], $fields['status'], Money::vnd((int) $fields['amount']));
-    }
-
-    public function query(PaymentData $payment): GatewayStatus
-    {
-        return new GatewayStatus(GatewayCallback::PENDING);
+        return new GatewayCallback($fields['payment_id'], $fields['txn'], GatewayPaymentStatus::tryFrom($fields['status']) ?? throw new InvalidCallback('Trạng thái lạ.'), Money::vnd((int) $fields['amount']));
     }
 
     public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult

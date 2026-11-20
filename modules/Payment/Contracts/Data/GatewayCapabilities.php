@@ -6,13 +6,15 @@ namespace Modules\Payment\Contracts\Data;
 
 use Modules\Shared\Contracts\PluginApi;
 
+/**
+ * Thông số của cổng. Hành vi (nhận callback, tra cứu, hoàn tiền, giữ tiền) không khai ở đây mà bằng interface tuỳ chọn:
+ * `ReceivesCallbacks`, `QueriesStatus`, `RefundsPayments`, `CapturesLater`.
+ */
 #[PluginApi]
 final readonly class GatewayCapabilities
 {
     public function __construct(
-        public bool $callbacks = false,
-        public bool $query = false,
-        public bool $refund = false,
+        /** Hoàn một phần được (chỉ có nghĩa khi cổng `RefundsPayments`). */
         public bool $partialRefund = false,
         /** Nhân viên xác nhận đã nhận tiền (chuyển khoản thủ công). */
         public bool $manualConfirmation = false,

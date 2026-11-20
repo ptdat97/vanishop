@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.60 — 2026-11-20 · Extension API 1.18.0
+
+Payment abstraction: interface lõi tối thiểu, khả năng là interface tuỳ chọn, trạng thái là enum.
+
+### Đổi (phá vỡ — plugin cổng thanh toán cập nhật theo)
+- `PaymentGateway` chỉ còn `code()`, `label()`, `capabilities()`, `isAvailable()`, `initiate()`. `verifyCallback()` → interface tuỳ chọn `ReceivesCallbacks`; `query()` → `QueriesStatus`; `refund()` → `RefundsPayments`. Core kiểm tra bằng `instanceof` (cổng không có callback/tra cứu/hoàn không phải cài method ném lỗi).
+- `GatewayCapabilities`: bỏ `callbacks`, `query`, `refund` (suy ra từ interface); còn `partialRefund`, `manualConfirmation`, `paymentTtlSeconds`, `collectsOnDelivery`.
+- `CallbackResponder extends ReceivesCallbacks`.
+- Enum mới `Contracts\Data\GatewayPaymentStatus` (`Paid`, `Failed`, `Pending`, `Authorized`): kiểu của `GatewayCallback::$status`, `GatewayStatus::$status`. Bỏ hằng `GatewayCallback::PAID/FAILED/PENDING/AUTHORIZED`.
+- Enum mới `Contracts\Data\InitiationType` (`None`, `Redirect`, `Qr`, `Instructions`): kiểu của `PaymentInitiation::$type`; hằng `PaymentInitiation::NONE/REDIRECT/QR/INSTRUCTIONS` nay là case enum. JSON `payment.action.type` của Storefront API không đổi.
+- `PaymentGatewayContract`: callback/query/refund chỉ kiểm tra khi cổng cài interface tương ứng.
+
 ## 0.5.59 — 2026-11-20 · Extension API 1.17.0 (không đổi)
 
 ### Thêm

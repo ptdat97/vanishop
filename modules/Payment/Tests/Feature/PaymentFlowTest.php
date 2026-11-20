@@ -13,7 +13,7 @@ use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
-use Modules\Payment\Contracts\Data\GatewayCallback;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Persistence\Models\Payment;
@@ -148,7 +148,7 @@ it('online: hết hạn thanh toán → huỷ đơn, nhả hàng, hoàn lượt 
 
 it('online: không nhận IPN → job truy vấn cổng ghi nhận thanh toán', function () {
     $paymentId = ($this->order)('fake_online')->json('data.payment.id');
-    FakeOnlineGateway::$queryResult = new GatewayStatus(GatewayCallback::PAID, 'TXN-Q', Money::vnd(330_000));
+    FakeOnlineGateway::$queryResult = new GatewayStatus(GatewayPaymentStatus::Paid, 'TXN-Q', Money::vnd(330_000));
 
     $this->artisan('vani:payment:reconcile')->assertSuccessful();
     expect(Payment::query()->withoutGlobalScopes()->sole()->status->value)->toBe('pending');

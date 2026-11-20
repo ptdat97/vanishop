@@ -7,6 +7,7 @@ namespace Modules\Payment\Tests\Feature\Fixtures;
 use Illuminate\Http\Request;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayCapabilities;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayResult;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
@@ -14,12 +15,15 @@ use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
+use Modules\Payment\Contracts\QueriesStatus;
+use Modules\Payment\Contracts\ReceivesCallbacks;
+use Modules\Payment\Contracts\RefundsPayments;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Cổng giả kiểu redirect + IPN ký HMAC — mô phỏng plugin cổng online trong test.
  */
-final class FakeOnlineGateway implements PaymentGateway
+final class FakeOnlineGateway implements PaymentGateway, QueriesStatus, ReceivesCallbacks, RefundsPayments
 {
     public const SECRET = 'fake-secret';
 
@@ -43,7 +47,7 @@ final class FakeOnlineGateway implements PaymentGateway
 
     public function capabilities(): GatewayCapabilities
     {
-        return new GatewayCapabilities(callbacks: true, query: true, refund: true, partialRefund: true, paymentTtlSeconds: 900);
+        return new GatewayCapabilities(partialRefund: true, paymentTtlSeconds: 900);
     }
 
     public function isAvailable(PaymentContext $context): bool
@@ -63,7 +67,7 @@ final class FakeOnlineGateway implements PaymentGateway
             throw new InvalidCallback('Chữ ký không hợp lệ.');
         }
 
-        return new GatewayCallback($fields['payment_id'], $fields['txn'], $fields['status'], Money::vnd((int) $fields['amount']), ['txn' => $fields['txn']], ['RspCode' => '00']);
+        return new GatewayCallback($fields['payment_id'], $fields['txn'], GatewayPaymentStatus::tryFrom($fields['status']) ?? throw new InvalidCallback('Trạng thái lạ.'), Money::vnd((int) $fields['amount']), ['txn' => $fields['txn']], ['RspCode' => '00']);
     }
 
     public function query(PaymentData $payment): GatewayStatus
@@ -72,7 +76,7 @@ final class FakeOnlineGateway implements PaymentGateway
             throw self::$queryException;
         }
 
-        return self::$queryResult ?? new GatewayStatus(GatewayCallback::PENDING);
+        return self::$queryResult ?? new GatewayStatus(GatewayPaymentStatus::Pending);
     }
 
     public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult

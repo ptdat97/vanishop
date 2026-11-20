@@ -19,6 +19,7 @@ use Modules\Ordering\Application\OrderCommands;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Contracts\Data\GatewayCallback;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Contracts\Returns;
@@ -176,7 +177,7 @@ it('nhận hàng trả và hoàn tiền đổi trả bị bấm 4 lần cùng l�
     $orderId = lifecycleOrder($this->variant->id, 'fake_online', 'lifecycle-return');
     $payment = DB::table('payments')->where('order_id', $orderId)->first();
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PaymentService::class)
-        ->applyCallback('fake_online', new GatewayCallback($payment->public_id, 'TXN-RETURN', GatewayCallback::PAID, Money::vnd(330_000))));
+        ->applyCallback('fake_online', new GatewayCallback($payment->public_id, 'TXN-RETURN', GatewayPaymentStatus::Paid, Money::vnd(330_000))));
     lifecycleShip($orderId, ShipmentStatus::PickedUp, ShipmentStatus::Delivered);
     $lineId = (int) DB::table('order_lines')->where('order_id', $orderId)->value('id');
     $returnId = app(CurrentContext::class)->runAs(ContextScope::system('test'), function () use ($orderId, $lineId): int {

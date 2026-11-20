@@ -14,6 +14,7 @@ use Modules\Payment\Contracts\Data\CallbackOutcome;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentRejected;
+use Modules\Payment\Contracts\ReceivesCallbacks;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 
@@ -26,7 +27,9 @@ final class GatewayCallbackController
     public function __invoke(string $gateway, Request $request, GatewayRegistry $gateways, PaymentService $payments, CurrentContext $context): JsonResponse
     {
         $implementation = $gateways->get($gateway);
-        abort_if($implementation === null || ! $implementation->capabilities()->callbacks, 404);
+        if (! $implementation instanceof ReceivesCallbacks) {
+            abort(404);
+        }
 
         $respond = function (CallbackOutcome $outcome, ?GatewayCallback $callback, JsonResponse $default) use ($implementation): JsonResponse {
             if (! $implementation instanceof CallbackResponder) {

@@ -9,12 +9,16 @@ use DateTimeImmutable;
 use Illuminate\Http\Request;
 use Modules\Payment\Contracts\CapturesLater;
 use Modules\Payment\Contracts\Data\GatewayCallback;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayResult;
 use Modules\Payment\Contracts\Data\GatewayStatus;
+use Modules\Payment\Contracts\Data\InitiationType;
 use Modules\Payment\Contracts\Data\PaymentData;
-use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
+use Modules\Payment\Contracts\QueriesStatus;
+use Modules\Payment\Contracts\ReceivesCallbacks;
+use Modules\Payment\Contracts\RefundsPayments;
 use Modules\Shared\Domain\Money\Money;
 
 /**
@@ -25,7 +29,7 @@ use Modules\Shared\Domain\Money\Money;
  *       tamperedCallback: fn (PaymentData $p) => Request::create(...));   // callback bị sửa
  *
  * Kiểm tra: mã hợp lệ; initiate idempotent; callback đúng chữ ký được chấp nhận và khớp payment/số tiền;
- * callback sai bị từ chối; cổng không có callback luôn từ chối; query trả trạng thái; refund idempotent theo key;
+ * callback sai bị từ chối (ReceivesCallbacks); query trả trạng thái (QueriesStatus); refund idempotent theo key (RefundsPayments);
  * cổng giữ tiền (CapturesLater): capture/void idempotent theo key.
  */
 final class PaymentGatewayContract
@@ -53,8 +57,7 @@ final class PaymentGatewayContract
                 $first = $instance->initiate($payment($instance));
                 $second = $instance->initiate($payment($instance));
 
-                expect($first)->toBeInstanceOf(PaymentInitiation::class)
-                    ->and($first->type)->toBeIn([PaymentInitiation::NONE, PaymentInitiation::REDIRECT, PaymentInitiation::QR, PaymentInitiation::INSTRUCTIONS])
+                expect($first->type)->toBeInstanceOf(InitiationType::class)
                     ->and([$second->type, $second->url, $second->qrPayload, $second->gatewayReference])->toBe([$first->type, $first->url, $first->qrPayload, $first->gatewayReference]);
             });
 
@@ -62,8 +65,8 @@ final class PaymentGatewayContract
                 $instance = $gateway();
                 $data = $payment($instance);
 
-                if (! $instance->capabilities()->callbacks) {
-                    expect(fn () => $instance->verifyCallback(Request::create('/callback', 'POST', ['payment_id' => $data->publicId])))->toThrow(InvalidCallback::class);
+                if (! $instance instanceof ReceivesCallbacks) {
+                    expect($validCallback)->toBeNull('Cổng không nhận callback (không ReceivesCallbacks) thì không cần validCallback.');
 
                     return;
                 }
@@ -75,32 +78,34 @@ final class PaymentGatewayContract
                 expect($callback)->toBeInstanceOf(GatewayCallback::class)
                     ->and($callback->paymentPublicId)->toBe($data->publicId)
                     ->and($callback->gatewayTransactionId)->not->toBe('')
-                    ->and($callback->status)->toBeIn([GatewayCallback::PAID, GatewayCallback::FAILED, GatewayCallback::PENDING, ...($instance instanceof CapturesLater ? [GatewayCallback::AUTHORIZED] : [])])
+                    ->and($callback->status !== GatewayPaymentStatus::Authorized || $instance instanceof CapturesLater)->toBeTrue('Chỉ cổng CapturesLater được báo Authorized.')
                     ->and($callback->amount->equals($data->amount))->toBeTrue();
 
                 expect(fn () => $instance->verifyCallback($tamperedCallback($data)))->toThrow(InvalidCallback::class);
             });
 
-            it('query trả trạng thái chuẩn hoá', function () use ($gateway, $payment): void {
+            it('query trả trạng thái chuẩn hoá (nếu QueriesStatus)', function () use ($gateway, $payment): void {
                 $instance = $gateway();
-                $status = $instance->query($payment($instance));
-
-                expect($status)->toBeInstanceOf(GatewayStatus::class)
-                    ->and($status->status)->toBeIn([GatewayCallback::PAID, GatewayCallback::FAILED, GatewayCallback::PENDING]);
-            });
-
-            it('refund idempotent theo key (nếu hỗ trợ)', function () use ($gateway, $payment): void {
-                $instance = $gateway();
-                $data = $payment($instance);
-                $first = $instance->refund($data, Money::vnd(100_000), 'contract-refund-1');
-
-                expect($first)->toBeInstanceOf(GatewayResult::class);
-                if (! $instance->capabilities()->refund) {
-                    expect($first->successful)->toBeFalse();
+                if (! $instance instanceof QueriesStatus) {
+                    expect($instance)->not->toBeInstanceOf(QueriesStatus::class);
 
                     return;
                 }
+                $status = $instance->query($payment($instance));
 
+                expect($status)->toBeInstanceOf(GatewayStatus::class)
+                    ->and($status->status)->not->toBe(GatewayPaymentStatus::Authorized);
+            });
+
+            it('refund idempotent theo key (nếu RefundsPayments)', function () use ($gateway, $payment): void {
+                $instance = $gateway();
+                if (! $instance instanceof RefundsPayments) {
+                    expect($instance->capabilities()->partialRefund)->toBeFalse('partialRefund chỉ có nghĩa khi cổng RefundsPayments.');
+
+                    return;
+                }
+                $data = $payment($instance);
+                $first = $instance->refund($data, Money::vnd(100_000), 'contract-refund-1');
                 $second = $instance->refund($data, Money::vnd(100_000), 'contract-refund-1');
                 expect($first->successful)->toBeTrue()
                     ->and($second->successful)->toBeTrue()

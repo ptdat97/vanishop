@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Payment\Application\GatewayRegistry;
-use Modules\Payment\Contracts\Data\GatewayCallback;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
@@ -38,14 +38,14 @@ afterEach(function () {
 });
 
 it('khớp với cổng → không chênh lệch; COD/chuyển khoản tay bị bỏ qua', function () {
-    FakeOnlineGateway::$queryResult = new GatewayStatus(GatewayCallback::PAID, 'TXN-VERIFY-1', Money::vnd(330_000));
+    FakeOnlineGateway::$queryResult = new GatewayStatus(GatewayPaymentStatus::Paid, 'TXN-VERIFY-1', Money::vnd(330_000));
 
     $this->artisan('vani:payment:verify')->expectsOutputToContain('Đã đối chiếu 1 khoản')->assertSuccessful();
     expect(($this->lines)())->toBe([]);
 });
 
 it('cổng báo chưa thu, sai số tiền, hoàn khác → ghi đúng loại; không đổi trạng thái thanh toán; chạy lại không ghi trùng', function () {
-    FakeOnlineGateway::$queryResult = new GatewayStatus(GatewayCallback::PENDING, null, Money::vnd(300_000), refunded: Money::vnd(30_000));
+    FakeOnlineGateway::$queryResult = new GatewayStatus(GatewayPaymentStatus::Pending, null, Money::vnd(300_000), refunded: Money::vnd(30_000));
 
     $this->artisan('vani:payment:verify')->assertFailed();
     expect(($this->lines)())->toBe([

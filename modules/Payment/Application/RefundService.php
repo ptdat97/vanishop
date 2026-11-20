@@ -16,6 +16,7 @@ use Modules\Payment\Contracts\Data\PayoutResult;
 use Modules\Payment\Contracts\Data\RefundData;
 use Modules\Payment\Contracts\PaymentRejected;
 use Modules\Payment\Contracts\RefundPayout;
+use Modules\Payment\Contracts\RefundsPayments;
 use Modules\Payment\Domain\CodRules;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Domain\RefundDecision;
@@ -196,8 +197,8 @@ final class RefundService
                 return [null, $payment];
             }
 
-            $capabilities = $this->gateways->get($payment->gateway_code)?->capabilities();
-            $automatic = RefundRules::isAutomatic((bool) $capabilities?->refund, (bool) $capabilities?->partialRefund, $decision->amount, $decision->refundable);
+            $gateway = $this->gateways->get($payment->gateway_code);
+            $automatic = RefundRules::isAutomatic($gateway instanceof RefundsPayments, (bool) $gateway?->capabilities()->partialRefund, $decision->amount, $decision->refundable);
             $actor = $this->context->has() ? $this->context->actor() : null;
 
             $refund = Refund::query()->create([
@@ -228,7 +229,7 @@ final class RefundService
         ExternalCalls::guard("payment.refund:{$payment->gateway_code}");
 
         try {
-            $result = $gateway?->refund($this->records->toData($payment), Money::of((int) $refund->amount, $payment->currency_code), $refund->idempotency_key);
+            $result = $gateway instanceof RefundsPayments ? $gateway->refund($this->records->toData($payment), Money::of((int) $refund->amount, $payment->currency_code), $refund->idempotency_key) : null;
         } catch (Throwable $exception) {
             Log::error('Hoàn tiền qua cổng lỗi — chờ nhân viên xử lý.', ['refund' => $refund->public_id, 'exception' => $exception]);
             $result = null;

@@ -9,6 +9,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Payment\Contracts\Data\InitiationType;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\Data\PaymentView;
@@ -89,7 +90,7 @@ final class PaymentRecords
      */
     public function serializeAction(PaymentInitiation $initiation): array
     {
-        return ['type' => $initiation->type, 'url' => $initiation->url, 'qr' => $initiation->qrPayload, 'instructions' => $initiation->instructions];
+        return ['type' => $initiation->type->value, 'url' => $initiation->url, 'qr' => $initiation->qrPayload, 'instructions' => $initiation->instructions];
     }
 
     public function toView(Payment $payment, ?string $actionError = null): PaymentView
@@ -102,7 +103,7 @@ final class PaymentRecords
             currencyCode: $payment->currency_code, orderPublicId: $order->publicId ?? '', orderNumber: $order->number ?? '',
             expiresAt: StoreClock::iso($payment->expires_at),
             action: $payment->status === PaymentStatus::Pending && is_array($action)
-                ? new PaymentInitiation((string) $action['type'], $action['url'] ?? null, $action['qr'] ?? null, (array) ($action['instructions'] ?? []))
+                ? new PaymentInitiation(InitiationType::tryFrom((string) $action['type']) ?? InitiationType::None, $action['url'] ?? null, $action['qr'] ?? null, (array) ($action['instructions'] ?? []))
                 : null,
             actionError: $actionError,
             retryable: $payment->status->canRetry()
