@@ -66,11 +66,6 @@ parameters:
 			count: 1
 			path: modules/Catalog/Application/Collections/EloquentCollectionDirectory.php
 
-		-
-			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\Style\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Catalog/Application/Search/ProductDocumentBuilder.php
 
 		-
 			message: '#^Parameter \#1 \$array \(list\<array\{code\: string, translations\: array\<string, array\{label\: string\}\>\}\>\) of array_values is already a list, call has no effect\.$#'
