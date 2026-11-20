@@ -399,6 +399,7 @@ const STOREFRONT_WEB_ONLY_PAGES = [
     'storefront.account.password.reset' => 'link trong email mở form; app gọi POST /auth/password/reset',
     'storefront.account.register.verify' => 'link trong email; app gọi POST /auth/register/verify',
     'storefront.account.email.verify' => 'link trong email; app gọi POST /auth/email/verify',
+    'storefront.payment.return' => 'điểm cổng thanh toán trả khách về (HandlesReturn): chỉ chuyển hướng tới trang đơn kèm thông báo, không hiện dữ liệu, không ghi nhận thanh toán; app hỏi GET /payments/{payment}',
 ];
 
 it('AF2: mọi trang Blade GET có endpoint Storefront API GET cho cùng dữ liệu, hoặc ghi lý do chỉ có trên web', function () {
@@ -472,7 +473,6 @@ it('R37: JS và view của theme/plugin không gọi endpoint JSON riêng ngoài
  * @var array<string, string>
  */
 const PLUGIN_PAGES_WITHOUT_API = [
-    'vani.vnpay' => 'trang khách quay về từ cổng thanh toán: xác minh chữ ký rồi chuyển tới trang đơn; app dùng GET /payments/{payment}',
 ];
 
 /**

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Shared\Support;
 
 use Illuminate\Support\Facades\Log;
-use LogicException;
 
 /**
  * Ranh giới transaction (stabilization C3): gọi dịch vụ ngoài (cổng thanh toán, hãng vận chuyển, kênh OTP…) KHÔNG được
@@ -30,7 +29,7 @@ final class ExternalCalls
             return;
         }
 
-        throw new LogicException($message);
+        throw new ExternalCallInTransaction($message);
     }
 
     public static function insideTransaction(): bool

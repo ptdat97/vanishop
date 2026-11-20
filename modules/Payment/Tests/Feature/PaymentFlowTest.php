@@ -13,17 +13,20 @@ use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
+use Modules\Payment\Application\RefundService;
 use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\RefundOutcome;
 use Modules\Payment\Contracts\Data\RefundResult;
 use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Persistence\Models\Payment;
+use Modules\Payment\Persistence\Models\Refund;
 use Modules\Payment\Tests\Feature\Fixtures\FakeCollectOnDeliveryGateway;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\ExternalCallInTransaction;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\HelloWorld\HelloWorldServiceProvider;
 
@@ -340,6 +343,19 @@ it('online: khách huỷ đơn (khoản thanh toán huỷ theo) rồi IPN mới 
     expect(Payment::query()->withoutGlobalScopes()->sole()->status->value)->toBe('refunded')
         ->and(DB::table('refunds')->value('reason'))->toBe('late_payment_after_cancel')
         ->and(($this->orderRow)()->order_status->value)->toBe('cancelled');
+});
+
+it('bước gọi cổng hoàn tiền nằm trong transaction (lỗi lập trình): báo lỗi ngay, không bị bắt thành "hoàn thất bại — chờ hoàn tay"', function () {
+    $paymentId = ($this->order)('fake_online')->assertCreated()->json('data.payment.id');
+    ($this->callback)($paymentId, 'TXN-1')->assertOk();
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Payments::class)->refund((int) $paymentId, Money::vnd(100_000), 'test', 'refund-in-tx-0001'));
+    $refund = Refund::query()->withoutGlobalScopes()->sole();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    // Luồng thật gọi cổng sau commit (afterCommit); ở đây gọi thẳng bước gọi cổng bên trong transaction.
+    $execute = new ReflectionMethod(RefundService::class, 'executeGatewayRefund');
+
+    expect(fn () => DB::transaction(fn () => $execute->invoke(app(RefundService::class), $refund, $payment)))
+        ->toThrow(ExternalCallInTransaction::class, 'payment.refund:fake_online');
 });
 
 it('online: khoản đã hoàn hết, cổng gửi thêm IPN "đã trả" mã giao dịch khác → không ghi nhận lại', function () {

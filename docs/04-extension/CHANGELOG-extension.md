@@ -6,6 +6,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.64 — 2026-11-20 · Extension API 1.21.0 (không đổi)
+
+Sửa 3 test kiến trúc đỏ sau đợt Payment abstraction (0.5.60–0.5.62).
+
+### Sửa
+- Hoàn tiền qua cổng (`RefundService`): `ExternalCalls::guard()` đặt ngay trước lời gọi cổng (trong `try`), lỗi guard (`Shared\Support\ExternalCallInTransaction`, kế thừa `LogicException`) được ném lại thay vì bị bắt thành "hoàn thất bại — chờ hoàn tay".
+- `storefront.payment.return` (Return URL chung) khai là trang chỉ có trên web: chỉ chuyển hướng tới trang đơn; app hỏi `GET /payments/{payment}`.
+- `vani.vnpay` không còn trang storefront riêng → bỏ khỏi danh sách plugin có trang mà không có API.
+
 ## 0.5.63 — 2026-11-20 · Extension API 1.21.0
 
 Rà soát kiến trúc 2026-11-20 (đề xuất 1–6, 8) — một đợt việc, một version (quy ước mới). Đánh số lại khi rebase lên 0.5.60–0.5.62 (Payment abstraction).

@@ -31,6 +31,7 @@ use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\ExternalCallInTransaction;
 use Modules\Shared\Support\ExternalCalls;
 use Throwable;
 
@@ -253,15 +254,17 @@ final class RefundService
     private function executeGatewayRefund(Refund $refund, Payment $payment, bool $track = false): RefundOutcome
     {
         $gateway = $this->gateways->get($payment->gateway_code);
-        ExternalCalls::guard("payment.refund:{$payment->gateway_code}");
 
         try {
             $data = $this->records->toData($payment);
+            ExternalCalls::guard("payment.refund:{$payment->gateway_code}");
             $result = match (true) {
                 $track && $gateway instanceof TracksRefunds => $gateway->refundStatus($data, $refund->idempotency_key, $refund->gateway_reference),
                 $gateway instanceof RefundsPayments => $gateway->refund($data, Money::of((int) $refund->amount, $payment->currency_code), $refund->idempotency_key),
                 default => RefundResult::failed(),
             };
+        } catch (ExternalCallInTransaction $exception) {
+            throw $exception; // lỗi lập trình (gọi cổng trong transaction) — không biến thành "hoàn thất bại"
         } catch (Throwable $exception) {
             Log::error('Hoàn tiền qua cổng lỗi — chờ nhân viên xử lý.', ['refund' => $refund->public_id, 'exception' => $exception]);
             $result = RefundResult::failed($exception->getMessage());
