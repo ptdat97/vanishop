@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.58 — 2026-11-20 · Extension API 1.17.0 (không đổi)
+
+Form thêm sản phẩm bớt nhập tay.
+
+### Đổi (Admin)
+- Mã sản phẩm: ô để trống khi thêm mới → mã gợi ý (`suggestedStyleCode`: tăng số cuối của mã gần nhất, giữ độ dài, bỏ mã đã có; chưa có sản phẩm → `SP0001`), hiện làm placeholder; gõ chữ thường tự viết hoa.
+- Slug: để trống → tạo theo tên (không dấu, trùng thì `-2`, `-3`…); gõ có dấu/khoảng trắng → chuẩn hoá. Slug người dùng gõ trùng sản phẩm khác vẫn báo lỗi.
+- Chỉ chọn một danh mục mà chưa chọn danh mục chính → danh mục đó là danh mục chính.
+- `Catalog\Application\Products\ProductIdentifiers` (slug không trùng, mã gợi ý) dùng chung cho form, nhân bản, nhập file (bỏ hai bản `uniqueSlug` trùng nhau).
+
 ## 0.5.57 — 2026-11-19 · Extension API 1.17.0
 
 Khối lượng mặc định cho sản phẩm chưa nhập khối lượng.

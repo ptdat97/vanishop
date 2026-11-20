@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Catalog\Application\Products;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Events\ProductDuplicated;
@@ -42,7 +41,7 @@ final class ProductDuplicator
 
             $style = $this->products->create(new ProductInput(
                 styleCode: $styleCode,
-                slug: $this->uniqueSlug($name, $styleCode),
+                slug: ProductIdentifiers::uniqueSlug($name, $styleCode),
                 status: StyleStatus::Draft,
                 translations: $translations,
                 categoryIds: $source->categories()->pluck('categories.id')->map(fn ($id): int => (int) $id)->all(),
@@ -84,17 +83,5 @@ final class ProductDuplicator
 
             return $style;
         });
-    }
-
-    private function uniqueSlug(string $name, string $styleCode): string
-    {
-        $base = Str::slug($name) ?: Str::slug($styleCode);
-        $base = Str::limit($base, 150, '');
-        $slug = $base;
-        for ($suffix = 2; Style::query()->withoutGlobalScopes()->where('slug', $slug)->exists(); $suffix++) {
-            $slug = "{$base}-{$suffix}";
-        }
-
-        return $slug;
     }
 }

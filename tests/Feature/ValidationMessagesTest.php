@@ -12,10 +12,11 @@ it('form Admin báo lỗi tiếng Việt với tên trường dễ đọc, kể 
 
     $this->post('/admin/catalog/products', ['translations' => ['vi' => ['name' => '']]])
         ->assertSessionHasErrors([
-            'slug' => 'Đường dẫn (slug) không được để trống.',
-            'style_code' => 'Mã sản phẩm không được để trống.',
+            // Mã sản phẩm và slug để trống được (tự sinh); trạng thái và tên vẫn bắt buộc.
+            'status' => 'Trạng thái không được để trống.',
             'translations.vi.name' => 'Tên (Tiếng Việt) không được để trống.',
-        ]);
+        ])
+        ->assertSessionDoesntHaveErrors(['slug', 'style_code']);
 });
 
 it('khoá lồng nhau: dòng đánh số từ 1, ngôn ngữ theo nhãn cửa hàng; tên truyền riêng được giữ', function () {

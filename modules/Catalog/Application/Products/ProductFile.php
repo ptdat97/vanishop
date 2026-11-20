@@ -353,7 +353,7 @@ final class ProductFile
             if ($style === null) {
                 $locale = StoreLocale::default();
                 $style = $this->products->create(new ProductInput(
-                    styleCode: $plan['code'], slug: $this->uniqueSlug((string) $plan['name'], $plan['code']), status: $plan['status'] ?? StyleStatus::Draft,
+                    styleCode: $plan['code'], slug: ProductIdentifiers::uniqueSlug((string) $plan['name'], $plan['code']), status: $plan['status'] ?? StyleStatus::Draft,
                     translations: [$locale => ['name' => $plan['name'], 'description' => $plan['description']]],
                     categoryIds: $plan['category_ids'] ?? [], primaryCategoryId: ($plan['category_ids'] ?? [])[0] ?? null, brandId: $brandId,
                 ));
@@ -558,17 +558,6 @@ final class ProductFile
         }
 
         return $this->taxonomy->saveBrand(['code' => $code, 'slug' => $slug, 'name' => $name, 'description' => null, 'status' => 'active', 'position' => (int) Brand::query()->max('position') + 1]);
-    }
-
-    private function uniqueSlug(string $name, string $styleCode): string
-    {
-        $base = Str::limit(Str::slug($name) ?: Str::slug($styleCode), 150, '');
-        $slug = $base;
-        for ($suffix = 2; Style::query()->withoutGlobalScopes()->where('slug', $slug)->exists(); $suffix++) {
-            $slug = "{$base}-{$suffix}";
-        }
-
-        return $slug;
     }
 
     /**

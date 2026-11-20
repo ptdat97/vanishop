@@ -19,6 +19,7 @@ use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductBulkEditor;
 use Modules\Catalog\Application\Products\ProductDuplicator;
 use Modules\Catalog\Application\Products\ProductFile;
+use Modules\Catalog\Application\Products\ProductIdentifiers;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
 use Modules\Catalog\Application\Products\VariantImages;
@@ -505,6 +506,8 @@ final class ProductController
                 ],
             ],
             // Dữ liệu còn thiếu (A4) — danh sách chỉ hiện icon, chi tiết ở đây.
+            // Thêm mới: mã gợi ý (ô để trống thì server dùng mã này lúc lưu).
+            'suggestedStyleCode' => $style === null ? ProductIdentifiers::suggestStyleCode() : null,
             'missing' => $style === null ? [] : array_map(fn (string $key): string => __(AdminQueries::MISSING[$key]), $this->queries->missingData([$style->id])[$style->id] ?? []),
             'product' => $style === null ? null : [
                 'id' => $style->id,

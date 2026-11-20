@@ -33,6 +33,8 @@ const props = defineProps<{
     labels: CatalogLabels;
     /** Dữ liệu còn thiếu của sản phẩm (nhãn đã dịch) — rỗng khi đủ hoặc khi thêm mới. */
     missing: string[];
+    /** Thêm mới: mã sản phẩm gợi ý (để trống ô mã thì dùng mã này). */
+    suggestedStyleCode: string | null;
     product: null | {
         id: number;
         style_code: string;
@@ -389,7 +391,7 @@ async function destroy(): Promise<void> {
                     ref="defaultVariant"
                     v-model:media-ids="form.media_ids"
                     :product-url="productUrl"
-                    :style-code="form.style_code || 'SKU'"
+                    :style-code="form.style_code || suggestedStyleCode || 'SKU'"
                     :variant="singleVariant"
                     :values="singleValues"
                     :columns="variantMatrix.columns"
@@ -461,7 +463,7 @@ async function destroy(): Promise<void> {
                     ref="matrix"
                     :product-url="productUrl"
                     :urls="variantMatrix.urls"
-                    :style-code="form.style_code || 'SKU'"
+                    :style-code="form.style_code || suggestedStyleCode || 'SKU'"
                     :axes="variantMatrix.axes"
                     :option-types="variantMatrix.optionTypes"
                     :variants="variants"
@@ -496,11 +498,15 @@ async function destroy(): Promise<void> {
         </div>
 
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5 self-start">
-            <FormField :label="t('catalog::admin.products_form.product_code_style_code')" :hint="t('catalog::admin.products_form.uppercase_letters_digits')" :error="errors.style_code">
-                <input v-model="form.style_code" :class="inputClass" />
+            <FormField
+                :label="t('catalog::admin.products_form.product_code_style_code')"
+                :hint="product ? t('catalog::admin.products_form.uppercase_letters_digits') : t('catalog::admin.products_form.empty_use_suggested_code')"
+                :error="errors.style_code"
+            >
+                <input v-model="form.style_code" :class="inputClass" class="uppercase" :placeholder="suggestedStyleCode ?? ''" data-style-code @blur="form.style_code = form.style_code.trim().toUpperCase()" />
             </FormField>
-            <FormField :label="t('catalog::admin.products_form.slug_path')" :error="errors.slug">
-                <input v-model="form.slug" :class="inputClass" />
+            <FormField :label="t('catalog::admin.products_form.slug_path')" :hint="t('catalog::admin.products_form.empty_slug_from_name')" :error="errors.slug">
+                <input v-model="form.slug" :class="inputClass" :placeholder="slugify(form.translations[defaultLocale]?.name ?? '')" data-slug />
             </FormField>
             <FormField :label="t('catalog::admin.products_form.status')" :error="errors.status">
                 <Select v-model="form.status" :options="codeOptions(statuses, labels.product_status)" />

@@ -6,7 +6,9 @@ namespace Modules\Catalog\Http\Requests\Admin;
 
 use DateTimeImmutable;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Modules\Catalog\Application\Products\ProductIdentifiers;
 use Modules\Catalog\Application\Products\ProductInput;
 use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Domain\StyleStatus;
@@ -17,6 +19,28 @@ final class ProductRequest extends FormRequest
 {
     use AuthorizesCatalogManage;
     use ValidatesLocalizedSlugs;
+
+    /**
+     * Bớt nhập tay: mã sản phẩm viết hoa (trống khi thêm mới → mã gợi ý); slug trống → theo tên (không trùng), slug gõ có
+     * dấu/khoảng trắng → chuẩn hoá; chỉ chọn một danh mục mà chưa chọn danh mục chính → lấy danh mục đó.
+     */
+    protected function prepareForValidation(): void
+    {
+        $style = $this->route('product');
+        $styleId = $style instanceof Style ? $style->id : null;
+        $code = strtoupper(trim((string) $this->input('style_code')));
+        if ($code === '' && $styleId === null) {
+            $code = ProductIdentifiers::suggestStyleCode();
+        }
+        $slug = Str::slug((string) $this->input('slug'));
+        $categoryIds = array_values(array_filter((array) $this->input('category_ids', []), 'is_numeric'));
+
+        $this->merge([
+            'style_code' => $code,
+            'slug' => $slug !== '' ? $slug : ProductIdentifiers::uniqueSlug((string) $this->input('translations.'.StoreLocale::default().'.name'), $code, $styleId),
+            'primary_category_id' => $this->input('primary_category_id') ?? (count($categoryIds) === 1 ? (int) $categoryIds[0] : null),
+        ]);
+    }
 
     /**
      * @return array<string, mixed>
