@@ -6,36 +6,28 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
-## 0.5.61 — 2026-11-20 · Extension API 1.19.0
+## 0.5.63 — 2026-11-20 · Extension API 1.21.0
 
-Rà soát kiến trúc 2026-11-20 (đề xuất 4): thu gọn API cho plugin — bỏ `#[PluginApi]` khỏi 22 mục không plugin/theme nào dùng và không nằm trong chữ ký của mục còn giữ. Class vẫn là contract giữa module (public API của Core), chỉ không còn hứa ổn định cho plugin; plugin cần thì gắn lại (minor).
+Rà soát kiến trúc 2026-11-20 (đề xuất 1–6, 8) — một đợt việc, một version (quy ước mới). Đánh số lại khi rebase lên 0.5.60–0.5.62 (Payment abstraction).
 
-### Bỏ khỏi API cho plugin
-`Cart\CartRejected`, `Catalog\MediaData`, `Catalog\ProductSearchResult`, `Catalog\SellableVariant`, `Catalog\VariantData`, `Catalog\VariantOptionsText`, `Checkout\CheckoutIssue`, `Checkout\TotalsLine`, `Extension\Formats`, `Fulfillment\AllocationProposal`, `Inventory\IncomingStockData`, `Inventory\ReservedLine`, `Ordering\OrderLineData`, `Ordering\OrderTransitionRejected`, `Ordering\OrderTransitions`, `Payment\PaymentRejected`, `Promotion\AppliedPromotion`, `Promotion\VoucherRejection`, `Promotion\PromotionEngine`, `Promotion\PromotionUnavailable`, `Storefront\ResolvedLink`, `Storefront\LinkResolver`.
+### Bỏ (phá vỡ) — **Plugin cần cập nhật** nếu dùng các mục dưới (plugin trong repo: không plugin nào dùng)
+- Extension point tìm kiếm: `Catalog\Contracts\SearchProvider`, `ConfigurableSearchIndex`, `Data\ProductDocument`, `Catalog\Testing\SearchProviderContract`, `SearchManager`, `ProductDocumentBuilder`, listener `SyncProductSearchIndex`, lệnh `vani:search:reindex`, cấu hình `vanishop.search.provider` / `VANI_SEARCH_PROVIDER`. Dự án chỉ tìm bằng SQL: `Catalog\Application\Search\ProductSearch` (trước là `DatabaseSearchProvider`). Lưu sản phẩm không còn dựng tài liệu tìm kiếm rồi bỏ đi.
+- Bỏ `#[PluginApi]` khỏi 22 mục không plugin/theme nào dùng (vẫn là contract giữa module): `Cart\CartRejected`, `Catalog\MediaData`, `Catalog\ProductSearchResult`, `Catalog\SellableVariant`, `Catalog\VariantData`, `Catalog\VariantOptionsText`, `Checkout\CheckoutIssue`, `Checkout\TotalsLine`, `Extension\Formats`, `Fulfillment\AllocationProposal`, `Inventory\IncomingStockData`, `Inventory\ReservedLine`, `Ordering\OrderLineData`, `Ordering\OrderTransitionRejected`, `Ordering\OrderTransitions`, `Payment\PaymentRejected`, `Promotion\AppliedPromotion`, `Promotion\VoucherRejection`, `Promotion\PromotionEngine`, `Promotion\PromotionUnavailable`, `Storefront\ResolvedLink`, `Storefront\LinkResolver`.
 
 ### Giữ
 - Mọi điểm mở rộng của microkernel (ADR-029) dù chưa plugin nào cài: `ReturnPolicy`, `PricingStrategy`, `InventoryStrategy`, `SourcingStrategy`, `CheckoutValidator`, `TotalsCalculator`, `PromotionAction`, `OrderStatusAction`, `VariantFieldProvider`, `AlertChannel`, `AuthProvider` (+ `AuthProviderFailed`), `Connector`, `InboundHandler`, `CapturesLater` và kiểu dữ liệu trong chữ ký của chúng. API cho plugin: 206 → 184 mục.
-
-### Thêm (cùng đợt — đề xuất 2, 5, 8; Core giữ 0.5.61 theo quy ước mới) · Extension API 1.20.0
-
-- API cho plugin: `SimpleXlsx::read(string $path, int $maxRows = MAX_ROWS)`, `SpreadsheetRows::fromUpload(UploadedFile $file, int $maxRows = …)`, `SpreadsheetRows::csv(string $path, int $maxRows = …)` — thêm tham số tuỳ chọn (minor).
-- **Nhập file sản phẩm lớn**: tối đa 60.000 dòng (`ProductFile::MAX_ROWS`, file tới 20 MB; `SimpleXlsx::read()` / `SpreadsheetRows::fromUpload()` nhận trần dòng, trần dung lượng sheet tăng theo). Xem trước nạp sẵn theo lô 1.000 sản phẩm (50.000 dòng: 2,7 s, 140 truy vấn, thay vì ~10 truy vấn mỗi sản phẩm). Quá 200 sản phẩm ghi được → `ApplyProductImportChunkJob` theo lô 100 sản phẩm trong `Bus::batch`; `GET products/import/runs/{run}` (tiến độ, bộ đếm `created`/`updated`/`failed_rows`, tối đa 200 lỗi); trang danh sách sản phẩm hiện tiến độ (`importRunUrl`). Trang xem trước gửi tối đa 1.000 sản phẩm (sản phẩm lỗi trước).
-- `Modules\Shared\Support\BulkRun`: việc hàng loạt chạy nền dùng chung (Inventory `StockBulkRun` dùng lại), thêm danh sách lỗi.
-- `tests/Architecture/PluginVersionTest.php` + `plugin-versions.snapshot`: plugin đổi code phải tăng `version`. Quy ước: Core tăng version **một lần mỗi đợt việc** ([extension-model](extension-model.md)).
-- ADR-007 sửa đổi: phần ERP/Integration đóng băng, không bảo đảm API.
-
-## 0.5.60 — 2026-11-20 · Extension API 1.18.0
-
-Rà soát kiến trúc 2026-11-20 (đề xuất 1, 3, 6).
-
-### Bỏ (phá vỡ — plugin/test cập nhật theo)
-- Extension point tìm kiếm: `Catalog\Contracts\SearchProvider`, `ConfigurableSearchIndex`, `Data\ProductDocument`, `Catalog\Testing\SearchProviderContract`, `SearchManager`, `ProductDocumentBuilder`, listener `SyncProductSearchIndex`, lệnh `vani:search:reindex`, cấu hình `vanishop.search.provider` / `VANI_SEARCH_PROVIDER`. Dự án chỉ tìm bằng SQL: `Catalog\Application\Search\ProductSearch` (trước là `DatabaseSearchProvider`). Lưu sản phẩm không còn dựng tài liệu tìm kiếm rồi bỏ đi.
 
 ### Sửa
 - Xuất file sản phẩm không N+1: nạp sẵn trục/giá trị tuỳ chọn; `VariantFieldProvider::values()` được gọi một lần cho mỗi lô 200 sản phẩm (`$styleId` = 0, `$variantIds` thuộc nhiều sản phẩm — đã ghi trong contract). 10.000 sản phẩm / 50.000 SKU: 10.501 truy vấn (+ khoảng 20.000 khi có cột giá) → 551; 8,4 s → 5,7 s.
 
 ### Thêm
 - `Extension\Application\PendingMigrations`: `/health` có mục `migrations` (degraded khi còn migration chưa chạy), `vani:security:check` báo lỗi, Tổng quan → Việc cần làm "Migration chưa chạy".
+- API cho plugin: `SimpleXlsx::read(string $path, int $maxRows = MAX_ROWS)`, `SpreadsheetRows::fromUpload(UploadedFile $file, int $maxRows = …)`, `SpreadsheetRows::csv(string $path, int $maxRows = …)` — thêm tham số tuỳ chọn (minor).
+- **Nhập file sản phẩm lớn**: tối đa 60.000 dòng (`ProductFile::MAX_ROWS`, file tới 20 MB; `SimpleXlsx::read()` / `SpreadsheetRows::fromUpload()` nhận trần dòng, trần dung lượng sheet tăng theo). Xem trước nạp sẵn theo lô 1.000 sản phẩm (50.000 dòng: 2,7 s, 140 truy vấn, thay vì ~10 truy vấn mỗi sản phẩm). Quá 200 sản phẩm ghi được → `ApplyProductImportChunkJob` theo lô 100 sản phẩm trong `Bus::batch`; `GET products/import/runs/{run}` (tiến độ, bộ đếm `created`/`updated`/`failed_rows`, tối đa 200 lỗi); trang danh sách sản phẩm hiện tiến độ (`importRunUrl`). Trang xem trước gửi tối đa 1.000 sản phẩm (sản phẩm lỗi trước).
+- `Modules\Shared\Support\BulkRun`: việc hàng loạt chạy nền dùng chung (Inventory `StockBulkRun` dùng lại), thêm danh sách lỗi.
+- `tests/Architecture/PluginVersionTest.php` + `plugin-versions.snapshot`: plugin đổi code phải tăng `version`. Quy ước: Core tăng version **một lần mỗi đợt việc** ([extension-model](extension-model.md)).
+- ADR-007 sửa đổi: phần ERP/Integration đóng băng, không bảo đảm API.
+
 ## 0.5.62 — 2026-11-20 · Extension API 1.20.0
 
 Cổng thanh toán nhận đủ ngữ cảnh; Return URL chung trong Core.
