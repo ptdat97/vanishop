@@ -16,13 +16,18 @@ use Modules\Payment\Contracts\CallbackResponder;
 use Modules\Payment\Contracts\Data\CallbackOutcome;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayCapabilities;
-use Modules\Payment\Contracts\Data\GatewayResult;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
+use Modules\Payment\Contracts\Data\RefundResult;
+use Modules\Payment\Contracts\Data\ReturnResult;
+use Modules\Payment\Contracts\HandlesReturn;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
+use Modules\Payment\Contracts\QueriesStatus;
+use Modules\Payment\Contracts\RefundsPayments;
 use Modules\Shared\Domain\Money\Money;
 
 /**
@@ -32,9 +37,11 @@ use Modules\Shared\Domain\Money\Money;
  * - vnp_TxnRef = public id của payment; thời điểm tạo lấy từ gateway_reference (lần đầu: hạn thanh toán − TTL) → URL
  *   giống nhau mỗi lần (idempotent).
  * - IPN luôn trả HTTP 200 + RspCode theo kết quả Core ghi nhận (CallbackResponder).
+ * - Return URL: Return URL chung của Core (`PaymentData::$returnUrl`, `HandlesReturn`); `VNPAY_RETURN_URL` ghi đè cho
+ *   storefront headless.
  * - Phản hồi API có chữ ký sai/không đọc được → coi như chưa xác định (query: pending; refund: thất bại → hoàn tay).
  */
-final class VnPayGateway implements CallbackResponder, PaymentGateway
+final class VnPayGateway implements CallbackResponder, HandlesReturn, PaymentGateway, QueriesStatus, RefundsPayments
 {
     public const CODE = 'vnpay';
 
@@ -67,7 +74,7 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
 
     public function capabilities(): GatewayCapabilities
     {
-        return new GatewayCapabilities(callbacks: true, query: true, refund: true, partialRefund: true, paymentTtlSeconds: $this->settings->ttl());
+        return new GatewayCapabilities(partialRefund: true, paymentTtlSeconds: $this->settings->ttl());
     }
 
     public function isAvailable(PaymentContext $context): bool
@@ -89,8 +96,8 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
             'vnp_OrderInfo' => $this->orderInfo($payment),
             'vnp_OrderType' => 'other',
             'vnp_Locale' => 'vn',
-            'vnp_ReturnUrl' => $this->settings->returnUrl(),
-            'vnp_IpAddr' => '127.0.0.1',
+            'vnp_ReturnUrl' => $this->settings->returnUrl() ?? $payment->returnUrl ?? url('/'),
+            'vnp_IpAddr' => $payment->clientIp ?? '127.0.0.1',
             'vnp_CreateDate' => $this->createdAt($payment)->format('YmdHis'),
             'vnp_ExpireDate' => $expiresAt->setTimezone(new DateTimeZone(self::TIMEZONE))->format('YmdHis'),
         ];
@@ -128,7 +135,7 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
             gatewayTransactionId: $transactionNo !== '' && $transactionNo !== '0'
                 ? $transactionNo
                 : 'fail:'.$params['vnp_TxnRef'].':'.$params['vnp_ResponseCode'].':'.($params['vnp_PayDate'] ?? ''),
-            status: $paid ? GatewayCallback::PAID : GatewayCallback::FAILED,
+            status: $paid ? GatewayPaymentStatus::Paid : GatewayPaymentStatus::Failed,
             amount: Money::vnd(intdiv((int) $params['vnp_Amount'], 100)),
             maskedPayload: array_intersect_key($params, array_flip(self::LOGGED_FIELDS)),
             acknowledgement: ['RspCode' => '00', 'Message' => 'Confirm Success'],
@@ -149,47 +156,46 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
     }
 
     /**
-     * Kết quả hiển thị cho khách ở Return URL (KHÔNG ghi nhận thanh toán — chỉ IPN mới ghi nhận).
-     *
-     * @param  array<string, mixed>  $params
-     * @return 'paid'|'failed'|'invalid'
+     * Kết quả hiển thị cho khách ở Return URL chung của Core (KHÔNG ghi nhận thanh toán — chỉ IPN mới ghi nhận).
      */
-    public function returnResult(array $params): string
+    public function parseReturn(Request $request): ReturnResult
     {
-        if (! $this->settings->signer()->verifyQuery($params)) {
-            return 'invalid';
+        $params = $this->vnpParams($request);
+        if (($params['vnp_TxnRef'] ?? '') === '' || ! $this->settings->signer()->verifyQuery($params)) {
+            return ReturnResult::invalid();
         }
+        $paid = ($params['vnp_ResponseCode'] ?? '') === '00' && ($params['vnp_TransactionStatus'] ?? '00') === '00';
 
-        return ($params['vnp_ResponseCode'] ?? '') === '00' && ($params['vnp_TransactionStatus'] ?? '00') === '00' ? 'paid' : 'failed';
+        return new ReturnResult($params['vnp_TxnRef'], $paid ? GatewayPaymentStatus::Paid : GatewayPaymentStatus::Failed);
     }
 
     public function query(PaymentData $payment): GatewayStatus
     {
         $response = $this->queryTransaction($payment);
         if ($response === null || ($response['vnp_ResponseCode'] ?? '') !== '00') {
-            return new GatewayStatus(GatewayCallback::PENDING);
+            return new GatewayStatus(GatewayPaymentStatus::Pending);
         }
 
         $amount = Money::vnd(intdiv((int) ($response['vnp_Amount'] ?? 0), 100));
 
         return match ((string) ($response['vnp_TransactionStatus'] ?? '')) {
-            '00' => new GatewayStatus(GatewayCallback::PAID, (string) ($response['vnp_TransactionNo'] ?? ''), $amount),
-            '02' => new GatewayStatus(GatewayCallback::FAILED, (string) ($response['vnp_TransactionNo'] ?? ''), $amount),
-            default => new GatewayStatus(GatewayCallback::PENDING),
+            '00' => new GatewayStatus(GatewayPaymentStatus::Paid, (string) ($response['vnp_TransactionNo'] ?? ''), $amount),
+            '02' => new GatewayStatus(GatewayPaymentStatus::Failed, (string) ($response['vnp_TransactionNo'] ?? ''), $amount),
+            default => new GatewayStatus(GatewayPaymentStatus::Pending),
         };
     }
 
-    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult
+    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): RefundResult
     {
         $done = DB::table('plg_vnpay_refunds')->where('idempotency_key', $idempotencyKey)->value('gateway_reference');
         if ($done !== null) {
-            return new GatewayResult(true, (string) $done, __('vani-vnpay::texts.vn_pay_gateway.already_refunded'));
+            return RefundResult::succeeded((string) $done);
         }
 
         // Hoàn tiền cần số giao dịch VNPay + thời điểm thanh toán gốc → tra cứu trước.
         $original = $this->queryTransaction($payment);
         if ($original === null || ($original['vnp_ResponseCode'] ?? '') !== '00' || ($original['vnp_TransactionStatus'] ?? '') !== '00') {
-            return new GatewayResult(false, message: __('vani-vnpay::texts.vn_pay_gateway.vnpay_has_not_confirmed_original'));
+            return RefundResult::failed(__('vani-vnpay::texts.vn_pay_gateway.vnpay_has_not_confirmed_original'));
         }
 
         $requestId = substr(hash('sha256', 'refund|'.$idempotencyKey), 0, 32); // cố định theo key: gửi lại không hoàn hai lần
@@ -217,7 +223,7 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
 
         $response = $this->post($body, self::REFUND_RESPONSE_FIELDS);
         if ($response === null || ($response['vnp_ResponseCode'] ?? '') !== '00') {
-            return new GatewayResult(false, message: __('vani-vnpay::texts.vn_pay_gateway.vnpay_declined_refund').($response === null ? '' : __('vani-vnpay::texts.vn_pay_gateway.code').($response['vnp_ResponseCode'] ?? '?').')').__('vani-vnpay::texts.vn_pay_gateway.refund_manually'));
+            return RefundResult::failed(__('vani-vnpay::texts.vn_pay_gateway.vnpay_declined_refund').($response === null ? '' : __('vani-vnpay::texts.vn_pay_gateway.code').($response['vnp_ResponseCode'] ?? '?').')').__('vani-vnpay::texts.vn_pay_gateway.refund_manually'));
         }
 
         $reference = 'VNP-RF-'.((string) ($response['vnp_TransactionNo'] ?? '') ?: $requestId);
@@ -226,7 +232,7 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
             'gateway_reference' => $reference, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        return new GatewayResult(true, $reference);
+        return RefundResult::succeeded($reference);
     }
 
     /**

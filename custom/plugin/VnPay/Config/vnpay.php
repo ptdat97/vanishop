@@ -15,7 +15,7 @@ return [
     // Thời gian khách được thanh toán (giây) — vnp_ExpireDate.
     'ttl' => (int) env('VNPAY_TTL', 900),
 
-    // URL khách quay về sau khi thanh toán. Để trống: trang của plugin (/p/vani-vnpay/return) → trang đơn hàng.
+    // URL khách quay về sau khi thanh toán (ghi đè cho storefront headless). Để trống: Return URL chung của Core (/_vani/payments/vnpay/return) → trang đơn hàng.
     // Storefront headless đặt URL của frontend (frontend gọi GET /api/storefront/v1/payments/{id} để biết kết quả).
     'return_url' => env('VNPAY_RETURN_URL', ''),
 ];

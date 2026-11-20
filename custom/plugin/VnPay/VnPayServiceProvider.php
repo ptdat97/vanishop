@@ -37,6 +37,5 @@ final class VnPayServiceProvider extends PluginServiceProvider
         ]);
 
         $this->contribute(PaymentGateway::TAG, VnPayGateway::class);
-        $this->storefrontPages($this->pluginPath('Http/routes/storefront-pages.php'));
     }
 }

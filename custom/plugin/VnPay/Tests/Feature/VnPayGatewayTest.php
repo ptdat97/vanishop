@@ -7,8 +7,10 @@ use Illuminate\Support\Facades\Http;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
+use Modules\Payment\Contracts\Data\RefundOutcome;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Testing\PaymentGatewayContract;
 use Modules\Shared\Context\ContextScope;
@@ -148,7 +150,7 @@ describe('vani.vnpay', function () {
 
         parse_str((string) parse_url($payment['action']['url'], PHP_URL_QUERY), $query);
         expect(strtok($payment['action']['url'], '?'))->toBe('https://sandbox.vnpayment.vn/paymentv2/vpcpay.html')
-            ->and($query)->toMatchArray(['vnp_Amount' => '33000000', 'vnp_TxnRef' => $payment['id'], 'vnp_TmnCode' => 'VANITEST', 'vnp_CreateDate' => '20261003100000', 'vnp_ExpireDate' => '20261003101500', 'vnp_ReturnUrl' => url('/p/vani-vnpay/return')])
+            ->and($query)->toMatchArray(['vnp_Amount' => '33000000', 'vnp_TxnRef' => $payment['id'], 'vnp_TmnCode' => 'VANITEST', 'vnp_CreateDate' => '20261003100000', 'vnp_ExpireDate' => '20261003101500', 'vnp_ReturnUrl' => url('/_vani/payments/vnpay/return'), 'vnp_IpAddr' => '127.0.0.1'])
             ->and((new VnPaySigner(VNPAY_SECRET))->verifyQuery($query))->toBeTrue()
             ->and(Payment::query()->sole()->gateway_reference)->toBe("VNP-{$payment['id']}-20261003100000");
 
@@ -182,16 +184,16 @@ describe('vani.vnpay', function () {
         expect(Payment::query()->sole()->status->value)->toBe('failed');
     });
 
-    it('Return URL chỉ báo kết quả (không ghi nhận) rồi về trang đơn; chữ ký sai → trang chủ báo lỗi', function () {
+    it('Return URL chung của Core (HandlesReturn) chỉ báo kết quả (không ghi nhận) rồi về trang đơn; chữ ký sai → trang chủ báo lỗi', function () {
         $payment = ($this->order)()->json('data.payment');
 
-        $this->get('/p/vani-vnpay/return?'.http_build_query(vnpayParams($payment['id'], 330_000)))
-            ->assertRedirect(route('storefront.order', $payment['order']['id']))->assertSessionHas('status', 'Thanh toán VNPay thành công. Cảm ơn bạn!');
+        $this->get('/_vani/payments/vnpay/return?'.http_build_query(vnpayParams($payment['id'], 330_000)))
+            ->assertRedirect(route('storefront.order', $payment['order']['id']))->assertSessionHas('status', __('storefront::messages.payment_return_paid'));
         expect(Payment::query()->sole()->status->value)->toBe('pending');
 
-        $this->get('/p/vani-vnpay/return?'.http_build_query(vnpayParams($payment['id'], 330_000, responseCode: '24')))
+        $this->get('/_vani/payments/vnpay/return?'.http_build_query(vnpayParams($payment['id'], 330_000, responseCode: '24')))
             ->assertRedirect(route('storefront.order', $payment['order']['id']))->assertSessionHasErrors('business');
-        $this->get('/p/vani-vnpay/return?'.http_build_query(vnpayParams($payment['id'], 330_000, tamper: ['vnp_ResponseCode' => '00', 'vnp_Amount' => '1'])))
+        $this->get('/_vani/payments/vnpay/return?'.http_build_query(vnpayParams($payment['id'], 330_000, tamper: ['vnp_ResponseCode' => '00', 'vnp_Amount' => '1'])))
             ->assertRedirect(route('storefront.home'))->assertSessionHasErrors('business');
     });
 
@@ -226,14 +228,14 @@ describe('vani.vnpay', function () {
 
         fakeVnPayApi(['query' => '00']);
         $status = $gateway->query($data);
-        expect([$status->status, $status->gatewayTransactionId, $status->amount?->amount])->toBe(['paid', '14012345', 330_000]);
+        expect([$status->status, $status->gatewayTransactionId, $status->amount?->amount])->toBe([GatewayPaymentStatus::Paid, '14012345', 330_000]);
         Http::assertSent(fn (HttpRequest $request) => $request['vnp_Command'] === 'querydr' && $request['vnp_TransactionDate'] === '20261003100000');
 
         fakeVnPayApi(['query' => '02']);
-        expect($gateway->query($data)->status)->toBe('failed');
+        expect($gateway->query($data)->status)->toBe(GatewayPaymentStatus::Failed);
 
         fakeVnPayApi(['tamper' => true]);
-        expect($gateway->query($data)->status)->toBe('pending');
+        expect($gateway->query($data)->status)->toBe(GatewayPaymentStatus::Pending);
     });
 
     it('hoàn tiền: tra cứu giao dịch gốc rồi refund (toàn phần/một phần), idempotent theo khoá; VNPay từ chối → thất bại để hoàn tay', function () {
@@ -242,7 +244,7 @@ describe('vani.vnpay', function () {
 
         fakeVnPayApi();
         $first = $gateway->refund($data, Money::vnd(100_000), 'refund-key-1');
-        expect($first->successful)->toBeTrue()->and($first->gatewayReference)->toBe('VNP-RF-14099999');
+        expect($first->outcome)->toBe(RefundOutcome::Succeeded)->and($first->gatewayReference)->toBe('VNP-RF-14099999');
         Http::assertSent(fn (HttpRequest $request) => $request['vnp_Command'] === 'refund' && $request['vnp_TransactionType'] === '03'
             && $request['vnp_Amount'] === 10_000_000 && $request['vnp_TransactionNo'] === '14012345');
 
@@ -251,6 +253,6 @@ describe('vani.vnpay', function () {
         Http::assertSentCount(2); // querydr + refund của lần đầu; lần hai không gọi VNPay
 
         fakeVnPayApi(['refund' => '94']);
-        expect($gateway->refund($data, Money::vnd(330_000), 'refund-key-2')->successful)->toBeFalse();
+        expect($gateway->refund($data, Money::vnd(330_000), 'refund-key-2')->outcome)->toBe(RefundOutcome::Failed);
     });
 });

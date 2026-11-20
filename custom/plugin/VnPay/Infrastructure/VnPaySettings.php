@@ -48,11 +48,12 @@ final class VnPaySettings
         return self::API_URL[$this->environment()];
     }
 
-    public function returnUrl(): string
+    /** Return URL ghi đè (`VNPAY_RETURN_URL`, storefront headless); null = Return URL chung của Core. */
+    public function returnUrl(): ?string
     {
         $configured = trim((string) config('vani.vnpay.return_url', ''));
 
-        return $configured !== '' ? $configured : vani_route('storefront.p.vani-vnpay.return');
+        return $configured !== '' ? $configured : null;
     }
 
     public function signer(): VnPaySigner

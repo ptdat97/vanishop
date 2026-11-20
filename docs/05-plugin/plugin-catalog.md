@@ -30,7 +30,7 @@ Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Co
 | Plugin | Thư mục | Contract | Chứng minh được |
 |---|---|---|---|
 | `vani.promotion-rules` | `custom/plugin/PromotionRules` | `PromotionRule` (tag `PromotionRule::TAG`) | Rule nghiệp vụ cắm vào engine của Core: `min_order_subtotal`, `min_quantity`, `in_collections` (qua `CollectionDirectory`), `first_order_only` (qua `OrderReader`) |
-| `vani.vietqr` | `custom/plugin/VietQr` | `PaymentGateway` (tag `PaymentGateway::TAG`) | Cổng QR động (payload QR theo số tiền/số đơn), IPN HMAC qua route chung `/api/payments/vietqr/callback`, hoàn tiền idempotent, cấu hình tài khoản theo pháp nhân |
+| `vani.vietqr` | `custom/plugin/VietQr` | `PaymentGateway` (tag `PaymentGateway::TAG`) | Cổng QR động (payload QR theo số tiền/số đơn), IPN HMAC qua route chung `/api/payments/vietqr/callback` (`ReceivesCallbacks`; chỉ khả dụng khi có khoá ký `VIETQR_SECRET`), không hoàn qua cổng (hoàn tay/`RefundPayout`), cấu hình tài khoản theo pháp nhân |
 | `vani.ghn` | `custom/plugin/Ghn` | `ShippingCarrier` + `ShippingRateProvider` | Báo cước ở checkout, đặt vận đơn idempotent sau commit, webhook trạng thái map về `ShipmentStatus` chuẩn. **Bản mô phỏng**: phí từ cấu hình, mã vận đơn sinh trong bộ nhớ, chưa gọi API GHN ([shipping-carrier](contracts/shipping-carrier.md)) |
 | `vani.sms-brandname` | `custom/plugin/SmsBrandname` | `NotificationChannel` (`sms`) + `OtpSender` | SMS brandname qua eSMS: brandname theo brand, nội dung bỏ dấu, `RequestId` idempotent, phân loại lỗi thử lại/vĩnh viễn |
 | `vani.zalo-zns` | `custom/plugin/ZaloZns` | `NotificationChannel` (`zns`) + `OtpSender` | ZNS theo template đã duyệt (tham số render từ biến), tự làm mới access token (refresh token xoay vòng), OTP ưu tiên ZNS rồi dự phòng SMS |
@@ -46,7 +46,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | Plugin | Contract | Đợt |
 |---|---|---|
 | `vani.vietqr` ✅ | `PaymentGateway` | P1 |
-| `vani.vnpay` | `PaymentGateway`, `CallbackResponder` | **Implemented** (Core 0.3.15); chờ chạy thử với TMN sandbox thật |
+| `vani.vnpay` | `PaymentGateway`, `CallbackResponder`, `QueriesStatus`, `RefundsPayments`, `HandlesReturn` | **Implemented** (Core 0.3.15; interface tuỳ chọn + Return URL chung từ 1.1.0); chờ chạy thử với TMN sandbox thật |
 | `vani.momo`, `vani.zalopay`, `vani.shopeepay` | `PaymentGateway` | P2 |
 | `vani.bnpl` (Kredivo, Fundiin…) | `PaymentGateway` | P3 |
 

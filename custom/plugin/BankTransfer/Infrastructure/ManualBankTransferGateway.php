@@ -4,17 +4,11 @@ declare(strict_types=1);
 
 namespace Plugin\BankTransfer\Infrastructure;
 
-use Illuminate\Http\Request;
-use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayCapabilities;
-use Modules\Payment\Contracts\Data\GatewayResult;
-use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
-use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
-use Modules\Shared\Domain\Money\Money;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\BankTransfer\BankTransferServiceProvider;
 
@@ -58,21 +52,6 @@ final class ManualBankTransferGateway implements PaymentGateway
             'amount' => (string) $payment->amount->amount,
             'transfer_content' => $payment->orderNumber,
         ]);
-    }
-
-    public function verifyCallback(Request $request): GatewayCallback
-    {
-        throw new InvalidCallback(__('vani-bank-transfer::texts.manual_bank_transfer_gateway.manual_bank_transfer_has_no'));
-    }
-
-    public function query(PaymentData $payment): GatewayStatus
-    {
-        return new GatewayStatus(GatewayCallback::PENDING);
-    }
-
-    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult
-    {
-        return new GatewayResult(false, null, __('vani-bank-transfer::texts.manual_bank_transfer_gateway.manual_bank_transfer_refund'));
     }
 
     /**

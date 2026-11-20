@@ -3,13 +3,7 @@
 // Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
 
 return [
-    'return_controller' => [
-        'could_not_identify_vnpay_transaction' => 'Không xác định được giao dịch VNPay.',
-        'vnpay_payment_successful_thank_you' => 'Thanh toán VNPay thành công. Cảm ơn bạn!',
-        'vnpay_payment_was_not_successful' => 'Thanh toán VNPay chưa thành công. Bạn có thể thử lại.',
-    ],
     'vn_pay_gateway' => [
-        'already_refunded' => 'Đã hoàn trước đó.',
         'code' => ' (mã ',
         'field_field_missing_from_vnpay' => 'Thiếu trường :field trong IPN VNPay.',
         'refund_manually' => ' — hoàn tiền thủ công.',

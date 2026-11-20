@@ -12,11 +12,11 @@ Vào Admin → Cài đặt → `vani.vnpay`. Giá trị để trống thì lấy
 | `hash_secret` | Khoá bí mật, lưu mã hoá | `VNPAY_HASH_SECRET` |
 | `sandbox` | Dùng môi trường thử `sandbox.vnpayment.vn`. Tắt khi chạy thật | `VNPAY_SANDBOX` |
 | `ttl` | Thời gian chờ thanh toán (giây), tối thiểu 300 | `VNPAY_TTL` |
-| — | Return URL cho storefront headless | `VNPAY_RETURN_URL` |
+| — | Return URL ghi đè cho storefront headless (trống = Return URL chung của Core) | `VNPAY_RETURN_URL` |
 
 Đăng ký với VNPay:
 - **IPN URL:** `https://<domain>/api/payments/vnpay/callback`
-- **Return URL** (storefront native): `https://<domain>/p/vani-vnpay/return`
+- **Return URL:** không cần đăng ký — mỗi giao dịch gửi Return URL chung của Core `https://<domain>/_vani/payments/vnpay/return` (`vnp_ReturnUrl`)
 
 ## Luồng thanh toán
 
@@ -34,7 +34,7 @@ Vào Admin → Cài đặt → `vani.vnpay`. Giá trị để trống thì lấy
 | Không thấy đơn | `01` |
 | Sai chữ ký | `97` |
 
-3. **Return URL:** chỉ báo kết quả cho khách rồi chuyển về trang đơn, không ghi nhận thanh toán. Trang đơn đọc trạng thái mới nhất: chưa trả thì có nút "Thanh toán ngay", đã nhận IPN thì hiện "Đã nhận thanh toán".
+3. **Return URL** (Return URL chung của Core, plugin cài `HandlesReturn`): chỉ báo kết quả cho khách rồi chuyển về trang đơn, không ghi nhận thanh toán. Trang đơn đọc trạng thái mới nhất: chưa trả thì có nút "Thanh toán ngay", đã nhận IPN thì hiện "Đã nhận thanh toán".
 4. **Tra cứu** (`querydr`): lệnh đối soát định kỳ của Core dùng để bù khi IPN bị lỡ.
 5. **Hoàn tiền** (`refund`, toàn phần hoặc một phần):
    - Plugin tra cứu giao dịch gốc để lấy `vnp_TransactionNo` rồi mới gửi lệnh hoàn.

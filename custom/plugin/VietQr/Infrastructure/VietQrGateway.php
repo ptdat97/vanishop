@@ -7,27 +7,32 @@ namespace Plugin\VietQr\Infrastructure;
 use Illuminate\Http\Request;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayCapabilities;
-use Modules\Payment\Contracts\Data\GatewayResult;
-use Modules\Payment\Contracts\Data\GatewayStatus;
+use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
+use Modules\Payment\Contracts\ReceivesCallbacks;
 use Modules\Shared\Domain\Money\Money;
+use RuntimeException;
 
 /**
  * Cổng thanh toán VietQR động: tạo payload VietQR (URL / mã QR theo chuẩn NAPAS)
  * và tiếp nhận webhook/IPN tự động xác nhận sao kê.
+ *
+ * Chỉ khả dụng khi có **cả** tài khoản nhận tiền và khoá ký callback (`VIETQR_SECRET`): khoá rỗng thì ai cũng ký được
+ * callback "đã trả". Không tra cứu và không hoàn tiền qua cổng (chuyển khoản ngân hàng) — khoản hoàn chờ nhân viên/kênh
+ * chuyển trả (`RefundPayout`).
  */
-final class VietQrGateway implements PaymentGateway
+final class VietQrGateway implements PaymentGateway, ReceivesCallbacks
 {
     /**
      * @param  array{bank_id?: string, account_no?: string, template?: string, account_name?: string}  $account  tài khoản nhận tiền của cửa hàng
      */
     public function __construct(
         private readonly array $account = [],
-        private readonly string $secret = 'vietqr-default-secret',
+        private readonly string $secret = '',
         private readonly int $ttlSeconds = 900,
     ) {}
 
@@ -43,31 +48,18 @@ final class VietQrGateway implements PaymentGateway
 
     public function capabilities(): GatewayCapabilities
     {
-        return new GatewayCapabilities(
-            callbacks: true,
-            query: true,
-            refund: true,
-            partialRefund: true,
-            manualConfirmation: false,
-            paymentTtlSeconds: $this->ttlSeconds,
-        );
+        return new GatewayCapabilities(paymentTtlSeconds: $this->ttlSeconds);
     }
 
     public function isAvailable(PaymentContext $context): bool
     {
-        return $this->account() !== null;
+        return $this->account() !== null && $this->secret !== '';
     }
 
     public function initiate(PaymentData $payment): PaymentInitiation
     {
-        $account = $this->account() ?? [
-            'bank_id' => '970436', // Vietcombank bin
-            'account_no' => '0123456789',
-            'template' => 'compact2',
-            'account_name' => 'VANI SHOP',
-        ];
-
-        $bankId = $account['bank_id'];
+        $account = $this->account() ?? throw new RuntimeException('VietQR chưa cấu hình tài khoản nhận tiền.'); // i18n-ignore: lỗi kỹ thuật, ghi log
+        $bankId = $account['bank_id'] ?? '';
         $accNo = $account['account_no'];
         $template = $account['template'] ?? 'compact2';
         $amount = $payment->amount->amount;
@@ -100,7 +92,7 @@ final class VietQrGateway implements PaymentGateway
         $amount = (string) $request->input('amount');
         $sig = (string) $request->input('signature');
 
-        if ($paymentId === '' || $txn === '' || $status === '' || $amount === '') {
+        if ($this->secret === '' || $paymentId === '' || $txn === '' || $status === '' || $amount === '' || $sig === '') {
             throw new InvalidCallback(__('vani-vietqr::texts.viet_qr_gateway.required_data_missing_from_vietqr'));
         }
 
@@ -116,9 +108,9 @@ final class VietQrGateway implements PaymentGateway
         }
 
         $mappedStatus = match ($status) {
-            'success', 'paid' => GatewayCallback::PAID,
-            'failed' => GatewayCallback::FAILED,
-            default => GatewayCallback::PENDING,
+            'success', 'paid' => GatewayPaymentStatus::Paid,
+            'failed' => GatewayPaymentStatus::Failed,
+            default => GatewayPaymentStatus::Pending,
         };
 
         return new GatewayCallback(
@@ -135,20 +127,6 @@ final class VietQrGateway implements PaymentGateway
         );
     }
 
-    public function query(PaymentData $payment): GatewayStatus
-    {
-        return new GatewayStatus(GatewayCallback::PENDING);
-    }
-
-    public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult
-    {
-        return new GatewayResult(
-            successful: true,
-            gatewayReference: "VQR-REFUND-{$idempotencyKey}",
-            message: __('vani-vietqr::texts.viet_qr_gateway.refund_request_was_created_via'),
-        );
-    }
-
     /**
      * @param  array<string, string>  $fields
      */
@@ -161,7 +139,7 @@ final class VietQrGateway implements PaymentGateway
     }
 
     /**
-     * @return array{bank_id: string, account_no: string, template?: string, account_name?: string}|null
+     * @return array{bank_id?: string, account_no: string, template?: string, account_name?: string}|null
      */
     private function account(): ?array
     {
