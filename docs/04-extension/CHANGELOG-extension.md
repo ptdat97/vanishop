@@ -2,6 +2,8 @@
 
 Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modules\*\Events`, `PluginServiceProvider`, hook trong `hooks.php`, registry. Nguồn đối chiếu tự động: `tests/Architecture/public-api.snapshot` (test đỏ khi API đổi mà snapshot chưa cập nhật). Chính sách: [extension-model §5](extension-model.md).
 
+> **Giai đoạn dev ([R38](../01-principles/architecture-rules.md), [ADR-048 — sửa đổi 2026-11-20](../19-adr/ADR-048-extension-api-version.md)): nâng cấp Core trước, không cần giữ tương thích ngược với plugin hiện có — plugin cập nhật sau.** Mục có thay đổi phá vỡ ghi thêm **"Plugin cần cập nhật"**; đợt cập nhật plugin ghi lại plugin đã sửa.
+
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
 ## 0.5.62 — 2026-11-20 · Extension API 1.20.0
@@ -17,6 +19,11 @@ Cổng thanh toán nhận đủ ngữ cảnh; Return URL chung trong Core.
 - `CheckoutRequest::$clientIp` (Storefront điền IP khách; không tính vào fingerprint idempotency); `Payments::createForOrder(..., ?string $clientIp = null)` lưu `payments.meta.client_ip`, "thanh toán lại" giữ IP.
 - Interface tuỳ chọn `HandlesReturn::parseReturn(Request): ReturnResult` + `Contracts\Data\ReturnResult` (`paymentPublicId`, `status: GatewayPaymentStatus`; `ReturnResult::invalid()`); `Payments::resolveReturn(string $gatewayCode, Request)`.
 - Route Storefront `GET /_vani/payments/{gateway}/return` (`storefront.payment.return`): về trang đơn kèm thông báo theo kết quả (không ghi nhận thanh toán); không hợp lệ/cổng không hỗ trợ → trang chủ kèm lỗi.
+
+### Plugin đã cập nhật (commit sau, theo 0.5.60–0.5.62)
+- `vani.vnpay` 1.1.0: `QueriesStatus`, `RefundsPayments` (`RefundResult`), `HandlesReturn`; bỏ Return URL riêng `/p/vani-vnpay/return` (dùng Return URL chung, `VNPAY_RETURN_URL` vẫn ghi đè); `vnp_IpAddr` = IP khách.
+- `vani.vietqr` 0.2.0: chỉ `ReceivesCallbacks`; khoá ký trống → không khả dụng, từ chối mọi callback; bỏ `query()`/`refund()` giả (hoàn tay); bỏ tài khoản giả dự phòng.
+- `vani.cod` 1.3.3, `vani.bank-transfer` 1.0.3: bỏ `verifyCallback()`/`query()`/`refund()` thừa.
 
 ## 0.5.61 — 2026-11-20 · Extension API 1.19.0
 

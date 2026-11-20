@@ -171,7 +171,15 @@ Extension point public được đánh version theo **SemVer của API cho plugi
 - Plugin khai báo `requires.extension_api: "^1.0"`. Loader từ chối bật plugin không tương thích (`incompatible_extension_api`) ([plugin-system](../05-plugin/plugin-system.md)). **Implemented** 0.5.1.
 - Deprecation: class `#[PluginApi(deprecated: '…')]`, hằng/method `#[\Deprecated]` (PHP), hook khoá `deprecated` trong `hooks.php`. Plugin nghe hook deprecated → log `vani.deprecation`; `vani:plugin:doctor` cảnh báo `deprecated_usage` (quét tĩnh, kèm file:dòng). **Implemented** 0.5.2.
 - Thực tế 0.4.x: một số thay đổi phá vỡ đã ra ở bản vá (0.4.21–0.4.27). Từ 0.5.1, mức tăng do `PluginApiSnapshotTest` kiểm tự động trên `extension_api`.
-- **Giai đoạn dev (Owner 2026-11-18, [architecture-rules R38](../01-principles/architecture-rules.md), [ADR-048 — sửa đổi](../19-adr/ADR-048-extension-api-version.md)):** dự án đang phát triển nên **API cho plugin chưa chốt — ưu tiên Core**. Bảng trên áp khi `vanishop.extension_api_stage = stable`; hiện là `dev`: thay đổi phá vỡ phần `stable` (đổi constructor DTO, đổi/xoá method…) chỉ cần tăng **minor** + ghi CHANGELOG-extension (mục phá vỡ), không cần `@deprecated` trước; **plugin trong repo cập nhật theo trong cùng commit**.
+- **Giai đoạn dev — nâng cấp Core trước, plugin cập nhật sau (Owner 2026-11-18, nhấn mạnh 2026-11-20, [architecture-rules R38](../01-principles/architecture-rules.md), [ADR-048 — sửa đổi](../19-adr/ADR-048-extension-api-version.md)):**
+
+  > **Khi phát triển, ưu tiên nâng cấp Core. Không cần giữ tương thích ngược với plugin hiện có. Plugin cập nhật sau.**
+
+  Bảng trên chỉ áp khi `vanishop.extension_api_stage = stable`; hiện là `dev`:
+  - Thay đổi phá vỡ phần `stable` (đổi constructor DTO, đổi/xoá method, tách interface, đổi kiểu) chỉ cần tăng **minor** + ghi CHANGELOG-extension (mục phá vỡ + mục **"Plugin cần cập nhật"**). Không `@deprecated` trước, không giữ API cũ song song, không adapter cho plugin cũ.
+  - Commit Core giữ xanh bộ test Core; plugin trong `custom/plugin` cập nhật ở commit/đợt sau (suite `Plugins` được phép đỏ ở plugin chờ cập nhật). Plugin hệ thống mà test Core phụ thuộc (`vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`) phải còn chạy được.
+  - Khi cập nhật plugin: tăng `version` của plugin (vá: chỉ dọn code; minor: đổi hành vi/cấu hình), xoá mục tương ứng khỏi "Plugin cần cập nhật".
+  - Ví dụ: Payment abstraction 0.5.60–0.5.62 (Core trước) → plugin VNPay/VietQR/COD/chuyển khoản cập nhật ở commit sau.
 - [`CHANGELOG-extension.md`](CHANGELOG-extension.md) ghi mọi thay đổi extension point. **Implemented** (0.2.0).
 - `tests/Architecture/PluginApiSnapshotTest.php` chụp API cho plugin vào `plugin-api.snapshot` (header `Extension API x.y.z`): đổi mà không tăng `extension_api` đúng mức (xoá/đổi phần stable → major) + ghi "Extension API x.y.z" trong changelog thì CI đỏ. `PublicApiSnapshotTest` vẫn chụp toàn bộ `Contracts`, `Events`, `PluginServiceProvider` vào `public-api.snapshot` theo version Core. Không dùng abstract base cho contract — mở rộng extension contract theo hai cách ở bảng trên.
 

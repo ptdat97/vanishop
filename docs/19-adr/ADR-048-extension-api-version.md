@@ -28,6 +28,16 @@ Quy tắc thiết kế: [architecture-rules R38](../01-principles/architecture-r
 - `vanishop.extension_api_stage` = `dev` (mặc định, `VANI_EXTENSION_API_STAGE`): `PluginApiSnapshotTest` hạ mức "major" xuống "minor" — vẫn phải tăng `extension_api` và ghi CHANGELOG-extension (nêu rõ thay đổi phá vỡ để plugin ngoài repo, nếu có, biết mà sửa). Không cần `@deprecated` trước.
 - Khi chốt API (trước khi mở cho plugin bên thứ ba): đặt `stable`, quy tắc §5 áp lại đầy đủ.
 
+## Sửa đổi 2026-11-20 (Owner): Core trước, plugin sau
+
+Nhấn mạnh và nới quy tắc giai đoạn dev ở trên:
+
+- **Khi phát triển, nâng cấp Core là ưu tiên số một. Không cần giữ tương thích ngược với plugin hiện có. Plugin cập nhật sau.**
+- Bỏ yêu cầu "plugin trong repo phải cập nhật theo trong cùng commit". Commit Core chỉ cần giữ xanh bộ test Core (`modules/`, `tests/`); plugin trong `custom/plugin` cập nhật ở commit/đợt riêng sau đó, suite `Plugins` được phép đỏ ở plugin chờ cập nhật.
+- Ngoại lệ: plugin hệ thống mà bộ test Core phụ thuộc (`vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`) phải còn nạp/chạy được — ưu tiên thiết kế để chúng không vỡ, không được thì sửa tối thiểu cùng commit.
+- Mỗi mục CHANGELOG-extension có thay đổi phá vỡ ghi thêm **"Plugin cần cập nhật"** (plugin nào, sửa gì); đợt cập nhật plugin xoá mục đó và tăng `version` của plugin.
+- Vẫn giữ: tăng `vanishop.extension_api` (minor ở `dev`) + CHANGELOG-extension cho mọi thay đổi bề mặt; snapshot API cập nhật cùng commit Core.
+
 ## Consequences
 
 - Core đổi API giữa module (vd. chuyển contract, thêm method service contract chỉ module dùng) không còn ép nâng plugin.
