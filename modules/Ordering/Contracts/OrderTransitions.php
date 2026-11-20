@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Ordering\Contracts;
 
 use Modules\Ordering\Contracts\Data\OrderStatus;
-use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Cổng duy nhất đổi trạng thái đơn. Mỗi lần: khoá dòng orders, kiểm tra state machine, ghi order_events,
@@ -13,7 +12,6 @@ use Modules\Shared\Contracts\PluginApi;
  *
  * @param  string  $source  customer | staff | system | gateway:<code> | integration:<client> | carrier
  */
-#[PluginApi]
 interface OrderTransitions
 {
     /**

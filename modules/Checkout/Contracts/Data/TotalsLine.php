@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Contracts\Data;
 
-use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 use Modules\Shared\Domain\Weight\Weight;
 
 /**
  * Một dòng trong totals pipeline. `discount` là độ lớn (>= 0) đã phân bổ về dòng; `tax` là thuế ĐÃ GỒM trong total().
  */
-#[PluginApi]
 final readonly class TotalsLine
 {
     public function __construct(

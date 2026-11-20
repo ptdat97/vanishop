@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Contracts\Data;
 
-use Modules\Shared\Contracts\PluginApi;
-
-#[PluginApi]
 final readonly class ReservedLine
 {
     public function __construct(

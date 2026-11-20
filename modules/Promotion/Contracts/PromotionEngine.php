@@ -6,13 +6,11 @@ namespace Modules\Promotion\Contracts;
 
 use Modules\Promotion\Contracts\Data\PromotionContext;
 use Modules\Promotion\Contracts\Data\PromotionResult;
-use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Service contract: đánh giá khuyến mãi (không ghi gì) và ghi nhận sử dụng (trong transaction PlaceOrder).
  */
-#[PluginApi]
 interface PromotionEngine
 {
     public function evaluate(PromotionContext $context): PromotionResult;

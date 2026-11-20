@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Contracts\Data;
 
-use Modules\Shared\Contracts\PluginApi;
-
 /**
  * Kết quả phân giải `LinkTarget`: `exists = false` khi đối tượng đã xoá/ẩn hoặc loại link không còn (plugin tắt) —
  * nơi render bỏ qua link.
  */
-#[PluginApi]
 final readonly class ResolvedLink
 {
     public function __construct(

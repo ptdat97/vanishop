@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts\Data;
 
-use Modules\Shared\Contracts\PluginApi;
-
 /**
  * Hiển thị tổ hợp tuỳ chọn của một SKU (ADR-045) — snapshot `list<{type, name, code, value}>` theo thứ tự trục, như trong
  * `VariantData::$options`, `SellableVariant::$options`, dòng giỏ/đơn (`variantOptions`). Dùng chung cho Admin, storefront,
  * phiếu in, file giao hãng, payload tích hợp.
  */
-#[PluginApi]
 final class VariantOptionsText
 {
     /**

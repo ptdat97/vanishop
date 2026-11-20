@@ -6,6 +6,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.61 — 2026-11-20 · Extension API 1.19.0
+
+Rà soát kiến trúc 2026-11-20 (đề xuất 4): thu gọn API cho plugin — bỏ `#[PluginApi]` khỏi 22 mục không plugin/theme nào dùng và không nằm trong chữ ký của mục còn giữ. Class vẫn là contract giữa module (public API của Core), chỉ không còn hứa ổn định cho plugin; plugin cần thì gắn lại (minor).
+
+### Bỏ khỏi API cho plugin
+`Cart\CartRejected`, `Catalog\MediaData`, `Catalog\ProductSearchResult`, `Catalog\SellableVariant`, `Catalog\VariantData`, `Catalog\VariantOptionsText`, `Checkout\CheckoutIssue`, `Checkout\TotalsLine`, `Extension\Formats`, `Fulfillment\AllocationProposal`, `Inventory\IncomingStockData`, `Inventory\ReservedLine`, `Ordering\OrderLineData`, `Ordering\OrderTransitionRejected`, `Ordering\OrderTransitions`, `Payment\PaymentRejected`, `Promotion\AppliedPromotion`, `Promotion\VoucherRejection`, `Promotion\PromotionEngine`, `Promotion\PromotionUnavailable`, `Storefront\ResolvedLink`, `Storefront\LinkResolver`.
+
+### Giữ
+- Mọi điểm mở rộng của microkernel (ADR-029) dù chưa plugin nào cài: `ReturnPolicy`, `PricingStrategy`, `InventoryStrategy`, `SourcingStrategy`, `CheckoutValidator`, `TotalsCalculator`, `PromotionAction`, `OrderStatusAction`, `VariantFieldProvider`, `AlertChannel`, `AuthProvider` (+ `AuthProviderFailed`), `Connector`, `InboundHandler`, `CapturesLater` và kiểu dữ liệu trong chữ ký của chúng. API cho plugin: 206 → 184 mục.
+
 ## 0.5.60 — 2026-11-20 · Extension API 1.18.0
 
 Rà soát kiến trúc 2026-11-20 (đề xuất 1, 3, 6).

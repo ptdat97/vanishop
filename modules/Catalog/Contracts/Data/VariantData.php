@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts\Data;
 
-use Modules\Shared\Contracts\PluginApi;
-
 /**
  * SKU cho module khác. `options`: tổ hợp tuỳ chọn theo thứ tự trục (ADR-045) — {type: mã loại, name: tên loại, code: mã giá
  * trị, value: tên giá trị}; hiển thị bằng VariantOptionsText.
  */
-#[PluginApi]
 final readonly class VariantData
 {
     /**

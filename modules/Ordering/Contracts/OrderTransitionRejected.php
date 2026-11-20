@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Modules\Ordering\Contracts;
 
 use Modules\Ordering\Contracts\Data\OrderStatus;
-use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\BusinessRuleViolation;
 
-#[PluginApi]
 final class OrderTransitionRejected extends BusinessRuleViolation
 {
     public function __construct(public readonly OrderStatus $from, public readonly OrderStatus $to)

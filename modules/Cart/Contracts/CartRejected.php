@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Cart\Contracts;
 
-use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\BusinessRuleViolation;
 
 /**
  * Lỗi nghiệp vụ công khai của giỏ hàng. Mã lỗi ổn định: xem docs/06-api/api.md.
  */
-#[PluginApi]
 final class CartRejected extends BusinessRuleViolation
 {
     /**

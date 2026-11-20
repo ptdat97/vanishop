@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Contracts\Data;
 
-use Modules\Shared\Contracts\PluginApi;
-
 /**
  * Lỗi chặn đặt hàng. `field` theo tên trường API (vd. "contact.phone"), null = cả đơn.
  */
-#[PluginApi]
 final readonly class CheckoutIssue
 {
     public function __construct(

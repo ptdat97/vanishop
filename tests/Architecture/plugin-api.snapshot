@@ -2,20 +2,6 @@ Extension API 1.20.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
-class Modules\Cart\Contracts\CartRejected extends Modules\Shared\Domain\BusinessRuleViolation
-  static notFound(): self
-  static closed(): self
-  static lineNotFound(): self
-  static variantUnavailable(int $variantId): self
-  static insufficientStock(int $variantId): self
-  static quantity(string $reason, int $max): self
-  static optionInvalid(string $plugin, string $message): self
-  static optionUnknown(string $plugin): self
-  static tooManyLines(int $max): self
-  static byRule(int $variantId, array $messages): self
-  errorCode(): string
-  status(): int
-  details(): array
 class Modules\Cart\Contracts\Data\CartKey
   __construct(string $publicId, string $token)
 class Modules\Cart\Contracts\InvalidCartLineOption extends InvalidArgumentException
@@ -51,11 +37,6 @@ class Modules\Catalog\Contracts\Data\ImageSize
   __construct(string $name, string $label, int $width, ?int $height = NULL, bool $crop = false)
   key(): string
   toArray(): array
-class Modules\Catalog\Contracts\Data\MediaData
-  __construct(int $id, string $name, ?int $width, ?int $height, string $url, array $variants, string $mimeType = 'image/jpeg')
-  isVideo(): bool
-  urlFor(?int $width = NULL): string
-  srcset(): string
 class Modules\Catalog\Contracts\Data\ProductFilters
   __construct(int $now, string $text = '', ?string $categorySlug = NULL, ?string $collectionSlug = NULL, array $attributes = array (
 ), string $sort = 'newest', int $page = 1, int $perPage = 24, array $brandSlugs = array (
@@ -78,28 +59,6 @@ class Modules\Catalog\Contracts\Data\ProductSearchQuery
 ))
   offset(): int
   limit(): int
-class Modules\Catalog\Contracts\Data\ProductSearchResult
-  __construct(array $styleIds, int $total, array $facets = array (
-  'attribute_values' => 
-  array (
-  ),
-  'brands' => 
-  array (
-  ),
-  'options' => 
-  array (
-  ),
-))
-class Modules\Catalog\Contracts\Data\SellableVariant
-  __construct(int $id, ?int $brandId, int $styleId, string $sku, string $slug, string $name, ?string $imageUrl, ?string $brandName = NULL, ?int $weightGram = NULL, array $options = array (
-))
-class Modules\Catalog\Contracts\Data\VariantData
-  __construct(int $id, ?int $brandId, int $styleId, string $styleCode, string $styleName, string $sku, string $status, array $options = array (
-), bool $tracksInventory = true)
-class Modules\Catalog\Contracts\Data\VariantOptionsText
-  static label(array $options): string
-  static describe(array $options): string
-  static code(array $options, string $type): string
 class Modules\Catalog\Contracts\Data\VideoThumbnail
   __construct(string $url, ?int $width = NULL, ?int $height = NULL)
 interface Modules\Catalog\Contracts\ImageFormat
@@ -161,8 +120,6 @@ interface Modules\Checkout\Contracts\CheckoutValidator
 class Modules\Checkout\Contracts\Data\Adjustment
   __construct(string $type, string $source, ?string $code, string $label, Modules\Shared\Domain\Money\Money $amount, array $meta = array (
 ))
-class Modules\Checkout\Contracts\Data\CheckoutIssue
-  __construct(string $code, string $message, ?string $field = NULL)
 class Modules\Checkout\Contracts\Data\CheckoutRequest
   __construct(Modules\Cart\Contracts\Data\CartKey $cart, ?array $contact, ?array $shippingAddress, ?string $shippingMethod, ?string $paymentMethod, ?array $voucherCodes, ?string $note, ?int $expectedTotal, array $extra = array (
 ), string $source = 'web', ?string $clientIp = NULL)
@@ -183,13 +140,6 @@ class Modules\Checkout\Contracts\Data\TotalsContext
   weight(): Modules\Shared\Domain\Weight\Weight
   missingWeight(): bool
   linesTotal(): Modules\Shared\Domain\Money\Money
-class Modules\Checkout\Contracts\Data\TotalsLine
-  __construct(int $key, int $variantId, ?int $brandId, int $styleId, string $sku, string $name, array $variantOptions, ?string $imageUrl, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, Modules\Shared\Domain\Money\Money $subtotal, Modules\Shared\Domain\Money\Money $discount, int $taxRateBp = 0, ?Modules\Shared\Domain\Money\Money $tax = NULL, ?string $brandName = NULL, array $options = array (
-), ?string $priceListCode = NULL, ?int $weightGram = NULL)
-  weight(): Modules\Shared\Domain\Weight\Weight
-  total(): Modules\Shared\Domain\Money\Money
-  withDiscount(Modules\Shared\Domain\Money\Money $discount): self
-  withTax(int $rateBp, Modules\Shared\Domain\Money\Money $tax): self
 interface Modules\Checkout\Contracts\ShippingRateProvider
   const TAG = 'vani.checkout.shipping_providers'
   options(Modules\Checkout\Contracts\Data\TotalsContext $context): array
@@ -293,15 +243,6 @@ class Modules\Extension\Contracts\Data\FieldDefinition
   static video(string $key, string $label, bool $required = false, ?string $help = NULL): self
   rules(): array
   toArray(): array
-class Modules\Extension\Contracts\Data\Formats
-  const NUMERIC = array (
-  0 => 'number',
-  1 => 'money',
-  2 => 'percent',
-  3 => 'compact',
-  4 => 'money_compact',
-)
-  static guard(string $format, bool $allowText = false): void
 class Modules\Extension\Contracts\Data\HealthStatus
   const OK = 'ok'
   const WARNING = 'warning'
@@ -377,8 +318,6 @@ abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Suppor
 interface Modules\Fulfillment\Contracts\CarrierAssignment [experimental]
   const TAG = 'vani.fulfillment.carrier_assignments'
   assign(Modules\Fulfillment\Contracts\Data\CarrierAssignmentContext $context): ?Modules\Fulfillment\Contracts\Data\CarrierChoice
-class Modules\Fulfillment\Contracts\Data\AllocationProposal
-  __construct(int $locationId, array $lines)
 class Modules\Fulfillment\Contracts\Data\CarrierAssignmentContext [experimental]
   __construct(int $orderId, string $orderNumber, array $address, int $codAmount, int $totalAmount, int $itemCount, array $shippingMethod)
 class Modules\Fulfillment\Contracts\Data\CarrierCapabilities
@@ -475,8 +414,6 @@ interface Modules\Inventory\Contracts\Backorders [experimental]
   waitingFor(string $reservationKey): array
 class Modules\Inventory\Contracts\Data\BackorderAllowance [experimental]
   __construct(int $limit, ?string $expectedOn = NULL)
-class Modules\Inventory\Contracts\Data\IncomingStockData [experimental]
-  __construct(int $variantId, int $quantity, ?string $expectedOn, string $source)
 class Modules\Inventory\Contracts\Data\LocationData
   const AUTHORITY_VANISHOP = 'vanishop'
   const TYPES = array (
@@ -487,8 +424,6 @@ class Modules\Inventory\Contracts\Data\LocationData
   __construct(int $id, string $code, string $name, string $type, ?string $address, ?string $provinceCode, bool $shipsOnlineOrders, bool $allowsPickup, bool $acceptsReturns, string $stockAuthority, int $priority, string $status, int $lockVersion)
   managesOnHand(): bool
   toArray(): array
-class Modules\Inventory\Contracts\Data\ReservedLine
-  __construct(int $variantId, int $locationId, int $quantity)
 interface Modules\Inventory\Contracts\IncomingStock [experimental]
   set(int $variantId, int $quantity, ?string $expectedOn, string $source): void
   forVariants(array $variantIds): array
@@ -593,10 +528,6 @@ class Modules\Ordering\Contracts\Data\OrderDetail
   __construct(int $id, string $publicId, string $number, string $orderStatus, string $paymentStatus, string $fulfillmentStatus, string $returnStatus, string $paymentMethod, array $customerStatus, string $currencyCode, array $amounts, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $placedAt, array $lines, array $adjustments, array $events, bool $cancellableByCustomer, int $lockVersion, string $source = 'web', array $pricing = array (
 ), array $receipt = array (
 ))
-class Modules\Ordering\Contracts\Data\OrderLineData
-  __construct(int $id, int $variantId, string $sku, string $productName, int $quantity, int $totalAmount = 0, array $variantOptions = array (
-), ?string $brandName = NULL, array $options = array (
-), int $unitAmount = 0)
 enum Modules\Ordering\Contracts\Data\OrderStatus
   const Pending = \Modules\Ordering\Contracts\Data\OrderStatus::Pending
   const Confirmed = \Modules\Ordering\Contracts\Data\OrderStatus::Confirmed
@@ -691,18 +622,6 @@ interface Modules\Ordering\Contracts\OrderStatusAction
   code(): string
   describe(Modules\Ordering\Contracts\Data\OrderData $order): ?Modules\Ordering\Contracts\Data\OrderStatusActionView
   perform(Modules\Ordering\Contracts\Data\OrderData $order, array $input): ?string
-class Modules\Ordering\Contracts\OrderTransitionRejected extends Modules\Shared\Domain\BusinessRuleViolation
-  __construct(Modules\Ordering\Contracts\Data\OrderStatus $from, Modules\Ordering\Contracts\Data\OrderStatus $to)
-  errorCode(): string
-  details(): array
-interface Modules\Ordering\Contracts\OrderTransitions
-  transition(int $orderId, Modules\Ordering\Contracts\Data\OrderStatus $to, string $reason, string $source): bool
-  can(int $orderId, Modules\Ordering\Contracts\Data\OrderStatus $to): bool
-  setPaymentStatus(int $orderId, string $paymentStatus, string $reason, string $source): void
-  setFulfillmentStatus(int $orderId, string $fulfillmentStatus, string $reason, string $source): void
-  setDeliveryIssue(int $orderId, ?string $deliveryIssue, string $reason, string $source): void
-  setReturnStatus(int $orderId, string $returnStatus, string $reason, string $source): void
-  lock(int $orderId): void
 interface Modules\Ordering\Contracts\PackingSlipTemplate [experimental]
   const TAG = 'vani.ordering.packing_slips'
   code(): string
@@ -878,8 +797,6 @@ class Modules\Pricing\Events\PriceChanged
 interface Modules\Promotion\Contracts\Campaigns [experimental]
   usage(int $campaignId): ?Modules\Promotion\Contracts\Data\CampaignUsage
 interface Modules\Promotion\Contracts\CartContentRule
-class Modules\Promotion\Contracts\Data\AppliedPromotion
-  __construct(int $promotionId, ?int $voucherId, ?string $voucherCode, string $name, array $lineDiscounts, Modules\Shared\Domain\Money\Money $total)
 class Modules\Promotion\Contracts\Data\CampaignUsage [experimental]
   __construct(int $campaignId, array $promotionOrderIds, int $promotionDiscount, int $usages, array $priceListCodes)
 class Modules\Promotion\Contracts\Data\Eligibility
@@ -898,31 +815,18 @@ class Modules\Promotion\Contracts\Data\PromotionResult
   __construct(array $applied, array $rejectedVouchers)
   discountByLine(): array
   total(string $currencyCode): Modules\Shared\Domain\Money\Money
-class Modules\Promotion\Contracts\Data\VoucherRejection
-  __construct(string $code, string $reason)
 interface Modules\Promotion\Contracts\PromotionAction
   const TAG = 'vani.promotion.actions'
   type(): string
   label(): string
   validateConfig(array $config): array
   apply(array $remaining, array $config, string $currencyCode): array
-interface Modules\Promotion\Contracts\PromotionEngine
-  evaluate(Modules\Promotion\Contracts\Data\PromotionContext $context): Modules\Promotion\Contracts\Data\PromotionResult
-  recordUsage(int $orderId, ?int $customerId, string $currencyCode, Modules\Promotion\Contracts\Data\PromotionResult $result): void
-  revertUsage(int $orderId): void
-  recheck(Modules\Promotion\Contracts\Data\PromotionContext $context, array $promotionIds): array
-  adjustUsage(int $orderId, array $currentDiscounts): void
 interface Modules\Promotion\Contracts\PromotionRule
   const TAG = 'vani.promotion.rules'
   type(): string
   label(): string
   validateConfig(array $config): array
   evaluate(Modules\Promotion\Contracts\Data\PromotionContext $context, array $config, Modules\Promotion\Contracts\Data\Eligibility $candidates): Modules\Promotion\Contracts\Data\Eligibility
-class Modules\Promotion\Contracts\PromotionUnavailable extends Modules\Shared\Domain\BusinessRuleViolation
-  static voucherExhausted(string $code): self
-  static limitReached(string $name): self
-  errorCode(): string
-  details(): array
 class Modules\Returns\Contracts\Data\ReturnContext
   __construct(int $orderId, array $lines, string $reasonCode, ?DateTimeImmutable $deliveredAt, DateTimeImmutable $now, string $source)
 class Modules\Returns\Contracts\Data\ReturnDecision
@@ -1002,18 +906,9 @@ class Modules\Storefront\Contracts\Data\LinkTarget
   static fromArray(array $data): ?self
   toArray(): array
   labelFor(string $locale): ?string
-class Modules\Storefront\Contracts\Data\ResolvedLink
-  __construct(string $url, string $label, bool $exists)
-  static missing(): self
 class Modules\Storefront\Contracts\Data\SlotView
   __construct(string $view, array $data = array (
 ))
-interface Modules\Storefront\Contracts\LinkResolver
-  resolve(Modules\Storefront\Contracts\Data\LinkTarget $target, string $locale): Modules\Storefront\Contracts\Data\ResolvedLink
-  resolveMany(array $targets, string $locale): array
-  accepts(Modules\Storefront\Contracts\Data\LinkTarget $target): bool
-  types(): array
-  search(string $type, string $query, string $locale, int $limit = 20): array
 interface Modules\Storefront\Contracts\LinkType
   const TAG = 'vani.storefront.link_types'
   type(): string
