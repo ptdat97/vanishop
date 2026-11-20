@@ -181,6 +181,7 @@ Extension point public được đánh version theo **SemVer của API cho plugi
   - Khi cập nhật plugin: tăng `version` của plugin (vá: chỉ dọn code; minor: đổi hành vi/cấu hình), xoá mục tương ứng khỏi "Plugin cần cập nhật".
   - Ví dụ: Payment abstraction 0.5.60–0.5.62 (Core trước) → plugin VNPay/VietQR/COD/chuyển khoản cập nhật ở commit sau.
 - [`CHANGELOG-extension.md`](CHANGELOG-extension.md) ghi mọi thay đổi extension point. **Implemented** (0.2.0).
+- **Version theo đợt việc** (Owner 2026-11-20, rà soát kiến trúc): `vanishop.version` (Core) tăng **một lần cho mỗi đợt việc** (một yêu cầu/một PR, có thể nhiều commit), không phải mỗi commit; CHANGELOG-extension ghi một mục cho đợt. `extension_api` vẫn tăng khi API cho plugin đổi (`PluginApiSnapshotTest` bắt buộc). Plugin đổi code (trừ `Tests/`, `*.md`) phải tăng `version` trong `vanishop.json` — `tests/Architecture/PluginVersionTest.php` so dấu vân tay code với `plugin-versions.snapshot`.
 - `tests/Architecture/PluginApiSnapshotTest.php` chụp API cho plugin vào `plugin-api.snapshot` (header `Extension API x.y.z`): đổi mà không tăng `extension_api` đúng mức (xoá/đổi phần stable → major) + ghi "Extension API x.y.z" trong changelog thì CI đỏ. `PublicApiSnapshotTest` vẫn chụp toàn bộ `Contracts`, `Events`, `PluginServiceProvider` vào `public-api.snapshot` theo version Core. Không dùng abstract base cho contract — mở rộng extension contract theo hai cách ở bảng trên.
 
 ## 6. Kiểm thử
