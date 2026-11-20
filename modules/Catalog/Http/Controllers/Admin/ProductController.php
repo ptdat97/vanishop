@@ -43,6 +43,7 @@ use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Facades\Hook;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\BulkRun;
 use Modules\Shared\Support\SimpleXlsx;
 use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Shared\Support\StoreClock;
@@ -84,6 +85,9 @@ final class ProductController
             'filters' => ['q' => $search, 'status' => $status, 'category' => $taxonomy['category'], 'brand' => $taxonomy['brand'] === null ? null : (string) $taxonomy['brand'], 'collection' => $taxonomy['collection'], 'missing' => $taxonomy['missing']],
             'filterOptions' => [...$options, 'missing' => array_map(fn (string $label): string => __($label), AdminQueries::MISSING)],
             'sort' => $sort?->toArray(),
+            // Lượt nhập file chạy nền vừa bắt đầu (applyImport chuyển về đây với ?import_run=…).
+            'importRunUrl' => is_string($request->query('import_run')) && preg_match('/^[0-9a-z-]{36}$/', (string) $request->query('import_run')) === 1 && Gate::allows('catalog.manage')
+                ? route('admin.catalog.products.import.runs.show', (string) $request->query('import_run')) : null,
             'products' => [
                 'data' => $styles->getCollection()->map(fn (Style $style): array => [
                     'views' => $viewCounts[$style->id] ?? 0,
@@ -315,9 +319,10 @@ final class ProductController
     public function import(Request $request, ProductFile $file): Response
     {
         Gate::authorize('catalog.manage');
-        $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:xlsx,csv,txt']]);
+        $request->validate(['file' => ['required', 'file', 'max:20480', 'extensions:xlsx,csv,txt']]);
+        self::raiseMemoryLimit();
         try {
-            $rows = SpreadsheetRows::fromUpload($request->file('file'));
+            $rows = SpreadsheetRows::fromUpload($request->file('file'), ProductFile::MAX_ROWS);
         } catch (RuntimeException $exception) {
             throw ValidationException::withMessages(['file' => $exception->getMessage()]);
         }
@@ -331,12 +336,43 @@ final class ProductController
         ]);
     }
 
+    /**
+     * File sản phẩm lớn (tới ProductFile::MAX_ROWS dòng, đo 50.000 dòng: ~150 MB khi xem trước): nâng memory_limit của
+     * request này lên 512 MB — chỉ nâng, không hạ cấu hình máy chủ.
+     */
+    private static function raiseMemoryLimit(): void
+    {
+        $current = (string) ini_get('memory_limit');
+        $bytes = $current === '-1' ? PHP_INT_MAX : (int) $current * match (strtoupper(substr($current, -1))) {
+            'G' => 1 << 30, 'M' => 1 << 20, 'K' => 1 << 10, default => 1
+        };
+        if ($bytes < 512 << 20) {
+            ini_set('memory_limit', '512M');
+        }
+    }
+
+    /** Tiến độ lượt nhập file sản phẩm chạy nền (trang danh sách hỏi mỗi 2 giây). */
+    public function importRun(string $run): JsonResponse
+    {
+        Gate::authorize('catalog.manage');
+        $status = BulkRun::status($run, ProductFile::RUN_COUNTERS);
+        abort_if($status === null, 404);
+
+        return response()->json(['data' => $status]);
+    }
+
     public function applyImport(string $token, ProductFile $file): RedirectResponse
     {
         Gate::authorize('catalog.manage');
+        self::raiseMemoryLimit();
         $result = $file->apply($token);
         if ($result === null) {
             return redirect()->route('admin.catalog.products.index')->withErrors(['file' => __('catalog::messages.import_expired')]);
+        }
+        if (isset($result['queued'])) {
+            // File lớn chạy nền: trang danh sách hiện tiến độ (hỏi lượt chạy theo id).
+            return redirect()->route('admin.catalog.products.index', ['import_run' => $result['queued']])
+                ->with('success', __('catalog::messages.import_queued', ['products' => $result['products']]));
         }
         $response = redirect()->route('admin.catalog.products.index')->with('success', __('catalog::messages.imported', ['created' => $result['created'], 'updated' => $result['updated']]));
         $errors = [];

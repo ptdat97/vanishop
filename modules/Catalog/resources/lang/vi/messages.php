@@ -91,4 +91,6 @@ return [
     'images_assigned' => 'Đã gán ảnh cho :count SKU.',
     'images_need_variant' => 'Cần ít nhất một biến thể (SKU) để gắn ảnh — bấm "Thiết lập biến thể" để tạo.',
     'variant_not_in_product' => 'SKU không thuộc sản phẩm này.',
+    'import_run_label' => 'Nhập file :file (:products sản phẩm)',
+    'import_queued' => 'File có :products sản phẩm — đang nhập nền theo lô, xem tiến độ ở đầu trang.',
 ];

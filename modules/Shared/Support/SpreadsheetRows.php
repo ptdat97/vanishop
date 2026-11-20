@@ -18,17 +18,17 @@ final class SpreadsheetRows
      *
      * @throws RuntimeException file hỏng, sai mã hoá hoặc quá nhiều dòng (thông điệp cho nhân viên)
      */
-    public static function fromUpload(UploadedFile $file): array
+    public static function fromUpload(UploadedFile $file, int $maxRows = SimpleXlsx::MAX_ROWS): array
     {
         return strtolower($file->getClientOriginalExtension()) === 'xlsx'
-            ? SimpleXlsx::read((string) $file->getRealPath())
-            : self::csv((string) $file->getRealPath());
+            ? SimpleXlsx::read((string) $file->getRealPath(), $maxRows)
+            : self::csv((string) $file->getRealPath(), $maxRows);
     }
 
     /**
      * @return list<list<string>>
      */
-    public static function csv(string $path): array
+    public static function csv(string $path, int $maxRows = SimpleXlsx::MAX_ROWS): array
     {
         $content = (string) file_get_contents($path);
         $content = str_starts_with($content, "\xEF\xBB\xBF") ? substr($content, 3) : $content;
@@ -43,8 +43,8 @@ final class SpreadsheetRows
                 continue;
             }
             $rows[] = array_map('strval', str_getcsv($line, $delimiter, '"', ''));
-            if (count($rows) > SimpleXlsx::MAX_ROWS) {
-                throw new RuntimeException('File có quá '.SimpleXlsx::MAX_ROWS.' dòng.');
+            if (count($rows) > $maxRows) {
+                throw new RuntimeException('File có quá '.$maxRows.' dòng.');
             }
         }
 

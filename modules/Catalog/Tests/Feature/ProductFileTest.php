@@ -68,6 +68,30 @@ it('xuất file: số truy vấn không tăng theo số sản phẩm (không N+1
     expect(count(($this->exported)()))->toBe(9)->and($count())->toBeLessThanOrEqual($one + 2);
 });
 
+it('file lớn (quá 200 sản phẩm ghi được): chạy nền theo lô 100 sản phẩm, trang danh sách hỏi tiến độ; dòng lỗi bỏ qua và báo lại', function () {
+    $rows = [['Mã sản phẩm', 'Tên sản phẩm']];
+    foreach (range(1, 205) as $i) {
+        $rows[] = [sprintf('IMP%03d', $i), "Áo nhập {$i}"];
+    }
+    $rows[] = ['IMP999', '']; // sản phẩm mới thiếu tên → lỗi
+    $preview = $this->post('/admin/catalog/products/import', ['file' => ($this->csv)($rows)])->assertOk()->viewData('page')['props'];
+    expect($preview['preview']['summary'])->toBe(['create' => 205, 'update' => 0, 'error' => 1])
+        ->and($preview['preview']['products'][0]['code'])->toBe('IMP999'); // sản phẩm lỗi lên đầu
+
+    $response = $this->post('/admin/catalog/products/import/'.basename((string) $preview['urls']['apply']))->assertSessionHas('success');
+    parse_str((string) parse_url((string) $response->headers->get('Location'), PHP_URL_QUERY), $query);
+    $this->get('/admin/catalog/products?import_run='.$query['import_run'])->assertInertia(fn (Assert $page) => $page->where('importRunUrl', route('admin.catalog.products.import.runs.show', $query['import_run'])));
+
+    $run = $this->getJson(route('admin.catalog.products.import.runs.show', $query['import_run']))->assertOk()->json('data');
+    expect($run['finished'])->toBeTrue()
+        ->and($run['counts'])->toBe(['created' => 205, 'updated' => 0, 'failed_rows' => 0])
+        ->and($run['errors'])->toHaveCount(1)
+        ->and(T::seed(fn () => Style::query()->where('style_code', 'like', 'IMP%')->count()))->toBe(205);
+
+    $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff');
+    $this->getJson(route('admin.catalog.products.import.runs.show', $query['import_run']))->assertForbidden();
+});
+
 it('nhập lại file đã xuất có sửa: xem trước chưa ghi gì; áp dụng cập nhật tên, trạng thái, khối lượng, giá; ô trống giữ nguyên', function () {
     $rows = ($this->exported)();
     $header = $rows[0];

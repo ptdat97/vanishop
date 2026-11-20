@@ -91,4 +91,6 @@ return [
     'images_assigned' => 'Images assigned to :count SKUs.',
     'images_need_variant' => 'Add at least one variant (SKU) to attach images — use "Set up variants".',
     'variant_not_in_product' => 'The SKU does not belong to this product.',
+    'import_run_label' => 'Import :file (:products products)',
+    'import_queued' => 'The file has :products products — importing in the background, see progress at the top.',
 ];

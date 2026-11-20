@@ -14,7 +14,7 @@ import { labelOptions, recordOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { CatalogLabels, NavItem } from '../../types';
 
@@ -24,6 +24,8 @@ const props = defineProps<{
     filters: { q: string; status: string | null; category: number | null; brand: string | null; collection: number | null; missing: string | null };
     filterOptions: Record<'categories' | 'brands' | 'collections', Array<{ id: number; label: string }>> & { missing: Record<string, string> };
     sort: ListSortState | null;
+    /** Lượt nhập file chạy nền vừa bắt đầu — hỏi tiến độ ở URL này. */
+    importRunUrl: string | null;
     products: {
         data: Array<{ id: number; style_code: string; name: string | null; brand: string | null; status: string; skus: number; image_url: string | null; views: number; missing: string[] }>;
         current: number;
@@ -181,6 +183,27 @@ function savePrice(url: string): void {
         },
     });
 }
+
+// Nhập file lớn chạy nền: hỏi tiến độ mỗi 2 giây; xong thì tải lại danh sách.
+type ImportRun = { label: string; progress: number; finished: boolean; failed_jobs: number; counts: { created: number; updated: number; failed_rows: number }; errors: string[] };
+const importRun = ref<ImportRun | null>(null);
+let importTimer: ReturnType<typeof setTimeout> | null = null;
+async function pollImport(): Promise<void> {
+    if (!props.importRunUrl) return;
+    try {
+        importRun.value = (await getJson<{ data: ImportRun }>(props.importRunUrl)).data;
+    } catch {
+        importRun.value = null;
+        return;
+    }
+    if (importRun.value.finished) {
+        router.reload({ only: ['products'] });
+        return;
+    }
+    importTimer = setTimeout(pollImport, 2000);
+}
+void pollImport();
+onBeforeUnmount(() => importTimer && clearTimeout(importTimer));
 </script>
 
 <template>
@@ -192,9 +215,22 @@ function savePrice(url: string): void {
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">{{ t('catalog::admin.products_index.add_product') }}</Link>
     </PageHeader>
 
+    <section v-if="importRun" class="mb-4 rounded-lg border border-slate-200 bg-white p-4 text-sm" role="status" aria-live="polite" data-import-run>
+        <p class="font-medium">{{ importRun.label }}</p>
+        <div class="mt-2 h-2 overflow-hidden rounded bg-slate-100"><div class="h-full bg-indigo-600 transition-all" :style="{ width: `${importRun.progress}%` }"></div></div>
+        <p class="mt-2 text-slate-600">
+            {{ importRun.finished ? t('catalog::admin.products_index.import_run_done') : t('catalog::admin.products_index.import_run_progress', { progress: importRun.progress }) }}
+            {{ t('catalog::admin.products_index.import_run_counts', { created: importRun.counts.created, updated: importRun.counts.updated }) }}
+            <template v-if="importRun.counts.failed_rows || importRun.failed_jobs">{{ t('catalog::admin.products_index.import_run_failed', { rows: importRun.counts.failed_rows }) }}</template>
+        </p>
+        <ul v-if="importRun.errors.length" class="mt-2 max-h-48 list-disc overflow-y-auto pl-5 text-red-700">
+            <li v-for="(error, index) in importRun.errors" :key="index">{{ error }}</li>
+        </ul>
+    </section>
+
     <form v-if="showImport" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" data-import @submit.prevent="submitImport">
         <p>{{ t('catalog::admin.products_index.excel_xlsx_csv_file_one') }} <strong>{{ t('catalog::admin.products_index.product_code') }}</strong> {{ t('catalog::admin.products_index.form_one_product_use_export') }}</p>
-        <FileInput v-model="importForm.file" accept=".xlsx,.csv" :max-kb="5120" :label="t('catalog::admin.products_index.choose_file')" :progress="importForm.progress?.percentage ?? null" />
+        <FileInput v-model="importForm.file" accept=".xlsx,.csv" :max-kb="20480" :label="t('catalog::admin.products_index.choose_file')" :progress="importForm.progress?.percentage ?? null" />
         <p v-for="(error, key) in importForm.errors" :key="key" class="text-red-600">{{ error }}</p>
         <div><button type="submit" :class="primaryButton" :disabled="!importForm.file || importForm.processing">{{ t('catalog::admin.products_index.preview') }}</button></div>
     </form>

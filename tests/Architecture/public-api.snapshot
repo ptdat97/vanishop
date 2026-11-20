@@ -1505,8 +1505,8 @@ class Modules\Shared\Support\MoneyFormatter
   rules(string $currency, ?string $locale = NULL): array
   toArray(Modules\Shared\Domain\Money\Money $money): array
 class Modules\Shared\Support\SpreadsheetRows
-  static fromUpload(Illuminate\Http\UploadedFile $file): array
-  static csv(string $path): array
+  static fromUpload(Illuminate\Http\UploadedFile $file, int $maxRows = 5000): array
+  static csv(string $path, int $maxRows = 5000): array
 class Modules\Shared\Support\StoreClock
   const INPUT_FORMAT = 'Y-m-d\\TH:i'
   static timezone(): string

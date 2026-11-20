@@ -36,6 +36,7 @@ Route::post('products/bulk-delete', [ProductController::class, 'bulkDelete'])->n
 Route::get('products/ids', [ProductController::class, 'ids'])->name('products.ids');
 Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
 Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
+Route::get('products/import/runs/{run}', [ProductController::class, 'importRun'])->where('run', '[0-9a-z-]{36}')->name('products.import.runs.show');
 Route::post('products/import/{token}', [ProductController::class, 'applyImport'])->where('token', '[A-Za-z0-9]{40}')->name('products.import.apply');
 Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])->name('products.duplicate');
 Route::resource('products', ProductController::class)->except('show');

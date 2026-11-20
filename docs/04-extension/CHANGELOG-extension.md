@@ -16,6 +16,14 @@ Rà soát kiến trúc 2026-11-20 (đề xuất 4): thu gọn API cho plugin —
 ### Giữ
 - Mọi điểm mở rộng của microkernel (ADR-029) dù chưa plugin nào cài: `ReturnPolicy`, `PricingStrategy`, `InventoryStrategy`, `SourcingStrategy`, `CheckoutValidator`, `TotalsCalculator`, `PromotionAction`, `OrderStatusAction`, `VariantFieldProvider`, `AlertChannel`, `AuthProvider` (+ `AuthProviderFailed`), `Connector`, `InboundHandler`, `CapturesLater` và kiểu dữ liệu trong chữ ký của chúng. API cho plugin: 206 → 184 mục.
 
+### Thêm (cùng đợt — đề xuất 2, 5, 8; Core giữ 0.5.61 theo quy ước mới) · Extension API 1.20.0
+
+- API cho plugin: `SimpleXlsx::read(string $path, int $maxRows = MAX_ROWS)`, `SpreadsheetRows::fromUpload(UploadedFile $file, int $maxRows = …)`, `SpreadsheetRows::csv(string $path, int $maxRows = …)` — thêm tham số tuỳ chọn (minor).
+- **Nhập file sản phẩm lớn**: tối đa 60.000 dòng (`ProductFile::MAX_ROWS`, file tới 20 MB; `SimpleXlsx::read()` / `SpreadsheetRows::fromUpload()` nhận trần dòng, trần dung lượng sheet tăng theo). Xem trước nạp sẵn theo lô 1.000 sản phẩm (50.000 dòng: 2,7 s, 140 truy vấn, thay vì ~10 truy vấn mỗi sản phẩm). Quá 200 sản phẩm ghi được → `ApplyProductImportChunkJob` theo lô 100 sản phẩm trong `Bus::batch`; `GET products/import/runs/{run}` (tiến độ, bộ đếm `created`/`updated`/`failed_rows`, tối đa 200 lỗi); trang danh sách sản phẩm hiện tiến độ (`importRunUrl`). Trang xem trước gửi tối đa 1.000 sản phẩm (sản phẩm lỗi trước).
+- `Modules\Shared\Support\BulkRun`: việc hàng loạt chạy nền dùng chung (Inventory `StockBulkRun` dùng lại), thêm danh sách lỗi.
+- `tests/Architecture/PluginVersionTest.php` + `plugin-versions.snapshot`: plugin đổi code phải tăng `version`. Quy ước: Core tăng version **một lần mỗi đợt việc** ([extension-model](extension-model.md)).
+- ADR-007 sửa đổi: phần ERP/Integration đóng băng, không bảo đảm API.
+
 ## 0.5.60 — 2026-11-20 · Extension API 1.18.0
 
 Rà soát kiến trúc 2026-11-20 (đề xuất 1, 3, 6).

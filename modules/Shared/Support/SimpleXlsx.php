@@ -84,9 +84,10 @@ final class SimpleXlsx
     /**
      * Đọc sheet đầu tiên thành các dòng giá trị chữ (ô trống = ''). Dòng trống bị bỏ.
      *
+     * @param  int  $maxRows  trần số dòng (nhập file sản phẩm lớn hơn mặc định — chạy nền)
      * @return list<list<string>>
      */
-    public static function read(string $path): array
+    public static function read(string $path, int $maxRows = self::MAX_ROWS): array
     {
         $zip = new ZipArchive;
         if ($zip->open($path, ZipArchive::RDONLY) !== true) {
@@ -95,7 +96,8 @@ final class SimpleXlsx
         try {
             $sheetPath = self::firstSheetPath($zip);
             $stat = $zip->statName($sheetPath);
-            if ($stat === false || $stat['size'] > self::MAX_SHEET_BYTES) {
+            // Trần dung lượng sheet (chống file nén "bom") tăng theo số dòng cho phép: ~1 KB mỗi dòng, tối thiểu MAX_SHEET_BYTES.
+            if ($stat === false || $stat['size'] > max(self::MAX_SHEET_BYTES, $maxRows * 1024)) {
                 throw new RuntimeException('Bảng tính quá lớn hoặc không có sheet.');
             }
             $strings = [];
@@ -125,8 +127,8 @@ final class SimpleXlsx
                     $line[$index] = $value;
                 }
                 $rows[] = $line;
-                if (count($rows) > self::MAX_ROWS) {
-                    throw new RuntimeException('Bảng tính có quá '.self::MAX_ROWS.' dòng.');
+                if (count($rows) > $maxRows) {
+                    throw new RuntimeException('Bảng tính có quá '.$maxRows.' dòng.');
                 }
             }
 

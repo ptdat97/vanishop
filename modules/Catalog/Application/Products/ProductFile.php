@@ -25,6 +25,8 @@ use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Support\BulkRun;
 use Modules\Shared\Support\StoreLocale;
 
 /**
@@ -39,6 +41,18 @@ final class ProductFile
     public const MAX_AXES = 3;
 
     private const CACHE_PREFIX = 'catalog:product-import:';
+
+    /** Tối đa số dòng của file nhập (xuất 10.000 sản phẩm × 5 SKU vẫn nhập lại được). */
+    public const MAX_ROWS = 60_000;
+
+    /** Tới mức này (sản phẩm ghi được) áp dụng ngay trong request; lớn hơn chạy nền theo lô (BulkRun). */
+    public const SYNC_PRODUCTS = 200;
+
+    /** Số sản phẩm mỗi lô chạy nền. */
+    public const CHUNK_PRODUCTS = 100;
+
+    /** Bộ đếm kết quả của lượt nhập chạy nền. */
+    public const RUN_COUNTERS = ['created', 'updated', 'failed_rows'];
 
     /** Cột của Catalog: khoá => [tiêu đề khi xuất, các tiêu đề nhận khi nhập (đã bỏ dấu, chữ thường)]. */
     private const COLUMNS = [
@@ -58,6 +72,9 @@ final class ProductFile
         'barcode' => ['Barcode', ['barcode', 'ma vach']],
         'weight' => ['Khối lượng (g)', ['khoi luong (g)', 'khoi luong', 'weight', 'weight (g)']], // i18n-ignore: tiêu đề cột file (định dạng file)
     ];
+
+    /** @var array{styles?: array<string, Style>, sku_owners?: array<string, int>, barcodes?: array<string, list<int>>, lookups?: array<string, mixed>} */
+    private array $memo = [];
 
     public function __construct(
         private readonly ProductService $products,
@@ -133,19 +150,21 @@ final class ProductFile
         return [
             'token' => $token,
             'file' => $fileName,
+            // File lớn: gửi tối đa 1.000 sản phẩm cho trang xem trước, sản phẩm lỗi trước (summary vẫn đếm đủ).
             'products' => array_map(fn (array $plan): array => [
                 'code' => $plan['code'], 'lines' => $plan['lines'], 'action' => $plan['errors'] === [] ? $plan['action'] : 'error', 'name' => $plan['name'],
                 'new_skus' => $plan['new_skus'], 'updated_skus' => $plan['updated_skus'], 'notes' => $plan['notes'], 'errors' => $plan['errors'],
-            ], $plans),
+            ], array_slice([...array_filter($plans, fn (array $plan): bool => $plan['errors'] !== []), ...array_filter($plans, fn (array $plan): bool => $plan['errors'] === [])], 0, 1000)),
             'summary' => $summary,
         ];
     }
 
     /**
      * Áp dụng file đã xem trước: lập lại kế hoạch trên dữ liệu hiện tại (có thể đã đổi từ lúc xem), ghi từng sản phẩm hợp lệ
-     * trong một transaction; sản phẩm lỗi bỏ qua và báo lại.
+     * trong một transaction; sản phẩm lỗi bỏ qua và báo lại. Quá SYNC_PRODUCTS sản phẩm → chia lô CHUNK_PRODUCTS chạy nền,
+     * trả `queued` (id lượt chạy, xem tiến độ bằng BulkRun::status).
      *
-     * @return array{created: int, updated: int, errors: list<string>}|null null = token hết hạn
+     * @return array{created: int, updated: int, errors: list<string>}|array{queued: string, products: int}|null null = token hết hạn
      */
     public function apply(string $token): ?array
     {
@@ -153,9 +172,52 @@ final class ProductFile
         if (! is_array($pending) || ! isset($pending['rows'])) {
             return null;
         }
+        $file = (string) ($pending['file'] ?? '');
+        $rows = $pending['rows'];
+        $plans = $this->plan($rows);
+        $valid = count(array_filter($plans, fn (array $plan): bool => $plan['errors'] === []));
+        if ($valid <= self::SYNC_PRODUCTS) {
+            $result = $this->applyPlans($plans);
+            $this->audit->record('catalog.products.imported', 'product_file', null, ['file' => $file, 'created' => $result['created'], 'updated' => $result['updated'], 'errors' => count($result['errors'])]);
+
+            return $result;
+        }
+
+        // Lô = các dòng của CHUNK_PRODUCTS sản phẩm liền nhau (giữ dòng tiêu đề); mỗi lô lập lại kế hoạch khi chạy.
+        $byCode = [];
+        foreach (array_slice($rows, 1) as $row) {
+            $byCode[$this->rowCode($rows[0], $row)][] = $row;
+        }
+        $jobs = [];
+        foreach (array_chunk($byCode, self::CHUNK_PRODUCTS, true) as $chunk) {
+            $jobs[] = new ApplyProductImportChunkJob([$rows[0], ...array_merge(...array_values($chunk))], app(CurrentContext::class)->scope());
+        }
+        $runId = BulkRun::dispatch(__('catalog::messages.import_run_label', ['file' => $file, 'products' => $valid]), $jobs);
+        $this->audit->record('catalog.products.imported', 'product_file', null, ['file' => $file, 'queued' => $runId, 'products' => $valid]);
+
+        return ['queued' => $runId, 'products' => $valid];
+    }
+
+    /**
+     * Một lô của lượt nhập chạy nền (ApplyProductImportChunkJob): dòng tiêu đề + dòng của một số sản phẩm.
+     *
+     * @param  list<list<string>>  $rows
+     * @return array{created: int, updated: int, errors: list<string>}
+     */
+    public function applyRows(array $rows): array
+    {
+        return $this->applyPlans($this->plan($rows));
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $plans
+     * @return array{created: int, updated: int, errors: list<string>}
+     */
+    private function applyPlans(array $plans): array
+    {
         $created = $updated = 0;
         $errors = [];
-        foreach ($this->plan($pending['rows']) as $plan) {
+        foreach ($plans as $plan) {
             if ($plan['errors'] !== []) {
                 $errors[] = "{$plan['code']}: ".implode(' ', $plan['errors']);
 
@@ -167,7 +229,6 @@ final class ProductFile
                 $errors[] = "{$plan['code']}: {$message}";
             }
         }
-        $this->audit->record('catalog.products.imported', 'product_file', null, ['file' => (string) ($pending['file'] ?? ''), 'created' => $created, 'updated' => $updated, 'errors' => count($errors)]);
 
         return ['created' => $created, 'updated' => $updated, 'errors' => $errors];
     }
@@ -208,11 +269,17 @@ final class ProductFile
             $groups[$code]['rows'][] = ['line' => $offset + 2, 'cell' => $cell, 'fields' => array_map(fn (array $field): array => [...$field, 'raw' => trim((string) ($row[$field['index']] ?? ''))], $fields)];
         }
 
+        // Nạp sẵn và lập kế hoạch theo nhóm 1.000 sản phẩm: bộ nhớ không tăng theo cỡ file (file 50.000 dòng).
+        $this->memo = ['lookups' => []];
         $skusInFile = [];
         $plans = [];
-        foreach ($groups as $group) {
-            $plans[] = $this->planProduct($group, $skusInFile);
+        foreach (array_chunk($groups, 1000, true) as $chunk) {
+            $this->preload(array_map('strval', array_keys($chunk)), array_merge(...array_map(fn (array $group): array => array_column($group['rows'], 'cell'), array_values($chunk))));
+            foreach ($chunk as $group) {
+                $plans[] = $this->planProduct($group, $skusInFile);
+            }
         }
+        $this->memo['styles'] = [];
 
         return $plans;
     }
@@ -227,7 +294,7 @@ final class ProductFile
         $code = $group['code'];
         $first = $group['rows'][0]['cell'];
         $errors = $notes = [];
-        $style = Style::query()->withoutGlobalScopes()->with(['options', 'variants.optionValues'])->where('style_code', $code)->first();
+        $style = $this->memo['styles'][$code] ?? null;
         $plan = [
             'code' => $code, 'lines' => array_column($group['rows'], 'line'), 'action' => $style === null ? 'create' : 'update', 'style_id' => $style?->id,
             'name' => $first('name') ?: null, 'description' => $first('description') ?: null, 'status' => null, 'brand' => null, 'category_ids' => null,
@@ -248,14 +315,14 @@ final class ProductFile
         }
         if (($brand = $first('brand')) !== '') {
             $plan['brand'] = $brand;
-            if (! Brand::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($brand)])->exists()) {
+            if (! $this->remember('brand:'.mb_strtolower($brand), fn (): bool => Brand::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($brand)])->exists())) {
                 $notes[] = __('catalog::messages.import_brand_new', ['name' => $brand]);
             }
         }
         if (($categories = $first('categories')) !== '') {
             $plan['category_ids'] = [];
             foreach (array_filter(array_map('trim', preg_split('/[|;,]/', $categories) ?: [])) as $slug) {
-                $id = Category::query()->where('slug', Str::lower($slug))->value('id');
+                $id = $this->remember('category:'.Str::lower($slug), fn (): mixed => Category::query()->where('slug', Str::lower($slug))->value('id'));
                 $id === null ? $errors[] = __('catalog::messages.import_category_missing', ['slug' => $slug]) : $plan['category_ids'][] = (int) $id;
             }
         }
@@ -266,8 +333,8 @@ final class ProductFile
             if (($name = $first("option{$index}")) === '') {
                 continue;
             }
-            $type = OptionType::query()->whereRaw('LOWER(code) = ?', [Str::lower($name)])->first()
-                ?? OptionType::query()->whereHas('translations', fn ($query) => $query->whereRaw('LOWER(name) = ?', [mb_strtolower($name)]))->first();
+            $type = $this->remember('type:'.mb_strtolower($name), fn (): ?OptionType => OptionType::query()->whereRaw('LOWER(code) = ?', [Str::lower($name)])->first()
+                ?? OptionType::query()->whereHas('translations', fn ($query) => $query->whereRaw('LOWER(name) = ?', [mb_strtolower($name)]))->first());
             $type === null ? $errors[] = __('catalog::messages.import_option_type_missing', ['name' => $name]) : $types[$index] = $type;
         }
         $typeIds = array_map(fn (OptionType $type): int => $type->id, array_values($types));
@@ -312,13 +379,13 @@ final class ProductFile
             $existing = in_array(null, $ids, true) ? null : $existingByKey->get(Variant::keyFor(array_map('intval', $ids)));
             $existing ??= $sku !== '' ? $existingBySku->get($sku) : null;
             if ($sku !== '') {
-                $owner = Variant::query()->where('sku', $sku)->value('style_id');
+                $owner = $this->memo['sku_owners'][$sku] ?? null;
                 if (($owner !== null && (int) $owner !== $style?->id) || (isset($skusInFile[$sku]) && $skusInFile[$sku] !== $code)) {
                     $errors[] = __('catalog::messages.import_sku_taken', ['line' => $line, 'sku' => $sku]);
                 }
                 $skusInFile[$sku] = $code;
             }
-            if (($barcode = $cell('barcode')) !== '' && Variant::query()->where('barcode', $barcode)->where('id', '!=', $existing->id ?? 0)->exists()) {
+            if (($barcode = $cell('barcode')) !== '' && array_diff($this->memo['barcodes'][$barcode] ?? [], [$existing->id ?? 0]) !== []) {
                 $errors[] = __('catalog::messages.import_barcode_taken', ['line' => $line, 'barcode' => $barcode]);
             }
 
@@ -522,8 +589,67 @@ final class ProductFile
 
     private function findValue(OptionType $type, string $label): ?OptionValue
     {
-        return OptionValue::query()->where('option_type_id', $type->id)->whereRaw('LOWER(code) = ?', [Str::lower($label)])->first()
+        // Nhớ giá trị đã tìm thấy (file lớn lặp lại cùng màu/size); chưa có thì tìm lại — có thể vừa được tạo khi áp dụng.
+        $key = "value:{$type->id}:".mb_strtolower($label);
+        if (isset($this->memo['lookups'][$key])) {
+            return $this->memo['lookups'][$key];
+        }
+        $value = OptionValue::query()->where('option_type_id', $type->id)->whereRaw('LOWER(code) = ?', [Str::lower($label)])->first()
             ?? OptionValue::query()->where('option_type_id', $type->id)->whereHas('translations', fn ($query) => $query->whereRaw('LOWER(name) = ?', [mb_strtolower($label)]))->first();
+        if ($value !== null) {
+            $this->memo['lookups'][$key] = $value;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Nạp sẵn theo lô cho cả file (thay vì vài truy vấn mỗi sản phẩm): sản phẩm theo mã, chủ của SKU, SKU đang dùng barcode.
+     *
+     * @param  list<string>  $codes
+     * @param  list<Closure(string): string>  $cells
+     */
+    private function preload(array $codes, array $cells): void
+    {
+        $this->memo = ['styles' => [], 'sku_owners' => [], 'barcodes' => [], 'lookups' => $this->memo['lookups'] ?? []];
+        foreach (array_chunk($codes, 1000) as $chunk) {
+            foreach (Style::query()->withoutGlobalScopes()->with(['options', 'variants.optionValues'])->whereIn('style_code', $chunk)->get() as $style) {
+                $this->memo['styles'][$style->style_code] = $style;
+            }
+        }
+        $skus = array_values(array_unique(array_filter(array_map(fn (Closure $cell): string => Str::upper($cell('sku')), $cells))));
+        foreach (array_chunk($skus, 1000) as $chunk) {
+            $this->memo['sku_owners'] += Variant::query()->whereIn('sku', $chunk)->pluck('style_id', 'sku')->map(fn ($id): int => (int) $id)->all();
+        }
+        $barcodes = array_values(array_unique(array_filter(array_map(fn (Closure $cell): string => $cell('barcode'), $cells))));
+        foreach (array_chunk($barcodes, 1000) as $chunk) {
+            foreach (Variant::query()->whereIn('barcode', $chunk)->get(['id', 'barcode']) as $variant) {
+                $this->memo['barcodes'][(string) $variant->barcode][] = (int) $variant->id;
+            }
+        }
+    }
+
+    /**
+     * Mã sản phẩm của một dòng (theo cột "Mã sản phẩm" của tiêu đề) — chia lô theo sản phẩm.
+     *
+     * @param  list<string>  $header
+     * @param  list<string>  $row
+     */
+    private function rowCode(array $header, array $row): string
+    {
+        $index = $this->column(array_map(fn (string $cell): string => trim(Str::lower(Str::ascii($cell))), $header), self::COLUMNS['code'][1]);
+
+        return $index === null ? '' : Str::upper(trim((string) ($row[$index] ?? '')));
+    }
+
+    /** Tra cứu lặp lại trong một lượt nhập (thương hiệu, danh mục, loại tuỳ chọn). */
+    private function remember(string $key, Closure $resolve): mixed
+    {
+        if (! array_key_exists($key, $this->memo['lookups'] ?? [])) {
+            $this->memo['lookups'][$key] = $resolve();
+        }
+
+        return $this->memo['lookups'][$key];
     }
 
     private function value(int $typeId, string $label): OptionValue
