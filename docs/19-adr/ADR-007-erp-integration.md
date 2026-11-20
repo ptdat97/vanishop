@@ -1,6 +1,6 @@
 # ADR-007 — ERP Integration (và hoãn vai trò ODO)
 
-- Trạng thái: Accepted · Ngày: 2026-09-28 · Người quyết định: Owner
+- Trạng thái: Accepted · Ngày: 2026-09-28 · Người quyết định: Owner · **Sửa đổi 2026-11-20**: phần ERP đóng băng (mục cuối)
 
 ## Context
 Chưa chốt ERP cụ thể; vai trò ODO (chọn kho, vận đơn, đối soát COD, hàng trả) chưa xác định.
@@ -23,3 +23,9 @@ Thiết kế cứng quanh một ERP/ODO sẽ khiến Core phải sửa khi phạ
 
 ## Trade-offs
 Làm thêm phần fulfillment nội bộ để đổi lấy sự độc lập với quyết định ODO.
+
+## Sửa đổi 2026-11-20 (Owner, rà soát kiến trúc đề xuất 8): đóng băng phần ERP
+
+- Kết nối ngoài đóng băng (chưa có ERP, chưa có đối tác). Module `Integration` (event feed, outbox/inbox, webhook ký HMAC, Integration API) và hợp đồng `Integration\Contracts\Connector`, `InboundHandler` **giữ nguyên code + test**, nhưng **không mở rộng** và **không bảo đảm ổn định**: được đổi/xoá khi Core cần mà không cần deprecation (giai đoạn `dev`, [ADR-048](ADR-048-extension-api-version.md)).
+- Mở lại khi Owner chọn ERP cụ thể: khi đó chốt lại hợp đồng connector cùng ERP đó.
+

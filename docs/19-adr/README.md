@@ -10,7 +10,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [004](ADR-004-extension-points.md) | Extension points: Contract · Event · Hook · Registry + compatibility policy | Accepted |
 | [005](ADR-005-event-driven-integration.md) | Tích hợp hướng sự kiện, bất đồng bộ | Accepted |
 | [006](ADR-006-inventory-authority.md) | Authority tồn kho: ERP giữ tồn vật lý, VaniShop giữ reservation | Accepted |
-| [007](ADR-007-erp-integration.md) | ERP integration qua `ErpConnector` + Integration API; vai trò ODO hoãn | Accepted |
+| [007](ADR-007-erp-integration.md) | ERP integration qua `ErpConnector` + Integration API; vai trò ODO hoãn | Accepted (2026-11-20: phần ERP đóng băng, không bảo đảm API) |
 | [008](ADR-008-multi-brand-model.md) | Mô hình Owner → Legal Entity → Brand; Channel độc lập; một DB | Superseded by 028 |
 | [009](ADR-009-storefront-architecture.md) | Storefront native dùng chung Application layer với API; theme tokens | Accepted (sửa đổi bởi 028) |
 | [010](ADR-010-api-versioning.md) | Ba nhóm API, version theo URL | Accepted |
