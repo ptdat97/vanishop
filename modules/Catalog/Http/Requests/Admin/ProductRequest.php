@@ -14,6 +14,7 @@ use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Support\StoreLocale;
+use Modules\Tenancy\Contracts\Settings;
 
 final class ProductRequest extends FormRequest
 {
@@ -30,7 +31,7 @@ final class ProductRequest extends FormRequest
         $styleId = $style instanceof Style ? $style->id : null;
         $code = strtoupper(trim((string) $this->input('style_code')));
         if ($code === '' && $styleId === null) {
-            $code = ProductIdentifiers::suggestStyleCode();
+            $code = ProductIdentifiers::suggestStyleCode($this->container->make(Settings::class));
         }
         $slug = Str::slug((string) $this->input('slug'));
         $categoryIds = array_values(array_filter((array) $this->input('category_ids', []), 'is_numeric'));

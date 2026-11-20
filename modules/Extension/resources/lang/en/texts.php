@@ -135,7 +135,7 @@ return [
         'today' => 'Today',
     ],
     'setting_groups' => [
-        'store' => ['title' => 'Store', 'description' => 'Maintenance mode, who can see prices, products per page.'],
+        'store' => ['title' => 'Store', 'description' => 'Maintenance mode, who can see prices, products per page, product code suggestions.'],
         'appearance' => ['title' => 'Appearance', 'description' => 'Theme, colours and design tokens, placeholder image for products without images.'],
         'seo' => ['title' => 'SEO & search', 'description' => 'Description and image for shared links, featured search keywords.'],
         'sales' => ['title' => 'Sales & tax', 'description' => 'How the selling price is chosen, tax calculation, guest checkout.'],

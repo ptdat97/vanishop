@@ -4,6 +4,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
 
@@ -13,7 +14,7 @@ require_once __DIR__.'/CatalogTestHelpers.php';
 */
 
 beforeEach(function () {
-    $this->actingAs(T::staff(), 'staff');
+    $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'settings.manage']), 'staff');
     $this->category = T::seed(fn () => Category::factory()->create());
     $this->create = fn (array $overrides = []) => $this->post('/admin/catalog/products', array_replace(
         ['style_code' => '', 'slug' => '', 'status' => 'draft', 'category_ids' => [], 'translations' => ['vi' => ['name' => 'Áo sơ mi Linen']]],
@@ -33,6 +34,22 @@ it('mã gợi ý: chưa có sản phẩm → SP0001; sau đó tăng số cuối 
 
     $this->get('/admin/catalog/products/create')->assertInertia(fn (Assert $page) => $page->where('suggestedStyleCode', 'AO014'));
     $this->get('/admin/catalog/products/'.($this->latest)()->id.'/edit')->assertInertia(fn (Assert $page) => $page->where('suggestedStyleCode', null));
+});
+
+it('có tiền tố trong Admin → Cài đặt → Cửa hàng: tiền tố + số lớn nhất của các mã cùng tiền tố cộng 1, theo số chữ số', function () {
+    app(Settings::class)->set('core', 'catalog.style_code_prefix', 'sp');
+    app(Settings::class)->set('core', 'catalog.style_code_digits', 3);
+    $suggested = fn (): string => $this->get('/admin/catalog/products/create')->viewData('page')['props']['suggestedStyleCode'];
+
+    expect($suggested())->toBe('SP001');
+    foreach (['SP007', 'SPX12', 'AO050'] as $code) {
+        T::product(null, ['style_code' => $code]); // AO050 tạo sau cùng nhưng không cùng tiền tố; SPX12 không phải SP<số>
+    }
+    expect($suggested())->toBe('SP008');
+
+    ($this->create)()->assertSessionHasNoErrors();
+    expect(($this->latest)()->style_code)->toBe('SP008');
+    $this->put('/admin/settings', ['namespace' => 'core', 'values' => ['catalog.style_code_prefix' => 'S P']])->assertSessionHasErrors('values.catalog.style_code_prefix');
 });
 
 it('slug trống → theo tên, không dấu, trùng thì thêm -2; slug gõ có dấu/khoảng trắng → chuẩn hoá; slug trùng do người dùng gõ vẫn báo lỗi', function () {

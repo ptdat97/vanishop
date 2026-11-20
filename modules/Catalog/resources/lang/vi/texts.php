@@ -30,6 +30,10 @@ return [
         'product_search' => 'Tìm kiếm sản phẩm',
         'products' => 'Sản phẩm',
         'shown_products_without_images_product' => 'Hiện thay cho sản phẩm chưa có ảnh (thẻ sản phẩm, Storefront API) và cho vani_image() khi thiếu ảnh. Để trống: khung trống của theme.',
+        'style_code_digits' => 'Số chữ số của mã gợi ý',
+        'style_code_digits_help' => 'Độ dài phần số khi dùng tiền tố, vd. 4 → SP0001.',
+        'style_code_prefix' => 'Tiền tố mã sản phẩm',
+        'style_code_prefix_help' => 'Mã gợi ý khi thêm sản phẩm = tiền tố + số thứ tự, vd. SP → SP0001, SP0002. Để trống: tăng số cuối của mã tạo gần nhất (AO012 → AO013).',
         'view_choose_images_from_media' => 'Xem và chọn ảnh từ Thư viện ảnh',
     ],
     'image_size_controller' => [

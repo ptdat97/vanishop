@@ -46,6 +46,7 @@ use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\SimpleXlsx;
 use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Shared\Support\StoreClock;
+use Modules\Tenancy\Contracts\Settings;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -507,7 +508,7 @@ final class ProductController
             ],
             // Dữ liệu còn thiếu (A4) — danh sách chỉ hiện icon, chi tiết ở đây.
             // Thêm mới: mã gợi ý (ô để trống thì server dùng mã này lúc lưu).
-            'suggestedStyleCode' => $style === null ? ProductIdentifiers::suggestStyleCode() : null,
+            'suggestedStyleCode' => $style === null ? ProductIdentifiers::suggestStyleCode(app(Settings::class)) : null,
             'missing' => $style === null ? [] : array_map(fn (string $key): string => __(AdminQueries::MISSING[$key]), $this->queries->missingData([$style->id])[$style->id] ?? []),
             'product' => $style === null ? null : [
                 'id' => $style->id,

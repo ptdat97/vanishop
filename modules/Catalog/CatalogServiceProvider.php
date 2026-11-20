@@ -18,6 +18,7 @@ use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
+use Modules\Catalog\Application\Products\ProductIdentifiers;
 use Modules\Catalog\Application\Products\ProductImporter;
 use Modules\Catalog\Application\Products\ProductViewCounter;
 use Modules\Catalog\Application\Products\StyleListPrices;
@@ -135,6 +136,14 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', DefaultWeight::SETTING, 'catalog::texts.catalog_service_provider.default_weight_gram', 'int', (int) config('vanishop.fulfillment.default_item_weight_gram', 300),
             help: 'catalog::texts.catalog_service_provider.default_weight_gram_help', rules: ['min:1', 'max:50000'], group: SettingGroup::Inventory,
+        ));
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', ProductIdentifiers::PREFIX_SETTING, 'catalog::texts.catalog_service_provider.style_code_prefix', 'string',
+            help: 'catalog::texts.catalog_service_provider.style_code_prefix_help', rules: ['max:20', 'regex:/^[A-Za-z0-9._-]*$/'], group: SettingGroup::Store,
+        ));
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', ProductIdentifiers::DIGITS_SETTING, 'catalog::texts.catalog_service_provider.style_code_digits', 'int', 4,
+            help: 'catalog::texts.catalog_service_provider.style_code_digits_help', rules: ['min:1', 'max:10'], group: SettingGroup::Store,
         ));
 
         if (! $this->app->routesAreCached()) {

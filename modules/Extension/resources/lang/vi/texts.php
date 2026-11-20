@@ -135,7 +135,7 @@ return [
         'today' => 'Hôm nay',
     ],
     'setting_groups' => [
-        'store' => ['title' => 'Cửa hàng', 'description' => 'Bảo trì cửa hàng, ai được xem giá, số sản phẩm mỗi trang.'],
+        'store' => ['title' => 'Cửa hàng', 'description' => 'Bảo trì cửa hàng, ai được xem giá, số sản phẩm mỗi trang, cách gợi ý mã sản phẩm.'],
         'appearance' => ['title' => 'Giao diện', 'description' => 'Theme, màu và token thiết kế, ảnh thay thế khi sản phẩm chưa có ảnh.'],
         'seo' => ['title' => 'SEO & tìm kiếm', 'description' => 'Mô tả và ảnh khi chia sẻ link, từ khoá tìm kiếm nổi bật.'],
         'sales' => ['title' => 'Bán hàng & thuế', 'description' => 'Cách chọn giá bán, cách tính thuế, mua hàng không cần đăng nhập.'],

@@ -30,6 +30,10 @@ return [
         'product_search' => 'Product search',
         'products' => 'Products',
         'shown_products_without_images_product' => 'Shown for products without images (product cards, Storefront API) and for vani_image() when an image is missing. Leave empty: the theme\'s empty frame.',
+        'style_code_digits' => 'Digits in suggested code',
+        'style_code_digits_help' => 'Length of the number part when a prefix is set, e.g. 4 → SP0001.',
+        'style_code_prefix' => 'Product code prefix',
+        'style_code_prefix_help' => 'Suggested code for new products = prefix + sequence, e.g. SP → SP0001, SP0002. Empty: increment the trailing number of the latest code (AO012 → AO013).',
         'view_choose_images_from_media' => 'View and choose images from the Media library',
     ],
     'image_size_controller' => [

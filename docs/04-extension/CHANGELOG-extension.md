@@ -4,6 +4,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.59 — 2026-11-20 · Extension API 1.17.0 (không đổi)
+
+### Thêm
+- Cách gợi ý mã sản phẩm đặt được ở Admin → Cài đặt → Cửa hàng: `core.catalog.style_code_prefix` (vd. `SP` → `SP0001`, `SP0002`… theo số lớn nhất của các mã `SP<số>`; trống = tăng số cuối của mã gần nhất như trước) và `core.catalog.style_code_digits` (mặc định 4). `ProductIdentifiers::suggestStyleCode(Settings $settings)`.
+
 ## 0.5.58 — 2026-11-20 · Extension API 1.17.0 (không đổi)
 
 Form thêm sản phẩm bớt nhập tay.
