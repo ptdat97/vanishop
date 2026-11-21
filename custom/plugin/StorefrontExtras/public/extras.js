@@ -51,21 +51,6 @@
             .catch(() => {});
     });
 
-    // Trình chiếu: tự chuyển theo data-interval (giây), dừng khi rê chuột/focus; tắt khi "giảm chuyển động".
-    document.querySelectorAll('[data-extras-slideshow]').forEach((show) => {
-        const track = show.querySelector('[data-extras-slides]');
-        const seconds = Number(show.dataset.interval) || 0;
-        if (!track || seconds <= 0 || reduceMotion || track.children.length < 2) return;
-        let paused = false;
-        ['mouseenter', 'focusin'].forEach((type) => show.addEventListener(type, () => (paused = true)));
-        ['mouseleave', 'focusout'].forEach((type) => show.addEventListener(type, () => (paused = false)));
-        setInterval(() => {
-            if (paused || document.hidden) return;
-            const next = Math.round(track.scrollLeft / track.clientWidth) + 1;
-            track.scrollTo({ left: next >= track.children.length ? 0 : next * track.clientWidth, behavior: 'smooth' });
-        }, seconds * 1000);
-    });
-
     // Sản phẩm theo tab: HTML xếp dọc → JS chuyển thành tab.
     document.querySelectorAll('[data-extras-tabs]').forEach((block) => {
         const tabs = [...block.querySelectorAll('[data-extras-tab]')];

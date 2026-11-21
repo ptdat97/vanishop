@@ -56,6 +56,25 @@ beforeEach(function () {
 
 afterEach(fn () => File::deleteDirectory($this->assets));
 
+it('trình chiếu chỉ bật điều hướng khi có nhiều ảnh và dùng thời gian chuyển đã cấu hình', function (int $count, int $interval) {
+    $config = ['interval' => $interval, 'slide_1_image' => '/img/first.jpg'];
+    if ($count > 1) {
+        $config['slide_2_image'] = '/img/second.jpg';
+    }
+
+    $block = app(SlideshowBlock::class);
+    $html = view($block->view(), $block->resolve($config, 'vi'))->render();
+
+    if ($count === 1) {
+        expect($html)->toContain('/img/first.jpg')->not->toContain('data-carousel-next', 'data-carousel=');
+
+        return;
+    }
+
+    $options = ['rewind' => true, 'autoplay' => $interval ? ['delay' => $interval * 1000] : false];
+    expect($html)->toContain('data-carousel-prev', 'data-carousel-next', 'data-carousel="'.e(json_encode($options)).'"');
+})->with([[1, 6], [2, 0], [2, 5]]);
+
 it('Bán chạy: theo số lượng đã bán, bỏ sản phẩm không còn bán, thiếu thì bù sản phẩm mới nhất', function () {
     $hidden = T::product($this->brand->id, ['status' => 'draft']);
     $other = T::product($this->brand->id, ['name' => 'Áo mới']);

@@ -166,7 +166,8 @@ function mountCarousel(Swiper, element, extra = {}) {
         options = {};
     }
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    return new Swiper(element, {
+    if (reduceMotion) options.autoplay = false;
+    const swiper = new Swiper(element, {
         speed: reduceMotion ? 0 : 300,
         watchOverflow: true,
         a11y: { prevSlideMessage: t('carousel_prev'), nextSlideMessage: t('carousel_next') },
@@ -175,6 +176,18 @@ function mountCarousel(Swiper, element, extra = {}) {
         ...options,
         ...extra,
     });
+    if (swiper.autoplay?.running) {
+        const stop = () => swiper.autoplay.stop();
+        const restart = () => {
+            if (!element.matches(':hover, :focus-within') && !swiper.autoplay.running) swiper.autoplay.start();
+        };
+        element.addEventListener('mouseenter', stop);
+        element.addEventListener('mouseleave', restart);
+        element.addEventListener('focusin', stop);
+        element.addEventListener('focusout', () => queueMicrotask(restart));
+        if (element.matches(':hover, :focus-within')) stop();
+    }
+    return swiper;
 }
 
 const carousels = [...document.querySelectorAll('.vani-carousel:not([data-gallery-slider])')];
