@@ -263,6 +263,7 @@ Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân b�
 | `adminTool(resource, key, label, permission, handle, accept, maxKb, help, fields)` | Công cụ tải file ở đầu danh sách (`shipment`, `return`, `payment`, `promotion`, `stock`, `price_list_item`…); Core kiểm quyền/file + audit — Implemented (0.4.59, EP v3 X1) |
 | `adminAction(resource, key, label, permission, handle, scope)` | Nút trên trang chi tiết / chọn nhiều (danh sách đơn); Core kiểm tra quyền + audit — Implemented (0.3.2) |
 | `adminTab(resource, key, label, rows)` | Tab nhãn/giá trị trên trang chi tiết (`order`, `customer`) — Implemented (0.3.2) |
+| `permission:` (tham số tuỳ chọn của `adminFormSection`/`adminColumn`/`adminFilter`/`adminTab`, 0.5.65) | Chỉ nhân viên có quyền mới thấy phần đó (vd. cột giá vốn); không có quyền thì phần form không bị validate/lưu. Plugin không tự kiểm `Gate` trong closure — Implemented |
 | Trường checkout của plugin | Thay cho `checkoutFields()`: client gửi `extra[<plugin id>]` ở đặt hàng → plugin kiểm tra qua `vani.checkout.before_validate` và lưu qua `vani.order.before_create` — Implemented (0.3) |
 | `integrationMessageTypes()` | Loại message tích hợp mới + JSON Schema |
 

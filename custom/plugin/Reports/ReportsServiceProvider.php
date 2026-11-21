@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Plugin\Reports;
 
-use Illuminate\Support\Facades\Gate;
 use Modules\Extension\Contracts\DashboardWidget;
 use Modules\Extension\Contracts\ReportProvider;
 use Modules\Extension\PluginServiceProvider;
@@ -52,9 +51,8 @@ final class ReportsServiceProvider extends PluginServiceProvider
         }
 
         // Tab "Kết quả" trên trang chiến dịch (Promotion → Chiến dịch): ghép số liệu Promotion + Ordering (M3).
-        $this->adminTab('campaign', 'results', 'vani-reports::texts.reports_service_provider.result', rows: fn (int $campaignId): array => Gate::allows(self::PERMISSION)
-            ? $this->app->make(CampaignResults::class)->rows($campaignId)
-            : [['label' => __('vani-reports::texts.reports_service_provider.requires_permission_view_reports'), 'value' => '']]);
+        $this->adminTab('campaign', 'results', 'vani-reports::texts.reports_service_provider.result',
+            rows: fn (int $campaignId): array => $this->app->make(CampaignResults::class)->rows($campaignId), permission: self::PERMISSION);
 
         foreach ([DailySalesReport::class, ProductSalesReport::class, BrandSalesReport::class, PaymentMethodSalesReport::class, ChannelSalesReport::class,
             GrossProfitDailyReport::class, GrossProfitByProductReport::class, ReturnsByProductReport::class, ReturnReasonsReport::class] as $report) {

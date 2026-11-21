@@ -89,7 +89,6 @@ return [
         'quantity_revenue_product_name_time' => 'Quantity and revenue by product (name at the time of ordering).',
     ],
     'reports_service_provider' => [
-        'requires_permission_view_reports' => 'Requires permission to view reports',
         'result' => 'Result',
         'view_sales_reports_revenue_widgets' => 'View sales reports and revenue widgets',
     ],

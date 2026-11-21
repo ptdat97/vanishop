@@ -57,6 +57,27 @@ it('phần mở rộng của plugin chưa bật bị ẩn; cột lỗi bị bỏ
         ->has('products.data', 1)->where('products.data.0.id', $other->id));
 });
 
+it('phần có permission: không có quyền thì cột, bộ lọc, phần form không hiện và phần form không bị validate/lưu', function () {
+    $saved = [];
+    $this->registry->column('product', 'vani.cod', 'cost', 'Giá vốn', fn (array $ids): array => array_fill_keys($ids, '100'), permission: 'pricing.manage');
+    $this->registry->filter('product', 'vani.cod', 'cost', 'Có giá vốn', ['y' => 'Có'], fn (string $value): array => [], permission: 'pricing.manage');
+    $this->registry->section('product', 'vani.cod', 'cost', 'Giá vốn', [FieldDefinition::string('cost', 'Giá vốn', required: true)],
+        load: fn (int $id): array => [], save: function (int $id, array $values) use (&$saved): void {
+            $saved[$id] = $values['cost'];
+        }, permission: 'pricing.manage');
+
+    $this->get('/admin/catalog/products?ext[vani.cod:cost]=y')->assertInertia(fn (Assert $page) => $page
+        ->where('extensions.columns', [])->where('extensions.filters', [])->has('products.data', 1));
+    $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page->where('extensionSections', []));
+    $this->put("/admin/catalog/products/{$this->style->id}", ($this->payload)([]))->assertSessionHasNoErrors();
+    expect($saved)->toBe([]);
+
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'catalog.view', 'catalog.manage', 'pricing.manage'])->create(), 'staff');
+    $this->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page
+        ->where('extensions.columns', [['key' => 'vani.cod:cost', 'label' => 'Giá vốn']]));
+    $this->put("/admin/catalog/products/{$this->style->id}", ($this->payload)([]))->assertSessionHasErrors('extensions.vani-cod.cost.cost');
+});
+
 it('thao tác: kiểm tra quyền, ghi audit, hàng loạt báo số thành công/lỗi, khoá lạ → 404', function () {
     $this->registry->action('product', 'vani.cod', 'sync', 'Đồng bộ', 'catalog.manage', fn (int $id): ?string => $id === 999 ? throw new RuntimeException('x') : null, scope: 'both');
     $this->registry->action('product', 'vani.cod', 'danger', 'Nguy hiểm', 'staff.manage', fn (int $id): ?string => null);

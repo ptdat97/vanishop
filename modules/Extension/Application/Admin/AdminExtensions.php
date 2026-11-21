@@ -52,17 +52,17 @@ final class AdminExtensions implements AdminScreen
      * @param  Closure(int): array<string, mixed>  $load
      * @param  Closure(int, array<string, mixed>): void  $save
      */
-    public function section(string $resource, string $plugin, string $key, string $label, array|Closure $fields, Closure $load, Closure $save, int $order = 500): void
+    public function section(string $resource, string $plugin, string $key, string $label, array|Closure $fields, Closure $load, Closure $save, int $order = 500, ?string $permission = null): void
     {
-        $this->put('section', $resource, $plugin, $key, compact('label', 'fields', 'load', 'save', 'order'));
+        $this->put('section', $resource, $plugin, $key, compact('label', 'fields', 'load', 'save', 'order', 'permission'));
     }
 
     /**
      * @param  Closure(list<int>): array<int, scalar|null>  $resolve
      */
-    public function column(string $resource, string $plugin, string $key, string $label, Closure $resolve, int $order = 500): void
+    public function column(string $resource, string $plugin, string $key, string $label, Closure $resolve, int $order = 500, ?string $permission = null): void
     {
-        $this->put('column', $resource, $plugin, $key, compact('label', 'resolve', 'order'));
+        $this->put('column', $resource, $plugin, $key, compact('label', 'resolve', 'order', 'permission'));
     }
 
     /**
@@ -77,18 +77,18 @@ final class AdminExtensions implements AdminScreen
     /**
      * @param  Closure(int): list<array{label: string, value: string}>  $rows
      */
-    public function tab(string $resource, string $plugin, string $key, string $label, Closure $rows, int $order = 500): void
+    public function tab(string $resource, string $plugin, string $key, string $label, Closure $rows, int $order = 500, ?string $permission = null): void
     {
-        $this->put('tab', $resource, $plugin, $key, compact('label', 'rows', 'order'));
+        $this->put('tab', $resource, $plugin, $key, compact('label', 'rows', 'order', 'permission'));
     }
 
     /**
      * @param  array<string, string>|Closure(): array<string, string>  $options
      * @param  Closure(string): list<int>  $apply  giá trị chọn → id thoả
      */
-    public function filter(string $resource, string $plugin, string $key, string $label, array|Closure $options, Closure $apply, int $order = 500): void
+    public function filter(string $resource, string $plugin, string $key, string $label, array|Closure $options, Closure $apply, int $order = 500, ?string $permission = null): void
     {
-        $this->put('filter', $resource, $plugin, $key, compact('label', 'options', 'apply', 'order'));
+        $this->put('filter', $resource, $plugin, $key, compact('label', 'options', 'apply', 'order', 'permission'));
     }
 
     /**
@@ -107,13 +107,11 @@ final class AdminExtensions implements AdminScreen
     {
         $tools = [];
         foreach ($this->active('tool', $resource) as $item) {
-            if (Gate::allows($item['permission'])) {
-                $tools[] = [
-                    'key' => "{$item['plugin']}:{$item['key']}", 'label' => __($item['label']), 'accept' => $item['accept'], 'max_kb' => $item['maxKb'],
-                    'help' => $item['help'] === null ? null : __($item['help']), 'fields' => $item['fields'],
-                    'url' => route('admin.extensions.tool', ['resource' => $resource, 'plugin' => $item['plugin'], 'key' => $item['key']]),
-                ];
-            }
+            $tools[] = [
+                'key' => "{$item['plugin']}:{$item['key']}", 'label' => __($item['label']), 'accept' => $item['accept'], 'max_kb' => $item['maxKb'],
+                'help' => $item['help'] === null ? null : __($item['help']), 'fields' => $item['fields'],
+                'url' => route('admin.extensions.tool', ['resource' => $resource, 'plugin' => $item['plugin'], 'key' => $item['key']]),
+            ];
         }
 
         return $tools;
@@ -226,7 +224,7 @@ final class AdminExtensions implements AdminScreen
     {
         $actions = [];
         foreach ($this->active('action', $resource) as $item) {
-            if (($item['scope'] === $scope || $item['scope'] === 'both') && Gate::allows($item['permission'])) {
+            if ($item['scope'] === $scope || $item['scope'] === 'both') {
                 $actions[] = [
                     'key' => "{$item['plugin']}:{$item['key']}", 'label' => __($item['label']), 'confirm' => is_string($item['confirm']) ? __($item['confirm']) : $item['confirm'],
                     'url' => route('admin.extensions.action', ['resource' => $resource, 'plugin' => $item['plugin'], 'key' => $item['key']]),
@@ -310,11 +308,15 @@ final class AdminExtensions implements AdminScreen
     }
 
     /**
+     * Phần của plugin đang bật mà nhân viên hiện tại được xem: phần có `permission` chỉ hiện (và form section chỉ được
+     * validate/lưu) khi có quyền đó — học từ slot có permission của Lunar 2.x; plugin không tự kiểm Gate trong closure.
+     *
      * @return list<array<string, mixed>>
      */
     private function active(string $type, string $resource): array
     {
-        $items = array_values(array_filter($this->items[$type], fn (array $item): bool => $item['resource'] === $resource && $this->isActive($item['plugin'])));
+        $items = array_values(array_filter($this->items[$type], fn (array $item): bool => $item['resource'] === $resource && $this->isActive($item['plugin'])
+            && (($item['permission'] ?? null) === null || Gate::allows($item['permission']))));
         usort($items, fn (array $a, array $b): int => [$a['order'], $a['plugin'], $a['key']] <=> [$b['order'], $b['plugin'], $b['key']]);
 
         return $items;

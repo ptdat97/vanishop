@@ -89,7 +89,6 @@ return [
         'quantity_revenue_product_name_time' => 'Số lượng và doanh thu theo sản phẩm (tên tại thời điểm đặt hàng).',
     ],
     'reports_service_provider' => [
-        'requires_permission_view_reports' => 'Cần quyền xem báo cáo',
         'result' => 'Kết quả',
         'view_sales_reports_revenue_widgets' => 'Xem báo cáo bán hàng và widget doanh thu',
     ],

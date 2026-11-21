@@ -445,6 +445,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L37 🟡 0.5.36 (Owner 2026-11-19: CSKH bấm giao trước, COD thu theo từng kiện) | Đặt trước (ADR-047): ✅ "Giao trước phần có hàng" tách vận đơn (`FulfillmentService::split`), COD theo giá trị từng kiện (Payment cộng dồn), `vani.preorder` 1.1.0 chặn theo từng kiện + ô "Đặt trước quá ngày dự kiến". Còn: đặt cọc một phần; đơn quá hạn không tự huỷ (CSKH xử lý từ ô nhắc) | Inventory, Fulfillment, `vani.preorder` | Cọc qua `Payments` khi cần |
 | L47 🟡 (từ stabilization R6, 2026-11-12) | Load test: `scripts/load/storefront.js` (k6) đã theo hợp đồng API-first; đo đọc trên dev bằng ApacheBench đạt NFR. **Chưa** chạy k6 đủ kịch bản (gồm đặt đơn) trên staging — máy dev chưa cài k6, không chạy luồng ghi vào DB dev | Vận hành | Chạy k6 đủ kịch bản trên staging trước go-live ([operations §9](../18-operations/operations.md)) |
 | L48 ❄️ (từ nhật ký slice Notification, 2026-10-13) | Plugin SMS brandname / Zalo ZNS chưa chạy thử với tài khoản sandbox eSMS / OA Zalo thật, chưa đối chiếu mã lỗi nhà cung cấp | `vani.sms-brandname`, `vani.zalo-zns` | Chạy thử khi mở lại kết nối ngoài (đang đóng băng) |
+| L49 (đối chiếu Lunar 2.x, 2026-11-21) | Lý do huỷ đơn là chữ tự nhập (đổi trả đã có danh mục lý do chỉnh trong Admin): không thống kê được huỷ theo lý do (khách đổi ý, bom hàng, hết hàng…), plugin không thêm được lý do | Ordering | Danh mục lý do huỷ như `return_reasons` (Admin chỉnh, plugin đăng ký thêm), giữ ô ghi chú tự do; báo cáo huỷ theo lý do |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

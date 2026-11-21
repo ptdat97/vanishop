@@ -17,6 +17,10 @@ Học từ Lunar 2.x (step list, modifier theo giai đoạn): ghi rõ và kiểm
 - `vani:flows {flow?}`: các bước của luồng theo thứ tự chạy thật — bước Core, calculator/validator (Core hay plugin, priority), hook kèm listener (priority, plugin đang tắt), cột "Trong transaction"; exit 1 khi bước hook trong transaction chưa khai `transaction: true`. Luồng: `checkout.quote`, `checkout.place_order`. Module mô tả luồng qua service contract `Extension\Contracts\Flows` + `Data\FlowStep` (giữa module, không phải API cho plugin). Thứ tự hook trong mô tả được test đối chiếu với lần xem trước/đặt hàng thật (`CheckoutFlowsTest`).
 - `TotalsPipeline::steps()`: một nguồn thứ tự cho cả lúc chạy và `vani:flows`. Doctor `totals_calculator_priority`: calculator của plugin có priority ngoài 300–399 (`TotalsPipeline::PLUGIN_PRIORITIES`) hoặc trùng mã → cảnh báo.
 - `HookManager::listeners(string $hook)`: listener theo thứ tự chạy (plugin, priority).
+- Tham số tuỳ chọn `permission` cho `adminFormSection`/`adminColumn`/`adminFilter`/`adminTab` (`PluginServiceProvider`, `AdminExtensions`): không có quyền → phần đó không hiện; phần form không bị validate/lưu. Kiểm quyền gom vào một chỗ (thao tác, công cụ dùng chung). `vani.reports` 1.3.4: tab "Kết quả" của chiến dịch dùng `permission:` — nhân viên không có quyền xem báo cáo không thấy tab (trước: tab hiện dòng "Cần quyền xem báo cáo").
+
+### Đối chiếu, không cần làm
+- Tồn kho theo sổ biến động, giữ hàng có hạn (`vani:inventory:release-expired` mỗi phút), đối soát (`vani:inventory:verify` hằng ngày), `InventoryStrategy`/`BackorderPolicy`: đã có, tương đương Lunar 2.x. Đơn đã tách trạng thái đơn / thanh toán / giao / đổi trả. Lý do huỷ đơn dạng danh mục: backlog L49.
 
 ## 0.5.64 — 2026-11-20 · Extension API 1.21.0 (không đổi)
 

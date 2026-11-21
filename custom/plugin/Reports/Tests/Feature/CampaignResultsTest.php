@@ -71,5 +71,6 @@ it('tính cả đơn chỉ hưởng giá sale của bảng giá chiến dịch; 
     ]);
 
     $this->actingAs(T::staff(['admin.access', 'promotion.view', 'promotion.manage', 'pricing.manage']), 'staff');
-    expect(($this->results)($campaign))->toBe(['Cần quyền xem báo cáo' => '']);
+    // Không có quyền xem báo cáo: tab không hiện (permission của adminTab).
+    expect(($this->results)($campaign))->toBe([]);
 });

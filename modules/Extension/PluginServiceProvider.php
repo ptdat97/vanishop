@@ -146,19 +146,21 @@ abstract class PluginServiceProvider extends ServiceProvider
      * @param  Closure(int): array<string, mixed>  $load  id → giá trị hiện tại
      * @param  Closure(int, array<string, mixed>): void  $save
      */
-    protected function adminFormSection(string $resource, string $key, string $label, array|Closure $fields, Closure $load, Closure $save, int $order = 500): void
+    protected function adminFormSection(string $resource, string $key, string $label, array|Closure $fields, Closure $load, Closure $save, int $order = 500, ?string $permission = null): void
     {
-        $this->app->make(AdminExtensions::class)->section($resource, $this->pluginId(), $key, $label, $fields, $load, $save, $order);
+        $this->app->make(AdminExtensions::class)->section($resource, $this->pluginId(), $key, $label, $fields, $load, $save, $order, $permission);
     }
 
     /**
-     * Cột trên trang danh sách. `resolve` nhận cả trang id (batch) và trả id => giá trị.
+     * Cột trên trang danh sách. `resolve` nhận cả trang id (batch) và trả id => giá trị. `permission`: chỉ nhân viên có
+     * quyền đó thấy cột (vd. giá vốn) — áp cho cả form section, tab, bộ lọc; không có quyền thì phần đó không hiện,
+     * form section không bị validate/lưu.
      *
      * @param  Closure(list<int>): array<int, scalar|null>  $resolve
      */
-    protected function adminColumn(string $resource, string $key, string $label, Closure $resolve, int $order = 500): void
+    protected function adminColumn(string $resource, string $key, string $label, Closure $resolve, int $order = 500, ?string $permission = null): void
     {
-        $this->app->make(AdminExtensions::class)->column($resource, $this->pluginId(), $key, $label, $resolve, $order);
+        $this->app->make(AdminExtensions::class)->column($resource, $this->pluginId(), $key, $label, $resolve, $order, $permission);
     }
 
     /**
@@ -177,9 +179,9 @@ abstract class PluginServiceProvider extends ServiceProvider
      *
      * @param  Closure(int): list<array{label: string, value: string}>  $rows
      */
-    protected function adminTab(string $resource, string $key, string $label, Closure $rows, int $order = 500): void
+    protected function adminTab(string $resource, string $key, string $label, Closure $rows, int $order = 500, ?string $permission = null): void
     {
-        $this->app->make(AdminExtensions::class)->tab($resource, $this->pluginId(), $key, $label, $rows, $order);
+        $this->app->make(AdminExtensions::class)->tab($resource, $this->pluginId(), $key, $label, $rows, $order, $permission);
     }
 
     /**
@@ -188,9 +190,9 @@ abstract class PluginServiceProvider extends ServiceProvider
      * @param  array<string, string>|Closure(): array<string, string>  $options
      * @param  Closure(string): list<int>  $apply
      */
-    protected function adminFilter(string $resource, string $key, string $label, array|Closure $options, Closure $apply, int $order = 500): void
+    protected function adminFilter(string $resource, string $key, string $label, array|Closure $options, Closure $apply, int $order = 500, ?string $permission = null): void
     {
-        $this->app->make(AdminExtensions::class)->filter($resource, $this->pluginId(), $key, $label, $options, $apply, $order);
+        $this->app->make(AdminExtensions::class)->filter($resource, $this->pluginId(), $key, $label, $options, $apply, $order, $permission);
     }
 
     /**
