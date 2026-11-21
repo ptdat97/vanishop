@@ -9,4 +9,5 @@ return [
     'previous' => '← Trước',
     'see_all' => 'Xem tất cả',
     'shop_look' => 'Xem thêm tại :name',
+    'view_product' => 'Xem sản phẩm :name',
 ];

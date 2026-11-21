@@ -2,7 +2,7 @@
     "openapi": "3.1.0",
     "info": {
         "title": "vani.lookbook — Storefront API",
-        "version": "1.1.1",
+        "version": "1.2.0",
         "description": "Bộ ảnh thời trang. Kiểm bằng Modules\\Extension\\Testing\\StorefrontApiContract trong test của plugin (plugin-system §10b)."
     },
     "servers": [
@@ -33,7 +33,7 @@
                 "summary": "Chi tiết lookbook",
                 "responses": {
                     "200": {
-                        "description": "Lookbook kèm ảnh.",
+                        "description": "Lookbook kèm ảnh và các liên kết sản phẩm đang hiển thị của từng ảnh.",
                         "content": {
                             "application/json": {
                                 "schema": {

@@ -109,6 +109,73 @@ it('bản tiếng Anh dùng tên đã dịch; thiếu bản dịch thì hiện t
     $this->get('/lookbook/'.$lookbook->slug)->assertOk()->assertDontSee('data-lookbook-category', false);
 });
 
+it('gắn sản phẩm theo từng ảnh và giữ thứ tự, chỉ hiện sản phẩm đang bán trên Blade và API theo locale', function () {
+    $coat = T::product(null, [
+        'style_code' => 'LOOK-COAT',
+        'slug' => 'ao-khoac',
+        'translations' => ['vi' => ['name' => 'Áo khoác len'], 'en' => ['name' => 'Wool coat', 'slug' => 'wool-coat']],
+    ]);
+    $scarf = T::product(null, ['name' => 'Khăn len', 'slug' => 'khan-len']);
+    $retired = T::product(null, ['name' => 'Mẫu ngừng bán']);
+    $photos = [lookbookMedia('coat.jpg'), lookbookMedia('scarf.jpg'), lookbookMedia('plain.jpg')];
+    $payload = [
+        'translations' => ['vi' => ['name' => 'Phối đồ mùa đông'], 'en' => ['name' => 'Winter outfits']],
+        'images' => [
+            ['media_id' => $photos[0]->id, 'product_ids' => [$scarf->id, $retired->id, $coat->id, $scarf->id]],
+            ['media_id' => $photos[1]->id, 'product_ids' => [$scarf->id]],
+            ['media_id' => $photos[2]->id],
+        ],
+        'active' => true,
+    ];
+    $this->getJson("{$this->admin}/products?q=LOOK-COAT")->assertOk()->assertJsonPath('data.0.value', (string) $coat->id);
+    $this->post($this->admin, $payload)->assertSessionHasNoErrors();
+    $lookbook = Lookbook::query()->sole();
+    expect($lookbook->images->pluck('product_ids')->all())->toBe([[$scarf->id, $retired->id, $coat->id], [$scarf->id], null]);
+    $this->get("{$this->admin}/{$lookbook->id}")->assertInertia(fn (Assert $page) => $page
+        ->where('lookbook.images.0.products.0.label', 'Khăn len')->where('lookbook.images.1.products.0.value', (string) $scarf->id));
+
+    $web = '/lookbook/'.$lookbook->slug;
+    $api = '/api/storefront/v1/x/vani-lookbook/lookbooks/'.$lookbook->slug;
+    $this->getJson($api)->assertJsonPath('data.images.0.products.1.name', 'Mẫu ngừng bán');
+    T::seed(fn () => $retired->update(['status' => 'draft']));
+
+    $html = $this->get('/en'.$web)->assertOk()->assertDontSee('Mẫu ngừng bán')
+        ->assertSee('aria-label="View product Wool coat"', false)->getContent();
+    expect(substr_count($html, 'data-lookbook-product-markers'))->toBe(2)
+        ->and(substr_count($html, 'data-lookbook-products'))->toBe(2);
+    $response = Api::assertResponse($this->getJson($api, ['X-Vani-Locale' => 'en']), dirname(__DIR__, 2), '/lookbooks/{slug}', 'GET')
+        ->assertOk()->assertJsonCount(2, 'data.images.0.products')
+        ->assertJsonPath('data.images.0.products.0.name', 'Khăn len')
+        ->assertJsonPath('data.images.0.products.1.name', 'Wool coat')
+        ->assertJsonPath('data.images.1.products.0.name', 'Khăn len')
+        ->assertJsonPath('data.images.2.products', []);
+    $coatUrl = $response->json('data.images.0.products.1.url');
+    expect($coatUrl)->toBe(vani_route('storefront.product', 'wool-coat', 'en'))
+        ->and(substr_count($html, 'href="'.e($coatUrl).'"'))->toBe(2);
+
+    $this->put("{$this->admin}/{$lookbook->id}", [
+        ...$payload,
+        'lock_version' => 0,
+        'images' => [['media_id' => $photos[0]->id], ['media_id' => $photos[1]->id, 'product_ids' => []]],
+    ])->assertSessionHasNoErrors();
+    expect($lookbook->fresh()->images->pluck('product_ids')->all())->toBe([[$scarf->id, $retired->id, $coat->id], null]);
+});
+
+it('từ chối danh sách sản phẩm vượt giới hạn hoặc sai kiểu và không cho người chỉ có quyền xem tìm sản phẩm', function () {
+    $photo = lookbookMedia();
+    $this->post($this->admin, [
+        'translations' => ['vi' => ['name' => 'Phối đồ']],
+        'images' => [
+            ['media_id' => $photo->id, 'product_ids' => range(1, Lookbooks::MAX_PRODUCTS_PER_IMAGE + 1)],
+            ['media_id' => $photo->id, 'product_ids' => [0]],
+        ],
+    ])->assertSessionHasErrors(['images.0.product_ids', 'images.1.product_ids.0']);
+    expect(Lookbook::query()->exists())->toBeFalse();
+
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'lookbook.view'])->create(), 'staff')
+        ->getJson("{$this->admin}/products?q=coat")->assertForbidden();
+});
+
 it('không có lookbook đang bật → sitemap không có trang lookbook', function () {
     ($this->save)(['active' => false]);
 

@@ -1,9 +1,13 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
+use Modules\Catalog\Application\Media\MediaLibrary;
+use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -17,6 +21,7 @@ use Modules\Storefront\Testing\StorefrontBlockContract;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\BannerGridBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\BestsellersBlock;
+use Plugin\StorefrontExtras\Infrastructure\Blocks\CategoryGridBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\FeaturesBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\MarkdownBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\ProductTabsBlock;
@@ -34,7 +39,7 @@ StorefrontBlockContract::define('vani.storefront-extras slideshow', fn () => app
 StorefrontBlockContract::define('vani.storefront-extras banner grid', fn () => app(BannerGridBlock::class), config: ['layout' => '3', 'cell_1_image' => '/img/a.jpg', 'cell_2_image' => '/img/b.jpg']);
 StorefrontBlockContract::define('vani.storefront-extras product tabs', fn () => app(ProductTabsBlock::class), config: ['tab_1_label' => 'Mới', 'tab_1_source' => 'newest']);
 StorefrontBlockContract::define('vani.storefront-extras features', fn () => app(FeaturesBlock::class), config: ['item_1_icon' => 'truck', 'item_1_title' => 'Giao nhanh']);
-StorefrontBlockContract::define('vani.storefront-extras category grid', fn () => app(\Plugin\StorefrontExtras\Infrastructure\Blocks\CategoryGridBlock::class), config: ['title' => 'Danh mục']);
+StorefrontBlockContract::define('vani.storefront-extras category grid', fn () => app(CategoryGridBlock::class), config: ['title' => 'Danh mục']);
 StorefrontBlockContract::define('vani.storefront-extras markdown', fn () => app(MarkdownBlock::class), config: ['body' => '**Chào**']);
 
 beforeEach(function () {
@@ -124,4 +129,42 @@ it('lưới banner: ô lớn (bố cục 1 ô, ô đầu của bố cục 3 ô) 
         [true, [1152, 1, 1], '#'],
         [false, [1152, 2, 1], '#'],
     ])->and(app(BannerGridBlock::class)->resolve(['layout' => '1', 'cell_1_image' => '/img/a.jpg'], 'vi')['cells'][0]['wide'])->toBeTrue();
+});
+
+it('lưới danh mục trang chủ giữ thứ tự đã chọn trên Blade và API, bỏ danh mục ẩn hoặc bị xoá', function () {
+    Storage::fake('public');
+    [$coats, $dresses, $hidden, $deleted, $imageUrl] = T::seed(function (): array {
+        $coats = Category::factory()->create(['slug' => 'ao-khoac', 'position' => 1]);
+        $coats->syncTranslations(['vi' => ['name' => 'Áo khoác'], 'en' => ['name' => 'Coats', 'slug' => 'coats']]);
+        $library = app(MediaLibrary::class);
+        $image = $library->store(UploadedFile::fake()->image('coats.jpg', 800, 600));
+        $library->attachSingle($coats, 'image', $image);
+        $dresses = Category::factory()->create(['slug' => 'dam', 'position' => 2]);
+        $dresses->syncTranslations(['vi' => ['name' => 'Đầm'], 'en' => ['name' => 'Dresses', 'slug' => 'dresses']]);
+        $hidden = Category::factory()->create(['slug' => 'mua-cu']);
+        $deleted = Category::factory()->create(['slug' => 'da-xoa']);
+
+        app(PageBlocks::class)->saveHome([['type' => 'extras_category_grid', 'config' => [
+            'category_1' => (string) $dresses->id,
+            'category_2' => (string) $hidden->id,
+            'category_3' => (string) $coats->id,
+            'category_4' => (string) $deleted->id,
+        ]]]);
+
+        return [$coats, $dresses, $hidden, $deleted, $image->url()];
+    });
+    T::seed(function () use ($hidden, $deleted): void {
+        $hidden->update(['status' => 'hidden']);
+        $deleted->delete();
+    });
+
+    $this->getJson('/api/storefront/v1/pages/home', ['X-Vani-Locale' => 'en'])->assertOk()
+        ->assertJsonPath('data.0.type', 'extras_category_grid')
+        ->assertJsonCount(2, 'data.0.data.categories')
+        ->assertJsonPath('data.0.data.categories.0', ['id' => $dresses->id, 'slug' => 'dresses', 'name' => 'Dresses', 'image_url' => null])
+        ->assertJsonPath('data.0.data.categories.1', ['id' => $coats->id, 'slug' => 'coats', 'name' => 'Coats', 'image_url' => $imageUrl]);
+    $html = $this->get('/en')->assertOk()->assertSeeInOrder(['Dresses', 'Coats'])->getContent();
+    $grid = str($html)->after('data-block="extras_category_grid"')->before('</section>')->toString();
+    expect($grid)->toContain(vani_route('storefront.category', 'dresses', 'en'), vani_route('storefront.category', 'coats', 'en'), 'src="'.e($imageUrl).'"', 'viewBox="0 0 48 48"')
+        ->and(substr_count($grid, 'data-category-card'))->toBe(2);
 });

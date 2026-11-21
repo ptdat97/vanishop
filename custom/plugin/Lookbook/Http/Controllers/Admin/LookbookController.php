@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Plugin\Lookbook\Http\Controllers\Admin;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -15,6 +16,7 @@ use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Shared\Support\StoreLocale;
 use Plugin\Lookbook\Infrastructure\Lookbooks;
 use Plugin\Lookbook\Persistence\Lookbook;
+use Plugin\Lookbook\Persistence\LookbookImage;
 
 /**
  * Admin → Nội dung → Lookbook (đặc tả §3.2): danh sách, tạo/sửa/xoá; ảnh chọn từ Thư viện ảnh.
@@ -90,24 +92,47 @@ final class LookbookController
         return redirect()->route('admin.plugins.vani-lookbook.index')->with('success', __('vani-lookbook::texts.lookbook_controller.lookbook_deleted'));
     }
 
+    public function products(Request $request): JsonResponse
+    {
+        Gate::authorize('lookbook.manage');
+        $validated = $request->validate(['q' => ['nullable', 'string', 'max:120']]);
+        $products = $this->catalog->search('product', $validated['q'] ?? '', StoreLocale::default());
+
+        return response()->json(['data' => array_map(fn (array $product): array => [
+            'value' => (string) $product['id'],
+            'label' => $product['name'].($product['visible'] ? '' : __('vani-lookbook::texts.lookbook_controller.hidden')),
+        ], $products)]);
+    }
+
     private function form(?Lookbook $lookbook): Response
     {
+        $locale = StoreLocale::default();
         $ids = $lookbook === null ? [] : [...$lookbook->images->pluck('media_id')->all(), ...($lookbook->cover_media_id === null ? [] : [$lookbook->cover_media_id])];
         $media = $ids === [] ? [] : $this->media->find(array_values(array_unique($ids)));
+        $productIds = $lookbook?->images->flatMap(fn (LookbookImage $image): array => $image->product_ids ?? [])->unique()->values()->all() ?? [];
+        $products = $this->catalog->visible('product', $productIds, $locale);
 
         return Inertia::render('Lookbook::Form', [
             'lookbook' => $lookbook === null ? null : [
                 'id' => $lookbook->id, 'slug' => $lookbook->slug, 'translations' => $lookbook->translations,
                 'cover' => $lookbook->cover_media_id === null ? null : ['id' => $lookbook->cover_media_id, 'url' => ($media[$lookbook->cover_media_id] ?? null)?->urlFor(400)],
-                'images' => $lookbook->images->map(fn ($image): array => ['media_id' => $image->media_id, 'alt' => (object) ($image->alt ?? []), 'thumb_url' => ($media[$image->media_id] ?? null)?->urlFor(160)])->all(),
+                'images' => $lookbook->images->map(fn (LookbookImage $image): array => [
+                    'media_id' => $image->media_id, 'alt' => (object) ($image->alt ?? []), 'thumb_url' => ($media[$image->media_id] ?? null)?->urlFor(160),
+                    'products' => array_map(fn (int $id): array => [
+                        'value' => (string) $id,
+                        'label' => $products[$id]['name'] ?? "#{$id}".__('vani-lookbook::texts.lookbook_controller.hidden'),
+                    ], $image->product_ids ?? []),
+                ])->all(),
                 'category_id' => $lookbook->category_id, 'position' => $lookbook->position, 'active' => $lookbook->active, 'lock_version' => $lookbook->lock_version,
                 'public_url' => $lookbook->active ? vani_route('storefront.p.vani-lookbook.show', $lookbook->slug) : null,
             ],
-            'categories' => array_map(fn (array $category): array => ['value' => $category['id'], 'label' => $category['name'].($category['visible'] ? '' : __('vani-lookbook::texts.lookbook_controller.hidden'))], $this->catalog->search('category', '', StoreLocale::default(), 200)),
+            'categories' => array_map(fn (array $category): array => ['value' => $category['id'], 'label' => $category['name'].($category['visible'] ? '' : __('vani-lookbook::texts.lookbook_controller.hidden'))], $this->catalog->search('category', '', $locale, 200)),
             'urls' => [
                 'index' => route('admin.plugins.vani-lookbook.index'),
                 'save' => $lookbook === null ? route('admin.plugins.vani-lookbook.store') : route('admin.plugins.vani-lookbook.update', $lookbook->id),
+                'products' => route('admin.plugins.vani-lookbook.products'),
             ],
+            'max_products_per_image' => Lookbooks::MAX_PRODUCTS_PER_IMAGE,
             'can' => ['manage' => Gate::allows('lookbook.manage')],
         ]);
     }
@@ -129,6 +154,8 @@ final class LookbookController
             'images.*.media_id' => ['required', 'integer', 'min:1'],
             'images.*.alt' => ['nullable', 'array'],
             'images.*.alt.*' => ['nullable', 'string', 'max:200'],
+            'images.*.product_ids' => ['sometimes', 'array', 'list', 'max:'.Lookbooks::MAX_PRODUCTS_PER_IMAGE],
+            'images.*.product_ids.*' => ['required', 'integer', 'min:1'],
         ];
         foreach (StoreLocale::supported() as $locale) {
             $rules["translations.{$locale}.name"] = ['nullable', 'string', 'max:160'];

@@ -1,17 +1,23 @@
+let pendingListing;
+
 /** Trang danh sách (tìm kiếm, danh mục, thương hiệu, lọc, phân trang) không tải lại: lấy HTML (trang cache được), thay vùng [data-vani-listing]. */
 export async function listing(url, { push = true } = {}) {
+    pendingListing?.abort();
     const current = document.querySelector('[data-vani-listing]');
     if (!current) {
         window.location.href = url;
         return;
     }
+    const request = new AbortController();
+    pendingListing = request;
     current.setAttribute('aria-busy', 'true');
     try {
-        const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'text/html' } });
+        const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'text/html' }, signal: request.signal });
         if (!response.ok) throw new Error(String(response.status));
         const page = new DOMParser().parseFromString(await response.text(), 'text/html');
         const next = page.querySelector('[data-vani-listing]');
         if (!next) throw new Error('no listing');
+        if (request.signal.aborted) return;
         current.replaceWith(next);
         const heading = page.querySelector('h1');
         if (heading && document.querySelector('h1')) document.querySelector('h1').textContent = heading.textContent;
@@ -20,7 +26,9 @@ export async function listing(url, { push = true } = {}) {
         next.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
         document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: next } }));
     } catch {
-        window.location.href = url;
+        if (!request.signal.aborted) window.location.href = url;
+    } finally {
+        if (pendingListing === request) pendingListing = undefined;
     }
 }
 

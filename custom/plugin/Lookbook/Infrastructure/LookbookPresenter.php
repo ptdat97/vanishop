@@ -9,6 +9,7 @@ use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Shared\Support\StoreLocale;
 use Plugin\Lookbook\Persistence\Lookbook;
+use Plugin\Lookbook\Persistence\LookbookImage;
 
 /**
  * Dữ liệu lookbook cho storefront (Blade + Storefront API) theo ngôn ngữ, ảnh tra lại URL lúc hiển thị (theo lô).
@@ -48,6 +49,8 @@ final class LookbookPresenter
         $description = $lookbook->text('description', $locale);
         $category = $lookbook->category_id === null ? null : ($this->catalog->visible('category', [$lookbook->category_id], $locale)[$lookbook->category_id] ?? null);
         $cover = $media[$this->coverId($lookbook) ?? 0] ?? null;
+        $productIds = $lookbook->images->flatMap(fn (LookbookImage $image): array => $image->product_ids ?? [])->unique()->values()->all();
+        $products = $this->catalog->visible('product', $productIds, $locale);
 
         return [
             'slug' => $lookbook->slug, 'name' => $name,
@@ -60,6 +63,10 @@ final class LookbookPresenter
                 'srcset' => $media[$image->media_id]->srcset() ?: null,
                 'alt' => (string) ($image->alt[$locale] ?? $image->alt[StoreLocale::default()] ?? $name),
                 'width' => $media[$image->media_id]->width, 'height' => $media[$image->media_id]->height,
+                'products' => array_values(array_map(
+                    fn (int $id): array => ['name' => $products[$id]['name'], 'url' => vani_route('storefront.product', $products[$id]['slug'], $locale)],
+                    array_intersect($image->product_ids ?? [], array_keys($products)),
+                )),
             ])->values()->all(),
             // Danh mục gắn đã ẩn/xoá → không có link (tiêu chí §8.6).
             'category' => $category === null ? null : ['name' => $category['name'], 'url' => vani_route('storefront.category', $category['slug'], $locale)],

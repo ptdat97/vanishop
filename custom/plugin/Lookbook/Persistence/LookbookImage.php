@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $lookbook_id
  * @property int $media_id
  * @property array<string, string|null>|null $alt
+ * @property list<int>|null $product_ids
  * @property int $position
  */
 final class LookbookImage extends Model
@@ -23,6 +24,6 @@ final class LookbookImage extends Model
 
     protected function casts(): array
     {
-        return ['media_id' => 'integer', 'alt' => 'array', 'position' => 'integer'];
+        return ['media_id' => 'integer', 'alt' => 'array', 'product_ids' => 'array', 'position' => 'integer'];
     }
 }

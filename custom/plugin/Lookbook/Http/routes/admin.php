@@ -5,6 +5,7 @@ use Plugin\Lookbook\Http\Controllers\Admin\LookbookController;
 
 Route::get('/', [LookbookController::class, 'index'])->name('index');
 Route::get('create', [LookbookController::class, 'create'])->name('create');
+Route::get('products', [LookbookController::class, 'products'])->name('products');
 Route::post('/', [LookbookController::class, 'store'])->name('store');
 Route::get('{lookbook}', [LookbookController::class, 'edit'])->whereNumber('lookbook')->name('edit');
 Route::put('{lookbook}', [LookbookController::class, 'update'])->whereNumber('lookbook')->name('update');

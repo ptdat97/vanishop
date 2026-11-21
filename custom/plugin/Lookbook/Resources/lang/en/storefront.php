@@ -9,4 +9,5 @@ return [
     'previous' => '← Previous',
     'see_all' => 'See all',
     'shop_look' => 'Shop :name',
+    'view_product' => 'View product :name',
 ];

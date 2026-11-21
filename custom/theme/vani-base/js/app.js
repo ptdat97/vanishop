@@ -1,21 +1,10 @@
+import { createCart, dispatchCartChange, dispatchInlineCartChange, updateCartCount } from './cart.js';
 import { createIcons, Heart, House, LayoutGrid, Menu, Search, ShoppingBag, Sparkles, UserRound } from 'lucide';
 import { listing, mountListingNavigation } from './listing.js';
-import { mountMobileCategoryNav } from './mobile-category-nav.js';
+import { mountAccountMenu, mountDialogs, mountSearchSuggestions } from './header.js';
+import { createSession } from './session.js';
 
-const accountMenuRoot = document.querySelector('[data-vani-account-menu-root]');
-if (accountMenuRoot) {
-    Promise.all([import('vue'), import('./AccountMenuDropdown.vue')])
-        .then(([{ createApp }, { default: AccountMenuDropdown }]) => {
-            const links = accountMenuRoot.querySelector('[data-vani-account-menu-links]');
-            if (!links) return;
-
-            createApp(AccountMenuDropdown, {
-                label: accountMenuRoot.dataset.label ?? '',
-                linksHtml: links.outerHTML,
-            }).mount(accountMenuRoot);
-        })
-        .catch((error) => console.error('Không thể tải menu tài khoản.', error));
-}
+mountAccountMenu();
 
 /*
  * Đảo tương tác của vani-base (ADR-025): HTML render sẵn ở server (SEO, hiển thị nhanh), JS gắn tương tác.
@@ -54,171 +43,14 @@ const urls = (() => {
 })();
 // Trang giỏ đầy đủ (0.3.94): JSON trả thêm `page_html` để thay vùng này.
 const cartPage = document.querySelector('[data-vani-cart-page]');
-let csrfToken = null;
-let sessionLoaded;
-const sessionReady = new Promise((resolve) => {
-    sessionLoaded = resolve;
-});
+const session = createSession({ urls, cartPage, t });
+const { request, auth } = session;
 
-/** Token CSRF: có sẵn khi trang không cache; trang cache CDN chờ /_vani/phien (tối đa 3 giây), không có thì tự gọi. */
-async function csrf(refresh = false) {
-    if (csrfToken && !refresh) return csrfToken;
-    if (!refresh) await Promise.race([sessionReady, new Promise((resolve) => setTimeout(resolve, 3000))]);
-    if ((!csrfToken || refresh) && urls.session) {
-        const session = await fetch(urls.session, { credentials: 'same-origin', headers: { Accept: 'application/json' } }).then((response) => (response.ok ? response.json() : null));
-        csrfToken = session?.csrf_token ?? csrfToken;
-    }
-    return csrfToken ?? '';
-}
-
-async function request(method, url, data = null, retried = false) {
-    const headers = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
-    if (cartPage) headers['X-Vani-Cart-View'] = 'page';
-    let body;
-    if (method !== 'GET') {
-        headers['X-CSRF-TOKEN'] = await csrf();
-        if (data instanceof FormData) {
-            body = data;
-        } else {
-            headers['Content-Type'] = 'application/json';
-            body = JSON.stringify(data ?? {});
-        }
-    }
-    const response = await fetch(url, { method, headers, body, credentials: 'same-origin' });
-    // Phiên hết hạn (419): lấy token mới, thử lại một lần.
-    if (response.status === 419 && !retried) {
-        await csrf(true);
-        return request(method, url, data, true);
-    }
-    const json = await response.json().catch(() => ({}));
-    if (!response.ok) {
-        const error = new Error(json.message || json.error?.message || t('request_failed'));
-        error.status = response.status;
-        error.errors = json.errors || {};
-        error.code = json.error?.code ?? null;
-        throw error;
-    }
-    if (json.csrf_token) csrfToken = json.csrf_token;
-    return json;
-}
-
-const lineUrl = (template, lineId) => String(template || '').replace('987654321', encodeURIComponent(lineId));
 const firstError = (error, field) => (error.errors?.[field] || [])[0] || error.message;
 
-const dialogOpeners = new WeakMap();
-document.addEventListener('click', (event) => {
-    if (!(event.target instanceof Element)) return;
-    const opener = event.target.closest('[data-vani-drawer-open], [data-vani-modal-open]');
-    if (opener) {
-        const dialogId = opener.dataset.vaniDrawerOpen || opener.dataset.vaniModalOpen;
-        const dialog = document.getElementById(dialogId);
-        if (dialog instanceof HTMLDialogElement && !dialog.open) {
-            event.preventDefault();
-            dialogOpeners.set(dialog, opener);
-            dialog.showModal();
-            // Menu di động: tải danh mục (Storefront API) ở lần mở đầu; lỗi thì lần mở sau thử lại.
-            if (dialog.matches('[data-vani-mobile-menu-dialog]')) {
-                mountMobileCategoryNav(dialog.querySelector('[data-vani-category-nav]'));
-            }
-        }
-        return;
-    }
+mountDialogs();
 
-    const closeButton = event.target.closest('[data-vani-drawer-close]');
-    if (closeButton) {
-        closeButton.closest('dialog.vani-drawer')?.close();
-        return;
-    }
-
-    const modalCloseButton = event.target.closest('[data-vani-modal-close]');
-    if (modalCloseButton) {
-        modalCloseButton.closest('dialog.vani-modal')?.close();
-        return;
-    }
-
-    if (event.target instanceof HTMLDialogElement && event.target.matches('.vani-drawer, .vani-modal')) {
-        event.target.close();
-    }
-});
-document.addEventListener('close', (event) => {
-    if (!(event.target instanceof HTMLDialogElement) || !event.target.matches('.vani-drawer, .vani-modal')) return;
-    dialogOpeners.get(event.target)?.focus();
-    dialogOpeners.delete(event.target);
-}, true);
-
-// Có thể có nhiều nhãn số món (header + thanh điều hướng dưới của menu di động).
-function updateCartCount(count) {
-    document.querySelectorAll('[data-vani-cart-count]').forEach((badge) => {
-        badge.textContent = count > 0 ? String(count) : '';
-        badge.hidden = !(count > 0);
-    });
-}
-
-const offcanvas = document.querySelector('[data-vani-offcanvas-cart]');
-const offcanvasBody = offcanvas?.querySelector('[data-vani-mini-cart-body]');
-let cartOpener = null;
-
-/** Áp trạng thái giỏ từ server: nhãn số món, nội dung giỏ mini, sự kiện cho plugin. */
-function applyCart(state) {
-    updateCartCount(state.count ?? 0);
-    if (offcanvasBody && typeof state.html === 'string') {
-        offcanvasBody.innerHTML = state.html; // HTML do Blade render (đã escape) — không chứa dữ liệu thô từ client.
-        offcanvasBody.setAttribute('aria-busy', 'false');
-        document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: offcanvasBody } }));
-    }
-    if (cartPage && typeof state.page_html === 'string') {
-        // Giữ chỗ focus (ô số lượng, ô chọn…) sau khi thay HTML.
-        const focusedId = document.activeElement && cartPage.contains(document.activeElement) ? document.activeElement.id : '';
-        cartPage.innerHTML = state.page_html; // HTML do Blade render (đã escape).
-        if (focusedId) document.getElementById(focusedId)?.focus();
-        document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: cartPage } }));
-    }
-    dispatchCartChange(state.change);
-    document.dispatchEvent(new CustomEvent('vani:cart', { detail: state }));
-    return state;
-}
-
-function showCartMessage(text) {
-    const box = offcanvas?.querySelector('[data-vani-cart-message]');
-    if (!box) return;
-    box.textContent = text || '';
-    box.classList.toggle('hidden', !text);
-}
-
-const cart = {
-    get: () => request('GET', urls.cart).then(applyCart),
-    add: (variantId, quantity = 1, options = {}, extra = {}) => request('POST', urls.cart_add, { variant_id: variantId, quantity, options, ...extra }).then(applyCart),
-    update: (lineId, quantity) => request('POST', lineUrl(urls.cart_line, lineId), { quantity }).then(applyCart),
-    remove: (lineId) => request('POST', lineUrl(urls.cart_remove, lineId)).then(applyCart),
-    select: (lineIds) => request('POST', urls.cart_select, { lines: lineIds }).then(applyCart),
-    applyVoucher: (code) => request('POST', urls.cart_voucher, { code }).then(applyCart),
-    removeVoucher: () => request('POST', urls.cart_voucher, { code: '' }).then(applyCart),
-    /** Mở giỏ mini; `state` (kết quả add…) có sẵn thì không tải lại. */
-    open(state = null) {
-        if (!offcanvas) {
-            window.location.href = urls.cart;
-            return Promise.resolve(null);
-        }
-        if (!offcanvas.open) {
-            cartOpener = document.activeElement;
-            offcanvas.showModal();
-        }
-        showCartMessage(state?.message ?? '');
-        if (state) return Promise.resolve(applyCart(state));
-        offcanvasBody?.setAttribute('aria-busy', 'true');
-        return cart.get().catch(() => {
-            window.location.href = urls.cart;
-        });
-    },
-    close() {
-        offcanvas?.close();
-    },
-};
-
-const auth = {
-    login: (email, password) => request('POST', urls.login_authenticate, { email, password }),
-    logout: () => request('POST', urls.logout),
-};
+const { cart, mountCartPage, mountMiniCart, mountProductCart } = createCart({ urls, request, cartPage, firstError });
 
 const search = {
     suggest: (query) =>
@@ -480,69 +312,7 @@ document.querySelectorAll('form[data-variant-form]').forEach((form) => {
     });
 });
 
-// Giỏ: đổi số lượng thì gửi luôn.
-// Trang giỏ đầy đủ (0.3.94): sửa số lượng, xoá dòng, chọn dòng, mã giảm giá qua window.vani.cart — server trả `page_html`,
-// thay vùng [data-vani-cart-page] (không tải lại trang). Gắn sự kiện ở vùng bao ngoài vì nội dung bên trong được thay.
-if (cartPage) {
-    const run = async (action) => {
-        const error = cartPage.querySelector('[data-vani-cart-error]');
-        if (error) error.hidden = true;
-        cartPage.setAttribute('aria-busy', 'true');
-        try {
-            const state = await action();
-            const status = document.querySelector('[data-vani-flash="status"]');
-            if (status && state?.message) {
-                status.textContent = state.message;
-                status.hidden = false;
-            }
-        } catch (failure) {
-            // Tải lại trạng thái giỏ (số lượng trên ô có thể đã đổi tay) rồi báo lỗi tại chỗ.
-            await cart.get().catch(() => {});
-            const field = failure.errors?.code ? 'code' : Object.keys(failure.errors || {})[0];
-            const target = field === 'code' ? cartPage.querySelector('[data-cart-voucher-error]') : cartPage.querySelector('[data-vani-cart-error]');
-            if (target) {
-                target.textContent = field ? firstError(failure, field) : failure.message;
-                target.hidden = false;
-            }
-        } finally {
-            cartPage.setAttribute('aria-busy', 'false');
-        }
-    };
-    const selectedLines = () => [...cartPage.querySelectorAll('[data-select-line]')].filter((input) => input.checked && !input.disabled).map((input) => Number(input.dataset.line));
-
-    cartPage.addEventListener('change', (event) => {
-        const target = event.target;
-        if (target.matches('[data-autosubmit][data-line]')) {
-            const quantity = Math.max(0, Number.parseInt(target.value, 10) || 0);
-            run(() => (quantity === 0 ? cart.remove(Number(target.dataset.line)) : cart.update(Number(target.dataset.line), quantity)));
-        } else if (target.matches('[data-select-all]')) {
-            cartPage.querySelectorAll('[data-select-line]').forEach((input) => {
-                if (!input.disabled) input.checked = target.checked;
-            });
-            run(() => cart.select(selectedLines()));
-        } else if (target.matches('[data-select-line]')) {
-            run(() => cart.select(selectedLines()));
-        }
-    });
-    cartPage.addEventListener('submit', (event) => {
-        const form = event.target;
-        if (form.matches('[data-cart-remove-form]')) {
-            event.preventDefault();
-            run(() => cart.remove(Number(form.dataset.line)));
-        } else if (form.matches('[data-cart-update-form]')) {
-            event.preventDefault();
-            const quantity = Math.max(0, Number.parseInt(String(new FormData(form).get('quantity') ?? ''), 10) || 0);
-            run(() => (quantity === 0 ? cart.remove(Number(form.dataset.line)) : cart.update(Number(form.dataset.line), quantity)));
-        } else if (form.matches('[data-cart-voucher-form]')) {
-            event.preventDefault();
-            const code = String(new FormData(form).get('code') ?? '').trim();
-            run(() => (code === '' ? cart.removeVoucher() : cart.applyVoucher(code)));
-        } else if (form.id === 'cart-selection') {
-            event.preventDefault();
-            run(() => cart.select(selectedLines()));
-        }
-    });
-}
+mountCartPage();
 
 /** Chữ thường, bỏ dấu tiếng Việt (đ → d) — so khớp "phuong ben thanh" với "Phường Bến Thành". */
 const LETTER_D_STROKE = new RegExp(String.fromCharCode(0x111), 'gi'); // đ/Đ
@@ -686,87 +456,9 @@ document.querySelectorAll('form[data-confirm]').forEach((form) => {
     });
 });
 
-// Trang cache được (không phiên, storefront §5): lấy phần riêng của khách — đăng nhập, số món trong giỏ, thông báo/lỗi
-// của lần gửi trước.
-/**
- * Sự kiện trình duyệt khi giỏ đổi (0.3.43) — plugin (đo quảng cáo…) nghe `document.addEventListener('vani:cart-updated', …)`.
- * detail: { action: 'add' | 'remove', variant_id, sku, name, quantity, unit_amount, currency }.
- */
-function dispatchCartChange(change) {
-    if (change) {
-        document.dispatchEvent(new CustomEvent('vani:cart-updated', { detail: change }));
-    }
-}
-const inlineCartChange = document.querySelector('script[data-vani-cart-change]');
-if (inlineCartChange) {
-    try {
-        dispatchCartChange(JSON.parse(inlineCartChange.textContent || 'null'));
-    } catch {
-        // dữ liệu hỏng: bỏ qua
-    }
-}
+dispatchInlineCartChange();
 
-// Ô tìm kiếm: gợi ý sản phẩm, danh mục, thương hiệu khi gõ ≥ 2 ký tự (Storefront API). Dựng bằng DOM, không chèn HTML.
-document.querySelectorAll('form[data-vani-suggest]').forEach((form) => {
-    const input = form.querySelector('input[name="q"]');
-    const box = form.querySelector('[data-vani-suggest-box]');
-    if (!input || !box) return;
-    let timer;
-    let controller;
-    const group = (title, items, render) => {
-        if (!items.length) return [];
-        const heading = document.createElement('p');
-        heading.className = 'px-2 pt-2 text-xs font-medium uppercase text-slate-500';
-        heading.textContent = title;
-        return [heading, ...items.map(render)];
-    };
-    const link = (item, label) => {
-        const anchor = document.createElement('a');
-        anchor.href = item.url;
-        anchor.className = 'flex items-center gap-2 rounded px-2 py-1.5 hover:bg-slate-100';
-        if (item.image_url) {
-            const image = document.createElement('img');
-            image.src = item.image_url;
-            image.alt = '';
-            image.className = 'h-8 w-8 rounded object-cover';
-            anchor.append(image);
-        }
-        anchor.append(document.createTextNode(label ?? item.name ?? ''));
-        return anchor;
-    };
-    const close = () => {
-        box.hidden = true;
-        box.replaceChildren();
-    };
-    input.addEventListener('input', () => {
-        clearTimeout(timer);
-        const query = input.value.trim();
-        if (query.length < 2) return close();
-        timer = setTimeout(() => {
-            controller?.abort();
-            controller = new AbortController();
-            fetch(`${form.dataset.vaniSuggest}?${new URLSearchParams({ q: query })}`, { headers: { Accept: 'application/json', 'X-Vani-Locale': form.dataset.locale || '' }, signal: controller.signal })
-                .then((response) => (response.ok ? response.json() : null))
-                .then((json) => {
-                    const data = json?.data;
-                    if (!data) return close();
-                    const nodes = [
-                        ...group(t('suggest_products'), data.products, (item) => link(item)),
-                        ...group(t('suggest_categories'), data.categories, (item) => link(item)),
-                        ...group(t('suggest_brands'), data.brands, (item) => link(item)),
-                    ];
-                    if (!nodes.length) return close();
-                    const all = link({ url: data.search_url }, t('suggest_all'));
-                    all.classList.add('mt-1', 'border-t', 'border-slate-100', 'font-medium');
-                    box.replaceChildren(...nodes, all);
-                    box.hidden = false;
-                })
-                .catch(() => {});
-        }, 200);
-    });
-    input.addEventListener('keydown', (event) => event.key === 'Escape' && close());
-    document.addEventListener('click', (event) => !form.contains(event.target) && close());
-});
+mountSearchSuggestions(t);
 
 // Trang sản phẩm: beacon lượt xem + "Đã xem gần đây" (§3.5-2). Danh sách chỉ ở trình duyệt (tối đa 30 mẫu — khối "Đã xem" của plugin đọc chung).
 const recent = document.querySelector('[data-vani-recently-viewed]');
@@ -826,207 +518,13 @@ if (recent) {
     }
 }
 
-/**
- * Phần riêng của khách (storefront §5): không CDN thì layout nhúng sẵn `script[data-vani-session-state]`; trang cache CDN
- * lấy từ /_vani/phien (thêm flash + cart_change). Cùng một hàm áp dụng → hai chế độ hiển thị như nhau.
- */
-function applySession(session) {
-    if (!session) return;
-    // Cho plugin (0.3.76): đọc `window.vaniSession` hoặc nghe `vani:session` — signed_in, csrf_token, cart…
-    window.vaniSession = session;
-    if (session.csrf_token) csrfToken = session.csrf_token;
-    sessionLoaded(session);
-    document.dispatchEvent(new CustomEvent('vani:session', { detail: session }));
-    dispatchCartChange(session.cart_change);
-    document.querySelectorAll('[data-vani-account]').forEach((account) => {
-        account.setAttribute('aria-label', session.account.label);
-        account.setAttribute('title', session.account.label);
-        account.setAttribute('href', session.account.url);
-    });
-    if (session.cart.count > 0) updateCartCount(session.cart.count);
-    const status = document.querySelector('[data-vani-flash="status"]');
-    if (status && session.flash?.status) {
-        status.textContent = session.flash.status;
-        status.hidden = false;
-    }
-    // Cửa hàng ẩn giá với khách chưa đăng nhập: HTML cache luôn là bản "Đăng nhập để xem giá" → điền giá cho khách đã đăng nhập.
-    const hiddenPrices = [...document.querySelectorAll('[data-vani-price-for]')];
-    if (session.signed_in && hiddenPrices.length && session.prices_url) {
-        const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['style_ids[]', id]));
-        // Storefront API bằng phiên cùng nguồn (ADR-044): trình duyệt gửi Sec-Fetch-Site: same-origin.
-        fetch(`${session.prices_url}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-            .then((response) => (response.ok ? response.json() : null))
-            .then((json) => {
-                const data = json?.data;
-                hiddenPrices.forEach((el) => {
-                    const price = data?.products?.[el.dataset.vaniPriceFor];
-                    if (!price) return;
-                    const span = document.createElement('span');
-                    span.className = 'font-semibold text-primary';
-                    span.textContent = price.max.amount !== price.min.amount ? `${price.min.formatted} – ${price.max.formatted}` : price.min.formatted;
-                    el.replaceWith(span);
-                });
-            })
-            .catch(() => {});
-    }
-    const memberPrice = document.querySelector('[data-vani-member-price]');
-    const variantIds = [...document.querySelectorAll('input[name="variant_id"], select[name="variant_id"] option')].map((input) => input.value);
-    if (session.signed_in && memberPrice && variantIds.length) {
-        const query = new URLSearchParams(variantIds.map((id) => ['variant_ids[]', id]));
-        fetch(`${memberPrice.dataset.route}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-            .then((response) => (response.ok ? response.json() : null))
-            .then((json) => {
-                const data = json?.data;
-                const prices = Object.values(data?.prices || {});
-                if (!prices.length) return;
-                const lowest = prices.reduce((min, price) => (price.amount < min.amount ? price : min));
-                memberPrice.textContent = t(prices.length < variantIds.length ? 'member_price_from' : 'member_price', { group: data.group ?? t('member'), price: lowest.formatted });
-                memberPrice.hidden = false;
-            })
-            .catch(() => {});
-    }
-    Object.entries(session.flash?.errors || {}).forEach(([field, message]) => {
-        const target = document.querySelector(`[data-vani-error-for="${field}"]`) || document.querySelector('[data-vani-error-for="business"]');
-        if (target && message) {
-            target.textContent = message;
-            target.hidden = false;
-        }
-    });
-}
+session.mount({ updateCartCount, dispatchCartChange });
 
-const inlineSession = document.querySelector('script[data-vani-session-state]');
-if (inlineSession) {
-    try {
-        applySession(JSON.parse(inlineSession.textContent || 'null'));
-    } catch {
-        // dữ liệu hỏng: bỏ qua
-    }
-}
+mountMiniCart();
 
-const sessionUrl = document.documentElement.dataset.vaniSession;
-if (sessionUrl) {
-    fetch(sessionUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-        .then((response) => (response.ok ? response.json() : null))
-        .then(applySession)
-        .catch(() => {});
-}
+mountProductCart();
 
-// ── Giỏ mini offcanvas (0.3.93) ─────────────────────────────────────────────────────────────────────────────────────
-if (offcanvas) {
-    document.querySelectorAll('[data-vani-cart-open]').forEach((link) =>
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-            cart.open();
-        }),
-    );
-    offcanvas.addEventListener('close', () => {
-        showCartMessage('');
-        cartOpener?.focus?.();
-    });
-    // Bấm nền tối (ngoài khung) → đóng.
-    offcanvas.addEventListener('click', (event) => {
-        if (event.target === offcanvas) cart.close();
-    });
-
-    const busy = async (action) => {
-        offcanvasBody?.setAttribute('aria-busy', 'true');
-        offcanvasBody?.querySelectorAll('button, input').forEach((element) => (element.disabled = true));
-        try {
-            const state = await action();
-            showCartMessage(state?.message ?? '');
-        } catch (error) {
-            showCartMessage('');
-            // Lỗi theo trường (mã giảm giá…) hiện tại chỗ; lỗi khác: tải lại nội dung giỏ rồi báo.
-            if (error.errors?.code) {
-                await cart.get().catch(() => {});
-                const target = offcanvasBody?.querySelector('[data-cart-voucher-error]');
-                if (target) {
-                    target.textContent = firstError(error, 'code');
-                    target.hidden = false;
-                }
-                return;
-            }
-            await cart.get().catch(() => {});
-            showCartMessage(firstError(error, 'quantity'));
-        }
-    };
-
-    offcanvas.addEventListener('click', (event) => {
-        const quantity = event.target.closest('[data-cart-quantity]');
-        const remove = event.target.closest('[data-cart-remove]');
-        if (event.target.closest('[data-cart-close]')) {
-            cart.close();
-        } else if (quantity) {
-            busy(() => cart.update(Number(quantity.dataset.line), Number(quantity.dataset.quantity)));
-        } else if (remove) {
-            busy(() => cart.remove(Number(remove.dataset.line)));
-        }
-    });
-    offcanvas.addEventListener('submit', (event) => {
-        const form = event.target.closest('form[data-cart-voucher-form]');
-        if (!form) return;
-        event.preventDefault();
-        const code = String(new FormData(form).get('code') ?? '').trim();
-        busy(() => (code === '' ? cart.removeVoucher() : cart.applyVoucher(code)));
-    });
-}
-
-// Trang sản phẩm: "Thêm vào giỏ" không tải lại trang → mở giỏ mini; "Mua ngay" → checkout. Lỗi lạ (vd. cửa hàng ẩn giá cần
-// đăng nhập): gửi form như thường để server chuyển hướng.
-document.querySelectorAll('form[data-variant-form]').forEach((form) => {
-    form.addEventListener('submit', async (event) => {
-        if (!urls.cart_add || form.dataset.vaniSubmitting) return;
-        event.preventDefault();
-        const submitter = event.submitter;
-        const data = new FormData(form);
-        if (submitter?.name) data.append(submitter.name, submitter.value);
-        const error = form.querySelector('[data-vani-error-for="variant_id"]');
-        if (error) error.hidden = true;
-        submitter?.setAttribute('aria-busy', 'true');
-        try {
-            const state = await request('POST', urls.cart_add, data);
-            if (state.redirect) {
-                window.location.href = state.redirect;
-                return;
-            }
-            cart.open(state);
-        } catch (failure) {
-            if (failure.status === 422 && error) {
-                error.textContent = firstError(failure, Object.keys(failure.errors)[0] ?? 'variant_id');
-                error.hidden = false;
-                return;
-            }
-            form.dataset.vaniSubmitting = '1';
-            if (submitter?.name) {
-                const hidden = Object.assign(document.createElement('input'), { type: 'hidden', name: submitter.name, value: submitter.value });
-                form.append(hidden);
-            }
-            form.submit();
-        } finally {
-            submitter?.removeAttribute('aria-busy');
-        }
-    });
-});
-
-// Đăng nhập email + mật khẩu không tải lại trang: thành công → về trang trước đó (hoặc tài khoản).
-const loginForm = document.querySelector('form[data-vani-login]');
-if (loginForm) {
-    const errorBox = loginForm.querySelector('[data-vani-form-error]');
-    loginForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (errorBox) errorBox.hidden = true;
-        const data = new FormData(loginForm);
-        try {
-            const result = await auth.login(String(data.get('email') ?? ''), String(data.get('password') ?? ''));
-            window.location.href = result.redirect;
-        } catch (error) {
-            if (errorBox) {
-                errorBox.textContent = firstError(error, 'business') || firstError(error, 'email') || firstError(error, 'password');
-                errorBox.hidden = !errorBox.textContent;
-            }
-        }
-    });
-}
+session.mountLoginForm(firstError);
 
 mountListingNavigation();
 

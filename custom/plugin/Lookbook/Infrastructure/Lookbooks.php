@@ -22,10 +22,12 @@ final class Lookbooks
 
     public const MAX_IMAGES = 60;
 
+    public const MAX_PRODUCTS_PER_IMAGE = 6;
+
     public function __construct(private readonly MediaDirectory $media) {}
 
     /**
-     * @param  array{lock_version?: ?int, slug?: ?string, translations: array<string, array<string, ?string>>, cover_media_id?: ?int, category_id?: ?int, position?: ?int, active?: bool, images?: list<array{media_id: int, alt?: array<string, ?string>}>}  $data
+     * @param  array{lock_version?: ?int, slug?: ?string, translations: array<string, array<string, ?string>>, cover_media_id?: ?int, category_id?: ?int, position?: ?int, active?: bool, images?: list<array{media_id: int, alt?: array<string, ?string>, product_ids?: list<int>}>}  $data
      */
     public function save(?Lookbook $lookbook, array $data): Lookbook
     {
@@ -72,10 +74,16 @@ final class Lookbooks
                 'position' => (int) ($data['position'] ?? 0), 'active' => (bool) ($data['active'] ?? false),
             ])->save();
 
-            LookbookImage::query()->where('lookbook_id', $lookbook->id)->delete();
+            $existingImages = $lookbook->images()->pluck('product_ids', 'media_id');
+            $lookbook->images()->delete();
             foreach ($images as $position => $image) {
                 $alt = array_filter(array_map(fn (mixed $value): ?string => is_string($value) && trim($value) !== '' ? mb_substr(trim($value), 0, 200) : null, (array) ($image['alt'] ?? [])));
-                LookbookImage::query()->create(['lookbook_id' => $lookbook->id, 'media_id' => (int) $image['media_id'], 'alt' => $alt === [] ? null : $alt, 'position' => $position]);
+                $productIds = array_values(array_unique(array_map('intval', $image['product_ids'] ?? $existingImages->get($image['media_id']) ?? [])));
+                LookbookImage::query()->create([
+                    'lookbook_id' => $lookbook->id, 'media_id' => (int) $image['media_id'],
+                    'alt' => $alt === [] ? null : $alt, 'position' => $position,
+                    'product_ids' => $productIds === [] ? null : $productIds,
+                ]);
             }
 
             $this->media->syncUsages(self::OWNER, $lookbook->id, 'gallery', array_map(fn (array $image): int => (int) $image['media_id'], $images));
