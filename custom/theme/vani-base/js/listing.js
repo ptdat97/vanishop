@@ -18,7 +18,11 @@ export async function listing(url, { push = true } = {}) {
         const next = page.querySelector('[data-vani-listing]');
         if (!next) throw new Error('no listing');
         if (request.signal.aborted) return;
+        const filtersWereOpen = current.querySelector('#vani-listing-filters')?.open;
         current.replaceWith(next);
+        if (filtersWereOpen) {
+            next.querySelector('[data-vani-drawer-open="vani-listing-filters"]')?.focus({ preventScroll: true });
+        }
         const heading = page.querySelector('h1');
         if (heading && document.querySelector('h1')) document.querySelector('h1').textContent = heading.textContent;
         document.title = page.title || document.title;
@@ -33,17 +37,6 @@ export async function listing(url, { push = true } = {}) {
 }
 
 export function mountListingNavigation() {
-    const sidebarLayout = window.matchMedia('(min-width: 768px)');
-    const syncFilters = () => {
-        const disclosure = document.querySelector('[data-vani-filter-disclosure]');
-        if (disclosure) disclosure.open = sidebarLayout.matches;
-    };
-    syncFilters();
-    sidebarLayout.addEventListener('change', syncFilters);
-    document.addEventListener('vani:content-updated', (event) => {
-        if (event.detail?.element?.matches('[data-vani-listing]')) syncFilters();
-    });
-
     // Danh sách sản phẩm: lọc và phân trang không tải lại trang (link thường cho SEO; mở tab mới/ctrl+click giữ nguyên).
     document.addEventListener('click', (event) => {
         const link = event.target.closest('[data-vani-listing] a[href]');

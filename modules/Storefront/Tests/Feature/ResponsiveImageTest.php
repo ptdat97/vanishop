@@ -36,7 +36,7 @@ it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã
         ->and($media->url(400, 'product'))->toEndWith('-w400h600c.jpg')
         ->and($media->srcset())->toEndWith($media->url().' 1000w') // ảnh thường giữ tỉ lệ, có ảnh gốc
         ->and($html)->toContain('srcset="'.e($srcset).'"')
-        ->and($html)->toContain('sizes="(min-width: 896px) 299px, (min-width: 768px) 34vw, 50vw"');
+        ->and($html)->toContain('sizes="(min-width: 1152px) 288px, (min-width: 768px) 25vw, 50vw"');
 
     $this->getJson('/api/storefront/v1/products')->assertOk()->assertJsonPath('data.0.image_srcset', $srcset);
 });

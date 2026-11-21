@@ -97,11 +97,28 @@ it('bố cục theo chiều rộng giữ trang vừa màn hình và bộ lọc �
             $page->resize($width, 844)->assertNoJavaScriptErrors();
             expect(mobilePageMetrics($page)['overflow'])->toBeLessThanOrEqual(0, "{$path} ({$width}px): cuộn ngang");
             if ($path === '/danh-muc/dam') {
-                $page->assertScript("document.querySelector('[data-vani-filter-disclosure]').open", $width >= 768);
+                $page->assertVisible('[data-vani-drawer-open="vani-listing-filters"]')
+                    ->assertScript("document.querySelector('#vani-listing-filters').open", false);
             }
         }
     }
 });
+
+it('mở bộ lọc bằng bàn phím và trả focus về nút lọc sau khi chọn thương hiệu', function (int $width) {
+    $trigger = '[data-vani-drawer-open="vani-listing-filters"]';
+    $page = visit('/tim-kiem')->resize($width, 844);
+    $page->keys($trigger, 'Enter')
+        ->assertVisible('#vani-listing-filters[open]')
+        ->keys('#vani-listing-filters [data-vani-drawer-close]', 'Escape')
+        ->assertScript("document.activeElement?.dataset.vaniDrawerOpen === 'vani-listing-filters'", true)
+        ->keys($trigger, 'Enter')
+        ->keys('#vani-listing-filters [data-filter="brand"] a', 'Enter')
+        ->assertSee('Bỏ tất cả bộ lọc')
+        ->assertScript("document.activeElement?.dataset.vaniDrawerOpen === 'vani-listing-filters'", true)
+        ->click($trigger)
+        ->assertVisible('#vani-listing-filters [data-filter="brand"] a[aria-current="true"]')
+        ->assertNoJavaScriptErrors();
+})->with([375, 1280]);
 
 it('trang chủ mặc định và trang chủ có khối thương hiệu đều dành kích thước cho logo', function (bool $configured) {
     T::seed(function () use ($configured): void {
