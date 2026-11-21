@@ -34,6 +34,7 @@ StorefrontBlockContract::define('vani.storefront-extras slideshow', fn () => app
 StorefrontBlockContract::define('vani.storefront-extras banner grid', fn () => app(BannerGridBlock::class), config: ['layout' => '3', 'cell_1_image' => '/img/a.jpg', 'cell_2_image' => '/img/b.jpg']);
 StorefrontBlockContract::define('vani.storefront-extras product tabs', fn () => app(ProductTabsBlock::class), config: ['tab_1_label' => 'Mới', 'tab_1_source' => 'newest']);
 StorefrontBlockContract::define('vani.storefront-extras features', fn () => app(FeaturesBlock::class), config: ['item_1_icon' => 'truck', 'item_1_title' => 'Giao nhanh']);
+StorefrontBlockContract::define('vani.storefront-extras category grid', fn () => app(\Plugin\StorefrontExtras\Infrastructure\Blocks\CategoryGridBlock::class), config: ['title' => 'Danh mục']);
 StorefrontBlockContract::define('vani.storefront-extras markdown', fn () => app(MarkdownBlock::class), config: ['body' => '**Chào**']);
 
 beforeEach(function () {

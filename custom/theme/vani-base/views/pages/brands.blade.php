@@ -19,7 +19,7 @@
                     <li data-vani-motion-item>
                         <a href="{{ vani_route('storefront.brand', $brand['slug']) }}" class="block rounded-[var(--radius-theme)] border border-slate-200 p-4 text-center" data-vani-motion-hover>
                             @if ($brand['logo_url'])
-                                <img src="{{ $brand['logo_url'] }}" alt="" class="mx-auto mb-2 max-h-12" loading="lazy">
+                                <img src="{{ $brand['logo_url'] }}" alt="" width="112" height="48" class="mx-auto mb-2 w-28 h-12 max-w-full object-contain" loading="lazy">
                             @endif
                             {{ $brand['name'] }}
                         </a>

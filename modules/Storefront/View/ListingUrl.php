@@ -30,6 +30,22 @@ final class ListingUrl
         return self::url($request, [...$request->query(), 'page' => $page]);
     }
 
+    public static function clearFilters(Request $request, bool $onBrandPage): ?string
+    {
+        $query = $request->query();
+        $filters = ['opt', 'attr', 'price_min', 'price_max'];
+        if (! $onBrandPage) {
+            $filters[] = 'brand';
+        }
+        $remaining = array_diff_key($query, array_flip($filters));
+        if ($remaining === $query) {
+            return null;
+        }
+        unset($remaining['page']);
+
+        return self::url($request, $remaining);
+    }
+
     public static function active(Request $request, string $key, string $value): bool
     {
         return in_array($value, self::values($request, $key), true);

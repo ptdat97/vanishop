@@ -82,6 +82,23 @@ it('link lọc theo thuộc tính lọc đúng và bỏ chọn được (link th
         ->assertSee('href="'.e(url('/tim-kiem')).'"  aria-current="true"', false);
 });
 
+it('bỏ toàn bộ bộ lọc từ kết quả rỗng, giữ từ khoá và cách sắp xếp, quay về trang đầu', function () {
+    $url = '/tim-kiem?q=Urbanx&sort=newest';
+    $this->get($url.'&opt[size]=XL&attr[material]=silk&brand=lumiere&price_min=100&page=2')
+        ->assertSeeText('Không có sản phẩm phù hợp.')
+        ->assertSee('XL')
+        ->assertSee('href="'.e(url('/tim-kiem?q=Urbanx&sort=newest&opt%5Bsize%5D=XL&attr%5Bmaterial%5D=silk&brand=lumiere')).'" aria-label="Bỏ lọc Giá từ', false)
+        ->assertSee('href="'.e(url($url)).'">Bỏ tất cả bộ lọc', false);
+
+    $this->get($url)->assertSeeText('Áo thun Urbanx')->assertDontSeeText('Bỏ tất cả bộ lọc');
+});
+
+it('giữ trang thương hiệu khi bỏ lọc và chỉ hiện thao tác khi khách lọc thêm', function () {
+    $this->get('/thuong-hieu/lumiere')->assertDontSeeText('Bỏ tất cả bộ lọc');
+    $this->get('/thuong-hieu/lumiere?opt[size]=XL')
+        ->assertSee('href="'.url('/thuong-hieu/lumiere').'">Bỏ tất cả bộ lọc', false);
+});
+
 it('lọc theo size: sản phẩm có biến thể đang bán thuộc size đã chọn; nhiều size là OR; facet theo thứ tự size, đếm bỏ qua chính nhóm size', function () {
     // Đầm: S, M — Áo: M, L (cùng một bản ghi size M); thêm size XL chỉ có ở biến thể đã ngừng bán của áo.
     T::seed(function () {

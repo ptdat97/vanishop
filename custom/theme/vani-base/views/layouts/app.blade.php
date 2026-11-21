@@ -38,6 +38,7 @@
     <x-vani::hook-slot name="vani.storefront.layout.head" :wrap="false" />
 </head>
 <body class="min-h-screen bg-surface font-sans text-slate-900 antialiased">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded focus:bg-white focus:px-4 focus:py-2">{{ __('theme::layout.skip_to_content') }}</a>
     <x-vani::hook-slot name="vani.storefront.layout.body_start" />
     {{-- Đầu & chân trang do cửa hàng nhập theo schema `settings` trong theme.json (Admin → Giao diện → Đầu & chân trang). --}}
     @if ($shell['announcement'])
@@ -144,7 +145,7 @@
     ])
     <x-vani::hook-slot name="vani.storefront.layout.header.after" />
 
-    <main class="mx-auto container px-4 py-6">
+    <main id="main-content" tabindex="-1" class="mx-auto container px-4 py-6">
         <x-vani::hook-slot name="vani.storefront.layout.main.before" />
         @include('theme::partials.notification', ['pageCache' => $pageCache])
 

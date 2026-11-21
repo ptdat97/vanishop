@@ -5,6 +5,8 @@ return [
     'browse_categories' => 'Xem danh mục',
     'by_letter' => 'Theo chữ cái',
     'categories_intro' => 'Chọn danh mục để khám phá những sản phẩm phù hợp.',
+    'remove_filter' => 'Bỏ lọc :filter',
+    'clear_filters' => 'Bỏ tất cả bộ lọc',
     'clear_price_filter' => 'Bỏ lọc giá',
     'could_not_load_categories' => 'Không tải được danh mục.',
     'explore_categories' => 'Khám phá danh mục',

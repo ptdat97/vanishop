@@ -5,6 +5,8 @@ return [
     'browse_categories' => 'Browse categories',
     'by_letter' => 'By letter',
     'categories_intro' => 'Choose a category to discover products that are right for you.',
+    'remove_filter' => 'Remove filter :filter',
+    'clear_filters' => 'Clear all filters',
     'clear_price_filter' => 'Clear price filter',
     'could_not_load_categories' => 'Could not load categories.',
     'explore_categories' => 'Explore categories',

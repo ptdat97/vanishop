@@ -64,7 +64,17 @@
 
     <section>
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-            <p class="text-slate-500">{{ trans_choice('theme::catalog.product_count', $listing['total'], ['count' => $listing['total']]) }}</p>
+            <div class="flex flex-wrap items-center gap-3">
+                <p class="text-slate-500">{{ trans_choice('theme::catalog.product_count', $listing['total'], ['count' => $listing['total']]) }}</p>
+                @foreach ($listingView['active_filters'] as $chip)
+                    <a href="{{ $chip['url'] }}" aria-label="{{ __('theme::catalog.remove_filter', ['filter' => $chip['label']]) }}" class="rounded-full border px-3 py-1">
+                        {{ $chip['label'] }} <span aria-hidden="true">×</span>
+                    </a>
+                @endforeach
+                @if ($listingView['clear_filters_url'])
+                    <a class="text-primary underline" href="{{ $listingView['clear_filters_url'] }}">{{ __('theme::catalog.clear_filters') }}</a>
+                @endif
+            </div>
             {{-- Sắp xếp: form GET thường, giữ bộ lọc đang chọn; sắp theo giá ẩn khi cửa hàng ẩn giá với khách chưa đăng nhập. --}}
             <form method="get" action="{{ $listingView['action'] }}" class="flex items-center gap-2" data-vani-sort>
                 @foreach ($listingView['sort']['hidden_fields'] as $name => $value)
@@ -78,6 +88,7 @@
                         <option value="price_desc" @selected($listingView['sort']['current'] === 'price_desc')>{{ __('theme::catalog.price_high_low') }}</option>
                     @endif
                 </select>
+                <noscript><button type="submit" class="rounded border px-3 py-1.5">{{ __('theme::common.apply') }}</button></noscript>
             </form>
         </div>
         @if ($listing['items'] === [])

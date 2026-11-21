@@ -28,11 +28,15 @@ final class ListingComposer
     {
         $data = $view->getData();
         $listing = (array) ($data['listing'] ?? []);
+        $filters = $this->filters((array) ($listing['filters'] ?? []));
+        $onBrandPage = ($data['listingContext']['type'] ?? null) === 'brand';
         $view->with('listingView', [
             // $listingContext: trang gọi truyền vào (danh mục / thương hiệu); mặc định là trang tìm kiếm.
             'context' => $data['listingContext'] ?? ['type' => 'search', 'category' => null, 'brand' => null],
             'action' => $this->request->url(),
-            'filters' => $this->filters((array) ($listing['filters'] ?? [])),
+            'clear_filters_url' => ListingUrl::clearFilters($this->request, $onBrandPage),
+            'filters' => $filters,
+            'active_filters' => $this->activeFilters($filters, $onBrandPage),
             'sort' => $this->sort((bool) ($listing['sortable_by_price'] ?? false)),
             'pages' => $this->pages((int) ($listing['total'] ?? 0), (int) ($listing['per_page'] ?? 1), (int) ($listing['page'] ?? 1)),
         ]);
@@ -73,6 +77,40 @@ final class ListingComposer
         }
 
         return $result;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $filters
+     * @return list<array{label: string, url: string}>
+     */
+    private function activeFilters(array $filters, bool $onBrandPage): array
+    {
+        $facets = array_column($filters, null, 'param');
+        $selection = $onBrandPage ? [] : ['brand' => $this->request->query('brand')];
+        foreach (['opt', 'attr'] as $group) {
+            foreach ((array) $this->request->query($group, []) as $key => $value) {
+                $selection["{$group}.{$key}"] = $value;
+            }
+        }
+        $chips = [];
+        foreach ($selection as $param => $selected) {
+            $facet = $facets[$param] ?? [];
+            $labels = array_column($facet['options'] ?? [], 'label', 'value');
+            foreach (array_unique(array_map('trim', explode(',', (string) $selected))) as $value) {
+                if ($value !== '') {
+                    $chips[] = ['label' => trim(($facet['label'] ?? '').' '.($labels[$value] ?? $value)), 'url' => ListingUrl::toggle($this->request, $param, $value)];
+                }
+            }
+        }
+        foreach (self::PRICE_PARAMS as $param) {
+            if ($this->request->filled($param)) {
+                $amount = $this->money->formatAmount((int) $this->request->query($param), (string) config('vanishop.currency'));
+                $label = __('theme::catalog.'.($param === 'price_min' ? 'price_from' : 'price_to'));
+                $chips[] = ['label' => "{$label} {$amount}", 'url' => ListingUrl::toggle($this->request, $param, (string) $this->request->query($param))];
+            }
+        }
+
+        return $chips;
     }
 
     /**

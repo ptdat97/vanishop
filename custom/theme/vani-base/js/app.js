@@ -1,4 +1,5 @@
 import { createIcons, Heart, House, LayoutGrid, Menu, Search, ShoppingBag, Sparkles, UserRound } from 'lucide';
+import { listing, mountListingNavigation } from './listing.js';
 import { mountMobileCategoryNav } from './mobile-category-nav.js';
 
 const accountMenuRoot = document.querySelector('[data-vani-account-menu-root]');
@@ -224,31 +225,7 @@ const search = {
         fetch(`${urls.search_suggestions}?${new URLSearchParams({ q: query })}`, { headers: { Accept: 'application/json', 'X-Vani-Locale': document.documentElement.lang || '' } })
             .then((response) => (response.ok ? response.json() : { data: null }))
             .then((json) => json.data),
-    /** Trang danh sách (tìm kiếm, danh mục, thương hiệu, lọc, phân trang) không tải lại: lấy HTML (trang cache được), thay vùng [data-vani-listing]. */
-    async listing(url, { push = true } = {}) {
-        const current = document.querySelector('[data-vani-listing]');
-        if (!current) {
-            window.location.href = url;
-            return;
-        }
-        current.setAttribute('aria-busy', 'true');
-        try {
-            const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'text/html' } });
-            if (!response.ok) throw new Error(String(response.status));
-            const page = new DOMParser().parseFromString(await response.text(), 'text/html');
-            const next = page.querySelector('[data-vani-listing]');
-            if (!next) throw new Error('no listing');
-            current.replaceWith(next);
-            const heading = page.querySelector('h1');
-            if (heading && document.querySelector('h1')) document.querySelector('h1').textContent = heading.textContent;
-            document.title = page.title || document.title;
-            if (push) history.pushState({ vaniListing: true }, '', url);
-            next.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-            document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: next } }));
-        } catch {
-            window.location.href = url;
-        }
-    },
+    listing,
 };
 
 window.vani = { request, cart, auth, search, urls };
@@ -1051,23 +1028,7 @@ if (loginForm) {
     });
 }
 
-// Danh sách sản phẩm: lọc và phân trang không tải lại trang (link thường cho SEO; mở tab mới/ctrl+click giữ nguyên).
-document.addEventListener('click', (event) => {
-    const link = event.target.closest('[data-vani-listing] a[href]');
-    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target) return;
-    const url = new URL(link.href, window.location.href);
-    if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) return;
-    event.preventDefault();
-    search.listing(url.href);
-});
-window.addEventListener('popstate', (event) => {
-    if (event.state?.vaniListing || document.querySelector('[data-vani-listing]')) {
-        search.listing(window.location.href, { push: false });
-    }
-});
-if (document.querySelector('[data-vani-listing]')) {
-    history.replaceState({ vaniListing: true }, '', window.location.href);
-}
+mountListingNavigation();
 
 /* ── Thông báo dùng chung: bấm nút đóng → ẩn thông báo ───────────────────────── */
 document.addEventListener('click', (event) => {
