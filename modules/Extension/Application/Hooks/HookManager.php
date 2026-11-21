@@ -12,7 +12,9 @@ use Modules\Extension\Domain\Hooks\HookDefinition;
 use Modules\Extension\Domain\Hooks\HookNotDeclared;
 use Modules\Extension\Domain\Hooks\HookNotPublic;
 use Modules\Extension\Domain\Hooks\HookReturnTypeMismatch;
+use Modules\Extension\Domain\Hooks\HookTransactionUndeclared;
 use Modules\Extension\Domain\Hooks\HookType;
+use Modules\Shared\Support\ExternalCalls;
 use Throwable;
 use TorMorten\Eventy\Events;
 
@@ -35,6 +37,9 @@ final class HookManager
 
     /** @var array<string, list<string|null>> */
     private array $listenerOwners = [];
+
+    /** @var array<string, list<array{plugin: string|null, priority: int}>> theo thứ tự đăng ký */
+    private array $listenerPriorities = [];
 
     /** @var array<string, array{hook: string, plugin: string, calls: int, total_ms: float, max_ms: float}> */
     private array $timings = [];
@@ -59,7 +64,7 @@ final class HookManager
 
     public function filter(string $name, mixed $value, mixed ...$args): mixed
     {
-        $this->assertDeclared($name);
+        $this->assertDispatchable($name);
         $this->trace($name, 'filter');
 
         return $this->events->filter($name, $value, ...$args);
@@ -67,7 +72,7 @@ final class HookManager
 
     public function action(string $name, mixed ...$args): void
     {
-        $this->assertDeclared($name);
+        $this->assertDispatchable($name);
         $this->trace($name, 'action');
 
         $this->events->action($name, ...$args);
@@ -80,7 +85,7 @@ final class HookManager
      */
     public function collect(string $name, mixed ...$args): array
     {
-        $this->assertDeclared($name);
+        $this->assertDispatchable($name);
         $this->trace($name, 'validate');
 
         return array_values($this->events->filter($name, [], ...$args));
@@ -93,7 +98,7 @@ final class HookManager
      */
     public function slot(string $name, mixed ...$args): array
     {
-        $this->assertDeclared($name);
+        $this->assertDispatchable($name);
         $this->trace($name, 'slot');
 
         return array_values($this->events->filter($name, [], ...$args));
@@ -217,6 +222,20 @@ final class HookManager
         return $this->listenerOwners;
     }
 
+    /**
+     * Listener của một hook theo thứ tự chạy (priority nhỏ trước, cùng priority theo thứ tự đăng ký) — `vani:flows`.
+     *
+     * @return list<array{plugin: string|null, priority: int}>
+     */
+    public function listeners(string $name): array
+    {
+        $listeners = $this->listenerPriorities[$name] ?? [];
+        // usort ổn định (PHP 8): cùng priority giữ thứ tự đăng ký như eventy.
+        usort($listeners, fn (array $a, array $b): int => $a['priority'] <=> $b['priority']);
+
+        return $listeners;
+    }
+
     private function trace(string $name, string $type): void
     {
         if ($this->trace) {
@@ -233,6 +252,7 @@ final class HookManager
         }
 
         $this->listenerOwners[$name][] = $pluginId;
+        $this->listenerPriorities[$name][] = ['plugin' => $pluginId, 'priority' => $priority];
         if ($definition?->deprecated !== null && $pluginId !== null && ! isset($this->deprecationsLogged["{$name}|{$pluginId}"])) {
             $this->deprecationsLogged["{$name}|{$pluginId}"] = true;
             Log::warning('vani.deprecation', ['kind' => 'hook', 'feature' => $name, 'plugin' => $pluginId, 'message' => $definition->deprecated]);
@@ -293,6 +313,19 @@ final class HookManager
     private function isActive(?string $pluginId): bool
     {
         return $pluginId === null || ($this->activation)()->isActive($pluginId);
+    }
+
+    /**
+     * Gọi hook: phải khai báo; strict thì khai báo `transaction` phải khớp thực tế (hook chạy trong transaction DB của
+     * ứng dụng — transaction bọc test không tính).
+     */
+    private function assertDispatchable(string $name): void
+    {
+        $definition = $this->assertDeclared($name);
+
+        if ($this->strict && $definition !== null && ! $definition->transaction && ExternalCalls::insideTransaction()) {
+            throw new HookTransactionUndeclared($name);
+        }
     }
 
     private function assertDeclared(string $name): ?HookDefinition

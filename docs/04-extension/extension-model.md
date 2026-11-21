@@ -125,26 +125,28 @@ Chỉ chạy khi có listener; listener lỗi bị bỏ (`on_error: skip`); filt
 // modules/Checkout/hooks.php
 return [
     'vani.checkout.before_validate' => [
-        'type' => 'validate', 'visibility' => 'public', 'since' => '1.0',
-        'args' => ['checkout' => CheckoutData::class],
-        'runs' => 'inside transaction = no',
+        'type' => 'validate', 'visibility' => 'public', 'since' => '0.1',
+        'transaction' => true,   // chạy trong transaction đặt hàng
+        'args' => ['request' => CheckoutRequest::class],
     ],
-    'vani.order.after_create' => [
-        'type' => 'action', 'visibility' => 'public', 'since' => '1.0',
-        'args' => ['order' => OrderData::class],
-        'runs' => 'inside PlaceOrder transaction — chỉ ghi DB, không I/O',
+    'vani.service.checkout.quote' => [
+        'type' => 'filter', 'visibility' => 'public', 'since' => '0.3.47',
+        'on_error' => 'skip',    // điểm hiển thị: listener lỗi bị bỏ
+        'args' => ['quote' => CheckoutQuote::class, 'request' => CheckoutRequest::class],
     ],
 ];
 ```
 
 - Gọi `Hook::filter/action` với tên **chưa khai báo** → exception ở môi trường local/test và bị CI chặn.
-- `php artisan vani:plugin:hooks` liệt kê hook công khai và plugin nào đang nghe.
+- `transaction: true` (0.5.65): hook có thể chạy **trong transaction DB**. Strict (local/test) báo `HookTransactionUndeclared` khi hook chạy trong transaction mà chưa khai — khai báo luôn khớp thực tế, plugin đọc khai báo là biết được gọi mạng hay không.
+- `php artisan vani:plugin:hooks` liệt kê hook công khai, cột Transaction và plugin nào đang nghe.
+- `php artisan vani:flows [checkout.place_order]` (0.5.65, học từ step list của Lunar 2.x): các bước của luồng theo thứ tự chạy thật — bước Core, calculator/validator (Core hay plugin nào, priority), hook kèm listener, bước nào trong transaction. Module mô tả luồng qua `Extension\Contracts\Flows`; thứ tự hook được test đối chiếu với lần chạy thật. Hiện có `checkout.quote`, `checkout.place_order`.
 
 ### 4.4 Quy tắc chạy hook
 
 | Quy tắc | Lý do |
 |---|---|
-| Hook chạy **trong transaction** (ví dụ `vani.order.after_create`) chỉ được ghi DB của plugin, không I/O mạng, thời gian < 50 ms | Không kéo dài lock, không làm hỏng checkout |
+| Hook chạy **trong transaction** (khai `transaction: true`, ví dụ `vani.order.after_create`) chỉ được ghi DB của plugin, không I/O mạng, thời gian < 50 ms. Gọi HTTP qua HTTP client của Laravel trong transaction chưa commit bị `ExternalCalls` chặn (dev/test ném `ExternalCallInTransaction`, production ghi cảnh báo) — việc cần gọi mạng đẩy sang `vani.event.*` (sau commit) hoặc queue | Không kéo dài lock, không làm hỏng checkout; rollback không thu hồi được việc đã làm ở phía ngoài |
 | Exception trong hook `validate`/`filter` của flow giao dịch → **fail flow** (rollback) | Rõ ràng hơn là bỏ qua lỗi âm thầm |
 | Exception trong **slot UI** → bỏ qua slot đó, ghi log, trang vẫn hiển thị | Plugin lỗi không được làm sập storefront |
 | Filter phải trả về **đúng kiểu** đầu vào; Core kiểm tra kiểu ở môi trường non-production | Chặn plugin trả dữ liệu sai |

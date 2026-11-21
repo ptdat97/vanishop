@@ -59,6 +59,7 @@ return [
         'type' => 'filter',
         'visibility' => 'public',
         'since' => '0.3',
+        'transaction' => true,
         'args' => ['meta' => 'array', 'request' => 'Modules\\Checkout\\Contracts\\Data\\CheckoutRequest', 'totals' => 'Modules\\Checkout\\Contracts\\Data\\Totals'],
         'description' => 'Chạy TRONG transaction đặt hàng (không I/O mạng): bổ sung orders.meta, khoá theo plugin id (vd. meta["vani.einvoice"]). Không sửa được giá/dòng. Dữ liệu khách nhập ở checkout nằm trong CheckoutRequest::$extra[<plugin id>] — kiểm tra bằng vani.checkout.before_validate.',
     ],

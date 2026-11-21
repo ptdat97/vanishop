@@ -348,7 +348,8 @@ it('online: khách huỷ đơn (khoản thanh toán huỷ theo) rồi IPN mới 
 it('bước gọi cổng hoàn tiền nằm trong transaction (lỗi lập trình): báo lỗi ngay, không bị bắt thành "hoàn thất bại — chờ hoàn tay"', function () {
     $paymentId = ($this->order)('fake_online')->assertCreated()->json('data.payment.id');
     ($this->callback)($paymentId, 'TXN-1')->assertOk();
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Payments::class)->refund((int) $paymentId, Money::vnd(100_000), 'test', 'refund-in-tx-0001'));
+    $id = Payment::query()->withoutGlobalScopes()->sole()->id;
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Payments::class)->refund($id, Money::vnd(100_000), 'test', 'refund-in-tx-0001'));
     $refund = Refund::query()->withoutGlobalScopes()->sole();
     $payment = Payment::query()->withoutGlobalScopes()->sole();
     // Luồng thật gọi cổng sau commit (afterCommit); ở đây gọi thẳng bước gọi cổng bên trong transaction.

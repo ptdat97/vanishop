@@ -10,11 +10,13 @@ use Modules\Checkout\Application\Calculators\PromotionCalculator;
 use Modules\Checkout\Application\Calculators\ShippingCalculator;
 use Modules\Checkout\Application\Calculators\SubtotalCalculator;
 use Modules\Checkout\Application\Calculators\TaxStage;
+use Modules\Checkout\Application\CheckoutFlows;
 use Modules\Checkout\Application\CheckoutService;
 use Modules\Checkout\Application\Listeners\UndoCancelledOrder;
 use Modules\Checkout\Application\ReplacementOrderService;
 use Modules\Checkout\Application\Tax\ConfiguredTaxCalculator;
 use Modules\Checkout\Application\Tax\NoTax;
+use Modules\Checkout\Application\TotalsPipeline;
 use Modules\Checkout\Application\Validators\CoreCheckoutValidator;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutValidator;
@@ -23,6 +25,7 @@ use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Contracts\TaxCalculator;
 use Modules\Checkout\Contracts\TotalsCalculator;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Flows;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Shared\Support\ModuleServiceProvider;
@@ -52,6 +55,11 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->tag([NoTax::class], TaxCalculator::TAG);
         $this->app->make(Extensions::class)->requires(TaxCalculator::TAG, Requirement::ExactlyOne, 'checkout::texts.checkout_service_provider.tax_calculation');
         $this->app->make(Extensions::class)->kindContract('tax', TaxCalculator::TAG);
+        $this->app->make(Extensions::class)->doctorCheck('totals_calculator_priority', function (): ?string {
+            $misplaced = $this->app->make(TotalsPipeline::class)->misplacedPluginCalculators();
+
+            return $misplaced === [] ? null : __('checkout::texts.checkout_service_provider.misplaced_calculators', ['calculators' => implode(', ', $misplaced)]);
+        });
         $this->app->bind(TaxCalculator::class, fn ($app): TaxCalculator => new ConfiguredTaxCalculator(
             $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.tax.calculator', NoTax::CODE),
         ));
@@ -70,6 +78,10 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
             group: SettingGroup::Sales,
         ));
         Event::listen(OrderCancelled::class, UndoCancelledOrder::class);
+        // `vani:flows`: bước dựng lúc xem (plugin đang bật).
+        $flows = $this->app->make(Flows::class);
+        $flows->describe(CheckoutFlows::QUOTE, 'checkout::texts.flows.quote', fn (): array => $this->app->make(CheckoutFlows::class)->quote());
+        $flows->describe(CheckoutFlows::PLACE_ORDER, 'checkout::texts.flows.place_order', fn (): array => $this->app->make(CheckoutFlows::class)->placeOrder());
 
         // Tạo đơn trong Admin (stabilization A8).
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));

@@ -17,6 +17,7 @@ use Inertia\ResponseFactory;
 use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Application\Admin\AdminMenuRegistry;
 use Modules\Extension\Application\Admin\Reports;
+use Modules\Extension\Application\Flows\FlowRegistry;
 use Modules\Extension\Application\Hooks\CallerPlugin;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
@@ -46,6 +47,7 @@ use Modules\Extension\Application\Settings\SettingsAdmin;
 use Modules\Extension\Application\Storefront\AccountPageRegistry;
 use Modules\Extension\Application\Storefront\PluginViewRegistry;
 use Modules\Extension\Application\Storefront\StorefrontPrefixes;
+use Modules\Extension\Console\FlowsCommand;
 use Modules\Extension\Console\InstallCommand;
 use Modules\Extension\Console\PluginCacheCommand;
 use Modules\Extension\Console\PluginDisableCommand;
@@ -62,6 +64,7 @@ use Modules\Extension\Console\PluginUpgradeCommand;
 use Modules\Extension\Contracts\AccountPages;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Flows;
 use Modules\Extension\Contracts\PluginDirectory;
 use Modules\Extension\Contracts\PluginViews;
 use Modules\Extension\Contracts\SettingActions;
@@ -119,6 +122,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(PluginViews::class, PluginViewRegistry::class);
         $this->app->singleton(StorefrontPrefixes::class);
         $this->app->singleton(SettingActions::class, SettingActionRegistry::class);
+        $this->app->singleton(Flows::class, FlowRegistry::class);
         $this->app->singleton(AccountPages::class, fn ($app): AccountPages => new AccountPageRegistry(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(CallerPlugin::class);
         // Điểm mở rộng tự động cho mọi trang Admin (ADR-031).
@@ -214,6 +218,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
                 PluginFinishDrainingCommand::class,
                 PluginUninstallCommand::class,
                 PluginHooksCommand::class,
+                FlowsCommand::class,
                 PluginUpgradeCommand::class,
                 PluginDoctorCommand::class,
             ]);

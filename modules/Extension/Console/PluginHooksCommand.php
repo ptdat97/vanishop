@@ -34,10 +34,10 @@ final class PluginHooksCommand extends Command
                 continue;
             }
 
-            $rows[] = [$name, $definition->type->value, $definition->public ? 'public' : 'internal', $definition->stability, $definition->since, implode(', ', $listeners) ?: '-'];
+            $rows[] = [$name, $definition->type->value, $definition->public ? 'public' : 'internal', $definition->stability, $definition->transaction ? 'yes' : '-', $definition->since, implode(', ', $listeners) ?: '-'];
         }
 
-        $this->table(['Hook', 'Type', 'Visibility', 'Stability', 'Since', 'Listeners'], $rows);
+        $this->table(['Hook', 'Type', 'Visibility', 'Stability', 'Transaction', 'Since', 'Listeners'], $rows);
 
         return self::SUCCESS;
     }

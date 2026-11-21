@@ -17,7 +17,6 @@ return [
         'visibility' => 'public',
         'since' => '0.3.57',
         'args' => ['customerId' => 'int'],
-        'runs' => 'trước transaction, trước khi kiểm OTP — chỉ đọc, không I/O mạng',
-        'description' => 'Việc còn dở chặn khách tự xoá tài khoản. Listener trả list<array{type: string, reference: string, label: string}> (vd. đơn chưa hoàn tất, đổi trả đang mở, điểm thưởng chờ). Nhân viên ẩn danh hoá trong Admin không qua hook này.',
+        'description' => 'Việc còn dở chặn khách tự xoá tài khoản. Chạy trước transaction, trước khi kiểm OTP — chỉ đọc. Listener trả list<array{type: string, reference: string, label: string}> (vd. đơn chưa hoàn tất, đổi trả đang mở, điểm thưởng chờ). Nhân viên ẩn danh hoá trong Admin không qua hook này.',
     ],
 ];

@@ -65,6 +65,8 @@ interface TaxCalculator
 
 Cùng một pipeline dùng cho: xem giỏ, checkout, `PlaceOrder`, và tính lại khi Admin sửa đơn trước khi xác nhận.
 
+Thứ tự chạy thật lấy từ `TotalsPipeline::steps()` (calculator theo priority, hook `vani.service.checkout.totals` chen ngay trước guard). Xem trên cửa hàng đang chạy: `php artisan vani:flows checkout.quote` / `checkout.place_order` — kèm calculator/validator của plugin nào, listener hook và bước nào trong transaction (0.5.65). Calculator của plugin ngoài dải 300–399 hoặc trùng mã → `vani:plugin:doctor` cảnh báo `totals_calculator_priority`.
+
 ## 3. Checkout flow
 
 1. **Liên hệ**: SĐT (bắt buộc), email (tuỳ chọn), họ tên.
@@ -78,6 +80,8 @@ Cùng một pipeline dùng cho: xem giỏ, checkout, `PlaceOrder`, và tính l�
 Validation: `CheckoutValidator` (core: giá, tồn, địa chỉ) + hook `vani.checkout.before_validate` / `vani.checkout.after_validate` (plugin: chống bom hàng, quy tắc riêng của cửa hàng).
 
 ## 4. `PlaceOrder`: transaction boundary
+
+> Code thật: `CheckoutService::place()`; danh sách bước và ranh giới transaction cập nhật theo code ở `php artisan vani:flows checkout.place_order` (thứ tự hook được `CheckoutFlowsTest` đối chiếu với lần đặt hàng thật). Đoạn dưới là thiết kế ban đầu.
 
 ```php
 final class PlaceOrder

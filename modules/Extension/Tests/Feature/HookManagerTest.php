@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
@@ -8,8 +10,10 @@ use Modules\Extension\Domain\Hooks\HookDefinition;
 use Modules\Extension\Domain\Hooks\HookNotDeclared;
 use Modules\Extension\Domain\Hooks\HookNotPublic;
 use Modules\Extension\Domain\Hooks\HookReturnTypeMismatch;
+use Modules\Extension\Domain\Hooks\HookTransactionUndeclared;
 use Modules\Extension\Domain\Hooks\HookType;
 use Modules\Extension\Facades\Hook;
+use Modules\Shared\Support\ExternalCallInTransaction;
 use TorMorten\Eventy\Events;
 
 beforeEach(function () {
@@ -58,6 +62,21 @@ it('slot bỏ qua listener lỗi mà không làm hỏng trang', function () {
 it('chế độ strict chặn hook chưa khai báo', function () {
     Hook::filter('test.not-declared', 1);
 })->throws(HookNotDeclared::class);
+
+it('strict: hook chạy trong transaction DB phải khai báo transaction: true', function () {
+    app(HookRegistry::class)->declare(new HookDefinition('test.in_transaction', HookType::Filter, true, '0.1', transaction: true));
+
+    expect(DB::transaction(fn () => Hook::filter('test.in_transaction', 1)))->toBe(1)
+        ->and(Hook::filter('test.filter', 1))->toBe(1)
+        ->and(fn () => DB::transaction(fn () => Hook::filter('test.filter', 1)))->toThrow(HookTransactionUndeclared::class, 'test.filter');
+});
+
+it('gọi HTTP trong transaction chưa commit bị chặn (listener hook transaction, calculator…); ngoài transaction thì gọi được', function () {
+    Http::fake(['partner.test/*' => Http::response(['ok' => true])]);
+
+    expect(Http::get('https://partner.test/ping')->json('ok'))->toBeTrue()
+        ->and(fn () => DB::transaction(fn () => Http::get('https://partner.test/ping')))->toThrow(ExternalCallInTransaction::class, 'http:partner.test');
+});
 
 it('plugin không được nghe hook internal', function () {
     Hook::onFilter('test.internal', fn ($v) => $v, pluginId: 'vani.some-plugin');

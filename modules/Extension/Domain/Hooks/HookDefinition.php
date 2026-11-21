@@ -22,6 +22,12 @@ final readonly class HookDefinition
         public string $onError = 'fail',
         /** Thông điệp khi hook đã ngừng khuyến nghị (`deprecated` trong hooks.php, K3/P5): plugin nghe hook → log `vani.deprecation`. */
         public ?string $deprecated = null,
+        /**
+         * Hook có thể chạy TRONG transaction DB (khoá `transaction: true`, rút từ "modifier" của Lunar 2.x): listener chỉ ghi DB
+         * của mình, không I/O mạng (gọi HTTP bị ExternalCalls chặn), lỗi → rollback. HookManager (strict) báo lỗi khi hook
+         * không khai báo mà lại chạy trong transaction — khai báo luôn khớp thực tế.
+         */
+        public bool $transaction = false,
     ) {}
 
     /**
@@ -34,11 +40,11 @@ final readonly class HookDefinition
 
     public function withName(string $name): self
     {
-        return new self($name, $this->type, $this->public, $this->since, $this->args, $this->description, $this->stability, $this->onError, $this->deprecated);
+        return new self($name, $this->type, $this->public, $this->since, $this->args, $this->description, $this->stability, $this->onError, $this->deprecated, $this->transaction);
     }
 
     /**
-     * @param  array{type: string, visibility?: string, since?: string, args?: array<string, string>, description?: string, stability?: string, on_error?: string, deprecated?: string}  $definition
+     * @param  array{type: string, visibility?: string, since?: string, args?: array<string, string>, description?: string, stability?: string, on_error?: string, deprecated?: string, transaction?: bool}  $definition
      */
     public static function fromArray(string $name, array $definition): self
     {
@@ -52,6 +58,7 @@ final readonly class HookDefinition
             stability: $definition['stability'] ?? 'stable',
             onError: $definition['on_error'] ?? 'fail',
             deprecated: isset($definition['deprecated']) ? (string) $definition['deprecated'] : null,
+            transaction: (bool) ($definition['transaction'] ?? false),
         );
     }
 }

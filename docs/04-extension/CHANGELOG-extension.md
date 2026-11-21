@@ -6,6 +6,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.65 — 2026-11-21 · Extension API 1.22.0
+
+Học từ Lunar 2.x (step list, modifier theo giai đoạn): ghi rõ và kiểm thật bước nào chạy trong transaction; xem được thứ tự các bước của luồng có điểm mở rộng.
+
+### Thêm
+- Khoá `transaction` trong `hooks.php` (`HookDefinition::$transaction`): hook có thể chạy TRONG transaction DB — listener chỉ ghi DB của mình, không gọi mạng, lỗi → rollback. Đã khai cho 18 hook: `vani.cart.validate_line`, `vani.product.before_save`, `vani.product.after_save`, `vani.service.pricing.prices`, `vani.checkout.context`, `vani.checkout.shipping_options`, `vani.checkout.payment_methods`, `vani.checkout.before_validate`, `vani.checkout.after_validate`, `vani.service.checkout.totals`, `vani.service.promotion.result`, `vani.order.before_create`, `vani.order.after_create`, `vani.service.notification.request`, `vani.payment.before_refund`, `vani.service.payment.view`, `vani.returns.before_approve`, `vani.service.returns.view`. `vani:plugin:hooks` thêm cột Transaction. Khoá tự do `runs` (chưa từng được đọc) bỏ.
+- Strict (local/test): hook chạy trong transaction của ứng dụng mà chưa khai `transaction: true` → `HookTransactionUndeclared` — cả bộ test giữ khai báo đúng thực tế (transaction bọc test không tính).
+- Mọi request qua HTTP client của Laravel đi qua `ExternalCalls::guard('http:<host>')` (`Http::globalRequestMiddleware`): gọi mạng trong transaction chưa commit (listener hook, calculator, validator của plugin) ném `ExternalCallInTransaction` ở dev/test, chỉ ghi cảnh báo ở production. **Plugin cần cập nhật** nếu gọi HTTP trong các điểm trên (plugin trong repo: không plugin nào).
+- `vani:flows {flow?}`: các bước của luồng theo thứ tự chạy thật — bước Core, calculator/validator (Core hay plugin, priority), hook kèm listener (priority, plugin đang tắt), cột "Trong transaction"; exit 1 khi bước hook trong transaction chưa khai `transaction: true`. Luồng: `checkout.quote`, `checkout.place_order`. Module mô tả luồng qua service contract `Extension\Contracts\Flows` + `Data\FlowStep` (giữa module, không phải API cho plugin). Thứ tự hook trong mô tả được test đối chiếu với lần xem trước/đặt hàng thật (`CheckoutFlowsTest`).
+- `TotalsPipeline::steps()`: một nguồn thứ tự cho cả lúc chạy và `vani:flows`. Doctor `totals_calculator_priority`: calculator của plugin có priority ngoài 300–399 (`TotalsPipeline::PLUGIN_PRIORITIES`) hoặc trùng mã → cảnh báo.
+- `HookManager::listeners(string $hook)`: listener theo thứ tự chạy (plugin, priority).
+
 ## 0.5.64 — 2026-11-20 · Extension API 1.21.0 (không đổi)
 
 Sửa 3 test kiến trúc đỏ sau đợt Payment abstraction (0.5.60–0.5.62).
