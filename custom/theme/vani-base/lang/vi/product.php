@@ -4,6 +4,7 @@ return [
     'add_to_cart' => 'Thêm vào giỏ',
     'browse_all_products' => 'Xem tất cả sản phẩm',
     'browse_category' => 'Xem cùng danh mục',
+    'description' => 'Mô tả sản phẩm',
     'buy_now' => 'Mua ngay',
     'low_stock' => 'sắp hết',
     'may_also_like' => 'Có thể bạn thích',

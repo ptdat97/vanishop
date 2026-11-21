@@ -3,7 +3,7 @@
 @section('title', __('theme::checkout.checkout'))
 
 @section('content')
-    <h1 class="mb-6 text-2xl font-semibold">{{ __('theme::checkout.checkout') }}</h1>
+    <h1 class="mb-6 text-3xl font-medium tracking-tight">{{ __('theme::checkout.checkout') }}</h1>
 
     {{-- $form (CheckoutForm): values = giá trị từng ô (lần gửi trước hoặc điền sẵn từ tài khoản), saved_addresses, errors = tóm tắt lỗi. --}}
     @php($values = $form['values'])
@@ -18,7 +18,7 @@
         </div>
     @endif
 
-    <form action="{{ vani_route('storefront.checkout.store') }}" method="post" class="grid gap-8 pb-24 md:grid-cols-[1fr_22rem] md:pb-0" data-checkout-form>
+    <form action="{{ vani_route('storefront.checkout.store') }}" method="post" class="grid gap-8 pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:pb-0" data-checkout-form>
         @csrf
         <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', $idempotencyKey) }}">
         <input type="hidden" name="expected_total" value="{{ $quote['total']['amount'] }}">
@@ -125,7 +125,7 @@
             </div>
         </div>
 
-        <aside class="h-fit space-y-3 rounded-[var(--radius-theme)] border border-slate-200 p-4 text-sm" data-checkout-summary>
+        <aside class="h-fit min-w-0 space-y-4 border-t border-border bg-subtle p-4 lg:p-6 text-sm" data-checkout-summary>
             <h2 class="font-semibold">{{ __('theme::common.orders') }}</h2>
             <ul class="space-y-1">
                 @foreach ($quote['lines'] as $line)
@@ -136,7 +136,7 @@
 
             <div class="flex gap-2">
                 <label for="voucher_code" class="sr-only">{{ __('theme::common.discount_code') }}</label>
-                <input id="voucher_code" name="voucher_code" value="{{ $voucherCode ?? old('voucher_code') }}" placeholder="{{ __('theme::common.discount_code') }}" class="flex-1 rounded border border-slate-300 px-2 py-1.5">
+                <input id="voucher_code" name="voucher_code" value="{{ $voucherCode ?? old('voucher_code') }}" placeholder="{{ __('theme::common.discount_code') }}" class="min-w-0 flex-1 rounded border border-slate-300 px-2 py-1.5">
                 <button type="submit" name="action" value="quote" class="rounded border border-slate-300 px-3">{{ __('theme::common.apply') }}</button>
             </div>
             {{-- 0.3.104: mã không dùng được không bị giữ lại (đặt hàng không bị chặn) — chỉ nhắc nhẹ khi khách vừa tự nhập. --}}
@@ -158,17 +158,17 @@
 
             <x-vani::hook-slot name="vani.storefront.checkout.after_summary" :args="[$quote]" />
             <x-vani::hook-slot name="vani.storefront.checkout.before_submit" :args="[$quote]" />
-            <button type="submit" class="hidden w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white md:block">{{ __('theme::checkout.place_order') }}</button>
+            <button type="submit" class="vani-button-primary hidden w-full lg:inline-flex">{{ __('theme::checkout.place_order') }}</button>
         </aside>
 
-        {{-- Điện thoại: tổng + nút đặt hàng luôn thấy ở đáy màn hình (nút trong khung tóm tắt chỉ hiện từ md). Đặt cuối form để
+        {{-- Điện thoại: tổng + nút đặt hàng luôn thấy ở đáy màn hình (nút trong khung tóm tắt chỉ hiện từ lg). Đặt cuối form để
              Enter trong ô nhập vẫn bấm nút đầu tiên ("Áp dụng" — tính lại), không đặt hàng ngoài ý muốn. --}}
-        <div class="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-slate-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden" data-checkout-bar>
+        <div class="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-slate-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden" data-checkout-bar>
             <div class="min-w-0 flex-1 text-sm">
                 <span class="block text-slate-500">{{ __('theme::checkout.total') }}</span>
                 <span class="text-base font-semibold" data-total>{{ $quote['total']['formatted'] }}</span>
             </div>
-            <button type="submit" class="rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white">{{ __('theme::checkout.place_order') }}</button>
+            <button type="submit" class="vani-button-primary">{{ __('theme::checkout.place_order') }}</button>
         </div>
     </form>
 @endsection

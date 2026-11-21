@@ -2,14 +2,14 @@
      $listingView: link lọc/sắp xếp/phân trang Core dựng sẵn (Storefront\View\Composers\ListingComposer) — partial chỉ in ra. --}}
 <div data-vani-listing>
 <x-vani::hook-slot name="vani.storefront.plp.before_listing" :args="[$listingView['context'], $listing]" />
-<div class="grid gap-8 md:grid-cols-[14rem_1fr]">
+<div class="grid gap-8 md:grid-cols-[14rem_minmax(0,1fr)]">
     <aside class="text-sm" aria-label="{{ __('theme::catalog.filters') }}">
-        <details class="group md:contents" data-vani-filter-disclosure>
-            <summary class="flex cursor-pointer list-none items-center justify-between rounded-[var(--radius-theme)] border border-slate-200 px-4 py-3 font-semibold marker:hidden md:hidden">
+        <details class="group" data-vani-filter-disclosure>
+            <summary class="flex cursor-pointer list-none items-center justify-between rounded-[var(--radius-theme)] border border-slate-200 px-4 py-3 font-semibold marker:hidden">
                 <span>{{ __('theme::catalog.filters') }}</span>
                 <svg viewBox="0 0 20 20" class="size-4 transition-transform group-open:rotate-180" fill="none" aria-hidden="true"><path d="m4 7 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </summary>
-            <div class="space-y-6 pt-4 md:block md:pt-0">
+            <div class="space-y-6 pt-4">
         {{-- Bộ lọc theo cấu hình Admin → Catalog → Bộ lọc (thứ tự, bật/tắt, kiểu hiển thị); link thường (SEO). --}}
         @foreach ($listingView['filters'] as $filter)
             @if ($filter['display'] === 'range')
@@ -67,7 +67,7 @@
             <div class="flex flex-wrap items-center gap-3">
                 <p class="text-slate-500">{{ trans_choice('theme::catalog.product_count', $listing['total'], ['count' => $listing['total']]) }}</p>
                 @foreach ($listingView['active_filters'] as $chip)
-                    <a href="{{ $chip['url'] }}" aria-label="{{ __('theme::catalog.remove_filter', ['filter' => $chip['label']]) }}" class="rounded-full border px-3 py-1">
+                    <a href="{{ $chip['url'] }}" aria-label="{{ __('theme::catalog.remove_filter', ['filter' => $chip['label']]) }}" class="rounded-[var(--radius-theme)] border px-3 py-1">
                         {{ $chip['label'] }} <span aria-hidden="true">×</span>
                     </a>
                 @endforeach
@@ -92,15 +92,15 @@
             </form>
         </div>
         @if ($listing['items'] === [])
-            <p class="py-12 text-center text-slate-500">{{ __('theme::catalog.no_matching_products') }}</p>
+            <p class="bg-subtle px-4 py-12 text-center text-slate-500">{{ __('theme::catalog.no_matching_products') }}</p>
             <x-vani::hook-slot name="vani.storefront.plp.empty" :args="[$listingView['context'], $listing]" />
         @else
             {{-- Lưới 3 cột cạnh cột lọc 14rem: vùng chứa ≈ 1152 − 224 − 32 px. --}}
-            @include('theme::partials.product-grid', ['products' => $listing['items'], 'gridClass' => 'grid grid-cols-2 gap-6 md:grid-cols-3', 'layout' => [896, 3, 2], 'stagger' => true, 'eager' => 2])
+            @include('theme::partials.product-grid', ['products' => $listing['items'], 'gridClass' => 'grid grid-cols-2 gap-x-2.5 gap-y-6 md:gap-x-6 md:grid-cols-3', 'layout' => [896, 3, 2], 'stagger' => true, 'eager' => 2])
         @endif
 
         @if ($listingView['pages'] !== [])
-            <nav class="mt-8 flex gap-2 text-sm" aria-label="{{ __('theme::common.pagination') }}">
+            <nav class="mt-8 flex flex-wrap gap-2 text-sm" aria-label="{{ __('theme::common.pagination') }}">
                 @foreach ($listingView['pages'] as $page)
                     @if ($page['current'])
                         <span aria-current="page" class="rounded border border-primary px-3 py-1 font-semibold">{{ $page['number'] }}</span>

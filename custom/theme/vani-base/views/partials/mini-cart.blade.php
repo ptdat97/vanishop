@@ -14,9 +14,9 @@
     <ul class="flex-1 divide-y divide-slate-100 overflow-y-auto px-4" aria-label="{{ __('theme::cart.items_cart') }}">
         @foreach ($cart['lines'] as $line)
             <li class="flex gap-3 py-4" data-line="{{ $line['id'] }}">
-                <div class="w-16 shrink-0 overflow-hidden rounded bg-slate-100" style="aspect-ratio: {{ $productFrame['aspect'] }}">
+                <div class="w-16 shrink-0 self-start overflow-hidden rounded bg-slate-100" style="aspect-ratio: {{ $productFrame['aspect'] }}">
                     @if ($line['product']['image_url'] ?? null)
-                        <img src="{{ $line['product']['image_url'] }}" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover">
+                        <img src="{{ $line['product']['image_url'] }}" alt="" width="{{ $productFrame['card']['width'] }}" height="{{ $productFrame['card']['height'] }}" loading="lazy" decoding="async" class="h-full w-full object-cover">
                     @endif
                 </div>
                 <div class="min-w-0 flex-1 text-sm">
@@ -30,12 +30,12 @@
                     @foreach ($line['issues'] as $issue)
                         <p class="text-red-600">{{ __('storefront::messages.issue_'.$issue) }}</p>
                     @endforeach
-                    <div class="mt-2 flex items-center gap-3">
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
                         <div class="flex items-center rounded border border-slate-300" role="group" aria-label="{{ __('theme::common.quantity') }}">
-                            <button type="button" class="px-2 py-0.5 disabled:opacity-40" data-cart-quantity data-line="{{ $line['id'] }}" data-quantity="{{ $line['quantity'] - 1 }}"
+                            <button type="button" class="size-8 disabled:opacity-40" data-cart-quantity data-line="{{ $line['id'] }}" data-quantity="{{ $line['quantity'] - 1 }}"
                                     @disabled($line['quantity'] <= 1) aria-label="{{ __('theme::cart.decrease_quantity') }}">−</button>
                             <span class="min-w-6 text-center tabular-nums" aria-live="polite">{{ $line['quantity'] }}</span>
-                            <button type="button" class="px-2 py-0.5" data-cart-quantity data-line="{{ $line['id'] }}" data-quantity="{{ $line['quantity'] + 1 }}"
+                            <button type="button" class="size-8" data-cart-quantity data-line="{{ $line['id'] }}" data-quantity="{{ $line['quantity'] + 1 }}"
                                     aria-label="{{ __('theme::cart.increase_quantity') }}">+</button>
                         </div>
                         <button type="button" class="text-slate-500 underline" data-cart-remove data-line="{{ $line['id'] }}">{{ __('theme::common.remove') }}</button>
@@ -46,7 +46,7 @@
         @endforeach
     </ul>
 
-    <div class="space-y-3 border-t border-slate-200 p-4 text-sm">
+    <div class="space-y-3 border-t border-slate-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-sm">
         @include('theme::partials.cart-voucher', ['voucher' => $voucher])
         <dl class="space-y-1">
             <div class="flex justify-between"><dt>{{ __('theme::cart.subtotal_selected', ['count' => $cart['selected_count']]) }}</dt><dd>{{ $cart['selected_subtotal']['formatted'] }}</dd></div>
@@ -61,7 +61,7 @@
         @endif
         <div class="grid grid-cols-2 gap-2">
             <a href="{{ vani_route('storefront.cart') }}" class="rounded-[var(--radius-theme)] border border-primary px-4 py-2.5 text-center font-medium text-primary">{{ __('theme::cart.view_cart') }}</a>
-            @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'rounded-[var(--radius-theme)] bg-primary px-4 py-2.5 text-center font-medium text-white'])
+            @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'vani-button-primary'])
         </div>
     </div>
 @endif

@@ -42,7 +42,7 @@
             data-vani-suggest-box
             hidden
             class="relative mt-3 w-full
-           rounded-xl border border-slate-200
+           rounded-[var(--radius-theme)] border border-slate-200
            bg-white p-2 text-sm"
         ></div>
     </form>
@@ -57,7 +57,7 @@
             <div class="flex flex-wrap gap-2">
                 @foreach ($popularSearches as $term)
                     <a href="{{ vani_route('storefront.search', ['q' => $term]) }}"
-                       class="rounded-full border border-slate-200 px-4 py-2
+                       class="rounded-[var(--radius-theme)] border border-slate-200 px-4 py-2
                               text-sm text-slate-600 transition
                               hover:border-slate-900 hover:bg-slate-900 hover:text-white">
                         {{ $term }}

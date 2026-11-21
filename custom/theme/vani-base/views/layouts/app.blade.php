@@ -52,9 +52,9 @@
     @endif
     <x-vani::hook-slot name="vani.storefront.layout.header.before" />
     <header class="border-b border-slate-200 sticky top-0 z-50 bg-white">
-        <div class="mx-auto grid container grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-4 md:grid-cols-[1fr_auto_1fr]">
-            <a href="{{ vani_route('storefront.home') }}" class="col-start-1 row-start-1 justify-self-start text-xl font-semibold text-primary">{{ config('app.name') }}</a>
-            <nav class="hidden md:col-start-2 md:row-start-1 md:flex md:justify-center" aria-label="{{ __('theme::layout.main_menu') }}">
+        <div class="mx-auto grid container grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 px-4 py-2 md:grid-cols-[1fr_auto_1fr]">
+            <a href="{{ vani_route('storefront.home') }}" class="col-start-1 row-start-1 min-w-0 break-words justify-self-start text-xl font-medium tracking-tight text-primary">{{ config('app.name') }}</a>
+            <nav class="hidden md:col-start-2 md:row-start-1 md:flex md:items-center md:justify-center md:gap-4" aria-label="{{ __('theme::layout.main_menu') }}">
                 @if ($shell['menus']['header'] !== null)
                     @include('theme::partials.menu', ['items' => $shell['menus']['header']])
                 @else
@@ -69,7 +69,7 @@
                 <input id="vani-search-fallback-q" name="q" type="search" value="{{ $shell['search_query'] }}"
                     placeholder="{{ __('theme::common.search_products') }}" @if (($popularSearches ?? []) !== []) list="vani-search-fallback-popular-searches" @endif
                     class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
-                <div data-vani-suggest-box hidden class="absolute inset-x-0 top-full z-30 mt-1 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-2 text-sm shadow-lg"></div>
+                <div data-vani-suggest-box hidden class="absolute inset-x-0 top-full z-30 mt-1 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-2 text-sm"></div>
                 @if (($popularSearches ?? []) !== [])
                     <datalist id="vani-search-fallback-popular-searches">
                         @foreach ($popularSearches as $term)

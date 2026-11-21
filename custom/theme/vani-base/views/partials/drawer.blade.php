@@ -14,7 +14,7 @@
         @if ($showHeader ?? true)
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <h2 id="{{ $id }}-title" class="text-lg font-semibold">{{ $title }}</h2>
-            <button type="button" class="px-2 text-2xl leading-none text-slate-500 hover:text-slate-900"
+            <button type="button" class="size-10 text-2xl leading-none text-slate-500 hover:text-slate-900"
                 data-vani-drawer-close
                 @foreach ($closeAttributes ?? [] as $attribute => $value)
                     @if ($value !== false)

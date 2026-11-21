@@ -19,50 +19,52 @@
 @section('content')
     @include('theme::partials.breadcrumb', ['crumbs' => $page['crumbs']])
 
-    <div class="grid gap-8 md:grid-cols-2">
+    <div class="grid items-start gap-6 md:grid-cols-[minmax(0,4fr)_minmax(0,3fr)] lg:gap-12">
         @php($gallery = $page['gallery'])
         {{--
             Gallery: Swiper (vuốt, mũi tên) + PhotoSwipe (phóng to) — cài qua npm, tải theo nhu cầu (app.js). HTML render
             sẵn: dải ảnh cuộn ngang (scroll-snap), bấm ảnh mở bản lớn nhất. Khung theo tỉ lệ ảnh sản phẩm (Admin → Kích thước ảnh).
         --}}
-        <x-vani::hook-slot name="vani.storefront.pdp.before_gallery" :args="[$product]" />
-        <div data-product-gallery>
-            <div class="vani-carousel swiper rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $gallery['aspect'] }}" data-gallery-slider
-                 aria-roledescription="carousel" aria-label="{{ $gallery['label'] }}">
-                <div class="swiper-wrapper">
-                    @foreach ($gallery['slides'] as $slide)
-                        <div class="swiper-slide w-full" data-gallery-slide>
-                            <a href="{{ $slide['zoom']['url'] }}" data-pswp-width="{{ $slide['zoom']['width'] }}" data-pswp-height="{{ $slide['zoom']['height'] }}" target="_blank" rel="noopener" class="block h-full cursor-zoom-in"
-                               aria-label="{{ $slide['zoom_label'] }}">
-                                <img {{ $slide['main'] ? 'data-gallery-main' : 'data-gallery-image' }} src="{{ $slide['url'] }}" alt="{{ $slide['alt'] }}" width="{{ $slide['width'] }}" height="{{ $slide['height'] }}"
-                                     @if ($slide['srcset']) srcset="{{ $slide['srcset'] }}" sizes="{{ $slide['sizes'] }}" @endif
-                                     @if ($slide['main']) fetchpriority="high" @else loading="lazy" @endif decoding="async" class="h-full w-full object-cover">
-                            </a>
-                        </div>
-                    @endforeach
+        <div class="min-w-0">
+            <x-vani::hook-slot name="vani.storefront.pdp.before_gallery" :args="[$product]" />
+            <div data-product-gallery>
+                <div class="vani-carousel swiper rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $gallery['aspect'] }}" data-gallery-slider
+                     aria-roledescription="carousel" aria-label="{{ $gallery['label'] }}">
+                    <div class="swiper-wrapper">
+                        @foreach ($gallery['slides'] as $slide)
+                            <div class="swiper-slide w-full" data-gallery-slide>
+                                <a href="{{ $slide['zoom']['url'] }}" data-pswp-width="{{ $slide['zoom']['width'] }}" data-pswp-height="{{ $slide['zoom']['height'] }}" target="_blank" rel="noopener" class="block h-full cursor-zoom-in"
+                                   aria-label="{{ $slide['zoom_label'] }}">
+                                    <img {{ $slide['main'] ? 'data-gallery-main' : 'data-gallery-image' }} src="{{ $slide['url'] }}" alt="{{ $slide['alt'] }}" width="{{ $slide['width'] }}" height="{{ $slide['height'] }}"
+                                         @if ($slide['srcset']) srcset="{{ $slide['srcset'] }}" sizes="(min-width: 1536px) 760px, (min-width: 1280px) 640px, (min-width: 768px) 57vw, 100vw" @endif
+                                         @if ($slide['main']) fetchpriority="high" @else loading="lazy" @endif decoding="async" class="h-full w-full object-cover">
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+                    @if ($gallery['navigation'])
+                        <button type="button" class="vani-carousel-nav left-2" data-carousel-prev data-js-only aria-label="{{ __('theme::common.previous_image') }}">‹</button>
+                        <button type="button" class="vani-carousel-nav right-2" data-carousel-next data-js-only aria-label="{{ __('theme::common.next_image') }}">›</button>
+                    @endif
                 </div>
-                @if ($gallery['navigation'])
-                    <button type="button" class="vani-carousel-nav left-2" data-carousel-prev data-js-only aria-label="{{ __('theme::common.previous_image') }}">‹</button>
-                    <button type="button" class="vani-carousel-nav right-2" data-carousel-next data-js-only aria-label="{{ __('theme::common.next_image') }}">›</button>
+                @if ($gallery['thumbs'] !== [])
+                    <div class="mt-3 flex gap-2 overflow-x-auto pb-1" data-gallery-thumbs>
+                        @foreach ($gallery['thumbs'] as $thumb)
+                            <button type="button" data-gallery-thumb data-src="{{ $thumb['url'] }}" data-index="{{ $thumb['index'] }}" @class(['w-1/5 shrink-0 overflow-hidden rounded border', 'border-primary' => $thumb['active'], 'border-slate-200' => ! $thumb['active']]) style="aspect-ratio: {{ $gallery['aspect'] }}" aria-label="{{ $thumb['label'] }}">
+                                <img src="{{ $thumb['thumb_url'] }}" alt="" loading="lazy" decoding="async" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" class="h-full w-full object-cover">
+                            </button>
+                        @endforeach
+                    </div>
                 @endif
+                <x-vani::hook-slot name="vani.storefront.pdp.gallery_after" :args="[$product]" />
             </div>
-            @if ($gallery['thumbs'] !== [])
-                <div class="mt-3 flex gap-2 overflow-x-auto pb-1" data-gallery-thumbs>
-                    @foreach ($gallery['thumbs'] as $thumb)
-                        <button type="button" data-gallery-thumb data-src="{{ $thumb['url'] }}" data-index="{{ $thumb['index'] }}" @class(['w-1/5 shrink-0 overflow-hidden rounded border', 'border-primary' => $thumb['active'], 'border-slate-200' => ! $thumb['active']]) style="aspect-ratio: {{ $gallery['aspect'] }}" aria-label="{{ $thumb['label'] }}">
-                            <img src="{{ $thumb['thumb_url'] }}" alt="" loading="lazy" decoding="async" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" class="h-full w-full object-cover">
-                        </button>
-                    @endforeach
-                </div>
-            @endif
-            <x-vani::hook-slot name="vani.storefront.pdp.gallery_after" :args="[$product]" />
         </div>
 
-        <div>
+        <div class="min-w-0 break-words">
             @if ($product['brand'])
                 <a href="{{ vani_route('storefront.brand', $product['brand']['slug']) }}" class="text-sm uppercase tracking-wide text-slate-500">{{ $product['brand']['name'] }}</a>
             @endif
-            <h1 class="text-2xl font-semibold">{{ $product['name'] }}</h1>
+            <h1 class="mt-1 text-3xl font-medium tracking-tight lg:text-4xl">{{ $product['name'] }}</h1>
             <x-vani::hook-slot name="vani.storefront.pdp.after_title" :args="[$product]" />
 
             <p class="mt-3 text-lg" data-product-price data-vani-value="in_stock" data-vani-code="{{ $product['in_stock'] ? '1' : '0' }}">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
@@ -104,7 +106,7 @@
                                     <label @class([
                                         'relative cursor-pointer has-[:focus-visible]:outline has-[:focus-visible]:outline-2',
                                         'rounded-full p-0.5 ring-1 ring-slate-200 has-[:checked]:ring-2 has-[:checked]:ring-primary' => $swatch,
-                                        'flex min-w-12 flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white' => ! $swatch,
+                                        'flex min-h-11 min-w-12 flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white' => ! $swatch,
                                         'cursor-not-allowed border-dashed text-slate-400 line-through' => ! $swatch && $value['disabled'],
                                     ]) title="{{ $value['name'] }}">
                                         <input type="radio" name="{{ $primary['input_name'] }}" value="{{ $value['input_value'] }}" class="sr-only" data-primary data-option-value="{{ $value['code'] }}"
@@ -135,7 +137,7 @@
                             <legend class="mb-2 text-sm">{{ $selector['rest_label'] }}</legend>
                             <div class="flex flex-wrap gap-2">
                                 @foreach ($skus as $variant)
-                                    <label @class(['relative flex min-w-12 cursor-pointer flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white has-[:focus-visible]:outline has-[:focus-visible]:outline-2', 'cursor-not-allowed border-dashed text-slate-400 line-through' => $variant['disabled']])>
+                                    <label @class(['relative flex min-h-11 min-w-12 cursor-pointer flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white has-[:focus-visible]:outline has-[:focus-visible]:outline-2', 'cursor-not-allowed border-dashed text-slate-400 line-through' => $variant['disabled']])>
                                         <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" data-images='@json($variant['images'])' @disabled($variant['disabled']) @checked($variant['checked'])
                                             @if ($variant['price_html']) data-price-html="{{ $variant['price_html'] }}" @endif>
                                         <span class="font-medium">{{ $variant['label'] }}</span>
@@ -155,20 +157,23 @@
                     <input id="quantity" name="quantity" type="number" min="{{ $product['purchase']['min_quantity'] }}" max="{{ $product['purchase']['max_quantity'] }}" value="{{ $product['purchase']['min_quantity'] }}" class="w-20 rounded border border-slate-300 px-2 py-1.5">
                 </div>
                 <x-vani::hook-slot name="vani.storefront.pdp.add_to_cart_fields" :args="[$product]" />
-                <div class="flex gap-3">
-                    <button type="submit" class="flex-1 rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $page['can_buy'])>
+                <div class="grid gap-2">
+                    <button type="submit" class="vani-button-primary w-full" @disabled(! $page['can_buy'])>
                         {{ $product['in_stock'] ? __('theme::product.add_to_cart') : __('theme::product.out_of_stock') }}
                     </button>
                     {{-- Mua ngay (§3.8): thêm rồi chỉ thanh toán riêng món này; món khác vẫn ở lại giỏ. --}}
                     @if ($product['in_stock'])
-                        <button type="submit" name="buy_now" value="1" class="flex-1 rounded-[var(--radius-theme)] border border-primary px-6 py-3 font-medium text-primary disabled:opacity-50" @disabled(! $page['can_buy'])>{{ __('theme::product.buy_now') }}</button>
+                        <button type="submit" name="buy_now" value="1" class="min-h-12 w-full rounded-[var(--radius-theme)] border border-primary px-6 py-3 font-medium text-primary disabled:opacity-50" @disabled(! $page['can_buy'])>{{ __('theme::product.buy_now') }}</button>
                     @endif
                 </div>
             </form>
             <x-vani::hook-slot name="vani.storefront.pdp.after_add_to_cart" :args="[$product]" />
 
             @if ($product['description'])
-                <section class="prose mt-8 max-w-none text-sm">{!! nl2br(e($product['description'])) !!}</section>
+                <details open class="mt-8 border-y border-border py-3">
+                    <summary class="cursor-pointer font-medium">{{ __('theme::product.description') }}</summary>
+                    <div class="vani-prose mt-3 text-sm">{!! nl2br(e($product['description'])) !!}</div>
+                </details>
             @endif
             @if ($product['attributes'] !== [])
                 <dl class="mt-6 grid grid-cols-[8rem_1fr] gap-y-1 text-sm">

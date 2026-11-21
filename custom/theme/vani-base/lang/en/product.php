@@ -4,6 +4,7 @@ return [
     'add_to_cart' => 'Add to cart',
     'browse_all_products' => 'Browse all products',
     'browse_category' => 'Browse the category',
+    'description' => 'Product description',
     'buy_now' => 'Buy now',
     'low_stock' => 'low stock',
     'may_also_like' => 'You may also like',

@@ -33,6 +33,17 @@ export async function listing(url, { push = true } = {}) {
 }
 
 export function mountListingNavigation() {
+    const sidebarLayout = window.matchMedia('(min-width: 768px)');
+    const syncFilters = () => {
+        const disclosure = document.querySelector('[data-vani-filter-disclosure]');
+        if (disclosure) disclosure.open = sidebarLayout.matches;
+    };
+    syncFilters();
+    sidebarLayout.addEventListener('change', syncFilters);
+    document.addEventListener('vani:content-updated', (event) => {
+        if (event.detail?.element?.matches('[data-vani-listing]')) syncFilters();
+    });
+
     // Danh sách sản phẩm: lọc và phân trang không tải lại trang (link thường cho SEO; mở tab mới/ctrl+click giữ nguyên).
     document.addEventListener('click', (event) => {
         const link = event.target.closest('[data-vani-listing] a[href]');

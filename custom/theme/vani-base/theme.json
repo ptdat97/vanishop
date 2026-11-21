@@ -2,10 +2,10 @@
     "label": "VaniShop Base",
     "parent": null,
     "tokens": {
-        "color-primary": "#111827",
-        "color-accent": "#b45309",
+        "color-primary": "#1f1f1d",
+        "color-accent": "#5c5c56",
         "color-surface": "#ffffff",
-        "radius": "0.5rem",
+        "radius": "2px",
         "font-sans": "'Anivele', ui-sans-serif, system-ui, sans-serif"
     },
     "menus": {

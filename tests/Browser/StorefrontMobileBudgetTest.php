@@ -90,10 +90,16 @@ it('trang chính ở màn 375px: không cuộn ngang, ảnh có kích thước, 
     'đăng nhập' => ['/tai-khoan/dang-nhap', false],
 ]);
 
-it('màn 320px: trang chủ, danh mục và sản phẩm không cuộn ngang', function () {
+it('bố cục theo chiều rộng giữ trang vừa màn hình và bộ lọc đúng trạng thái', function () {
     foreach (['/', '/danh-muc/dam', "/san-pham/{$this->product->slug}"] as $path) {
-        $page = visit($path)->resize(320, 568)->assertNoJavaScriptErrors();
-        expect(mobilePageMetrics($page)['overflow'])->toBeLessThanOrEqual(0, "{$path}: cuộn ngang");
+        $page = visit($path);
+        foreach ([320, 375, 390, 768, 1024, 1280, 1440] as $width) {
+            $page->resize($width, 844)->assertNoJavaScriptErrors();
+            expect(mobilePageMetrics($page)['overflow'])->toBeLessThanOrEqual(0, "{$path} ({$width}px): cuộn ngang");
+            if ($path === '/danh-muc/dam') {
+                $page->assertScript("document.querySelector('[data-vani-filter-disclosure]').open", $width >= 768);
+            }
+        }
     }
 });
 

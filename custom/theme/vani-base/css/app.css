@@ -42,7 +42,7 @@
     --color-foreground: var(--vani-color-foreground, #1f1f1d);
     --color-background: var(--vani-color-background, #ffffff);
     --color-muted: var(--vani-color-muted, #777771);
-    --color-subtle: var(--vani-color-subtle, #fafaf9);
+    --color-subtle: var(--vani-color-subtle, #f7f7f5);
     --color-border: var(--vani-color-border, #e9e9e6);
 
     /* Fashion accents */
@@ -64,6 +64,16 @@
     --color-gray-900: #1f1f1d;
 
     /* Container */
+    --color-slate-50: var(--color-subtle);
+    --color-slate-100: var(--color-subtle);
+    --color-slate-200: var(--color-border);
+    --color-slate-300: var(--color-gray-300);
+    --color-slate-400: var(--color-gray-600);
+    --color-slate-500: var(--color-gray-600);
+    --color-slate-600: var(--color-gray-600);
+    --color-slate-700: var(--color-gray-700);
+    --color-slate-900: var(--color-foreground);
+
     --container-sm: 640px;
     --container-md: 768px;
     --container-lg: 1024px;
@@ -162,8 +172,8 @@
 
     input::placeholder,
     textarea::placeholder {
-        color: var(--color-muted);
-        opacity: 0.7;
+        color: var(--color-gray-600);
+        opacity: 1;
     }
 
     input:focus-visible,
@@ -788,5 +798,80 @@ html:has(.vani-modal[open]) {
     .vani-modal[open] {
         opacity: 1;
         transform: none;
+    }
+}
+
+.vani-editorial-title,
+[data-extras-slides] figcaption p:first-child {
+    font-size: clamp(1.75rem, 4vw, 3.75rem);
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
+}
+
+[data-extras-slides] figure:has(figcaption) {
+    display: grid;
+    align-content: start;
+    background: var(--color-subtle);
+}
+
+[data-extras-slides] figcaption {
+    position: static;
+    align-self: center;
+    padding: clamp(1rem, 3vw, 3.5rem);
+    background: none;
+    color: var(--color-foreground);
+}
+
+[data-extras-slides] figcaption a {
+    padding-inline: 0;
+    background: transparent;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.35em;
+}
+
+[data-lookbook-products] a:hover,
+[data-lookbook-products] a:focus-visible {
+    text-decoration-thickness: 2px;
+}
+
+[data-lookbook-product-markers] a {
+    border: 1px solid var(--color-border);
+    box-shadow: none;
+}
+
+@media (min-width: 768px) {
+    #vani-cart-drawer {
+        width: 29rem;
+    }
+
+    [data-extras-slides] figure:has(figcaption) {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        align-content: stretch;
+    }
+}
+
+@layer components {
+    .vani-button-primary {
+        @apply inline-flex min-h-12 items-center justify-center rounded-[var(--radius-theme)] bg-primary px-6 py-3 text-center font-medium text-white;
+    }
+
+    .vani-button-primary:where(a, button):hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--color-primary), white 12%);
+    }
+
+    .vani-button-primary:disabled,
+    .vani-button-primary[aria-disabled="true"] {
+        opacity: 0.5;
+    }
+
+    [data-checkout-form] :is(input:not([type]), input[type="text"], input[type="email"], input[type="tel"], select) {
+        min-height: 2.75rem;
+    }
+
+    [data-checkout-form] [aria-invalid="true"] {
+        border-color: var(--color-danger);
     }
 }

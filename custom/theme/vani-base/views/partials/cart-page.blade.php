@@ -5,7 +5,7 @@
 --}}
 <p role="alert" class="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700" data-vani-cart-error hidden></p>
 @if ($cart === null || $cart['lines'] === [])
-    <p class="text-slate-500">{{ __('theme::cart.cart_empty') }} <a href="{{ vani_route('storefront.home') }}" class="underline">{{ __('theme::cart.continue_shopping') }}</a></p>
+    <p class="bg-subtle px-4 py-12 text-center text-slate-600">{{ __('theme::cart.cart_empty') }} <a href="{{ vani_route('storefront.home') }}" class="underline">{{ __('theme::cart.continue_shopping') }}</a></p>
     <x-vani::hook-slot name="vani.storefront.cart.empty" />
 @else
     <x-vani::hook-slot name="vani.storefront.cart.before_lines" :args="[$cart]" />
@@ -25,7 +25,7 @@
                     <span class="sr-only">{{ __('theme::cart.select_checkout') }}</span>
                     <input type="checkbox" name="lines[]" value="{{ $line['id'] }}" form="cart-selection" data-select-line data-line="{{ $line['id'] }}" @checked($line['selected']) @disabled($unavailable)>
                 </label>
-                <div class="min-w-48 flex-1">
+                <div class="min-w-48 flex-1 break-words">
                     @if ($line['product'])
                         <a href="{{ vani_route('storefront.product', $line['product']['slug']) }}" class="font-medium">{{ $line['product']['name'] }}</a>
                         <p class="text-sm text-slate-500">{{ $line['product']['variant_label'] !== '' ? $line['product']['variant_label'].' · ' : '' }}{{ $line['sku'] }}</p>
@@ -52,13 +52,13 @@
     </ul>
     <x-vani::hook-slot name="vani.storefront.cart.after_lines" :args="[$cart]" />
 
-    <div class="mt-6 flex flex-col items-end gap-3">
-        <div class="w-full max-w-sm">@include('theme::partials.cart-voucher', ['voucher' => $voucher ?? null])</div>
+    <div class="mt-6 ml-auto flex max-w-md flex-col gap-4 border-t border-border bg-subtle p-5">
+        <div class="w-full">@include('theme::partials.cart-voucher', ['voucher' => $voucher ?? null])</div>
         <p>{{ __('theme::cart.subtotal_selected_colon', ['count' => $cart['selected_count']]) }} <strong data-vani-value="cart.selected_subtotal" data-vani-amount="{{ $cart['selected_subtotal']['amount'] }}">{{ $cart['selected_subtotal']['formatted'] }}</strong></p>
         @if (($voucher ?? null) && $voucher['rejection'] === null && $voucher['discount']['amount'] > 0)
             <p class="text-emerald-700">{{ __('theme::common.discount') }}: −{{ $voucher['discount']['formatted'] }} · {{ __('theme::cart.estimated_total') }}: <strong>{{ $voucher['total']['formatted'] }}</strong></p>
         @endif
-        @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white'])
+        @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'vani-button-primary'])
         {{-- Chưa sẵn sàng: nút trên chọn lại mọi sản phẩm còn mua được; câu dưới giải thích cho khách. --}}
         @if (! $cart['checkout_ready'] && ($cart['payable_line_ids'] ?? []) !== [])
             <p class="text-sm text-slate-600">{{ __('theme::cart.checkout_all_hint') }}</p>

@@ -6,7 +6,7 @@
     <span class="text-sm text-slate-500">{{ __('theme::product.no_price_yet') }}</span>
 @else
     {{-- data-vani-value/-amount: số liệu thô để test so khớp trang với Storefront API (L46) — theme con giữ khi override. --}}
-    <span class="font-semibold text-primary" data-price data-vani-value="price.min" data-vani-amount="{{ $price['min']['amount'] }}" data-vani-amount-max="{{ $price['max']['amount'] }}">
+    <span class="font-medium tabular-nums text-primary" data-price data-vani-value="price.min" data-vani-amount="{{ $price['min']['amount'] }}" data-vani-amount-max="{{ $price['max']['amount'] }}">
         {{ $price['min']['formatted'] }}@if ($price['max']['amount'] !== $price['min']['amount']) – {{ $price['max']['formatted'] }}@endif
     </span>
     @if ($price['compare_at'])

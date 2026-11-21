@@ -56,6 +56,8 @@ Các đợt dưới đây có thể phát hành độc lập. Ưu tiên đề xu
 
 ## Bằng chứng kiểm thử local
 
+- [Audit Flat Ecommerce Luxury](flat-luxury-audit.md) ghi phạm vi thay đổi trực tiếp trong vani-base, kiểm tra bảy chiều rộng, số đo tải trên Herd và các điều kiện còn cần nghiệm thu trên thiết bị thật.
+
 - Browser dùng logo ngang và dọc ở trang chủ mặc định và trang chủ dựng bằng block, kiểm kích thước ảnh và ngân sách tải. Có ca 320 px, bỏ qua điều hướng bằng bàn phím, Back/Forward trên mobile, gắn sản phẩm vào Lookbook và đặt COD trên mobile.
 - Browser kiểm tài khoản, giá dành cho thành viên và số món ở cả hai chế độ phiên. Khi đóng gợi ý bằng Escape, phản hồi đến chậm bị bỏ qua. Đóng modal tìm kiếm trả focus về nút mở.
 - Browser kiểm bấm thêm hàng hai lần, cập nhật số lượng từ giỏ mini và mất phản hồi sau khi máy chủ đã thêm hàng. Khi mất phản hồi, khách được đưa tới giỏ để kiểm tra số lượng đã ghi.
