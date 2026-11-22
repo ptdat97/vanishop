@@ -34,3 +34,16 @@ it('thêm SKU từ ô tìm, tổng tự tính; điền người nhận + địa 
     $page->assertNoJavaScriptErrors();
     expect(Order::query()->withoutGlobalScopes()->sole())->source->toBe('admin')->customer_phone->toBe('+84987654321');
 });
+
+it('Combobox tìm SKU phía máy chủ đổi từ kết quả trống sang lựa chọn được bằng bàn phím', function () {
+    $search = '[data-add-variant] input';
+    visit('/admin/orders/new')
+        ->type($search, 'KHONG-CO-SKU')
+        ->assertSee('Không tìm thấy SKU đang bán')
+        ->clear($search)
+        ->type($search, $this->s->sku)
+        ->assertSeeIn('[role="option"]', $this->s->sku)
+        ->keys($search, ['ArrowDown', 'Enter'])
+        ->assertSeeIn('[data-order-lines]', $this->s->sku)
+        ->assertNoJavaScriptErrors();
+});
