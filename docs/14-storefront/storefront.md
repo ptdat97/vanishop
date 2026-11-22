@@ -98,6 +98,8 @@ Admin → Giao diện → Trang chủ lưu danh sách block vào `core.storefron
 
 StorefrontExtras dùng Swiper chung của theme cho slideshow từ hai ảnh trở lên. Khoảng chuyển lấy từ cấu hình, rời focus/rê chuột mới chạy tiếp và tắt tự chuyển khi người dùng chọn giảm chuyển động. Slide đầu ưu tiên tải, ảnh sau tải lười và dải ảnh cuộn ngang khi thư viện chưa tải được. Lookbook render các liên kết được đánh số trên ảnh và danh sách tên sản phẩm tương ứng bên dưới.
 
+StorefrontExtras 1.4.0 có block `extras_featured_collection` tại Admin → Giao diện → Trang chủ → **Bộ sưu tập nổi bật**. Chọn bộ sưu tập trong danh sách tối đa 200 mục và thêm ảnh từ Thư viện nếu cần. Block dùng tên và slug theo locale, ảnh responsive và hai thẻ sản phẩm đầu từ catalog. Bộ sưu tập ẩn hoặc hết sản phẩm hiển thị sẽ bỏ qua block. Bản giới thiệu và mô tả ảnh là nội dung cấu hình của block.
+
 ## 3a. URL theo ngôn ngữ
 
 > **Implemented** (Core 0.3.59–0.3.62, [ADR-038](../19-adr/ADR-038-localized-storefront-urls.md)).
@@ -229,6 +231,8 @@ StorefrontExtras dùng Swiper chung của theme cho slideshow từ hai ảnh tr�
 | Tìm kiếm | `js/header.js` điều khiển modal và gợi ý, hủy yêu cầu cũ và trả focus khi đóng. Form tìm kiếm dự phòng giúp gửi truy vấn khi tắt JavaScript. |
 | Giỏ và checkout | `js/cart.js` nhận `html`/`page_html` do Blade render và phát `vani:content-updated` sau khi thay vùng. Khi mất phản hồi thêm hàng, chuyển khách về giỏ để kiểm tra. Checkout giữ cùng `idempotency_key` qua lần gửi lại và đối chiếu `expected_total` với tổng server tính. Storefront API dùng header `Idempotency-Key`. |
 | Wishlist | Khách vãng lai lưu ID sản phẩm trong trình duyệt và có thể xem/bỏ món ở `/yeu-thich`. HTML thẻ sản phẩm tuân theo chính sách nhìn giá của Storefront. Khách đã đăng nhập dùng trang tài khoản; thông báo giảm giá lấy giá riêng của khách từ hợp đồng `CustomerProductPrices`. |
+
+`theme::partials.checkout-summary` chứa danh sách dòng quote, ô áp mã giảm giá và các số tiền checkout. Giữ `[data-checkout-summary]`, các slot bên trong và `data-vani-value` khi override. Nút đặt hàng mobile vẫn ở cuối form. `theme::partials.empty-state` dùng chung cho listing, trang giỏ và giỏ mini. Link tiếp tục mua ở giỏ mini giữ `data-cart-close`.
 
 Storefront khai báo nhóm middleware qua `StorefrontRouteMiddleware`. Shared dùng nhóm API khi nạp route module. Extension dùng các nhóm API, trang plugin và tài khoản, theo thứ tự middleware và quy tắc cache do Storefront định nghĩa.
 

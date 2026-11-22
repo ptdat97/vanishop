@@ -6,9 +6,12 @@ use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Storefront\Application\PageBlocks;
+use Plugin\StorefrontExtras\StorefrontExtrasServiceProvider;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -217,5 +220,31 @@ it('sản phẩm dưới màn hình đầu chờ hiệu ứng và hiện ra khi 
     $page->script('() => window.scrollTo(0, document.body.scrollHeight)');
     $page->wait(1)
         ->assertScript("document.querySelectorAll('[data-vani-motion-pending]').length", 0)
+        ->assertNoJavaScriptErrors();
+});
+
+it('bộ sưu tập nổi bật vừa màn hình nhỏ và dẫn tới đúng tập sản phẩm', function () {
+    T::seed(function (): void {
+        app(PluginManager::class)->install(StorefrontExtrasServiceProvider::ID);
+        app(PluginManager::class)->enable(StorefrontExtrasServiceProvider::ID);
+        app()->register(StorefrontExtrasServiceProvider::class);
+        $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']);
+        $collection->syncTranslations(['vi' => ['name' => 'Bộ sưu tập mùa hè']]);
+        $collection->styles()->attach($this->product->id);
+        $cover = app(MediaLibrary::class)->store(UploadedFile::fake()->image('collection.jpg', 800, 1000));
+        app(PageBlocks::class)->saveHome([['type' => 'extras_featured_collection', 'config' => [
+            'collection' => (string) $collection->id,
+            'image' => $cover->id,
+            'image_alt' => 'Ảnh bộ sưu tập mùa hè',
+        ]]]);
+    });
+
+    $page = visit('/')->resize(320, 844)->assertVisible('[data-block="extras_featured_collection"] img[alt="Ảnh bộ sưu tập mùa hè"]');
+    expect(mobilePageMetrics($page)['overflow'])->toBeLessThanOrEqual(0);
+    $page->resize(1280, 844)->assertSee('Bộ sưu tập mùa hè');
+    expect(mobilePageMetrics($page)['overflow'])->toBeLessThanOrEqual(0);
+    $page->click('Xem bộ sưu tập')
+        ->assertPathIs('/tim-kiem')
+        ->assertVisible('[data-vani-product="'.$this->product->slug.'"]')
         ->assertNoJavaScriptErrors();
 });

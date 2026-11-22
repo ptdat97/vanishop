@@ -42,7 +42,10 @@
             </form>
         </div>
         @if ($listing['items'] === [])
-            <p class="bg-subtle px-4 py-12 text-center text-slate-500">{{ __('theme::catalog.no_matching_products') }}</p>
+            @include('theme::partials.empty-state', [
+                'emptyMessage' => __('theme::catalog.no_matching_products'),
+                'emptyClass' => 'bg-subtle px-4 py-12 text-center text-slate-500',
+            ])
             <x-vani::hook-slot name="vani.storefront.plp.empty" :args="[$listingView['context'], $listing]" />
         @else
             @include('theme::partials.product-grid', ['products' => $listing['items'], 'stagger' => true, 'eager' => 2])

@@ -5,7 +5,11 @@
 --}}
 <p role="alert" class="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700" data-vani-cart-error hidden></p>
 @if ($cart === null || $cart['lines'] === [])
-    <p class="bg-subtle px-4 py-12 text-center text-slate-600">{{ __('theme::cart.cart_empty') }} <a href="{{ vani_route('storefront.home') }}" class="underline">{{ __('theme::cart.continue_shopping') }}</a></p>
+    @include('theme::partials.empty-state', [
+        'emptyMessage' => __('theme::cart.cart_empty'),
+        'emptyClass' => 'bg-subtle px-4 py-12 text-center text-slate-600',
+        'emptyAction' => ['url' => vani_route('storefront.home'), 'label' => __('theme::cart.continue_shopping')],
+    ])
     <x-vani::hook-slot name="vani.storefront.cart.empty" />
 @else
     <x-vani::hook-slot name="vani.storefront.cart.before_lines" :args="[$cart]" />

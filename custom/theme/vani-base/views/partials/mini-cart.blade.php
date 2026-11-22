@@ -6,10 +6,11 @@
     $cart: null | giỏ như Storefront API (CartPresenter::present) · $voucher: null | CartVoucher::preview.
 --}}
 @if ($cart === null || $cart['lines'] === [])
-    <div class="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center text-slate-500">
-        <p>{{ __('theme::cart.cart_empty') }}</p>
-        <a href="{{ vani_route('storefront.home') }}" class="underline" data-cart-close>{{ __('theme::cart.continue_shopping') }}</a>
-    </div>
+    @include('theme::partials.empty-state', [
+        'emptyMessage' => __('theme::cart.cart_empty'),
+        'emptyClass' => 'flex flex-1 flex-col items-center justify-center py-16 text-center text-slate-500',
+        'emptyAction' => ['url' => vani_route('storefront.home'), 'label' => __('theme::cart.continue_shopping'), 'close_cart' => true],
+    ])
 @else
     <ul class="flex-1 divide-y divide-slate-100 overflow-y-auto px-4" aria-label="{{ __('theme::cart.items_cart') }}">
         @foreach ($cart['lines'] as $line)

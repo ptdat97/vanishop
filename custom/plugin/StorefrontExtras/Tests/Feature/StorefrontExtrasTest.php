@@ -10,6 +10,7 @@ use Mockery\MockInterface;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
+use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginAssets;
@@ -23,6 +24,7 @@ use Modules\Tenancy\Contracts\Settings;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\BannerGridBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\BestsellersBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\CategoryGridBlock;
+use Plugin\StorefrontExtras\Infrastructure\Blocks\FeaturedCollectionBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\FeaturesBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\MarkdownBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\ProductTabsBlock;
@@ -41,6 +43,7 @@ StorefrontBlockContract::define('vani.storefront-extras banner grid', fn () => a
 StorefrontBlockContract::define('vani.storefront-extras product tabs', fn () => app(ProductTabsBlock::class), config: ['tab_1_label' => 'Mới', 'tab_1_source' => 'newest']);
 StorefrontBlockContract::define('vani.storefront-extras features', fn () => app(FeaturesBlock::class), config: ['item_1_icon' => 'truck', 'item_1_title' => 'Giao nhanh']);
 StorefrontBlockContract::define('vani.storefront-extras category grid', fn () => app(CategoryGridBlock::class), config: ['title' => 'Danh mục']);
+StorefrontBlockContract::define('vani.storefront-extras featured collection', fn () => app(FeaturedCollectionBlock::class), config: ['collection' => '0']);
 StorefrontBlockContract::define('vani.storefront-extras markdown', fn () => app(MarkdownBlock::class), config: ['body' => '**Chào**']);
 
 beforeEach(function () {
@@ -194,4 +197,34 @@ it('lưới danh mục trang chủ giữ thứ tự đã chọn trên Blade và 
     $grid = str($html)->after('data-block="extras_category_grid"')->before('</section>')->toString();
     expect($grid)->toContain(vani_route('storefront.category', 'dresses', 'en'), vani_route('storefront.category', 'coats', 'en'), 'src="'.e($imageUrl).'"', 'viewBox="0 0 48 48"')
         ->and(substr_count($grid, 'data-category-card'))->toBe(2);
+});
+
+it('bộ sưu tập nổi bật dùng đúng locale, ảnh và thẻ sản phẩm; ẩn khối khi bộ sưu tập bị ẩn', function () {
+    Storage::fake('public');
+    [$collection, $cover] = T::seed(function (): array {
+        $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']);
+        $collection->syncTranslations(['vi' => ['name' => 'Mùa hè'], 'en' => ['name' => 'Summer edit', 'slug' => 'summer-edit']]);
+        $collection->styles()->attach($this->s->style_id);
+        $cover = app(MediaLibrary::class)->store(UploadedFile::fake()->image('cover.jpg', 1200, 1500));
+        app(PageBlocks::class)->saveHome([['type' => 'extras_featured_collection', 'config' => [
+            'collection' => (string) $collection->id, 'image' => $cover->id, 'image_alt' => 'Ảnh bìa mùa hè',
+            'description' => '<strong>Phối đồ mùa hè</strong>',
+        ]]]);
+
+        return [$collection, $cover];
+    });
+
+    $this->get('/')->assertOk()->assertSee('data-block="extras_featured_collection"', false)
+        ->assertSee('Mùa hè')->assertSee('alt="Ảnh bìa mùa hè"', false)->assertSee('width="1200"', false)->assertSee('height="1500"', false)
+        ->assertSee('srcset="'.$cover->srcset().'"', false)
+        ->assertSee('<strong>Phối đồ mùa hè</strong>')->assertDontSee('<strong>Phối đồ mùa hè</strong>', false)
+        ->assertSee('data-vani-product="'.$this->s->style->slug.'"', false);
+    $this->get('/en')->assertOk()->assertSee('Summer edit')->assertSee('/en/search?collection=summer-edit');
+    $this->getJson('/api/storefront/v1/pages/home', ['X-Vani-Locale' => 'en'])->assertOk()
+        ->assertJsonPath('data.0.data.title', 'Summer edit')
+        ->assertJsonCount(1, 'data.0.data.products')
+        ->assertJsonPath('data.0.data.products.0.id', $this->s->style_id);
+
+    T::seed(fn () => $collection->update(['status' => 'hidden']));
+    $this->get('/')->assertOk()->assertDontSee('data-block="extras_featured_collection"', false);
 });
