@@ -30,7 +30,7 @@ const t = (key, replace = {}) => Object.entries(replace).reduce((text, [name, va
  * ── window.vani (0.3.93): API cho frontend nạp dữ liệu không tải lại trang ─────────────────────────────────────────────
  * Gọi chính các route web của storefront với `Accept: application/json` (cùng phiên, validation, throttle như form). URL theo ngôn ngữ trang lấy từ `script[data-vani-urls]`. Lỗi: Error có `status`, `errors` (theo trường),
  * `code`. Theme con / plugin dùng lại:
- *   vani.cart.get() · add(variantId, quantity, options) · update(lineId, quantity) · remove(lineId) · select(lineIds)
+ *   vani.cart.get() · add(variantId, quantity, options) · addItems([{variant_id, quantity}]) · update(lineId, quantity) · remove(lineId) · select(lineIds)
  *   vani.cart.applyVoucher(code) · removeVoucher() · open(state?) · close()
  *   vani.auth.login(email, password) · logout()
  *   vani.search.suggest(q) · listing(url)        vani.request(method, url, data)

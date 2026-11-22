@@ -17,6 +17,14 @@ beforeEach(function () {
     ['s' => $this->s, 'm' => $this->m] = C::store();
 });
 
+it('thêm nhiều món một lần bằng items[]: thêm tất cả hoặc không món nào', function () {
+    $this->postJson('/gio-hang', ['items' => [['variant_id' => $this->s->id], ['variant_id' => $this->m->id, 'quantity' => 2]]])->assertOk()
+        ->assertJsonPath('count', 3)->assertJsonPath('message', 'Đã thêm 2 sản phẩm vào giỏ.');
+    $this->postJson('/gio-hang', ['items' => [['variant_id' => $this->s->id], ['variant_id' => 999_999]]])->assertUnprocessable();
+    $this->getJson('/gio-hang')->assertJsonPath('count', 3);
+    $this->postJson('/gio-hang', ['items' => [['quantity' => 1]]])->assertUnprocessable()->assertJsonValidationErrors('items.0.variant_id');
+});
+
 it('thêm / sửa số lượng / xoá dòng bằng JSON: trả số món, HTML giỏ mini và thay đổi cho sự kiện vani:cart-updated', function () {
     $added = $this->postJson('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 2])->assertOk()
         ->assertJsonPath('count', 2)

@@ -8,11 +8,13 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Promotion\Contracts\CartContentRule;
+use Modules\Promotion\Contracts\ContextualPromotionAction;
 use Modules\Promotion\Contracts\Data\AppliedPromotion;
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
 use Modules\Promotion\Contracts\Data\PromotionResult;
 use Modules\Promotion\Contracts\Data\VoucherRejection;
+use Modules\Promotion\Contracts\PromotionAction;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Promotion\Contracts\PromotionUnavailable;
 use Modules\Promotion\Domain\DiscountMath;
@@ -80,7 +82,7 @@ final class PromotionEvaluator implements PromotionEngine
                 $remaining[$key] = $subtotals[$key]->subtract($discounted[$key]);
             }
 
-            $proposed = $action->apply($remaining, $promotion->action_config, $context->currencyCode);
+            $proposed = $this->propose($action, $context, $remaining, $promotion->action_config);
             $lineDiscounts = array_filter(
                 DiscountMath::capToFloor(array_intersect_key($proposed, $remaining), $subtotals, $discounted, $this->maxDiscountBasisPoints),
                 fn (Money $discount): bool => $discount->isPositive(),
@@ -190,7 +192,7 @@ final class PromotionEvaluator implements PromotionEngine
             foreach ($eligibility->keys as $key) {
                 $remaining[$key] = $subtotals[$key]->subtract($discounted[$key]);
             }
-            $proposed = $action->apply($remaining, $promotion->action_config, $context->currencyCode);
+            $proposed = $this->propose($action, $context, $remaining, $promotion->action_config);
             $lineDiscounts = array_filter(
                 DiscountMath::capToFloor(array_intersect_key($proposed, $remaining), $subtotals, $discounted, $this->maxDiscountBasisPoints),
                 fn (Money $discount): bool => $discount->isPositive(),
@@ -267,6 +269,18 @@ final class PromotionEvaluator implements PromotionEngine
      * Mọi dòng của giỏ, lọc qua mọi rule (hoặc chỉ `CartContentRule` khi kiểm tra lại). null = có rule thuộc plugin không
      * còn bật (bỏ qua khuyến mãi).
      */
+    /**
+     * @param  array<int, Money>  $remaining
+     * @param  array<string, mixed>  $config
+     * @return array<int, Money>
+     */
+    private function propose(PromotionAction $action, PromotionContext $context, array $remaining, array $config): array
+    {
+        return $action instanceof ContextualPromotionAction
+            ? $action->applyInContext($context, $remaining, $config)
+            : $action->apply($remaining, $config, $context->currencyCode);
+    }
+
     private function eligibility(Promotion $promotion, PromotionContext $context, bool $cartContentOnly = false): ?Eligibility
     {
         $eligibility = new Eligibility(array_values(array_map(fn ($line): int => $line->key, $context->lines)));

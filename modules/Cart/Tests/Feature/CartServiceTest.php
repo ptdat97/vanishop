@@ -57,6 +57,16 @@ it('cộng dồn khi thêm cùng variant; chặn vượt số có thể bán và
         ->and($this->carts->view($key)->lines[0]->quantity)->toBe(3);
 });
 
+it('thêm nhiều món một lần: một món lỗi thì giỏ giữ nguyên', function () {
+    $key = $this->carts->create('VND')->key;
+
+    expect(rejectedCode(fn () => $this->carts->addLines($key, [['variant_id' => $this->s->id, 'quantity' => 1], ['variant_id' => $this->m->id, 'quantity' => 3]])))->toBe('cart.insufficient_stock')
+        ->and($this->carts->view($key)->lines)->toBe([]);
+
+    $view = $this->carts->addLines($key, [['variant_id' => $this->s->id, 'quantity' => 1], ['variant_id' => $this->l->id, 'quantity' => 2]]);
+    expect(collect($view->lines)->pluck('quantity', 'variantId')->all())->toBe([$this->s->id => 1, $this->l->id => 2]);
+});
+
 it('giới hạn số dòng trong giỏ', function () {
     app(Settings::class)->set('core', 'cart.max_lines', 2);
     $carts = app(Carts::class);

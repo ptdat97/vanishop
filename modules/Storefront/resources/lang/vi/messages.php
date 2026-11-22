@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'added_items_to_cart' => 'Đã thêm :count sản phẩm vào giỏ.',
     'block_zone_rule' => 'Vị trí này không nhận loại block đã chọn hoặc đã đủ số block.',
     'collection_page_saved' => 'Đã lưu trang bộ sưu tập.',
     'menu_location_unknown' => 'Vị trí menu không có trong giao diện.',

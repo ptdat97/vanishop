@@ -74,6 +74,22 @@ final class CartService implements Carts
         return $this->mutate($key, fn (Cart $cart): CartLine => $this->add($cart, $variantId, $quantity, $options));
     }
 
+    public function addLines(CartKey $key, array $items): CartView
+    {
+        $normalized = array_map(fn (array $item): array => [
+            'variant_id' => (int) $item['variant_id'],
+            'quantity' => (int) $item['quantity'],
+            'options' => $this->normalizeOptions((int) $item['variant_id'], (array) ($item['options'] ?? [])),
+        ], array_values($items));
+
+        // Một transaction (mutate): món sau ném CartRejected → các món trước rollback cùng.
+        return $this->mutate($key, function (Cart $cart) use ($normalized): void {
+            foreach ($normalized as $item) {
+                $this->add($cart, $item['variant_id'], $item['quantity'], $item['options']);
+            }
+        });
+    }
+
     public function buyNow(CartKey $key, int $variantId, int $quantity, array $options = []): CartView
     {
         $options = $this->normalizeOptions($variantId, $options);

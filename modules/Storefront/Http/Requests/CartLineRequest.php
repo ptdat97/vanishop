@@ -15,13 +15,19 @@ use Modules\Catalog\Contracts\VariantDirectory;
  */
 final class CartLineRequest extends FormRequest
 {
+    public const MAX_ITEMS = 10;
+
     /**
      * @return array<string, list<mixed>>
      */
     public function rules(): array
     {
         return [
-            'variant_id' => ['required', 'integer', 'min:1'],
+            'variant_id' => ['nullable', 'required_without:items', 'integer', 'min:1'],
+            // Thêm nhiều món một lần (vd. cả bộ combo của plugin): thêm tất cả hoặc không món nào (Carts::addLines).
+            'items' => ['nullable', 'array', 'min:1', 'max:'.self::MAX_ITEMS],
+            'items.*.variant_id' => ['required', 'integer', 'min:1'],
+            'items.*.quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'buy_now' => ['nullable', 'boolean'],
             // Bộ chọn của trang sản phẩm (ADR-045) gửi kèm giá trị trục đầu đang chọn `axis[<mã loại>]=<mã giá trị>` (khác `options` — tuỳ chọn dòng của plugin): biến thể
@@ -58,7 +64,21 @@ final class CartLineRequest extends FormRequest
     public function messages(): array
     {
         // Đã chọn giá trị trục đầu ở bộ chọn của trang sản phẩm → chỉ còn thiếu các trục còn lại.
-        return ['variant_id.required' => __(array_filter((array) $this->input('axis', [])) !== [] ? 'storefront::messages.choose_remaining' : 'storefront::messages.choose_variant')];
+        $chooseVariant = __(array_filter((array) $this->input('axis', [])) !== [] ? 'storefront::messages.choose_remaining' : 'storefront::messages.choose_variant');
+
+        return ['variant_id.required_without' => $chooseVariant, 'items.*.variant_id.required' => __('storefront::messages.choose_variant')];
+    }
+
+    /**
+     * @return list<array{variant_id: int, quantity: int}>|null null = thêm một món qua `variant_id`
+     */
+    public function items(): ?array
+    {
+        $items = $this->validated('items');
+
+        return $items === null ? null : array_map(fn (array $item): array => [
+            'variant_id' => (int) $item['variant_id'], 'quantity' => (int) ($item['quantity'] ?? 1),
+        ], array_values($items));
     }
 
     public function variantId(): int

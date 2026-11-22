@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'managed' => 'Khuyến mãi do plugin :owner quản lý, sửa tại màn hình của plugin.',
     'voucher_exhausted' => 'Mã :code đã hết lượt sử dụng.',
     'limit_reached' => 'Khuyến mãi ":name" đã hết lượt hoặc hết ngân sách.',
     'saved' => 'Đã lưu.',

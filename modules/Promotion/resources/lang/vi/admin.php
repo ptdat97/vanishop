@@ -39,6 +39,8 @@ return [
         'status' => 'Trạng thái',
     ],
     'promotions_form' => [
+        'managed_note' => 'Khuyến mãi này do plugin :owner quản lý. Sửa nội dung, lịch chạy và trạng thái tại màn hình của plugin.',
+        'managed_open' => 'Mở màn hình của plugin',
         'add_condition' => 'Thêm điều kiện',
         'add_promotion' => 'Thêm khuyến mãi',
         'all_promotion_s_vouchers_deleted' => 'Toàn bộ voucher của khuyến mãi cũng bị xoá.',
@@ -88,6 +90,7 @@ return [
         'valid_until' => 'Hiệu lực đến',
     ],
     'promotions_index' => [
+        'managed' => 'Plugin',
         'active_period' => 'Hiệu lực',
         'add_promotion' => 'Thêm khuyến mãi',
         'amount_off' => 'Giảm :amount',

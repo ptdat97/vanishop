@@ -44,6 +44,8 @@ const props = defineProps<{
         ends_at: string | null;
         lock_version: number;
         rules: Array<{ type: string; label: string | null; config: Record<string, unknown> }>;
+        /** Do plugin quản lý (ManagedPromotions): chỉ xem. */
+        managed: { owner: string; url: string | null } | null;
     };
     vouchers: Array<{ id: number; code: string; status: string; used_count: number; usage_limit: number | null; expires_at: string | null }>;
     vouchersTotal: number;
@@ -158,10 +160,13 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
     <Head :title="promotion ? t('promotion::admin.promotions_form.edit_promotion') : t('promotion::admin.promotions_form.add_promotion')" />
     <PageHeader :title="promotion ? t('promotion::admin.promotions_form.edit_promotion_name', { name: promotion.name }) : t('promotion::admin.promotions_form.add_promotion')">
         <Link :href="baseUrl" :class="secondaryButton">{{ t('promotion::admin.promotions_form.back') }}</Link>
-        <button v-if="promotion" type="button" :class="dangerButton" @click="destroy">{{ t('promotion::admin.promotions_form.delete') }}</button>
+        <a v-if="promotion?.managed?.url" :href="promotion.managed.url" :class="primaryButton">{{ t('promotion::admin.promotions_form.managed_open') }}</a>
+        <button v-if="promotion && !promotion.managed" type="button" :class="dangerButton" @click="destroy">{{ t('promotion::admin.promotions_form.delete') }}</button>
     </PageHeader>
 
+    <p v-if="promotion?.managed" class="mb-4 max-w-3xl rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800" data-managed-promotion>{{ t('promotion::admin.promotions_form.managed_note', { owner: promotion.managed.owner }) }}</p>
     <form class="grid max-w-3xl gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2" @submit.prevent="submit">
+        <fieldset :disabled="!!promotion?.managed" class="contents">
         <FormField :label="t('promotion::admin.promotions_form.name')" :error="form.errors.name"><input v-model="form.name" :class="inputClass" /></FormField>
         <FormField :label="t('promotion::admin.promotions_form.status')" :error="form.errors.status">
             <Select v-model="form.status" :options="labelOptions(labels.promotion_status)" />
@@ -207,7 +212,8 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
         <p v-if="promotion" class="text-sm text-slate-500 sm:col-span-2">
             {{ t('promotion::admin.promotions_form.used_usage_count_times', { usage_count: promotion.usage_count }) }}<span v-if="promotion.budget_amount">, <MoneyText :amount="promotion.budget_used_amount" /> {{ t('promotion::admin.promotions_form.budget') }}</span>.
         </p>
-        <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('promotion::admin.promotions_form.save') }}</button></div>
+        <div v-if="!promotion?.managed" class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('promotion::admin.promotions_form.save') }}</button></div>
+        </fieldset>
     </form>
 
     <section v-if="promotion && promotion.requires_voucher" class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-white p-5">

@@ -64,6 +64,8 @@ export function createCart({ urls, request, cartPage, firstError }) {
     const cart = {
         get: () => request('GET', urls.cart).then(applyCart),
         add: (variantId, quantity = 1, options = {}, extra = {}) => request('POST', urls.cart_add, { variant_id: variantId, quantity, options, ...extra }).then(applyCart),
+        /** Thêm nhiều món một lần (`[{variant_id, quantity}]`): một món lỗi thì không món nào được thêm. */
+        addItems: (items) => request('POST', urls.cart_add, { items }).then(applyCart),
         update: (lineId, quantity) => request('POST', lineUrl(urls.cart_line, lineId), { quantity }).then(applyCart),
         remove: (lineId) => request('POST', lineUrl(urls.cart_remove, lineId)).then(applyCart),
         select: (lineIds) => request('POST', urls.cart_select, { lines: lineIds }).then(applyCart),

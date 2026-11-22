@@ -55,6 +55,9 @@ final class CartController
 
     public function add(CartLineRequest $request): RedirectResponse|JsonResponse
     {
+        if (($items = $request->items()) !== null) {
+            return $this->addMany($items, $request->expectsJson());
+        }
         $quantity = $request->quantity();
         $buyNow = $request->boolean('buy_now');
         $key = $this->cart->keyOrCreate();
@@ -73,6 +76,24 @@ final class CartController
             : redirect()->to(LocalizedUrls::route('storefront.cart'))->with('status', __('storefront::messages.added_to_cart'));
 
         return $redirect->with(self::CHANGE_FLASH, $change);
+    }
+
+    /**
+     * Thêm nhiều món một lần (vd. cả bộ combo): một món lỗi thì giỏ giữ nguyên, khách nhận thông báo lỗi của món đó.
+     *
+     * @param  list<array{variant_id: int, quantity: int}>  $items
+     */
+    private function addMany(array $items, bool $json): RedirectResponse|JsonResponse
+    {
+        $view = $this->carts->addLines($this->cart->keyOrCreate(), $items);
+        $line = collect($view->lines)->firstWhere('variantId', $items[0]['variant_id']);
+        $change = $line === null ? null : $this->presenter->change('add', $line, $items[0]['quantity']);
+        if ($json) {
+            return $this->payload($change, __('storefront::messages.added_items_to_cart', ['count' => count($items)]));
+        }
+
+        return redirect()->to(LocalizedUrls::route('storefront.cart'))
+            ->with('status', __('storefront::messages.added_items_to_cart', ['count' => count($items)]))->with(self::CHANGE_FLASH, $change);
     }
 
     /**

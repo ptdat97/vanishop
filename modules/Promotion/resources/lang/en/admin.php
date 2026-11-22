@@ -39,6 +39,8 @@ return [
         'status' => 'Status',
     ],
     'promotions_form' => [
+        'managed_note' => 'This promotion is managed by plugin :owner. Edit content, schedule and status on the plugin screen.',
+        'managed_open' => 'Open plugin screen',
         'add_condition' => 'Add condition',
         'add_promotion' => 'Add promotion',
         'all_promotion_s_vouchers_deleted' => 'All of the promotion\'s vouchers are deleted too.',
@@ -88,6 +90,7 @@ return [
         'valid_until' => 'Valid until',
     ],
     'promotions_index' => [
+        'managed' => 'Plugin',
         'active_period' => 'Active period',
         'add_promotion' => 'Add promotion',
         'amount_off' => ':amount off',

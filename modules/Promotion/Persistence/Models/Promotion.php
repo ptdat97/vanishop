@@ -7,6 +7,7 @@ namespace Modules\Promotion\Persistence\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
 use Modules\Promotion\Domain\Stacking;
 
 /**
@@ -29,7 +30,7 @@ use Modules\Promotion\Domain\Stacking;
  */
 final class Promotion extends Model
 {
-    protected $fillable = ['campaign_id', 'name', 'status', 'starts_at', 'ends_at', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
+    protected $fillable = ['campaign_id', 'managed_by', 'managed_key', 'managed_route', 'name', 'status', 'starts_at', 'ends_at', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
         'usage_limit', 'usage_count', 'budget_amount', 'budget_used_amount', 'lock_version'];
 
     protected function casts(): array
@@ -55,6 +56,18 @@ final class Promotion extends Model
     public function vouchers(): HasMany
     {
         return $this->hasMany(Voucher::class);
+    }
+
+    /** Do plugin quản lý qua ManagedPromotions: Admin chỉ xem. */
+    public function isManaged(): bool
+    {
+        return $this->managed_by !== null;
+    }
+
+    /** Liên kết sang màn hình sửa của plugin; route không còn (plugin tắt) → null. */
+    public function managedUrl(): ?string
+    {
+        return $this->managed_route !== null && Route::has($this->managed_route) ? route($this->managed_route, [$this->managed_key]) : null;
     }
 
     public function isRunningAt(int $now): bool

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'added_items_to_cart' => 'Added :count items to your cart.',
     'block_zone_rule' => 'This area does not accept the selected block type or is already full.',
     'collection_page_saved' => 'Collection page saved.',
     'menu_location_unknown' => 'This menu location is not part of the theme.',

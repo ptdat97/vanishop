@@ -30,6 +30,14 @@ interface Carts
     public function addLine(CartKey $key, int $variantId, int $quantity, array $options = []): CartView;
 
     /**
+     * Thêm nhiều variant trong một lần khoá giỏ (vd. cả bộ combo): một món không thêm được (hết hàng, ngừng bán, vượt
+     * giới hạn dòng) → ném CartRejected và giỏ giữ nguyên, không món nào được thêm.
+     *
+     * @param  list<array{variant_id: int, quantity: int, options?: array<string, array<string, mixed>>}>  $items
+     */
+    public function addLines(CartKey $key, array $items): CartView;
+
+    /**
      * Đặt số lượng tuyệt đối; 0 = xoá dòng.
      */
     public function updateLine(CartKey $key, int $lineId, int $quantity): CartView;

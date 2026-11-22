@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'managed' => 'This promotion is managed by plugin :owner; edit it on the plugin screen.',
     'voucher_exhausted' => 'Voucher :code has no uses left.',
     'limit_reached' => 'Promotion ":name" has reached its usage or budget limit.',
     'saved' => 'Saved.',

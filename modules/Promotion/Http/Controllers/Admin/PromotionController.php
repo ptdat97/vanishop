@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Contracts\AdminScreen;
@@ -48,6 +49,7 @@ final class PromotionController
             'promotions' => $promotions->map(fn (Promotion $promotion): array => [
                 'id' => $promotion->id,
                 'name' => $promotion->name,
+                'managed' => $promotion->isManaged(),
                 'status' => $promotion->status,
                 'running' => $promotion->isRunningAt(now()->getTimestamp()),
                 'action_type' => $promotion->action_type,
@@ -91,6 +93,7 @@ final class PromotionController
 
     public function update(Promotion $promotion, PromotionRequest $request, PromotionService $service): RedirectResponse
     {
+        $this->assertNotManaged($promotion);
         $service->save($request->toData(), $promotion, (int) $request->validated('lock_version'));
 
         return back()->with('success', __('promotion::messages.saved'));
@@ -99,6 +102,7 @@ final class PromotionController
     public function destroy(Promotion $promotion, PromotionService $service): RedirectResponse
     {
         Gate::authorize('promotion.manage');
+        $this->assertNotManaged($promotion);
         $service->delete($promotion);
 
         return redirect()->route('admin.promotion.promotions.index')->with('success', __('promotion::messages.deleted'));
@@ -128,6 +132,13 @@ final class PromotionController
         return back()->with('success', __('promotion::messages.saved'));
     }
 
+    private function assertNotManaged(Promotion $promotion): void
+    {
+        if ($promotion->isManaged()) {
+            throw ValidationException::withMessages(['promotion' => __('promotion::messages.managed', ['owner' => $promotion->managed_by])]);
+        }
+    }
+
     /** Số mã giảm giá mỗi trang trong form khuyến mãi (backlog L32: trước chỉ hiện 200 mã mới nhất, không tìm được). */
     private const VOUCHERS_PER_PAGE = 50;
 
@@ -148,6 +159,8 @@ final class PromotionController
                 'stacking' => $promotion->stacking->value,
                 'starts_at' => StoreClock::toInput($promotion->starts_at),
                 'ends_at' => StoreClock::toInput($promotion->ends_at),
+                // Do plugin quản lý (ManagedPromotions): Admin chỉ xem, sửa tại màn hình của plugin.
+                'managed' => $promotion->isManaged() ? ['owner' => $promotion->managed_by, 'url' => $promotion->managedUrl()] : null,
                 'rules' => $promotion->rules->map(fn ($rule): array => ['type' => $rule->rule_type, 'label' => $registry->rule($rule->rule_type)?->label(), 'config' => $rule->config])->all(),
             ],
             'vouchers' => $vouchers === null ? [] : collect($vouchers->items())->map(fn (Voucher $voucher): array => [

@@ -20,6 +20,7 @@ const props = defineProps<{
     promotions: Array<{
         id: number;
         name: string;
+        managed: boolean;
         status: string;
         running: boolean;
         action_type: string;
@@ -80,6 +81,7 @@ function describe(type: string, config: Record<string, number>): string {
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-slate-400">
+                <StatusBadge v-if="row.managed" :label="t('promotion::admin.promotions_index.managed')" tone="info" />
                 <StatusBadge :label="row.running ? t('promotion::admin.promotions_index.running') : row.status === 'active' ? t('promotion::admin.promotions_index.outside_period') : (labels.promotion_status[row.status] ?? row.status)" :tone="row.running ? 'success' : 'neutral'" />
                 {{ row.stacking === 'exclusive' ? t('promotion::admin.promotions_index.exclusive') : t('promotion::admin.promotions_index.stackable') }} · priority {{ row.priority }}
             </div>
