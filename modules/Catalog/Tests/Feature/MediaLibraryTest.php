@@ -227,17 +227,32 @@ function fakeMp4(string $name, int $width, int $height): UploadedFile
     return UploadedFile::fake()->createWithContent($name, $bytes.str_repeat("\0", 2048));
 }
 
-it('đọc khung WebM từ track video ngay cả khi Segment không có kích thước cố định', function () {
+/** WebM có Segment chưa biết kích thước và track âm thanh trước track video. */
+function fakeWebmWithDimensions(string $name): UploadedFile
+{
     $element = fn (string $id, string $payload): string => $id.chr(0x80 | strlen($payload)).$payload;
     $entry = fn (int $type, int $width, int $height): string => $element("\xAE",
         $element("\x83", chr($type)).$element("\xE0",
             $element("\xB0", pack('n', $width)).$element("\xBA", pack('n', $height))));
     $header = $element("\x1A\x45\xDF\xA3", $element("\x42\x82", 'webm'));
     $tracks = $element("\x16\x54\xAE\x6B", $entry(2, 1, 1).$entry(1, 720, 1280));
-    $webm = UploadedFile::fake()->createWithContent('hero.webm', $header."\x18\x53\x80\x67\x01".str_repeat("\xFF", 7).$tracks);
 
-    [$video] = uploadTo('', [$webm]);
+    return UploadedFile::fake()->createWithContent($name, $header."\x18\x53\x80\x67\x01".str_repeat("\xFF", 7).$tracks);
+}
+
+it('đọc khung WebM từ track video ngay cả khi Segment không có kích thước cố định', function () {
+    [$video] = uploadTo('', [fakeWebmWithDimensions('hero.webm')]);
     expect($video)->toMatchArray(['kind' => 'video', 'mime_type' => 'video/webm', 'width' => 720, 'height' => 1280, 'thumb_url' => null]);
+});
+
+it('tải lại đúng video cũ bổ sung metadata và giữ ID, tên, thư mục', function () {
+    $this->postJson("{$this->base}/folders", ['name' => 'banner'])->assertOk();
+    [$original] = uploadTo('banner', [fakeWebmWithDimensions('hero.webm')]);
+    Media::query()->whereKey($original['id'])->update(['width' => null, 'height' => null]);
+
+    [$reused] = uploadTo('', [fakeWebmWithDimensions('renamed.webm')]);
+    expect($reused)->toMatchArray(['id' => $original['id'], 'name' => 'hero.webm', 'folder' => 'banner', 'width' => 720, 'height' => 1280])
+        ->and(Media::query()->count())->toBe(1);
 });
 
 it('video: tải lên MP4/WebM (giới hạn dung lượng riêng), đọc khung hình MP4, không có bản thu nhỏ; duyệt lọc theo loại', function () {

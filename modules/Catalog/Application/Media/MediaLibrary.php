@@ -38,11 +38,18 @@ final class MediaLibrary
                 $storage->putFileAs(dirname($existing->path), $file, basename($existing->path));
             }
 
+            if ($existing->isVideo() && ($existing->width === null || $existing->height === null)) {
+                $dimensions = VideoProbe::dimensions((string) $file->getRealPath(), $existing->mime_type);
+                if ($dimensions !== null) {
+                    $existing->update(['width' => $dimensions[0], 'height' => $dimensions[1]]);
+                }
+            }
+
             return $existing;
         }
 
         $mime = Media::normalizeMime((string) $file->getMimeType());
-        // Ảnh: kích thước từ getimagesize; video (0.3.91): đọc khung hình MP4 nếu được.
+        // Ảnh: kích thước từ getimagesize; video: đọc kích thước từ metadata nếu có.
         $dimensions = str_starts_with($mime, 'video/')
             ? (VideoProbe::dimensions((string) $file->getRealPath(), $mime) ?? [null, null])
             : (@getimagesize((string) $file->getRealPath()) ?: [null, null]);
