@@ -64,12 +64,12 @@ interface CatalogReader
     /**
      * Thương hiệu đang hiện (status = active), theo thứ tự hiển thị.
      *
-     * @return list<array{id: int, code: string, slug: string, name: string, description: ?string, logo_url: ?string}>
+     * @return list<array{id: int, code: string, slug: string, name: string, description: ?string, logo_url: ?string, logo_srcset?: string}>
      */
     public function brands(): array;
 
     /**
-     * @return array{id: int, code: string, slug: string, name: string, description: ?string, logo_url: ?string, meta_title: ?string, meta_description: ?string}|null
+     * @return array{id: int, code: string, slug: string, name: string, description: ?string, logo_url: ?string, logo_srcset?: string, meta_title: ?string, meta_description: ?string}|null
      */
     public function brand(string $slug): ?array;
 

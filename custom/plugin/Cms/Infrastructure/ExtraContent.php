@@ -11,6 +11,7 @@ use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Shared\Support\StoreClock;
 use Modules\Shared\Support\StoreLocale;
+use Modules\Storefront\Contracts\PublicPageExpiry;
 use Plugin\Cms\CmsServiceProvider;
 use Plugin\Cms\Persistence\CategoryBanner;
 use Plugin\Cms\Persistence\ProductExtra;
@@ -52,7 +53,7 @@ final class ExtraContent
         $now ??= StoreClock::now();
         $from = $this->storeTime($this->setting('announcement_from'));
         $until = $this->storeTime($this->setting('announcement_to'));
-        if (($from !== null && $now < $from) || ($until !== null && $now >= $until)) {
+        if ($until !== null && $now >= $until) {
             return null;
         }
 
@@ -60,6 +61,15 @@ final class ExtraContent
         $lines = array_values(array_filter(array_map(fn (string $line): string => $this->inline($line), $lines), fn (string $html): bool => trim(strip_tags($html)) !== ''));
         if ($lines === []) {
             return null;
+        }
+
+        if ($from !== null && $now < $from) {
+            PublicPageExpiry::limit(request(), $from);
+
+            return null;
+        }
+        if ($until !== null) {
+            PublicPageExpiry::limit(request(), $until);
         }
 
         return [
@@ -179,7 +189,7 @@ final class ExtraContent
     /**
      * Banner đang bật của danh mục, đã trình bày cho storefront.
      *
-     * @return array{title: ?string, html: ?string, button_text: ?string, button_url: ?string, desktop: ?string, mobile: ?string}|null
+     * @return array{title: ?string, html: ?string, button_text: ?string, button_url: ?string, desktop: ?string, desktop_srcset: string, mobile: ?string}|null
      */
     public function banner(int $categoryId, string $locale): ?array
     {
@@ -197,6 +207,7 @@ final class ExtraContent
             'button_text' => $buttonText,
             'button_url' => $buttonText !== null && self::allowedUrl($banner->button_url) ? $banner->button_url : null,
             'desktop' => $desktop,
+            'desktop_srcset' => $this->mediaUrls->srcset($banner->desktop_media_id),
             // Không có ảnh mobile → dùng ảnh desktop (§8-4).
             'mobile' => ($banner->mobile_media_id === null ? null : $this->mediaUrls->image($banner->mobile_media_id, 800)) ?? ($banner->desktop_media_id === null ? null : $this->mediaUrls->image($banner->desktop_media_id, 800)),
         ];

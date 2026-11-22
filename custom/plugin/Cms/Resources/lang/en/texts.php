@@ -38,7 +38,7 @@ return [
         'hide_shared_offer_box_product' => 'Hide the shared offer box on this product',
         'highlights_locale' => 'Highlights (:locale)',
         'line_transition_time_ms_0' => 'Line transition time (ms, 0–2000)',
-        'multiple_lines_rotating_automatically_when' => 'Multiple lines, rotating automatically. When enabled, leave "Announcement line" empty in Storefront design → Header & footer so two bars are not shown.',
+        'multiple_lines_rotating_automatically_when' => 'Multiple lines rotate automatically. The vani-base theme shows its announcement when the CMS bar is hidden.',
         'offer_box_content_locale_markdown' => 'Offer box content (:locale, Markdown)',
         'offer_box_position' => 'Offer box position',
         'one_announcement_per_line_single' => 'One announcement per line; single-line Markdown: **bold**, [link](/path). Empty = use the default language.',

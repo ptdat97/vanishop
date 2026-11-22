@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Modules\Shared\Http\SessionlessRoutes;
+use Modules\Storefront\Contracts\PublicPageExpiry;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -66,7 +67,15 @@ final class PublicPageCache
             return $response;
         }
 
-        $response->headers->set('Cache-Control', sprintf('public, max-age=0, s-maxage=%d, stale-while-revalidate=%d', (int) ($config['s_maxage'] ?? 300), (int) ($config['stale_while_revalidate'] ?? 600)));
+        $fresh = (int) ($config['s_maxage'] ?? 300);
+        $stale = (int) ($config['stale_while_revalidate'] ?? 600);
+        $expiresAt = PublicPageExpiry::timestamp($request);
+        if ($expiresAt !== null) {
+            $remaining = max(0, $expiresAt - time());
+            $fresh = min($fresh, $remaining);
+            $stale = min($stale, $remaining - $fresh);
+        }
+        $response->headers->set('Cache-Control', sprintf('public, max-age=0, s-maxage=%d, stale-while-revalidate=%d', $fresh, $stale));
         // Ngôn ngữ nằm trong URL (ADR-038) nên không Vary theo header ngôn ngữ.
         $response->headers->set('Vary', 'Accept-Encoding');
 

@@ -26,7 +26,9 @@
             </p>
         @endif
         @if ($post['cover_url'])
-            <img src="{{ $post['cover_url'] }}" alt="" class="mb-6 w-full rounded-[var(--radius-theme)]">
+            <img src="{{ $post['cover_url'] }}" alt=""
+                @if (! empty($post['cover_srcset'])) srcset="{{ $post['cover_srcset'] }}" sizes="(min-width: 48rem) 45rem, 100vw" @endif
+                @if (! empty($post['cover_width']) && ! empty($post['cover_height'])) width="{{ $post['cover_width'] }}" height="{{ $post['cover_height'] }}" @endif class="mb-6 w-full rounded-[var(--radius-theme)]">
         @endif
         <div class="vani-prose">{!! $post['html'] !!}</div>
     </article>

@@ -369,7 +369,7 @@ final class StorefrontCatalog implements CatalogReader
     }
 
     /**
-     * @return array{id: int, code: string, slug: string, name: string, description: ?string, logo_url: ?string}
+     * @return array{id: int, code: string, slug: string, name: string, description: ?string, logo_url: ?string, logo_srcset: string}
      */
     private function brandView(Brand $brand): array
     {
@@ -381,6 +381,7 @@ final class StorefrontCatalog implements CatalogReader
             'description' => $brand->description,
             // Logo từ Thư viện ảnh (bản thu nhỏ 400px); `logo_path` là file cũ (trước 0.3.90).
             'logo_url' => $brand->logo_media_id !== null ? app(MediaUrls::class)->url($brand->logo_media_id, 400) : ($brand->logo_path === null ? null : Storage::disk((string) config('vanishop.media.disk', 'public'))->url($brand->logo_path)),
+            'logo_srcset' => app(MediaUrls::class)->srcset($brand->logo_media_id),
         ];
     }
 

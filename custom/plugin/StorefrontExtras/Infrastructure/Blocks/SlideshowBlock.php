@@ -53,7 +53,7 @@ final class SlideshowBlock implements StorefrontBlock
             }
         }
 
-        return ['slides' => $slides, 'interval' => max(0, min(30, (int) ($config['interval'] ?? 6)))];
+        return ['slides' => $slides, 'multiple' => count($slides) > 1, 'interval' => max(0, min(30, (int) ($config['interval'] ?? 6)))];
     }
 
     public function view(): string

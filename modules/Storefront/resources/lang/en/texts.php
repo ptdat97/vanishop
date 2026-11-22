@@ -45,6 +45,8 @@ return [
         'version_does_not_exist' => 'This version does not exist.',
     ],
     'page_blocks' => [
+        'choose_image' => 'Choose an image from the media library.',
+        'choose_video' => 'Choose a video from the media library.',
         'block_type_does_not_exist' => 'The block type does not exist or its plugin is disabled.',
         'blocks' => ' blocks.',
         'characters' => ' characters.',

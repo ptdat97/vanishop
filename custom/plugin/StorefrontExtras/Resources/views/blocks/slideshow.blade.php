@@ -1,5 +1,4 @@
 @if ($slides !== [])
-    @php($multiple = count($slides) > 1)
     <section @class(['relative mb-10 overflow-hidden rounded-[var(--radius-theme)]', 'vani-carousel swiper' => $multiple])
              data-block="extras_slideshow" data-extras-slideshow data-interval="{{ $interval }}"
              @if ($multiple) data-carousel="{{ json_encode(['rewind' => true, 'autoplay' => $interval > 0 ? ['delay' => $interval * 1000] : false]) }}" @endif

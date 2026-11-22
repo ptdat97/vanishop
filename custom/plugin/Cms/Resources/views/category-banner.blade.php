@@ -3,7 +3,7 @@
     @if ($banner['desktop'])
         <picture>
             @if ($banner['mobile'])<source media="(max-width: 767px)" srcset="{{ $banner['mobile'] }}">@endif
-            <img src="{{ $banner['desktop'] }}" alt="{{ $banner['title'] ?? '' }}" class="h-48 w-full object-cover md:h-72" fetchpriority="high">
+            <img src="{{ $banner['desktop'] }}" alt="{{ $banner['title'] ?? '' }}" @if (! empty($banner['desktop_srcset'])) srcset="{{ $banner['desktop_srcset'] }}" sizes="(min-width: 96rem) 86rem, (min-width: 80rem) 71rem, 100vw" @endif class="h-48 w-full object-cover md:h-72" fetchpriority="high">
         </picture>
     @endif
     @if ($banner['title'] || $banner['html'] || $banner['button_url'])

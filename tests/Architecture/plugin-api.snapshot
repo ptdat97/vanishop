@@ -1,4 +1,4 @@
-Extension API 1.22.0
+Extension API 1.23.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -13,6 +13,7 @@ interface Modules\Catalog\Contracts\CatalogLookup
   3 => 'product',
 )
   visible(string $kind, array $ids, string $locale): array
+  adminCategories(array $ids, string $locale): array
   search(string $kind, string $query, string $locale, int $limit = 20): array
 interface Modules\Catalog\Contracts\CatalogReader
   const SLUG_PRODUCT = 'product'
@@ -37,6 +38,11 @@ class Modules\Catalog\Contracts\Data\ImageSize
   __construct(string $name, string $label, int $width, ?int $height = NULL, bool $crop = false)
   key(): string
   toArray(): array
+class Modules\Catalog\Contracts\Data\MediaData
+  __construct(int $id, string $name, ?int $width, ?int $height, string $url, array $variants, string $mimeType = 'image/jpeg')
+  isVideo(): bool
+  urlFor(?int $width = NULL): string
+  srcset(): string
 class Modules\Catalog\Contracts\Data\ProductFilters
   __construct(int $now, string $text = '', ?string $categorySlug = NULL, ?string $collectionSlug = NULL, array $attributes = array (
 ), string $sort = 'newest', int $page = 1, int $perPage = 24, array $brandSlugs = array (
@@ -912,6 +918,9 @@ interface Modules\Storefront\Contracts\PageSeo
 interface Modules\Storefront\Contracts\ProductCards
   const MAX_IDS = 60
   forIds(array $styleIds, string $locale): array
+class Modules\Storefront\Contracts\PublicPageExpiry
+  static limit(Illuminate\Http\Request $request, DateTimeInterface $at): void
+  static timestamp(Illuminate\Http\Request $request): ?int
 interface Modules\Storefront\Contracts\SitemapProvider
   const TAG = 'vani.storefront.sitemap'
   urls(int $limit): array

@@ -49,12 +49,45 @@
         }
     };
 
+    const guest = document.querySelector('[data-wishlist-guest]');
+    let pendingPreview;
+    const loadGuest = async () => {
+        if (!guest) return;
+        pendingPreview?.abort();
+        const items = guest.querySelector('[data-guest-items]');
+        const retry = guest.querySelector('[data-guest-retry]');
+        retry.hidden = true;
+        guest.querySelector('[data-guest-empty]').hidden = ids.size > 0;
+        if (!ids.size) {
+            items.replaceChildren();
+            return;
+        }
+        const request = new AbortController();
+        pendingPreview = request;
+        try {
+            const response = await fetch(guest.dataset.wishlistGuest, {
+                method: 'POST', credentials: 'same-origin', signal: request.signal,
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': session.csrf_token },
+                body: JSON.stringify({ style_ids: [...ids].reverse() }),
+            });
+            if (!response.ok) throw new Error(String(response.status));
+            const html = await response.text();
+            if (request.signal.aborted) return;
+            items.innerHTML = html;
+            document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: items } }));
+        } catch {
+            if (!request.signal.aborted) retry.hidden = false;
+        }
+    };
+    guest?.querySelector('[data-guest-retry]').addEventListener('click', loadGuest);
+
     const start = (detail) => {
         if (session) return;
         session = detail;
         if (!session.signed_in) {
             ids = new Set(readLocal());
             render();
+            loadGuest();
             return;
         }
         const local = readLocal();
@@ -82,6 +115,7 @@
             ids.has(styleId) ? ids.delete(styleId) : ids.size < MAX && ids.add(styleId);
             writeLocal([...ids]);
             render();
+            loadGuest();
             return;
         }
         (ids.has(styleId) ? call('DELETE', `${config.itemsUrl}/${styleId}`) : call('POST', config.itemsUrl, { style_id: styleId }))
@@ -96,7 +130,15 @@
     // Trang yêu thích trong tài khoản: bỏ một mẫu rồi gỡ thẻ khỏi lưới (hết mẫu: tải lại để hiện trạng thái trống).
     document.addEventListener('click', (event) => {
         const button = event.target.closest?.('[data-vani-wishlist-remove]');
-        if (!button || !session?.signed_in) return;
+        if (!button || !session) return;
+        if (!session.signed_in && guest) {
+            ids.delete(Number(button.dataset.vaniWishlistRemove));
+            writeLocal([...ids]);
+            render();
+            loadGuest();
+            return;
+        }
+        if (!session.signed_in) return;
         event.preventDefault();
         button.disabled = true;
         call('DELETE', `${config.itemsUrl}/${button.dataset.vaniWishlistRemove}`)

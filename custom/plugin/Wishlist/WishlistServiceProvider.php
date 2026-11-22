@@ -52,6 +52,7 @@ final class WishlistServiceProvider extends PluginServiceProvider
         $this->onEvent(CustomerAnonymized::class, fn (CustomerAnonymized $event) => $this->app->make(Wishlists::class)->forget($event->customerId));
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-wishlist');
+        $this->storefrontPages($this->pluginPath('Http/routes/guest.php'), ['vi' => 'yeu-thich', 'en' => 'wishlist']);
         $this->accountRoutes($this->pluginPath('Http/routes/account.php'), ['vi' => 'yeu-thich', 'en' => 'wishlist']);
         $this->accountPage('wishlist', 'vani-wishlist::storefront.wishlist', 'storefront.p.vani-wishlist.account.index', 300);
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));

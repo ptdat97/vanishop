@@ -38,7 +38,7 @@ return [
         'hide_shared_offer_box_product' => 'Ẩn hộp ưu đãi dùng chung ở sản phẩm này',
         'highlights_locale' => 'Điểm nổi bật (:locale)',
         'line_transition_time_ms_0' => 'Thời gian chuyển dòng (ms, 0–2000)',
-        'multiple_lines_rotating_automatically_when' => 'Nhiều dòng, tự xoay vòng. Khi bật, để trống "Dòng thông báo" ở Giao diện → Đầu & chân trang để không hiện hai thanh.',
+        'multiple_lines_rotating_automatically_when' => 'Nhiều dòng, tự xoay vòng. Giao diện vani-base hiện dòng thông báo của theme khi thanh CMS không hiển thị.',
         'offer_box_content_locale_markdown' => 'Nội dung hộp ưu đãi (:locale, Markdown)',
         'offer_box_position' => 'Vị trí hộp ưu đãi',
         'one_announcement_per_line_single' => 'Mỗi dòng một thông báo; Markdown một dòng: **đậm**, [link](/duong-dan). Trống = theo ngôn ngữ mặc định.',

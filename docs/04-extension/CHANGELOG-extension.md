@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.66 — 2026-11-22 · Extension API 1.23.0
+
+- `PublicPageExpiry::limit()` cho phép plugin giới hạn thời gian dùng HTML tại CDN khi nội dung có lịch. CMS khai báo mốc bắt đầu và kết thúc của thanh thông báo.
+- `CatalogLookup::adminCategories()` tra danh mục theo ID cho form Admin, kể cả danh mục ẩn.
+- Công khai DTO `MediaData` của `MediaDirectory::find()` cho plugin cần kích thước và `srcset`.
+- Wishlist có trang cho khách vãng lai. Page builder kiểm loại tệp và sự tồn tại của ID đã chọn từ Thư viện ảnh.
+
 ## 0.5.65 — 2026-11-21 · Extension API 1.22.0
 
 Học từ Lunar 2.x (step list, modifier theo giai đoạn): ghi rõ và kiểm thật bước nào chạy trong transaction; xem được thứ tự các bước của luồng có điểm mở rộng.

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Mockery\MockInterface;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Persistence\Models\Category;
@@ -109,6 +110,13 @@ it('Video hero 1.2.0: video chọn từ Thư viện ảnh (id), di động riên
 
     $html = view(app(VideoHeroBlock::class)->view(), $data)->render();
     expect($html)->toContain('src="'.vani_media($mobile->id).'" media="(max-width: 767px)" type="video/webm"')->toContain('type="video/mp4"');
+
+    try {
+        app(PageBlocks::class)->saveHome([['type' => 'extras_video_hero', 'config' => ['video' => $photo->id, 'poster' => $desktop->id, 'video_mobile' => 99999999]]]);
+        $this->fail('Phải từ chối tệp sai loại hoặc không tồn tại.');
+    } catch (ValidationException $exception) {
+        expect(array_keys($exception->errors()))->toEqualCanonicalizing(['blocks.0.config.video', 'blocks.0.config.poster', 'blocks.0.config.video_mobile']);
+    }
 
     // Video đang dùng ở khối trang chủ được khai báo như ảnh — Thư viện ảnh không cho xoá.
     app(PageBlocks::class)->saveHome([['type' => 'extras_video_hero', 'config' => ['video' => $desktop->id, 'video_mobile' => $mobile->id]]]);

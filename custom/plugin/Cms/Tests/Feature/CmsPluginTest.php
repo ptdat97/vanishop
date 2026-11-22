@@ -164,6 +164,7 @@ it('Admin: bài viết dùng ảnh bìa + ảnh trong bài từ Thư viện ản
     $html = $this->get('/tin-tuc/mac-gi-di-bien')->assertOk()->getContent();
     $prefix = fn (array $item) => '/cache/media/'.substr(Media::query()->find($item['id'])->checksum, 0, 2).'/';
     expect($html)->toContain($prefix($cover).Media::query()->find($cover['id'])->checksum.'-w1600.jpg')
+        ->toContain('width="2000" height="1125"')
         ->toContain('alt="Áo đi biển"')
         ->toContain('srcset="')
         ->toContain($prefix($inline).Media::query()->find($inline['id'])->checksum.'-w800.jpg')

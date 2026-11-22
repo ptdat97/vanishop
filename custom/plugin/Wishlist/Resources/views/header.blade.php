@@ -1,5 +1,4 @@
-{{-- Link tới danh sách yêu thích + số món (JS điền). Chưa đăng nhập → trang đăng nhập, rồi quay lại danh sách. --}}
-<a href="{{ vani_route('storefront.p.vani-wishlist.account.index') }}"
+<a href="{{ vani_route('storefront.p.vani-wishlist.guest') }}"
     class="relative inline-flex size-10 items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     data-vani-wishlist-link aria-label="{{ __('vani-wishlist::storefront.wishlist') }}" title="{{ __('vani-wishlist::storefront.wishlist') }}">
     <i data-lucide="heart" class="size-5" aria-hidden="true"></i>

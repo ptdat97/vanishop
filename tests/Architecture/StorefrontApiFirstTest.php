@@ -389,6 +389,7 @@ const STOREFRONT_API_READ_PAIRS = [
  * @var array<string, string>
  */
 const STOREFRONT_WEB_ONLY_PAGES = [
+    'storefront.p.vani-wishlist.guest' => 'Danh sách của trình duyệt đọc từ localStorage, thẻ sản phẩm lấy từ catalog công khai.',
     'storefront.session' => '"đường ống" của Blade khi trang cache CDN (CSRF, flash, lỗi form) — không phải dữ liệu cửa hàng',
     'storefront.robots' => 'trình bày web (SEO)',
     'storefront.sitemap' => 'trình bày web (SEO)',

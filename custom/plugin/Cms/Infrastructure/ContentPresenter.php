@@ -53,10 +53,13 @@ final class ContentPresenter
      */
     public function postSummary(Post $post): array
     {
+        $cover = $this->media->cover($post);
+
         return [
             'slug' => $post->slug, 'title' => $post->title,
             'excerpt' => $post->excerpt ?: $this->markdown->plain($post->body, 200),
-            'cover_url' => $this->media->coverUrl($post),
+            'cover_url' => $post->cover_media_id === null ? $this->media->coverUrl($post) : $cover?->urlFor(1600),
+            'cover_srcset' => $cover?->srcset(), 'cover_width' => $cover?->width, 'cover_height' => $cover?->height,
             'url' => vani_route('storefront.p.vani-cms.post', $post->slug),
             'published_at' => StoreClock::iso($post->published_at),
             'published_date' => StoreClock::format($post->published_at, 'date'),

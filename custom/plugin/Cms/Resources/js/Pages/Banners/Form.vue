@@ -4,7 +4,8 @@ import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import MediaField from '@admin/Components/Media/MediaField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
-import Select from '@admin/Components/Select.vue';
+import Combobox from '@admin/Components/Combobox.vue';
+import { getJson } from '@admin/http';
 import { confirmAction } from '@admin/confirm';
 import { useStoreLocales } from '@admin/locales';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
@@ -25,8 +26,8 @@ const props = defineProps<{
         desktop: Image | null;
         mobile: Image | null;
     };
-    categories: Array<{ value: number; label: string }>;
-    urls: { index: string; save: string };
+    categoryLabel: string | null;
+    urls: { index: string; save: string; categories: string };
     can: { manage: boolean };
 }>();
 
@@ -40,6 +41,16 @@ const { form, save } = useAdminForm({
     active: props.banner?.active ?? true,
 });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
+
+const categoryId = computed({
+    get: () => form.category_id === null ? '' : String(form.category_id),
+    set: (value: string) => { form.category_id = value === '' ? null : Number(value); },
+});
+
+async function searchCategories(term: string): Promise<Array<{ value: string; label: string }>> {
+    const response = await getJson<{ data: Array<{ value: string; label: string }> }>(props.urls.categories, { q: term });
+    return response.data;
+}
 
 function submit(): void {
     if (props.banner) {
@@ -81,7 +92,7 @@ async function destroy(): Promise<void> {
         <aside class="space-y-4">
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
                 <FormField :label="t('vani-cms::admin.banners_form.category')" :error="errors.category_id">
-                    <Select v-model="form.category_id" :options="categories" :empty-label="t('vani-cms::admin.banners_form.choose_category')" :empty-value="null" :disabled="!can.manage" />
+                    <Combobox v-model="categoryId" :search="searchCategories" :selected-label="categoryLabel ?? undefined" :placeholder="t('vani-cms::admin.banners_form.choose_category')" :aria-label="t('vani-cms::admin.banners_form.category')" :disabled="!can.manage" />
                 </FormField>
                 <FormField :label="t('vani-cms::admin.banners_form.button_link')" :hint="t('vani-cms::admin.banners_form.store_path_https')" :error="errors.button_url">
                     <input v-model="form.button_url" :class="inputClass" maxlength="500" placeholder="/danh-muc/…" :disabled="!can.manage" />

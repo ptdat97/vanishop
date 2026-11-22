@@ -875,3 +875,7 @@ html:has(.vani-modal[open]) {
         border-color: var(--color-danger);
     }
 }
+
+body:has([data-vani-cms-announcement]:not([hidden])) [data-vani-announcement] {
+    display: none;
+}

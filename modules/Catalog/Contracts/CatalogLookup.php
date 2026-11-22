@@ -28,6 +28,14 @@ interface CatalogLookup
     public function visible(string $kind, array $ids, string $locale): array;
 
     /**
+     * Danh mục theo ID cho form Admin, gồm danh mục đang ẩn.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, array{id: int, name: string, visible: bool}>
+     */
+    public function adminCategories(array $ids, string $locale): array;
+
+    /**
      * Tìm theo tên/mã (không dấu) cho Admin, gồm cả đối tượng đang ẩn (`visible = false`).
      *
      * @param  'category'|'collection'|'brand'|'product'  $kind

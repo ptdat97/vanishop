@@ -37,6 +37,20 @@ final class EloquentCatalogLookup implements CatalogLookup
         return array_column($found, null, 'id');
     }
 
+    public function adminCategories(array $ids, string $locale): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return Category::query()->whereIn('id', $ids)->with('translations')->get()
+            ->mapWithKeys(fn (Category $category): array => [$category->id => [
+                'id' => $category->id,
+                'name' => (string) $category->translate('name', $locale),
+                'visible' => $category->status->value === 'active',
+            ]])->all();
+    }
+
     public function search(string $kind, string $query, string $locale, int $limit = 20): array
     {
         $tokens = VietnameseText::tokens($query);

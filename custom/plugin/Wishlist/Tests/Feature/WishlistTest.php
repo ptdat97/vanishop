@@ -73,6 +73,20 @@ it('header yêu thích dùng biểu tượng Lucide và vẫn có nhãn trợ n�
         ->assertSee('data-vani-wishlist-count', false);
 });
 
+it('khách xem danh sách cục bộ, sản phẩm ngừng bán và giá theo chính sách storefront', function () {
+    $this->get('/yeu-thich')->assertOk()->assertSee('data-wishlist-guest', false);
+    $this->get('/en/wishlist')->assertOk();
+    T::seed(fn () => app(Settings::class)->set('core', 'storefront.price_visibility', 'members'));
+    $this->post('/yeu-thich/items', ['style_ids' => [$this->style->id, 99999999]])
+        ->assertOk()->assertSee($this->style->translate('name', 'vi'))->assertSee('Sản phẩm không còn bán')
+        ->assertSee('data-vani-price-for', false)->assertDontSee('data-vani-amount', false)
+        ->assertHeader('Cache-Control', 'no-store, private');
+    $this->postJson('/yeu-thich/items', ['style_ids' => [0]])->assertUnprocessable();
+    expect(WishlistItem::query()->count())->toBe(0);
+    ($this->signIn)();
+    $this->get('/yeu-thich')->assertRedirect('/tai-khoan/yeu-thich');
+});
+
 it('khách đăng nhập: thêm/bỏ như wishlist.js (Storefront API, phiên cùng nguồn), trạng thái qua ids; vãng lai bị từ chối', function () {
     $this->postJson("{$this->api}/items", ['style_id' => $this->style->id], $this->sameOrigin)->assertUnauthorized();
     Api::assertRoutesDocumented(dirname(__DIR__, 2));

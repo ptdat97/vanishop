@@ -45,6 +45,8 @@ return [
         'version_does_not_exist' => 'Không có phiên bản này.',
     ],
     'page_blocks' => [
+        'choose_image' => 'Chọn ảnh có trong Thư viện.',
+        'choose_video' => 'Chọn video có trong Thư viện.',
         'block_type_does_not_exist' => 'Loại khối không có hoặc plugin đã tắt.',
         'blocks' => ' khối.',
         'characters' => ' ký tự.',

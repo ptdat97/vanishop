@@ -24,6 +24,7 @@ Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->
 // Banner đầu trang danh mục sản phẩm (1.5.0, store-content §3.3).
 Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
 Route::get('banners/create', [BannerController::class, 'create'])->name('banners.create');
+Route::get('banners/categories', [BannerController::class, 'categories'])->name('banners.categories');
 Route::post('banners', [BannerController::class, 'store'])->name('banners.store');
 Route::get('banners/{banner}', [BannerController::class, 'edit'])->whereNumber('banner')->name('banners.edit');
 Route::put('banners/{banner}', [BannerController::class, 'update'])->whereNumber('banner')->name('banners.update');

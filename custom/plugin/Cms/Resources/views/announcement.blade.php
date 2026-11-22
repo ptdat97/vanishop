@@ -9,8 +9,8 @@
     @if (count($announcement['lines']) > 1)
         <button type="button" data-prev hidden class="absolute inset-y-0 left-2 px-2" aria-label="{{ __('vani-cms::storefront.previous_announcement') }}">‹</button>
         <button type="button" data-next hidden class="absolute inset-y-0 right-2 px-2" aria-label="{{ __('vani-cms::storefront.next_announcement') }}">›</button>
-        @if ($scriptSrc !== '')
-            <script src="{{ $scriptSrc }}" defer></script>
-        @endif
+    @endif
+    @if ($scriptSrc !== '')
+        <script src="{{ $scriptSrc }}" defer></script>
     @endif
 </div>

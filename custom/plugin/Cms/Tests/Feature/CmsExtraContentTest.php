@@ -69,6 +69,21 @@ it('thanh thông báo: tắt → không có HTML; nhiều dòng xoay vòng; Mark
     $this->get('/')->assertOk()->assertSee('data-until=', false);
 });
 
+it('giới hạn bản cache CDN theo lịch thông báo', function (string $key, bool $visible, int $minutes) {
+    config(['vanishop.storefront.page_cache.enabled' => true, 'vanishop.storefront.page_cache.s_maxage' => 300, 'vanishop.storefront.page_cache.stale_while_revalidate' => 600]);
+    $boundary = now(config('vanishop.locale.timezone'))->addMinutes($minutes)->startOfMinute();
+    ($this->set)(['announcement_enabled' => true, 'announcement_lines.vi' => 'Ưu đãi', $key => $boundary->format('Y-m-d H:i')]);
+    $before = time();
+    $page = $this->get('/')->assertOk();
+    expect(str_contains($page->getContent(), 'data-vani-cms-announcement'))->toBe($visible);
+    $headers = $page->baseResponse->headers;
+    $fresh = (int) $headers->getCacheControlDirective('s-maxage');
+    $stale = (int) $headers->getCacheControlDirective('stale-while-revalidate');
+    expect($fresh)->toBeLessThanOrEqual(300)
+        ->and($fresh + $stale)->toBeGreaterThanOrEqual($boundary->timestamp - time())
+        ->and($fresh + $stale)->toBeLessThanOrEqual($boundary->timestamp - $before);
+})->with([['announcement_from', false, 2], ['announcement_to', true, 7]]);
+
 it('hộp ưu đãi ở vị trí cấu hình; sản phẩm chọn ẩn thì không hiện (cả Storefront API)', function () {
     ($this->set)(['promo_box_markdown.vi' => 'Tặng **túi vải** cho đơn từ 1 triệu']);
     expect(($this->pdp)())->not->toContain('data-vani-cms-promo-box');
@@ -118,6 +133,7 @@ it('banner danh mục: chỉ ở danh mục của nó; thiếu ảnh mobile → 
 
         return [$dresses, $shirts];
     });
+    $this->getJson('/admin/plugins/vani-cms/banners/categories?q=dam')->assertOk()->assertExactJson(['data' => [['value' => (string) $dresses->id, 'label' => 'Đầm']]]);
     $desktop = cmsBannerMedia('desktop.jpg');
     $payload = ['category_id' => $dresses->id, 'desktop_media_id' => $desktop->id, 'button_url' => '/khuyen-mai', 'active' => true,
         'content' => ['vi' => ['title' => 'Đầm mùa thu', 'markdown' => 'Giảm **20%** <script>x</script>', 'button_text' => 'Mua ngay']]];

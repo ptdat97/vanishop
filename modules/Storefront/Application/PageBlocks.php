@@ -66,7 +66,7 @@ final class PageBlocks
 
         $types = $this->types();
         $clean = [];
-        $mediaIds = [];
+        $mediaFields = [];
         foreach (array_values($blocks) as $index => $block) {
             $type = $types[(string) ($block['type'] ?? '')] ?? throw ValidationException::withMessages(["blocks.{$index}.type" => __('storefront::texts.page_blocks.block_type_does_not_exist')]);
             $fields = $type->fields();
@@ -88,13 +88,25 @@ final class PageBlocks
             $clean[] = ['type' => $type->type(), 'config' => array_intersect_key($config, array_flip($known))];
             foreach ($fields as $field) {
                 if (in_array($field->type, ['media', 'video'], true) && is_numeric($config[$field->key] ?? null)) {
-                    $mediaIds[] = (int) $config[$field->key];
+                    $mediaFields["blocks.{$index}.config.{$field->key}"] = ['id' => (int) $config[$field->key], 'kind' => $field->type === 'video' ? 'video' : 'image'];
                 }
             }
         }
 
+        $mediaIds = array_values(array_unique(array_column($mediaFields, 'id')));
+        $files = $mediaIds === [] ? [] : $this->media->find($mediaIds);
+        $errors = [];
+        foreach ($mediaFields as $path => $field) {
+            $file = $files[$field['id']] ?? null;
+            if ($file === null || ! str_starts_with($file->mimeType, $field['kind'].'/')) {
+                $errors[$path] = __('storefront::texts.page_blocks.choose_'.$field['kind']);
+            }
+        }
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
         $this->settings->set('core', self::SETTING, $clean);
-        $this->media->syncUsages(self::MEDIA_OWNER, 1, 'blocks', array_values(array_unique($mediaIds)));
+        $this->media->syncUsages(self::MEDIA_OWNER, 1, 'blocks', $mediaIds);
     }
 
     public function resetHome(): void

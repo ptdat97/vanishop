@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Plugin\Cms\Http\Controllers\Admin;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -18,7 +19,7 @@ use Plugin\Cms\Persistence\CategoryBanner;
 
 /**
  * Admin → Nội dung → Banner danh mục (store-content §3.3): mỗi danh mục một banner; ảnh desktop/mobile chọn từ Thư viện ảnh.
- * Trang riêng thay vì phần form ở form danh mục vì phần form của plugin chưa có kiểu trường chọn ảnh (backlog L6).
+ * Form quản lý banner của từng danh mục.
  */
 final class BannerController
 {
@@ -32,12 +33,12 @@ final class BannerController
     {
         Gate::authorize('cms.view');
         $banners = CategoryBanner::query()->orderByDesc('id')->get();
-        $categories = $this->categoryNames();
+        $categories = $this->catalog->adminCategories($banners->pluck('category_id')->unique()->values()->all(), StoreLocale::default());
         $thumbs = $this->media->find(array_values(array_filter($banners->pluck('desktop_media_id')->all())));
 
         return Inertia::render('Cms::Banners/Index', [
             'banners' => $banners->map(fn (CategoryBanner $banner): array => [
-                'id' => $banner->id, 'category' => $categories[$banner->category_id] ?? __('vani-cms::texts.banner_controller.category_id_deleted', ['category_id' => $banner->category_id]),
+                'id' => $banner->id, 'category' => $categories[$banner->category_id]['name'] ?? __('vani-cms::texts.banner_controller.category_id_deleted', ['category_id' => $banner->category_id]),
                 'title' => $banner->text('title', StoreLocale::default(), StoreLocale::default()), 'active' => $banner->active,
                 'thumb_url' => ($thumbs[$banner->desktop_media_id ?? 0] ?? null)?->urlFor(160),
             ])->all(),
@@ -86,6 +87,18 @@ final class BannerController
         return redirect()->route('admin.plugins.vani-cms.banners.index')->with('success', __('vani-cms::texts.banner_controller.banner_deleted'));
     }
 
+    public function categories(Request $request): JsonResponse
+    {
+        Gate::authorize('cms.view');
+        $query = (string) ($request->validate(['q' => ['nullable', 'string', 'max:100']])['q'] ?? '');
+        $categories = $this->catalog->search('category', $query, StoreLocale::default());
+
+        return response()->json(['data' => array_map(fn (array $category): array => [
+            'value' => (string) $category['id'],
+            'label' => $category['name'].($category['visible'] ? '' : __('vani-cms::texts.banner_controller.hidden')),
+        ], $categories)]);
+    }
+
     private function form(?CategoryBanner $banner): Response
     {
         $ids = $banner === null ? [] : array_values(array_filter([$banner->desktop_media_id, $banner->mobile_media_id]));
@@ -98,26 +111,14 @@ final class BannerController
                 'button_url' => $banner->button_url, 'active' => $banner->active,
                 'desktop' => $image($banner->desktop_media_id), 'mobile' => $image($banner->mobile_media_id),
             ],
-            'categories' => array_map(fn (array $category): array => ['value' => $category['id'], 'label' => $category['name'].($category['visible'] ? '' : __('vani-cms::texts.banner_controller.hidden'))], $this->catalog->search('category', '', StoreLocale::default(), 200)),
+            'categoryLabel' => $banner === null ? null : ($this->catalog->adminCategories([$banner->category_id], StoreLocale::default())[$banner->category_id]['name'] ?? null),
             'urls' => [
                 'index' => route('admin.plugins.vani-cms.banners.index'),
+                'categories' => route('admin.plugins.vani-cms.banners.categories'),
                 'save' => $banner === null ? route('admin.plugins.vani-cms.banners.store') : route('admin.plugins.vani-cms.banners.update', $banner->id),
             ],
             'can' => ['manage' => Gate::allows('cms.manage')],
         ]);
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function categoryNames(): array
-    {
-        $names = [];
-        foreach ($this->catalog->search('category', '', StoreLocale::default(), 500) as $category) {
-            $names[(int) $category['id']] = (string) $category['name'];
-        }
-
-        return $names;
     }
 
     /**
@@ -139,7 +140,7 @@ final class BannerController
         }
 
         $data = $request->validate($rules) + ['content' => []];
-        if (! array_key_exists((int) $data['category_id'], $this->categoryNames())) {
+        if ($this->catalog->adminCategories([(int) $data['category_id']], StoreLocale::default()) === []) {
             throw ValidationException::withMessages(['category_id' => __('vani-cms::texts.banner_controller.category_does_not_exist')]);
         }
 

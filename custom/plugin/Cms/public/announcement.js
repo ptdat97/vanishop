@@ -9,6 +9,14 @@
             bar.hidden = true;
             continue;
         }
+        if (until) {
+            const expire = () => {
+                const remaining = until * 1000 - Date.now();
+                if (remaining <= 0) bar.hidden = true;
+                else setTimeout(expire, Math.min(remaining, 2147483647));
+            };
+            expire();
+        }
         const lines = [...bar.querySelectorAll('[data-line]')];
         if (lines.length < 2) continue;
         const pause = Number(bar.dataset.pause || 3000);
@@ -38,7 +46,7 @@
         };
         const schedule = () => {
             clearTimeout(timer);
-            if (!reduced && !hovering) timer = setTimeout(() => { show(current + 1); schedule(); }, pause + fade);
+            if (!bar.hidden && !reduced && !hovering) timer = setTimeout(() => { show(current + 1); schedule(); }, pause + fade);
         };
 
         for (const [selector, delta] of [['[data-prev]', -1], ['[data-next]', 1]]) {
