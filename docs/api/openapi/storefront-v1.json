@@ -301,6 +301,20 @@
                     "Catalog"
                 ],
                 "summary": "Ghi lượt xem sản phẩm (beacon)",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["style_id"],
+                                "properties": {
+                                    "style_id": {"type": "integer", "minimum": 1},
+                                    "viewer_id": {"type": "string", "pattern": "^[a-f0-9]{32}$"}
+                                }
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "204": {
                         "description": "Không có nội dung."
@@ -309,7 +323,7 @@
                         "$ref": "#/components/responses/RateLimited"
                     }
                 },
-                "description": "Miễn CSRF; lọc trùng theo phiên cùng nguồn hoặc IP + trình duyệt.",
+                "description": "Miễn CSRF. Trình duyệt cùng nguồn có thể gửi viewer_id ngẫu nhiên gồm 32 ký tự hex để lọc trùng. Dự phòng dùng phiên hoặc IP và trình duyệt.",
                 "security": [
                     {},
                     {

@@ -18,6 +18,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Shared\Http\RateLimits;
+use Modules\Shared\Http\StorefrontRouteMiddleware;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Application\Blocks\BrandGridBlock;
@@ -78,6 +79,13 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        $this->app->singleton(StorefrontRouteMiddleware::class, fn (): StorefrontRouteMiddleware => new StorefrontRouteMiddleware(
+            api: ['api', 'vani.first-party-session', 'throttle:storefront-api', 'vani.storefront-context', 'vani.maintenance'],
+            page: ['web', 'vani.storefront-context:{locale}', 'vani.customer-session', 'vani.theme', 'vani.maintenance'],
+            cacheable: ['vani.page-cache'],
+            account: ['web', 'vani.storefront-context:{locale}', 'vani.customer-session:required', 'vani.theme', 'vani.maintenance'],
+            sessionless: PublicPageCache::SESSIONLESS,
+        ));
         $this->app->bind(ProductCards::class, ProductViews::class);
         $this->app->bind(CustomerProductPrices::class, ProductViews::class);
         $this->app->bind(CustomerSignIn::class, NativeCustomerSignIn::class);

@@ -1,4 +1,4 @@
-Extension API 1.25.0
+Extension API 1.26.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -444,6 +444,9 @@ interface Modules\Inventory\Contracts\LocationRegistry
   all(): array
   find(int $id): ?Modules\Inventory\Contracts\Data\LocationData
   save(array $data, ?int $id = NULL, ?int $expectedLockVersion = NULL): Modules\Inventory\Contracts\Data\LocationData
+interface Modules\Inventory\Contracts\StockJournal
+  const MAX_ENTRIES = 1000
+  movements(int $variantId, int $limit = 100, ?int $locationId = NULL): array
 class Modules\Inventory\Contracts\StockMovementRejected extends RuntimeException
 interface Modules\Inventory\Contracts\StockMovements
   transferOut(int $locationId, array $quantities, string $reason, string $reference): void

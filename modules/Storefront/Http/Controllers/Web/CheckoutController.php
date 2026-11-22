@@ -15,6 +15,7 @@ use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
+use Modules\Shared\Http\Middleware\ResolveStorefrontContext;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\AddressOptions;
 use Modules\Storefront\Application\CartVoucher;
@@ -54,7 +55,7 @@ final class CheckoutController
         $errors = $request->session()->get('errors');
         $form = $this->form->for($old, $customer === null ? null : (int) $customer->id, $errors instanceof ViewErrorBag ? $errors->getBag('default') : null);
         // Báo giá theo đúng giá trị đang hiện trên form (cả địa chỉ điền sẵn): phí giao của hãng có thể theo địa chỉ.
-        $checkoutQuote = $this->checkout->quote(CheckoutRequestForm::build(Arr::undot($form['values']), $key, (string) $request->attributes->get('order_source', 'web')));
+        $checkoutQuote = $this->checkout->quote(CheckoutRequestForm::build(Arr::undot($form['values']), $key, (string) $request->attributes->get(ResolveStorefrontContext::SOURCE_ATTRIBUTE, 'web')));
         $quote = $this->presenter->quote($checkoutQuote);
         $voucherNotice = $request->session()->get('voucher_notice');
         $quote['rejected_vouchers'] = [];

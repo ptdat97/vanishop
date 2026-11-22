@@ -25,6 +25,8 @@ final class ResolveStorefrontContext
 
     public const SOURCE_HEADER = 'X-Vani-Source';
 
+    public const SOURCE_ATTRIBUTE = 'order_source';
+
     public function __construct(private readonly CurrentContext $context) {}
 
     public function handle(Request $request, Closure $next, ?string $routeLocale = null): Response
@@ -34,7 +36,7 @@ final class ResolveStorefrontContext
 
         $source = (string) $request->headers->get(self::SOURCE_HEADER, '');
         $sources = (array) config('vanishop.storefront.sources');
-        $request->attributes->set('order_source', in_array($source, $sources, true) ? $source : (string) ($sources[0] ?? ''));
+        $request->attributes->set(self::SOURCE_ATTRIBUTE, in_array($source, $sources, true) ? $source : (string) ($sources[0] ?? ''));
 
         $this->context->set(new ContextScope(Actor::guest(), $locale));
         App::setLocale($locale);

@@ -214,7 +214,7 @@ Giá trị **thị trường và vận hành** (múi giờ, ngôn ngữ, tiền 
 Ngoại lệ có chủ đích (giai đoạn SME, [vision §2.1](../00-overview/vision.md#21-định-hướng-giai-đoạn-bắt-đầu-từ-sme-mở-rộng-khi-doanh-nghiệp-lớn-lên) — giữ đơn giản, không trừu tượng hoá trước nhu cầu; ghi ở backlog [§6b L27](../20-roadmap/reference-parity-refactor.md)):
 
 - **Địa chỉ hai cấp** (`province_*`, `ward_*`) là hình dạng địa chỉ trong schema và contract của Core; dữ liệu địa giới do plugin `vani.provinces-vn` cung cấp qua `AddressDirectory`.
-- **Alias middleware storefront** (`vani.customer-session`, `vani.theme`, `vani.page-cache`) được `PluginServiceProvider` và `Shared` nhắc bằng chuỗi khi dựng route trang plugin; thuộc tính request vẫn tên `order_source`.
+- **Middleware storefront** do Storefront khai báo qua `StorefrontRouteMiddleware` để Shared và Extension dùng khi đăng ký route. Khoá request `order_source` dùng hằng số `ResolveStorefrontContext::SOURCE_ATTRIBUTE`.
 - **`Shared\Domain\Text\VietnameseText`** (bỏ dấu để tìm kiếm, SMS) ở vòng 0.
 
 Giới hạn: R28 chỉ so literal trong `modules/`; `config/vanishop.php` là cấu hình của cửa hàng (được nhắc mã plugin làm mặc định), và mã phương thức giao của `ShippingRateProvider` nằm trong option nên không kiểm được tĩnh.

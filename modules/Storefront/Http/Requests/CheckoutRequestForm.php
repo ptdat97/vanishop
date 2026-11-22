@@ -9,6 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
+use Modules\Shared\Http\Middleware\ResolveStorefrontContext;
 
 /**
  * Hợp đồng đầu vào DUY NHẤT của checkout cho mọi kênh (ADR-044 §2): Storefront API (`quote`, `orders`) và form checkout
@@ -72,7 +73,7 @@ final class CheckoutRequestForm extends FormRequest
 
     public function toCheckoutRequest(CartKey $cart): CheckoutRequest
     {
-        return self::build($this->validated(), $cart, (string) $this->attributes->get('order_source', 'web'), $this->ip());
+        return self::build($this->validated(), $cart, (string) $this->attributes->get(ResolveStorefrontContext::SOURCE_ATTRIBUTE, 'web'), $this->ip());
     }
 
     /**

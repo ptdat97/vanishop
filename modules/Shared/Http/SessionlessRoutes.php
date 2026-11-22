@@ -9,11 +9,8 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-/**
- * Middleware bỏ khỏi route trang công khai cache được (`vani.page-cache`, storefront §5): không phiên, không CSRF, không
- * nhận diện khách — HTML giống nhau với mọi người, không Set-Cookie.
- */
+/** Middleware phiên của framework cần bỏ khi route tự quyết định cách mở phiên. */
 final class SessionlessRoutes
 {
-    public const MIDDLEWARE = [StartSession::class, ShareErrorsFromSession::class, PreventRequestForgery::class, ValidateCsrfToken::class, 'vani.customer-session'];
+    public const MIDDLEWARE = [StartSession::class, ShareErrorsFromSession::class, PreventRequestForgery::class, ValidateCsrfToken::class];
 }

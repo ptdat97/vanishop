@@ -30,6 +30,7 @@ use Modules\Inventory\Application\StockAvailability;
 use Modules\Inventory\Application\StockCountImporter;
 use Modules\Inventory\Application\StockedVariants;
 use Modules\Inventory\Application\StockMovementService;
+use Modules\Inventory\Application\StockQueries;
 use Modules\Inventory\Application\VariantStockFields;
 use Modules\Inventory\Console\EnsureDefaultLocationCommand;
 use Modules\Inventory\Console\ReleaseExpiredReservationsCommand;
@@ -44,6 +45,7 @@ use Modules\Inventory\Contracts\InventoryStrategy;
 use Modules\Inventory\Contracts\InventorySync;
 use Modules\Inventory\Contracts\LocationRegistry;
 use Modules\Inventory\Contracts\StockImporter;
+use Modules\Inventory\Contracts\StockJournal;
 use Modules\Inventory\Contracts\StockMovements;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
@@ -68,6 +70,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         // Contract cho vận hành kho (plugin vani.warehouse, ADR-042): kho, biến động chuyển kho, đối soát nguồn ngoài.
         $this->app->bind(LocationRegistry::class, EloquentLocationRegistry::class);
         $this->app->bind(StockMovements::class, StockMovementService::class);
+        $this->app->bind(StockJournal::class, StockQueries::class);
         $this->app->bind(InventoryReconciliation::class, InventoryReconciler::class);
         $this->app->singleton(StandardInventoryStrategy::class);
         $this->app->make(Extensions::class)->tag([StandardInventoryStrategy::class], InventoryStrategy::TAG);

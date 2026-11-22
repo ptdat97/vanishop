@@ -35,7 +35,7 @@ final class PublicPageCache
     public const PUBLIC_PAGE = 'vani.public_page';
 
     /** Middleware bỏ khỏi route trang công khai. */
-    public const SESSIONLESS = SessionlessRoutes::MIDDLEWARE;
+    public const SESSIONLESS = [...SessionlessRoutes::MIDDLEWARE, 'vani.customer-session'];
 
     public function __construct(private readonly Router $router) {}
 

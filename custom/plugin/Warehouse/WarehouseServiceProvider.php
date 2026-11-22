@@ -11,6 +11,7 @@ use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Inventory\Contracts\StockPageLink;
 use Plugin\Warehouse\Application\TransferGuard;
 use Plugin\Warehouse\Console\ReconcileCommand;
+use Plugin\Warehouse\Console\StockCardCommand;
 use Plugin\Warehouse\Infrastructure\LocationsLink;
 use Plugin\Warehouse\Infrastructure\TransferredVariants;
 use Plugin\Warehouse\Infrastructure\TransfersLink;
@@ -51,7 +52,7 @@ final class WarehouseServiceProvider extends PluginServiceProvider
         $this->app->make(Extensions::class)->guardDisable(TransferGuard::TAG, fn (object $guard): ?string => $guard instanceof TransferGuard ? $guard->blocker() : null);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ReconcileCommand::class]);
+            $this->commands([ReconcileCommand::class, StockCardCommand::class]);
         }
     }
 }

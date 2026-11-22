@@ -11,8 +11,7 @@ use Modules\Customer\Contracts\CustomerSessions;
 
 /**
  * Storefront API `POST /products/views` (ADR-044, thay `/_vani/xem`): beacon lượt xem PDP (§3.5-2), JS gửi sau khi trang
- * tải (trang cache CDN được, không ghi DB lúc render). Lọc trùng theo phiên web cùng nguồn (FirstPartySession) hoặc IP +
- * trình duyệt; client khác gửi như khách vãng lai. Miễn CSRF —
+ * tải (trang cache CDN được, không ghi DB lúc render). Lọc trùng theo mã ngẫu nhiên của trình duyệt cùng nguồn, phiên hoặc IP + trình duyệt. Miễn CSRF —
  * chỉ cộng lượt xem, đã lọc trùng theo phiên. Luôn 204.
  */
 final class ProductViewController
@@ -21,10 +20,12 @@ final class ProductViewController
     {
         $styleId = (int) $request->input('style_id');
         if ($styleId > 0) {
-            // Phiên chỉ ổn định khi request đã mang cookie phiên; lần đầu (trang cache CDN, chưa có cookie) dùng IP + trình duyệt.
-            $viewer = $request->hasSession() && $request->cookies->has((string) config('session.cookie'))
-                ? $request->session()->getId()
-                : (string) $request->ip().'|'.$request->userAgent();
+            $viewerId = $request->input('viewer_id');
+            $viewer = match (true) {
+                $request->hasSession() && is_string($viewerId) && preg_match('/\A[a-f0-9]{32}\z/', $viewerId) === 1 => 'browser:'.$viewerId,
+                $request->hasSession() && $request->cookies->has((string) config('session.cookie')) => 'session:'.$request->session()->getId(),
+                default => (string) $request->ip().'|'.$request->userAgent(),
+            };
             $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
             $views->record($styleId, $viewer, $customer === null ? null : (int) $customer->id);
         }

@@ -473,6 +473,20 @@ dispatchInlineCartChange();
 
 mountSearchSuggestions(t);
 
+function productViewViewerId() {
+    try {
+        const key = 'vani.product_viewer';
+        const previous = JSON.parse(localStorage.getItem(key) || 'null');
+        if (/^[a-f0-9]{32}$/.test(previous?.id) && previous.expiresAt > Date.now()) return previous.id;
+
+        const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem(key, JSON.stringify({ id, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
+        return id;
+    } catch {
+        return null;
+    }
+}
+
 // Trang sản phẩm: beacon lượt xem + "Đã xem gần đây" (§3.5-2). Danh sách chỉ ở trình duyệt (tối đa 30 mẫu — khối "Đã xem" của plugin đọc chung).
 const recent = document.querySelector('[data-vani-recently-viewed]');
 if (recent) {
@@ -492,6 +506,8 @@ if (recent) {
     }
     const body = new FormData();
     body.append('style_id', String(current));
+    const viewerId = productViewViewerId();
+    if (viewerId) body.append('viewer_id', viewerId);
     if (!(navigator.sendBeacon && navigator.sendBeacon(recent.dataset.viewUrl, body))) {
         fetch(recent.dataset.viewUrl, { method: 'POST', body, credentials: 'same-origin', keepalive: true }).catch(() => {});
     }

@@ -24,7 +24,7 @@ use Modules\Extension\Contracts\PluginViews;
 use Modules\Extension\Contracts\SettingPermissions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
-use Modules\Shared\Http\SessionlessRoutes;
+use Modules\Shared\Http\StorefrontRouteMiddleware;
 use Modules\Shared\Support\AdminPath;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
@@ -278,7 +278,7 @@ abstract class PluginServiceProvider extends ServiceProvider
 
         $slug = $this->pluginSlug();
 
-        Route::middleware(['api', 'vani.first-party-session', 'throttle:storefront-api', 'vani.storefront-context', 'vani.maintenance', 'vani.plugin-active:'.$this->pluginId(), 'vani.response-hooks:vani.api.storefront,api.storefront.'])
+        Route::middleware([...$this->app->make(StorefrontRouteMiddleware::class)->api, 'vani.plugin-active:'.$this->pluginId(), 'vani.response-hooks:vani.api.storefront,api.storefront.'])
             ->prefix("api/storefront/v1/x/{$slug}")
             ->name("api.storefront.x.{$slug}.")
             ->group($file);
@@ -318,11 +318,12 @@ abstract class PluginServiceProvider extends ServiceProvider
         }
 
         $slug = $this->pluginSlug();
+        $middleware = $this->app->make(StorefrontRouteMiddleware::class);
 
         foreach ($prefixes as $locale => $localePrefix) {
             $path = $localePrefix ?? "p/{$slug}";
-            Route::middleware(['web', 'vani.storefront-context:'.$locale, 'vani.customer-session', 'vani.theme', 'vani.maintenance', 'vani.plugin-active:'.$this->pluginId(), ...($cacheable ? ['vani.page-cache'] : [])])
-                ->withoutMiddleware($cacheable ? SessionlessRoutes::MIDDLEWARE : [])
+            Route::middleware([...$middleware->localized($middleware->page, $locale), 'vani.plugin-active:'.$this->pluginId(), ...($cacheable ? $middleware->cacheable : [])])
+                ->withoutMiddleware($cacheable ? $middleware->sessionless : [])
                 ->prefix($locale === $default ? $path : "{$locale}/{$path}")
                 ->name($locale === $default ? "storefront.p.{$slug}." : "storefront.{$locale}.p.{$slug}.")
                 ->group($file);
@@ -354,10 +355,11 @@ abstract class PluginServiceProvider extends ServiceProvider
         }
 
         $slug = $this->pluginSlug();
+        $middleware = $this->app->make(StorefrontRouteMiddleware::class);
         foreach ($segments as $locale => $localeSegment) {
             $paths = (array) config("vanishop.locale.paths.{$locale}", []);
             $account = (string) ($paths['account'] ?? config("vanishop.locale.paths.{$default}.account"));
-            Route::middleware(['web', 'vani.storefront-context:'.$locale, 'vani.customer-session:required', 'vani.theme', 'vani.maintenance', 'vani.plugin-active:'.$this->pluginId()])
+            Route::middleware([...$middleware->localized($middleware->account, $locale), 'vani.plugin-active:'.$this->pluginId()])
                 ->prefix(($locale === $default ? '' : "{$locale}/")."{$account}/{$localeSegment}")
                 ->name($locale === $default ? "storefront.p.{$slug}.account." : "storefront.{$locale}.p.{$slug}.account.")
                 ->group($file);

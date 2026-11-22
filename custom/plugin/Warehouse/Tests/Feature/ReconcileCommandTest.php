@@ -11,6 +11,7 @@ use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Plugin\Warehouse\Console\ReconcileCommand;
+use Plugin\Warehouse\Console\StockCardCommand;
 use Plugin\Warehouse\WarehouseServiceProvider;
 
 require_once __DIR__.'/../../../../../modules/Inventory/Tests/Feature/InventoryTestHelpers.php';
@@ -24,6 +25,7 @@ beforeEach(function () {
     // Provider đăng ký giữa chừng: Artisan có thể đã dựng (migrate của test trước) nên `commands()` của provider không
     // còn tác dụng — đăng ký lệnh thẳng vào console kernel để test không phụ thuộc thứ tự chạy (backlog L34).
     app(Kernel::class)->registerCommand(app(ReconcileCommand::class));
+    app(Kernel::class)->registerCommand(app(StockCardCommand::class));
     $this->brand = Brand::factory()->create();
     $this->style = T::product($this->brand->id, ['style_code' => 'LM-REC']);
     [$this->s, $this->m] = P::variants($this->style);
@@ -124,4 +126,21 @@ it('location/SKU không tra được bị bỏ qua; dòng trùng lấy bản m�
         ->and((int) $line->expected)->toBe(9)
         ->and((int) $line->actual)->toBe(4)
         ->and($line->resolution)->toBeNull();
+});
+
+it('thẻ kho đọc biến động theo SKU và kho, bỏ biến động ngoài phạm vi', function () {
+    $erp = I::location(['code' => 'WH-CARD', 'stock_authority' => 'client_erp']);
+    I::stock($erp, $this->s->id, 10);
+    I::stock($erp, $this->m->id, 5);
+    $this->artisan('vani:warehouse:reconcile', ['--source' => 'client_erp', '--json' => json_encode([
+        ['location' => $erp->code, 'sku' => $this->s->sku, 'on_hand' => 12, 'version' => 2],
+        ['location' => $erp->code, 'sku' => $this->m->sku, 'on_hand' => 9, 'version' => 3],
+    ])])->assertSuccessful();
+
+    $this->artisan('vani:warehouse:stock-card', ['sku' => $this->s->sku, '--location' => $erp->code])
+        ->expectsOutputToContain('v2')->doesntExpectOutputToContain('v3')->assertSuccessful();
+    $this->artisan('vani:warehouse:stock-card', ['sku' => $this->s->sku, '--location' => $this->loc->code])
+        ->doesntExpectOutputToContain('v2')->assertSuccessful();
+    $this->artisan('vani:warehouse:stock-card', ['sku' => $this->s->sku, '--location' => 'UNKNOWN'])->assertFailed();
+    expect(DB::table('stock_movements')->count())->toBe(2);
 });

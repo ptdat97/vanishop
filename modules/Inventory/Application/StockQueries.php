@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Application;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Inventory\Contracts\StockJournal;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Persistence\Models\StockMovement;
 use Modules\Shared\Support\StoreClock;
@@ -12,7 +13,7 @@ use Modules\Shared\Support\StoreClock;
 /**
  * Truy vấn đọc cho màn hình tồn kho trong Admin.
  */
-final class StockQueries
+final class StockQueries implements StockJournal
 {
     /**
      * Mọi location (kể cả không phục vụ online — cửa hàng vẫn có tồn).
@@ -66,14 +67,13 @@ final class StockQueries
             ->all();
     }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function movements(int $variantId, int $limit = 100): array
+    public function movements(int $variantId, int $limit = 100, ?int $locationId = null): array
     {
         $codes = Location::query()->pluck('code', 'id');
 
-        return StockMovement::query()->where('variant_id', $variantId)->orderByDesc('id')->limit($limit)->get()
+        return StockMovement::query()->where('variant_id', $variantId)
+            ->when($locationId !== null, fn ($query) => $query->where('location_id', $locationId))
+            ->orderByDesc('id')->limit(max(1, min($limit, self::MAX_ENTRIES)))->get()
             ->map(fn (StockMovement $movement): array => [
                 'id' => $movement->id,
                 'at' => StoreClock::format($movement->created_at, 'datetime_seconds'),

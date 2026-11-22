@@ -7,8 +7,10 @@ use Modules\Catalog\Contracts\ProductViewStatistics;
 use Modules\Catalog\Events\ProductViewed;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
+require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 
 beforeEach(function () {
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
@@ -31,6 +33,36 @@ it('beacon lượt xem (Storefront API, ADR-044): miễn CSRF, 204, gom theo gi�
     $draft = T::product($this->brand->id, ['status' => 'draft']);
     $this->post('/api/storefront/v1/products/views', ['style_id' => $draft->id], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
     expect(DB::table('style_view_stats')->where('style_id', $draft->id)->exists())->toBeFalse();
+});
+
+it('beacon cùng IP phân biệt trình duyệt và chỉ tin viewer_id gửi cùng nguồn', function () {
+    $headers = ['Sec-Fetch-Site' => 'same-origin', 'User-Agent' => 'Same Browser'];
+    $url = '/api/storefront/v1/products/views';
+    $send = fn (string $id, array $headers) => $this->post($url, ['style_id' => $this->style->id, 'viewer_id' => $id], $headers)->assertNoContent();
+
+    $send(str_repeat('a', 32), $headers);
+    $send(str_repeat('a', 32), $headers);
+    $send(str_repeat('b', 32), $headers);
+    expect(app(ProductViewStatistics::class)->counts([$this->style->id]))->toBe([$this->style->id => 2]);
+
+    $headers['Sec-Fetch-Site'] = 'cross-site';
+    $send(str_repeat('c', 32), $headers);
+    $send(str_repeat('d', 32), $headers);
+    expect(app(ProductViewStatistics::class)->counts([$this->style->id]))->toBe([$this->style->id => 3]);
+});
+
+it('HTML cache CDN dùng chung và beacon cùng nguồn vẫn nhận khách từ phiên đăng nhập', function () {
+    config(['vanishop.storefront.page_cache.enabled' => true]);
+    $customer = H::account();
+    $this->post('/tai-khoan/dang-nhap', ['email' => $customer->email, 'password' => H::PASSWORD])->assertRedirect();
+    $this->get('/san-pham/'.$this->style->slug)->assertOk()->assertHeaderMissing('Set-Cookie');
+    Event::fake([ProductViewed::class]);
+
+    $this->post('/api/storefront/v1/products/views', [
+        'style_id' => $this->style->id,
+        'viewer_id' => str_repeat('a', 32),
+    ], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
+    Event::assertDispatched(ProductViewed::class, fn (ProductViewed $event): bool => $event->customerId === $customer->id);
 });
 
 it('thống kê: tổng theo khoảng ngày, xem nhiều nhất', function () {

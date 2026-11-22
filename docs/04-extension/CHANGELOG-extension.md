@@ -6,6 +6,12 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.69 — 2026-11-22 · Extension API 1.26.0
+
+- `Inventory\Contracts\StockJournal` đọc biến động của một SKU, có thể lọc theo kho. Plugin Warehouse 1.1.0 dùng contract này cho lệnh `vani:warehouse:stock-card`.
+- Storefront khai báo các nhóm middleware dùng cho API và trang plugin. Các helper đăng ký route giữ nguyên chữ ký và thứ tự middleware.
+- Beacon lượt xem trình duyệt cùng nguồn nhận `viewer_id` để phân biệt người xem sau cùng một IP. HTML công khai vẫn dùng chung trên CDN.
+
 ## 0.5.68 — 2026-11-22 · Extension API 1.25.0
 
 - `Reconciliations::statuses()` đọc trạng thái theo tham chiếu. `matchOpen()` chuyển dòng lệch còn mở sang khớp khi nhập lại bảng kê COD. Dòng đã khớp hoặc đã xử lý thủ công giữ trạng thái hiện tại.
