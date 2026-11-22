@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 
@@ -28,4 +30,21 @@ it('popup: giữ Tab/Shift+Tab trong popup, khoá cuộn nền, Esc đóng và t
     expect($page->script('document.activeElement?.textContent?.trim()'))->toBe('Chọn từ thư viện')
         ->and($page->script('document.body.style.overflow'))->toBe('');
     $page->assertNoJavaScriptErrors();
+});
+
+it('ô tải ảnh chặn tệp sai loại và chấp nhận ảnh khi chọn lại', function () {
+    $fixtures = Storage::fake('local');
+    Storage::fake('public');
+    $fixtures->put('sai.txt', 'not an image');
+    $fixtures->put('banner.png', UploadedFile::fake()->image('banner.png')->getContent());
+
+    visit($this->edit)
+        ->attach('[data-file-input] input', $fixtures->path('sai.txt'))
+        ->assertSee('sai.txt: loại tệp không được hỗ trợ.')
+        ->assertScript("Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Tải lên').disabled", true)
+        ->attach('[data-file-input] input', $fixtures->path('banner.png'))
+        ->assertDontSee('sai.txt: loại tệp không được hỗ trợ.')
+        ->click('Tải lên')
+        ->assertSee('Gỡ ảnh')
+        ->assertNoJavaScriptErrors();
 });
