@@ -12,10 +12,12 @@ use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Inventory\Contracts\AvailabilityReader;
+use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Shared\Support\MoneyFormatter;
+use Modules\Storefront\Contracts\CustomerProductPrices;
 use Modules\Storefront\Contracts\ProductCards;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -25,7 +27,7 @@ use Modules\Tenancy\Contracts\Settings;
  * Native storefront và Storefront API cùng dùng lớp này (ADR-009). Giá bị ẩn theo `PriceVisibility` → `price: null`,
  * `price_hidden: true` (cả variant); plugin enricher nhận dữ liệu đã ẩn.
  */
-final class ProductViews implements ProductCards
+final class ProductViews implements CustomerProductPrices, ProductCards
 {
     public function __construct(
         private readonly CatalogReader $catalog,
@@ -37,6 +39,7 @@ final class ProductViews implements ProductCards
         private readonly MediaUrls $media,
         private readonly Settings $settings,
         private readonly Extensions $extensions,
+        private readonly CustomerGroupDirectory $groups,
     ) {}
 
     /**
@@ -212,9 +215,30 @@ final class ProductViews implements ProductCards
      */
     public function priceRanges(array $styleIds, string $locale): array
     {
-        $now = now()->getTimestamp();
-        $items = $this->catalog->productsByIds(array_slice($styleIds, 0, self::MAX_IDS), $locale, $now);
-        $resolved = $this->resolve(array_merge(...array_map(fn (array $item): array => $item['variant_ids'], $items ?: [['variant_ids' => []]])), $now);
+        return $this->rangesForContext($styleIds, $locale, new PricingContext(now()->getTimestamp()));
+    }
+
+    public function forCustomer(array $styleIds, int $customerId, string $locale): array
+    {
+        $groupId = $this->groups->groupOf($customerId);
+        $ranges = $this->rangesForContext($styleIds, $locale, new PricingContext(now()->getTimestamp(), $groupId, $customerId));
+        $prices = [];
+        foreach ($ranges as $styleId => $range) {
+            $prices[$styleId] = ['amount' => (int) $range['min']['amount'], 'formatted' => (string) $range['min']['formatted']];
+        }
+
+        return ['group_id' => $groupId, 'prices' => $prices];
+    }
+
+    /**
+     * @param  list<int>  $styleIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function rangesForContext(array $styleIds, string $locale, PricingContext $context): array
+    {
+        $items = $this->catalog->productsByIds(array_slice($styleIds, 0, self::MAX_IDS), $locale, $context->now);
+        $variantIds = array_merge(...array_column($items, 'variant_ids'));
+        $resolved = $variantIds === [] ? [] : $this->prices->forVariants($variantIds, $context);
 
         $ranges = [];
         foreach ($items as $item) {

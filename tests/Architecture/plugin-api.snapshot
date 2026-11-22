@@ -1,4 +1,4 @@
-Extension API 1.23.0
+Extension API 1.24.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -892,6 +892,8 @@ class Modules\Shared\Support\StoreLocale
   static supported(): array
   static options(): array
   static isSupported(string $locale): bool
+interface Modules\Storefront\Contracts\CustomerProductPrices
+  forCustomer(array $styleIds, int $customerId, string $locale): array
 interface Modules\Storefront\Contracts\CustomerSignIn [experimental]
   signIn(Illuminate\Http\Request $request, string $token, int $customerId): string
 class Modules\Storefront\Contracts\Data\LinkTarget

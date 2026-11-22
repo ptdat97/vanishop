@@ -51,26 +51,33 @@ final class WishlistAlerts
         $notifyStock = (bool) $this->settings->get(WishlistServiceProvider::ID, 'notify_back_in_stock', false);
         $notifyPrice = (bool) $this->settings->get(WishlistServiceProvider::ID, 'notify_price_drop', false);
 
-        foreach ($items as $item) {
-            $card = $cards[$item->style_id] ?? null;
-            if ($card === null) {
-                continue;
-            }
-            $inStock = (bool) ($card['in_stock'] ?? false);
-            $price = $card['price']['min']['amount'] ?? null;
+        foreach ($items->groupBy('customer_id') as $customerId => $customerItems) {
+            $snapshot = $this->wishlists->pricesFor((int) $customerId, $customerItems->pluck('style_id')->all());
+            foreach ($customerItems as $item) {
+                $card = $cards[$item->style_id] ?? null;
+                if ($card === null) {
+                    continue;
+                }
+                $price = $snapshot['prices'][$item->style_id] ?? null;
+                $inStock = (bool) ($card['in_stock'] ?? false);
 
-            if ($inStock && ! $item->in_stock && $notifyStock && $this->cooledDown($item->notified_stock_at)) {
-                $this->send(self::BACK_IN_STOCK, $item, $card);
-                $item->notified_stock_at = now();
+                if ($inStock && ! $item->in_stock && $notifyStock && $this->cooledDown($item->notified_stock_at)) {
+                    $this->send(self::BACK_IN_STOCK, $item, $card, $price['formatted'] ?? null);
+                    $item->notified_stock_at = now();
+                }
+
+                if ($item->price_group_id !== $snapshot['group_id']) {
+                    $item->price_group_id = $snapshot['group_id'];
+                    $item->price_amount = $price['amount'] ?? null;
+                } elseif ($price !== null && $item->price_amount !== null && $price['amount'] < $item->price_amount && $inStock && $notifyPrice && $this->cooledDown($item->notified_price_at)) {
+                    $this->send(self::PRICE_DROP, $item, $card, $price['formatted']);
+                    $item->notified_price_at = now();
+                    $item->price_amount = $price['amount'];
+                }
+                $item->in_stock = $inStock;
+                $item->price_amount ??= $price['amount'] ?? null;
+                $item->save();
             }
-            if ($price !== null && $item->price_amount !== null && $price < $item->price_amount && $inStock && $notifyPrice && $this->cooledDown($item->notified_price_at)) {
-                $this->send(self::PRICE_DROP, $item, $card);
-                $item->notified_price_at = now();
-                $item->price_amount = (int) $price;
-            }
-            $item->in_stock = $inStock;
-            $item->price_amount ??= $price === null ? null : (int) $price;
-            $item->save();
         }
     }
 
@@ -82,7 +89,7 @@ final class WishlistAlerts
     /**
      * @param  array<string, mixed>  $card
      */
-    private function send(string $type, WishlistItem $item, array $card): void
+    private function send(string $type, WishlistItem $item, array $card, ?string $price): void
     {
         $customer = $this->customers->find($item->customer_id);
         if ($customer === null) {
@@ -98,7 +105,7 @@ final class WishlistAlerts
                 'customer_name' => $customer->fullName,
                 'product_name' => (string) ($card['name'] ?? ''),
                 'product_url' => LocalizedUrls::route('storefront.product', (string) $card['slug'], $locale),
-                'price' => $card['price']['min']['formatted'] ?? null,
+                'price' => $price,
             ],
             category: NotificationRequest::MARKETING,
         ));

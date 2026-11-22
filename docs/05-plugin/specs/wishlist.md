@@ -27,7 +27,7 @@
 
 ## 3. Dữ liệu
 
-`plg_wishlist_items`: `id`, `customer_id`, `style_id`, `price_amount` (giá thấp nhất lúc thêm/lần báo giá gần nhất, null khi ẩn giá), `in_stock` (bool, lần kiểm gần nhất), `notified_stock_at`, `notified_price_at`, `created_at`, `updated_at`; unique (`customer_id`, `style_id`). Không khoá ngoại sang bảng Core ([ADR-027](../../19-adr/ADR-027-plugin-data-no-core-columns.md)); manifest khai báo `owned`.
+`plg_wishlist_items`: `id`, `customer_id`, `style_id`, `price_amount` (giá thấp nhất theo nhóm khách lúc thêm hoặc lần báo giá gần nhất), `price_group_id` (nhóm của mốc giá, null khi khách không có nhóm), `in_stock` (bool, lần kiểm gần nhất), `notified_stock_at`, `notified_price_at`, `created_at`, `updated_at`; unique (`customer_id`, `style_id`). Không khoá ngoại sang bảng Core ([ADR-027](../../19-adr/ADR-027-plugin-data-no-core-columns.md)); manifest khai báo `owned`.
 
 ## 4. API
 

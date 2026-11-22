@@ -6,6 +6,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.67 — 2026-11-22 · Extension API 1.24.0
+
+- `CustomerProductPrices::forCustomer()` dùng bộ tính giá hiện hành để lấy giá tối thiểu theo sản phẩm cho chính khách nhận nội dung riêng.
+- `vani.wishlist` 1.4.0 lưu nhóm giá cạnh mốc giá đã thấy và gửi thông báo theo giá của khách khi đủ điều kiện. Chạy `php artisan vani:plugin:upgrade vani.wishlist` khi nâng cấp cửa hàng đang bật plugin.
+
 ## 0.5.66 — 2026-11-22 · Extension API 1.23.0
 
 - `PublicPageExpiry::limit()` cho phép plugin giới hạn thời gian dùng HTML tại CDN khi nội dung có lịch. CMS khai báo mốc bắt đầu và kết thúc của thanh thông báo.

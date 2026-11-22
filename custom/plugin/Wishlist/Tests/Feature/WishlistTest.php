@@ -4,9 +4,11 @@ use Illuminate\Support\Facades\File;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Contracts\Customers;
+use Modules\Customer\Contracts\CustomerSegments;
 use Modules\Customer\Events\CustomerAnonymized;
 use Modules\Customer\Events\CustomerMerged;
 use Modules\Customer\Persistence\Models\Customer;
+use Modules\Customer\Persistence\Models\CustomerGroup;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Extension\Application\Plugins\PluginAssets;
 use Modules\Extension\Application\Plugins\PluginManager;
@@ -18,6 +20,8 @@ use Modules\Pricing\Events\PriceChanged;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\Phones;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\Wishlist\Infrastructure\Wishlists;
@@ -186,6 +190,39 @@ it('báo giảm giá: giá thấp nhất thấp hơn giá lúc thêm', function 
     event(new PriceChanged(1, [$this->s->id]));
     expect($sent)->toHaveCount(1)->and($sent[0]->type)->toBe('wishlist_price_drop')
         ->and(WishlistItem::query()->value('price_amount'))->toBe(150_000);
+});
+
+it('chỉ báo giảm giá cho đúng nhóm khi storefront ẩn giá và đặt lại mốc khi khách đổi nhóm', function () {
+    $notifier = Mockery::mock(Notifier::class);
+    $vip = H::account('0912345678');
+    $regular = H::account('0912345679');
+    $group = T::seed(fn () => CustomerGroup::query()->create(['code' => 'vip', 'name' => 'VIP']));
+    $member = P::priceList(['code' => 'vip', 'type' => 'member', 'priority' => 20], [$this->s->id => [180_000]]);
+    T::seed(function () use ($member, $group, $vip): void {
+        $member->update(['customer_group_id' => $group->id]);
+        app(CustomerSegments::class)->assignGroup($vip->id, $group->id, 'system:test');
+        app(Settings::class)->set('core', 'storefront.price_visibility', 'members');
+        app(Settings::class)->set(WishlistServiceProvider::ID, 'notify_price_drop', true);
+    });
+    $this->get('/san-pham/'.$this->style->slug)->assertOk()->assertDontSee('data-vani-amount', false);
+    $wishlists = app(Wishlists::class);
+    $wishlists->add($vip->id, [$this->style->id]);
+    $wishlists->add($regular->id, [$this->style->id]);
+    expect(WishlistItem::query()->where('customer_id', $vip->id)->value('price_amount'))->toBe(180_000)
+        ->and(WishlistItem::query()->where('customer_id', $regular->id)->value('price_amount'))->toBe(200_000);
+
+    $notifier->shouldReceive('notify')->once()->with(Mockery::on(fn (NotificationRequest $request): bool => $request->recipient->customerId === $vip->id
+        && $request->type === 'wishlist_price_drop'
+        && $request->variables['price'] === app(MoneyFormatter::class)->toArray(Money::vnd(150_000))['formatted']))->andReturn(['mail']);
+    app()->instance(Notifier::class, $notifier);
+    T::seed(fn () => $member->prices()->update(['amount' => 150_000]));
+    event(new PriceChanged($member->id, [$this->s->id]));
+
+    T::seed(fn () => app(CustomerSegments::class)->assignGroup($regular->id, $group->id, 'system:test'));
+    event(new PriceChanged($member->id, [$this->s->id]));
+    expect(WishlistItem::query()->where('customer_id', $vip->id)->value('price_amount'))->toBe(150_000)
+        ->and(WishlistItem::query()->where('customer_id', $regular->id)->value('price_amount'))->toBe(150_000)
+        ->and(WishlistItem::query()->where('customer_id', $regular->id)->value('notified_price_at'))->toBeNull();
 });
 
 it('gộp hồ sơ khách chuyển danh sách (bỏ trùng); ẩn danh hoá xoá danh sách', function () {

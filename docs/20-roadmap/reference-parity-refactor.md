@@ -421,6 +421,8 @@ Thứ tự trong một đợt theo nguyên tắc của roadmap: **Correctness �
 
 Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong đợt hiện tại; mở lại theo nhu cầu. Chỉ giữ mục **còn mở hoặc làm dở**; mục đã xong (L2, L3, L5, L6, L7, L8, L9, L10, L13, L15, L16, L20, L22, L28, L29, L30, L31, L32, L34, L35, L36, L38, L39, L44, L45, L46) đã gỡ khỏi bảng 2026-11-20 — chi tiết ở [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md) và git history.
 
+Đã đóng L12 ngày 2026-11-22. Khách vãng lai xem và bỏ sản phẩm yêu thích từ danh sách cục bộ. Thông báo giảm giá dùng giá theo nhóm khách kể cả khi storefront ẩn giá.
+
 Đã đóng L18 ngày 2026-11-22. CDN giới hạn thời gian cache và phục vụ bản cũ theo lịch CMS. `vani-base` hiện dòng thông báo theme khi thanh CMS ẩn.
 
 | # | Giới hạn | Nơi | Hướng xử lý |
@@ -428,7 +430,6 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L1 | Nội dung `vani.cms` (trang, bài viết) chỉ một ngôn ngữ; bản `/en` là `noindex` | `vani.cms` | Bản dịch + slug theo ngôn ngữ như Catalog (ADR-038 mục 4) |
 | L4 | Có CDN: thay đổi (giá, slug, menu, cấu hình) thấy sau tối đa `s-maxage`; chưa purge theo event | Storefront | `CdnPurger` (plugin theo nhà cung cấp CDN) nghe event |
 | L11 🟡 0.5.57 (✅ SKU chưa nhập khối lượng dùng khối lượng mặc định của cửa hàng — Admin → Cài đặt → Kho & giao hàng; còn: `vani.ghn` gửi `weight`, chờ mở lại kết nối ngoài) | `vani.ghn` chưa gửi khối lượng (Core đã có `weight()`); dòng thiếu khối lượng tính 0 g | `vani.ghn`, Catalog | Gửi `weight` khi đặt vận đơn; cảnh báo sản phẩm thiếu khối lượng |
-| L12 🟡 | Khách vãng lai xem và bỏ sản phẩm yêu thích từ danh sách cục bộ. Chế độ ẩn giá `members` còn thiếu thông báo giảm giá theo nhóm khách. | `vani.wishlist` | Tính giá thông báo theo nhóm khách. |
 | L14 ⏸ (Owner 2026-11-19: để sau — sai số nhỏ chấp nhận được) | Lượt xem: lần xem đầu chưa có cookie phiên lọc trùng theo IP + trình duyệt (chung NAT có thể đếm thiếu); `ProductViewed` không có khách khi trang chạy chế độ CDN chưa có phiên | Catalog, Storefront | Định danh người xem ẩn danh riêng (cookie ngắn hạn) nếu cần độ chính xác |
 | L17 | Khối nhiều mục (trình chiếu 5 slide, lưới banner 4 ô, tab, biểu tượng) dùng số ô cố định vì `FieldDefinition` chưa có trường lặp | `vani.storefront-extras`, Extension | Kiểu trường danh sách (repeater) cho page builder |
 | L19 🟡 | Form banner tìm danh mục trên máy chủ và tải danh mục đã chọn theo ID. | `vani.cms`, Extension | Còn tích hợp banner vào form danh mục. |
