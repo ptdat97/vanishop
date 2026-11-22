@@ -1,23 +1,25 @@
 # Storefront
 
-> Trạng thái: native storefront **Partially Implemented** (slice 12b, 2026-10-02); tầng ghép + Storefront API: Implemented.
+> Đối chiếu mã nguồn ngày 22/11/2026. Native storefront, tầng ghép và Storefront API đã có các luồng mở bán bên dưới. Trạng thái nghiệm thu theo môi trường nằm trong [kế hoạch production](ke-hoach-production.md).
 >
 > | Phần | Trạng thái |
 > |---|---|
 > | Theme `vani-base` (`custom/theme/vani-base`), theme đang hoạt động `core.theme` + theme con (`parent`), token `theme.tokens` → CSS variables | Implemented |
 > | Trang SSR: `/`, `/danh-muc/{slug}`, `/thuong-hieu`, `/thuong-hieu/{slug}`, `/tim-kiem`, `/san-pham/{slug}` (JSON-LD `Product`; breadcrumb + JSON-LD `BreadcrumbList` ở PDP, danh mục, thương hiệu — 0.3.66), `/gio-hang`, `/thanh-toan`, `/don-hang/{id}` | Implemented |
 > | Slot storefront (`modules/Storefront/hooks.php`) + `<x-vani::hook-slot>` | Implemented; `vani.storefront.account.menu` bổ sung mục menu ngoài các trang tài khoản do plugin đăng ký qua `accountPage()` |
-> | Đảo tương tác | JS thuần, không thư viện (đổi ảnh theo màu, tự gửi form số lượng). Alpine chờ duyệt dependency |
+> | Đảo tương tác | JavaScript thuần điều phối listing, phiên và giỏ. Swiper và PhotoSwipe tải theo nhu cầu. Menu tài khoản tải Vue riêng khi có điểm mount. |
 > | Tài khoản `/tai-khoan` (đăng nhập email + mật khẩu — OTP theo SĐT là plugin `vani.phone-otp-login`, tổng quan, đơn hàng + huỷ, địa chỉ; giỏ vãng lai gộp khi đăng nhập), tra cứu đơn `/tra-cuu-don`, `robots.txt`, `sitemap.xml` | Implemented (2026-10-02) |
 > | Đổi/trả trên native (2026-10-08): partial `order-returns` trên `/tai-khoan/don-hang/{id}` và `/don-hang/{id}` (token đơn trong phiên) — danh sách yêu cầu + huỷ khi chờ duyệt, form chọn số lượng, trả hoàn tiền hoặc đổi size/màu cùng mẫu (size hết hàng bị khoá), lý do, ghi chú; `POST /don-hang/{id}/doi-tra`, `POST /don-hang/{id}/doi-tra/{return}/huy`. Đổi mẫu khác: qua CSKH | Implemented |
 > | Cache CDN trang công khai — **tuỳ chọn nâng cao**, mặc định tắt (0.3.34, 0.3.68, §5): không CDN thì trang có phiên, render sẵn theo khách; bật thì không phiên, `Cache-Control: public, s-maxage`, phần riêng của khách qua `/_vani/phien` — hiển thị như nhau | Implemented |
 > | Chọn dòng giỏ (ô chọn + "Chọn tất cả", `POST /gio-hang/chon`), nút "Mua ngay" ở PDP (`buy_now` → `/thanh-toan`), giỏ mini ở header (0.3.64) | Implemented |
 > | Page builder cho trang khác ngoài trang chủ; purge CDN theo event | Designed |
-> | Địa chỉ checkout | Có `vani.provinces-vn`: chọn tỉnh/phường (JS tải phường theo tỉnh). Không có danh mục: nhập tự do | Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
+> | Địa chỉ checkout | Có `vani.provinces-vn`: chọn tỉnh/phường (JS tải phường theo tỉnh). Nếu chưa cấu hình danh mục địa giới, form cho nhập địa chỉ tự do. |
+
+Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
 
 ## 1. Nguyên tắc
 
-> Đánh giá 2026-11-11: luồng đọc đã dùng chung tầng ghép; luồng ghi, "vỏ" trang và JSON của theme còn lệch API — kế hoạch ở [ADR-044](../19-adr/ADR-044-storefront-api-first.md).
+> ADR-044 mô tả hợp đồng hiện hành. Trang Blade gọi use-case trong cùng process. JSON chứa partial giỏ phục vụ giao diện web, còn Storefront API trả DTO cho client. Endpoint phiên giữ vai trò riêng trong chế độ CDN. [ADR-044](../19-adr/ADR-044-storefront-api-first.md)
 
 - Storefront **độc lập với business domain**. Business logic **không** nằm trong Blade, Vue/React component, theme hay CSS (rule R10).
 - Storefront chỉ dùng **Storefront Application layer**: các query/command giống hệt những gì Storefront API công bố.
@@ -32,7 +34,7 @@ Native Storefront (Blade SSR + JavaScript thuần, theme `custom/theme/vani-base
 
 | Client | Cách dùng |
 |---|---|
-| **Tầng ghép** | Module `modules/Storefront` (**Implemented** cho API, [ADR-021](../19-adr/ADR-021-storefront-composition-module.md)): `ProductViews` gọi `CatalogReader` + `PriceResolver` + `AvailabilityReader` (chỉ công bố còn/hết/sắp hết, ngưỡng `VANI_LOW_STOCK_THRESHOLD`); `CartPresenter` định dạng giỏ từ contract `Carts` |
+| **Tầng ghép** | Module `modules/Storefront` (**Implemented** cho API, [ADR-021](../19-adr/ADR-021-storefront-composition-module.md)): `ProductViews` gọi `CatalogReader` + `PriceResolver` + `AvailabilityReader` (chỉ công bố còn/hết/sắp hết, ngưỡng `inventory.low_stock_threshold`, mặc định từ `VANI_LOW_STOCK_THRESHOLD`); `CartPresenter` định dạng giỏ từ contract `Carts` |
 | **Native storefront** | Controller storefront gọi **cùng Query/Command** mà API dùng, trong cùng process (không tự gọi HTTP tới chính mình, rule R19). Blade chỉ render DTO |
 | **Headless** (Next.js, mobile, Zalo Mini App) | Gọi `/api/storefront/v1` ([api](../06-api/api.md)) |
 
@@ -68,8 +70,8 @@ custom/theme/vani-base/
 | Quy tắc | Chi tiết |
 |---|---|
 | SSR là nguồn nội dung | PDP, PLP, danh mục, trang render đủ ở server (SEO, tốc độ hiển thị) |
-| JS = đảo tương tác | Alpine gắn vào gallery, chọn màu/size, mini-cart, form checkout. Không app JS toàn trang, không router phía client |
-| JSON bridge | Dữ liệu cho Alpine render sẵn bằng `@js`/`data-*` từ DTO của Presenter; không gọi API lấy lại thứ server đã có. Phần cá nhân hoá (giỏ, giá thành viên) tải qua Storefront API sau khi trang hiện |
+| JS = đảo tương tác | Các module JavaScript tăng cường gallery, chọn màu/size, mini-cart và checkout trên HTML đã render. |
+| JSON bridge | Presenter dựng dữ liệu trong thuộc tính `data-*` và các khối JSON. Khi bật CDN, theme lấy trạng thái phiên qua `/_vani/phien` rồi tải giá riêng qua Storefront API. |
 | Không ẩn nội dung SSR chờ JS | Chống nhảy layout bằng kích thước cố định/skeleton CSS, không `display:none` rồi chờ JS bật lại |
 | Slot UI | `<x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />` render các phần tử plugin trả về (`Storefront\Contracts\Data\SlotView` hoặc `Htmlable`; chuỗi thô bị bỏ) theo priority; chỉ nối thêm; lỗi một listener bị bỏ qua. Danh mục: [extension-point-catalog §4.1](../04-extension/extension-point-catalog.md) |
 | Thay khối | Override view trong theme con của cửa hàng (fallback `vani-base` → module). Không có cơ chế viết lại HTML lúc render |
@@ -81,7 +83,7 @@ Luồng một trang PDP:
 GET /san-pham/{slug}
   → web → controller Storefront
   → ProductViews (CatalogReader + PriceResolver + AvailabilityReader) → DTO (gồm brand: tên, slug, logo)
-  → Blade (theme đang hoạt động → vani-base) + slot UI (Hook::slot) + JSON bridge cho Alpine
+  → Blade (theme đang hoạt động → vani-base) + slot UI (Hook::slot) + dữ liệu JSON cho JavaScript
   → HTML (cache CDN; giỏ/giá thành viên tải sau qua /api/storefront/v1)
 
 GET /thuong-hieu/{slug}
@@ -90,19 +92,11 @@ GET /thuong-hieu/{slug}
 
 ## 4. Block (page builder)
 
-> **Implemented** (2026-10-02) cho trang chủ: `Storefront\Contracts\StorefrontBlock` (`type`, `label`, `fields(): list<FieldDefinition>`, `resolve(config, locale)`, `view`), cấu hình lưu ở `core.storefront.home_blocks`, Admin → Giao diện → Trang chủ. Interface dưới đây là thiết kế ban đầu.
+Admin → Giao diện → Trang chủ lưu danh sách block vào `core.storefront.home_blocks`. `StorefrontBlock` khai báo `type()`, `label()`, `fields(): list<FieldDefinition>`, `resolve(array $config, string $locale)` và `view()`. Core đăng ký `hero`, `product_grid`, `brand_grid`, `rich_text`. Plugin đóng góp thêm qua `StorefrontBlock::TAG` (`vani.storefront.blocks`).
 
-```php
-interface StorefrontBlock
-{
-    public function type(): string;               // 'hero', 'product_grid', 'collection_carousel', 'rich_text'
-    public function schema(): array;              // JSON Schema cho Admin editor
-    public function resolve(array $config): BlockViewData;  // lấy dữ liệu qua Query
-    public function view(): string;               // Blade view (theme có thể override)
-}
-```
+`PageBlocks` validate cấu hình và kiểm tra ID ảnh/video có trong Thư viện ảnh, đúng loại trường. Khi ghi cấu hình, module đồng bộ ghi nhận media đang dùng để Thư viện bảo vệ các tệp còn tham chiếu. Thứ tự block theo cấu hình áp dụng cho cả HTML và dữ liệu home API. Khi chưa có cấu hình, theme dùng trang chủ mặc định.
 
-Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin thêm block qua tag `vani.content.blocks` (ví dụ lookbook, recommendation).
+StorefrontExtras dùng Swiper chung của theme cho slideshow từ hai ảnh trở lên. Khoảng chuyển lấy từ cấu hình, rời focus/rê chuột mới chạy tiếp và tắt tự chuyển khi người dùng chọn giảm chuyển động. Slide đầu ưu tiên tải, ảnh sau tải lười và dải ảnh cuộn ngang khi thư viện chưa tải được. Lookbook render các liên kết được đánh số trên ảnh và danh sách tên sản phẩm tương ứng bên dưới.
 
 ## 3a. URL theo ngôn ngữ
 
@@ -128,10 +122,10 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 > **Implemented** (Core 0.3.58, [ADR-040](../19-adr/ADR-040-typed-links-menus.md)).
 
 - **Link có kiểu** `LinkTarget {type, value, label?}` phân giải lúc render bằng `LinkResolver` (URL + nhãn theo ngôn ngữ; đối tượng đã ẩn/xoá → bỏ). Loại Core: `category`, `collection` (→ `/tim-kiem?collection=`), `brand`, `product`, `route` (trang công khai cho phép), `url` (`/…`, `http(s)://`, `mailto:`, `tel:`). Plugin thêm loại qua `LinkType` (vd. `vani.cms`: `page`, `article`).
-- **Vị trí menu** do `theme.json` khai báo (`menus`); `vani-base`: `header` 3 cấp (cấp 2–3 mở khi rê chuột/focus), `mobile` 2 cấp (mặc định dùng menu `header`), `footer_1..4` 1 cấp. Vị trí chưa xuất bản → link mặc định của theme.
+- **Vị trí menu** do `theme.json` khai báo (`menus`); `vani-base`: `header` 3 cấp (cấp 2–3 mở khi rê chuột/focus), `mobile` 3 cấp (mặc định dùng menu `header`), `footer_1..4` 1 cấp. Vị trí chưa xuất bản → link mặc định của theme.
 - **Admin → Giao diện → Menu** (quyền `storefront.manage`): cây theo vị trí, sắp bằng nút ↑ ↓ ← →; mỗi mục có link, nhãn theo ngôn ngữ, huy hiệu Mới/Sale, ảnh (cấp 1), bật/tắt, khung giờ hiển thị. Lưu nháp → Xuất bản; bỏ nháp; khôi phục 10 bản xuất bản trước. Lưu ở `core.storefront.menu.<vị trí>`.
 - Theme render: `$menus->items('header', app()->getLocale())` (layout) → `list<{label, url|null, badge, image_url, children}>` hoặc `null` (chưa xuất bản). Partial `theme::partials.menu` (ngang, nhiều cấp), `theme::partials.menu-list` (dọc).
-- Phân giải theo lô (một truy vấn mỗi loại), không cache qua request; trang có cache CDN đổi theo `s-maxage`.
+- Phân giải theo lô (một truy vấn mỗi loại). Khi bật CDN, menu đã xuất bản theo chính sách cache ở mục 5.
 
 ## 4c. Breadcrumb
 
@@ -188,14 +182,14 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 
 - **Trang công khai và cache CDN (Implemented, 0.3.34; 0.3.68: CDN là tuỳ chọn nâng cao):** trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm và trang CMS (`/trang/…`, `/tin-tuc/…`) dùng middleware `vani.page-cache` (`PublicPageCache`). Hai chế độ, **hiển thị như nhau**:
   - **Mặc định — chưa có CDN** (`VANI_PAGE_CACHE=false`): trang chạy **có phiên** như mọi trang (middleware tự chạy `StartSession`, `ShareErrorsFromSession`, nhận diện khách), `Cache-Control: private, no-store`. Layout render sẵn phần riêng của khách: nhãn Đăng nhập/Tài khoản, số món, thông báo flash, lỗi form, giá cho khách đã đăng nhập khi ẩn giá; nhúng `script[data-vani-session-state]` (cùng dữ liệu `/_vani/phien` trừ flash — `CustomerSessionState`) để JS dựng giỏ mini, giá thành viên. Không gọi `/_vani/phien`.
-  - **Có CDN** (`VANI_PAGE_CACHE=true`, tuỳ chọn khi deploy — [production §7](../18-operations/production.md)): trang chạy **không phiên** (bỏ CSRF, nhận diện khách — `Shared\Http\SessionlessRoutes`), HTML giống nhau với mọi khách, không `Set-Cookie`, không ghi phiên mỗi lượt xem. Response: `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=600`, `Vary: Accept-Encoding` (`VANI_PAGE_CACHE_TTL`). Không cache: link có chữ ký (xem trước CMS), phản hồi khác 200. **Phần riêng của khách** lấy bằng JS từ `GET /_vani/phien` (`private, no-store`, flash đọc xong là hết) và điền vào `[data-vani-account]`, `[data-vani-cart-count]`, giỏ mini `[data-vani-mini-cart]` (`cart.lines[]` 3 dòng gần nhất + `cart.subtotal`, không tính khuyến mãi; dựng bằng DOM, không chèn HTML), `[data-vani-flash]`, `[data-vani-error-for]`.
+  - **Có CDN** (`VANI_PAGE_CACHE=true`, tuỳ chọn khi deploy — [production §7](../18-operations/production.md)): trang chạy **không phiên** (bỏ middleware phiên, CSRF và nhận diện khách trên route công khai), HTML giống nhau với mọi khách, không `Set-Cookie`, không ghi phiên mỗi lượt xem. Response: `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=600`, `Vary: Accept-Encoding` (`VANI_PAGE_CACHE_TTL`). Không cache: link có chữ ký (xem trước CMS), phản hồi khác 200. **Phần riêng của khách** lấy bằng JS từ `GET /_vani/phien` (`private, no-store`, flash đọc xong là hết) rồi cập nhật nhãn tài khoản, số món, flash và giá riêng theo phiên. Giỏ mini tải partial do Blade render khi mở hoặc dùng HTML trả về sau thao tác giỏ.
   - SEO (canonical, hreflang, `noindex`) theo cờ "trang công khai" (`PublicPageCache::PUBLIC_PAGE`), không phụ thuộc chế độ cache.
   - **Dữ liệu phiên cho JS** (0.3.76): sau khi có dữ liệu phiên (nhúng sẵn hoặc `/_vani/phien`), theme đặt `window.vaniSession` và phát `vani:session` (`{signed_in, account, cart, prices_url, csrf_token, …}`). Plugin dùng `csrf_token` cho POST (header `X-CSRF-TOKEN`) vì trang cache CDN không có token trong HTML; theme tự viết phải giữ hành vi này.
   - **Sự kiện giỏ** (0.3.43): sau thêm/sửa/xoá dòng giỏ, trang kế tiếp phát `document` event `vani:cart-updated` với `detail = {action: add|remove, variant_id, sku, name, quantity, unit_amount, currency}` (một lần; trang không cache đọc từ thẻ `script[data-vani-cart-change]`, trang có cache từ `cart_change` của `/_vani/phien`). Plugin đo quảng cáo/khuyến nghị nghe sự kiện này; theme tự viết phải giữ hành vi này.
   - Form "thêm vào giỏ" trên trang sản phẩm không có token CSRF (HTML như nhau ở cả hai chế độ); `POST` giỏ (`/gio-hang`, `/en/cart`… mọi ngôn ngữ) được miễn CSRF — an toàn vì cookie phiên `SameSite=Lax` (form chéo trang không mang phiên theo).
   - **Quy tắc cho theme/plugin:** để trang chạy đúng khi bật CDN, view và slot trên trang công khai không được đọc phiên, `old()`, `@csrf`, khách đăng nhập hay dữ liệu riêng của khách — trừ khi chỉ dùng để render sẵn khi chế độ CDN tắt (`$customerState !== null`, `$errors` của phiên), với cùng kết quả hiển thị như phần JS điền ở chế độ CDN. Cá nhân hoá (giá thành viên ở Phase 8, gợi ý theo khách) tải qua API sau khi trang hiện. Plugin bật cache cho trang của mình bằng `storefrontPages($file, prefix: …, cacheable: true)`.
   - Livewire chỉ dùng cho Pulse, tắt tự chèn script (`config/livewire.php`), vì script đó mang token CSRF theo phiên.
-  - Có CDN: cập nhật nội dung (giá, tồn, sản phẩm) hiện ra sau tối đa `s-maxage` (mặc định 5 phút); purge chủ động theo event: chưa có. Không CDN: thấy ngay.
+  - Ở CDN, thời gian phục vụ nội dung cũ phụ thuộc cả `s-maxage`, `stale-while-revalidate` và chính sách edge. Purge theo event còn ở L4. Plugin CMS dùng `PublicPageExpiry::limit()` để giới hạn tổng thời gian tươi và phục vụ bản cũ đến mốc đổi lịch của thông báo. Khi thanh CMS ẩn, `vani-base` dùng thông báo của theme nếu đã cấu hình.
 - **Bộ lọc và gợi ý (Implemented, 0.3.71):** Admin → Catalog → Bộ lọc (bật/tắt, thứ tự, kiểu danh sách/ô màu) → `$listing['filters']` (cũng `meta.filters` của API); theme render chung, link thường (`ListingUrl::toggle($request, $filter['param'], $value)`), facet không có giá trị thì ẩn. Ô tìm kiếm gợi ý sản phẩm/danh mục/thương hiệu qua `GET /api/storefront/v1/search/suggestions` (JS, gửi `X-Vani-Locale`).
 - **Cấu hình danh sách (Implemented, 0.3.70):** `storefront.per_page` (12–60, mặc định 24), `storefront.popular_searches` (`$popularSearches` ở layout — `datalist` của ô tìm kiếm — và trang tìm kiếm khi chưa gõ), `storefront.placeholder_image` (ID ảnh; thẻ sản phẩm thiếu ảnh dùng ảnh này).
 - **Cấu hình vận hành (Implemented, 0.3.49 — [reference-parity §3.2](../20-roadmap/reference-parity-refactor.md)):** Admin → Cài đặt, namespace `core`.
@@ -217,7 +211,7 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 - **Form checkout (0.5.24, stabilization S2 — `Storefront\View\CheckoutForm` dựng `$form` cho `theme::pages.checkout`):**
   - Giá trị từng ô: lần gửi trước (`old`) nếu có; chưa gửi và khách đã đăng nhập → điền sẵn họ tên/SĐT/email từ hồ sơ và người nhận + địa chỉ mặc định trong sổ địa chỉ (tỉnh/phường chọn sẵn, danh sách phường tải sẵn). Báo giá dựng theo đúng giá trị đang hiện (cả địa chỉ điền sẵn). Có từ 2 địa chỉ: ô "Địa chỉ đã lưu" (chỉ hiện khi có JS) điền lại các ô.
   - Tóm tắt lỗi đầu trang (`[data-checkout-errors]`, `role="alert"`): lỗi chung (`business` — tổng đã đổi, hết hàng…) và lỗi từng ô kèm link tới ô; ô lỗi có `aria-invalid` + `aria-describedby`. Lỗi in sẵn trong HTML (trước 0.5.24 lỗi chung chỉ hiện sau khi JS đọc phiên); focus vào tóm tắt khi trang mở.
-  - Điện thoại: thanh đáy cố định (`[data-checkout-bar]`) có tổng + "Đặt hàng"; nút trong khung tóm tắt chỉ hiện từ `md`. Thanh nằm cuối form để Enter trong ô nhập vẫn bấm "Áp dụng" (tính lại), không đặt hàng.
+  - Điện thoại: thanh đáy cố định (`[data-checkout-bar]`) có tổng + "Đặt hàng"; nút trong khung tóm tắt chỉ hiện từ `lg`. Thanh nằm cuối form để Enter trong ô nhập vẫn bấm "Áp dụng" (tính lại), không đặt hàng.
   - Đổi phường/xã, phương thức giao hoặc thanh toán (có JS) → POST `action=quote` như nút "Áp dụng", thay `[data-checkout-summary]`, `[data-checkout-shipping]`, `[data-checkout-payment]`, `[data-checkout-bar]` và `expected_total` bằng bản server vừa render, rồi phát `vani:content-updated` — phí giao theo địa chỉ của plugin hãng vận chuyển luôn khớp tổng khách thấy. Theme con giữ các thuộc tính `data-checkout-*` này.
   - Phường/xã: ô `[data-ward-filter]` lọc danh sách của tỉnh đang chọn, gõ không dấu (`đ` → `d`), hiện khi danh sách ≥ 15 mục; còn đúng một kết quả thì tự chọn. Dùng chung cho sổ địa chỉ.
   - Test: `CheckoutFormTest` (điền sẵn, sổ địa chỉ, lỗi giữ giá trị khách gõ, lỗi chung in sẵn trong HTML), `tests/Browser/CheckoutMobileTest` (đặt COD qua thanh đáy, tìm phường không dấu, tính lại khi đổi phường, focus tóm tắt lỗi, chọn địa chỉ đã lưu).
@@ -226,6 +220,24 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
   - Lưới sản phẩm: `theme::partials.product-grid` nhận `$eager` (số ảnh đầu tải ngay, `fetchpriority="high"`); trang danh sách dùng 2 (hàng đầu trên điện thoại).
   - Hiệu ứng hiện dần (`data-vani-motion="rise|fade"`, nhóm `data-vani-motion-stagger` > `data-vani-motion-item`): CSS transition + `IntersectionObserver`, không tải thư viện Motion (trước 0.5.23 tải ~60 KB gzip ở mọi trang có lưới sản phẩm, và ẩn cả nội dung màn hình đầu — kể cả ảnh hero — tới khi tải xong). Phần tử trong màn hình đầu lúc tải trang hiện ngay; phần tử phía dưới hiện khi cuộn tới, các mục so le cùng hàng lệch 45 ms. Theme con/plugin vẫn gọi được `window.vaniLoadVendor('motion')` khi cần animation riêng.
 
+### 5a. Điều hướng tăng cường trên HTML
+
+| Thành phần | Hợp đồng cần giữ khi override theme |
+| --- | --- |
+| Danh sách và bộ lọc | `listing.blade.php` dùng chung `drawer.blade.php` trên desktop và mobile. Nút điều khiển `#vani-listing-filters`; bộ lọc nằm trong partial `listing-filters`. Lưới mặc định có hai cột mobile và bốn cột từ `md`. |
+| URL và focus | `js/listing.js` thay `[data-vani-listing]` khi link cùng trang, hủy yêu cầu cũ, cập nhật history và hỗ trợ Back/Forward. Chọn lọc trong drawer trả focus về nút lọc sau khi thay HTML. Link lọc/phân trang và form GET vẫn do server dựng. Khi tắt JavaScript, việc mở drawer dựa vào hỗ trợ `commandfor` và `command` của trình duyệt. |
+| Tìm kiếm | `js/header.js` điều khiển modal và gợi ý, hủy yêu cầu cũ và trả focus khi đóng. Form tìm kiếm dự phòng giúp gửi truy vấn khi tắt JavaScript. |
+| Giỏ và checkout | `js/cart.js` nhận `html`/`page_html` do Blade render và phát `vani:content-updated` sau khi thay vùng. Khi mất phản hồi thêm hàng, chuyển khách về giỏ để kiểm tra. Checkout giữ cùng `idempotency_key` qua lần gửi lại và đối chiếu `expected_total` với tổng server tính. Storefront API dùng header `Idempotency-Key`. |
+| Wishlist | Khách vãng lai lưu ID sản phẩm trong trình duyệt và có thể xem/bỏ món ở `/yeu-thich`. HTML thẻ sản phẩm tuân theo chính sách nhìn giá của Storefront. Khách đã đăng nhập dùng trang tài khoản; thông báo giảm giá lấy giá riêng của khách từ hợp đồng `CustomerProductPrices`. |
+
+Storefront khai báo nhóm middleware qua `StorefrontRouteMiddleware`. Shared dùng nhóm API khi nạp route module. Extension dùng các nhóm API, trang plugin và tài khoản, theo thứ tự middleware và quy tắc cache do Storefront định nghĩa.
+
+### 5b. Ảnh sản phẩm và đo lượt xem
+
+- Ảnh bìa CMS, banner danh mục desktop và logo thương hiệu lấy `srcset` từ các bản thu nhỏ khi có. Khi dùng disk `public`, URL ảnh gốc `/storage/media/…` phụ thuộc link `public/storage` đến `storage/app/public`. URL `/cache/` là đường dẫn ảnh thu nhỏ và được cấu hình riêng ở web server. [Runbook production](../18-operations/production.md)
+- PDP gửi `style_id` và `viewer_id` qua `POST /api/storefront/v1/products/views`. Theme tạo mã ngẫu nhiên và lưu trong trình duyệt với thời hạn sử dụng 24 giờ. Beacon có phiên web cùng nguồn dùng mã này để lọc trùng mỗi sản phẩm trong 30 phút. Khi thiếu mã hợp lệ, endpoint dùng phiên có cookie hoặc IP và User-Agent. [OpenAPI Storefront](../api/openapi/storefront-v1.json)
+- HTML cache CDN có thể phục vụ đồng nhất cho khách vãng lai và thành viên. Beacon gửi sau khi trang hiện có thể nhận diện thành viên từ phiên web cùng nguồn. `ProductViewed` chỉ phát khi lượt xem được tính và dùng `customerId = null` với khách vãng lai.
+
 ## 6. Kiểm thử
 
 - Arch test: namespace controller storefront không dùng `Persistence`/`Domain` (chỉ dùng Application).
@@ -233,3 +245,4 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 - Test theme fallback: theme con thiếu view thì dùng view của `vani-base`.
 - Test trang brand: chỉ hiện sản phẩm của brand; brand ẩn → 404.
 - Test slot: listener plugin ném lỗi → trang vẫn render, phần tử khác vẫn có; plugin tắt → không hiện.
+- `StorefrontMobileBudgetTest`, `StorefrontHeaderTest`, `StorefrontCartTest` và `CheckoutMobileTest` kiểm trải nghiệm browser. `PublicPageCacheTest`, `ProductViewsTest`, `CmsExtraContentTest` và `BladeApiParityTest` kiểm riêng tư HTML, beacon, lịch thông báo và đối chiếu số tiền. [Kế hoạch nghiệm thu production](ke-hoach-production.md)
