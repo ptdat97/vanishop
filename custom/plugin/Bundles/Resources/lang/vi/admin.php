@@ -1,0 +1,45 @@
+<?php
+
+// Chuỗi giao diện Vue của Admin (ADR-049): t('vani-bundles::admin.<trang>.<khoá>').
+
+return [
+    'index' => [
+        'title' => 'Combo sản phẩm',
+        'subtitle' => 'Bán theo bộ, giảm khi khách mua đủ các món. Mỗi combo tự tạo một khuyến mãi ở Khuyến mãi.',
+        'add' => 'Thêm combo',
+        'bundle' => 'Combo',
+        'products' => 'Số món',
+        'discount' => 'Giảm',
+        'status' => 'Trạng thái',
+        'running' => 'Đang chạy',
+        'outside_period' => 'Ngoài thời gian',
+        'off' => 'Tắt',
+        'promotion' => 'Xem khuyến mãi',
+        'empty' => 'Chưa có combo nào.',
+    ],
+    'form' => [
+        'add' => 'Thêm combo',
+        'list' => 'Danh sách',
+        'delete' => 'Xoá',
+        'delete_title' => 'Xoá combo?',
+        'delete_message' => 'Khuyến mãi của combo cũng bị gỡ. Đơn đã đặt giữ nguyên mức giảm.',
+        'name' => 'Tên combo',
+        'slug' => 'Đường dẫn',
+        'slug_hint' => 'Chữ thường, số và dấu gạch ngang.',
+        'description' => 'Mô tả ngắn',
+        'discount_percent' => 'Giảm (%)',
+        'discount_hint' => 'Áp cho mỗi bộ đủ món. Món mua dư giữ giá gốc.',
+        'position' => 'Thứ tự',
+        'starts_at' => 'Bắt đầu',
+        'ends_at' => 'Kết thúc',
+        'active' => 'Đang bật',
+        'items' => 'Sản phẩm trong combo',
+        'items_hint' => 'Từ :min đến :max sản phẩm. Khách chọn size/màu cho từng món.',
+        'quantity_for' => 'Số lượng của :name',
+        'remove' => 'Bỏ sản phẩm',
+        'search_products' => 'Tìm sản phẩm theo tên hoặc mã',
+        'add_product' => 'Thêm sản phẩm vào combo',
+        'image' => 'Ảnh combo',
+        'save' => 'Lưu',
+    ],
+];
