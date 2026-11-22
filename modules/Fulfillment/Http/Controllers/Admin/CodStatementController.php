@@ -55,6 +55,6 @@ final class CodStatementController
 
         return $result === null
             ? $back->withErrors(['file' => __('fulfillment::messages.cod_statement_expired')])
-            : $back->with('success', __('fulfillment::messages.cod_statement_imported', ['matched' => $result['matched'], 'mismatched' => $result['mismatched']]));
+            : $back->with('success', __('fulfillment::messages.cod_statement_imported', ['matched' => $result['matched'], 'mismatched' => $result['mismatched'], 'fees' => $result['fees']]));
     }
 }

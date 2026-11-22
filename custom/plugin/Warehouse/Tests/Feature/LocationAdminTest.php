@@ -46,12 +46,16 @@ it('tạo và sửa location, có optimistic lock và audit', function () {
 
     $location = T::seed(fn () => Location::query()->where('code', 'WH-HCM')->sole());
     $this->get("/admin/plugins/vani-warehouse/locations/{$location->id}/edit")->assertInertia(fn (Assert $page) => $page->component('Warehouse::Locations/Form')
-        ->where('location.code', 'WH-HCM'));
+        ->where('location.code', 'WH-HCM')
+        ->where('stockAuthorities', ['vanishop', 'erp'])
+        ->where('priorities', [-10, 0, 5, 10]));
 
-    $this->put("/admin/plugins/vani-warehouse/locations/{$location->id}", locationPayload(['name' => 'Kho Thủ Đức', 'lock_version' => 0]))->assertSessionHasNoErrors();
+    $this->put("/admin/plugins/vani-warehouse/locations/{$location->id}", locationPayload(['name' => 'Kho Thủ Đức', 'stock_authority' => 'partner_erp', 'priority' => 7, 'lock_version' => 0]))->assertSessionHasNoErrors();
     $this->put("/admin/plugins/vani-warehouse/locations/{$location->id}", locationPayload(['lock_version' => 0]))->assertSessionHasErrors('lock_version');
 
     expect($location->fresh()->name)->toBe('Kho Thủ Đức')
+        ->and($location->fresh()->stock_authority)->toBe('partner_erp')
+        ->and($location->fresh()->priority)->toBe(7)
         ->and(AuditLog::query()->where('action', 'like', 'inventory.location.%')->count())->toBe(2);
     $this->post('/admin/plugins/vani-warehouse/locations', locationPayload())->assertSessionHasErrors('code');
 });

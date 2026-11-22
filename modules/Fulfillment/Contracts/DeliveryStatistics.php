@@ -14,8 +14,8 @@ use Modules\Shared\Contracts\PluginApi;
 interface DeliveryStatistics
 {
     /**
-     * Vận đơn thu hộ (COD > 0) tạo trong [from, to): tổng số, số đã giao, số giao thất bại (đang hoàn / đã hoàn về) và tiền
-     * COD của các vận đơn thất bại.
+     * Kết quả vận đơn thu hộ (COD > 0) trong [from, to), dựa trên lúc giao xong hoặc lúc ghi nhận hoàn về lần đầu.
+     * Tổng bằng số đã giao cộng số giao thất bại. Chỉ đếm vận đơn có mốc kết quả.
      *
      * @return array{cod_shipments: int, delivered: int, failed: int, failed_cod_amount: int}
      */

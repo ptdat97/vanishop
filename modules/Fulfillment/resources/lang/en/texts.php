@@ -49,6 +49,7 @@ return [
         'shipments' => 'Shipments',
     ],
     'order_shipment_panel' => [
+        'actual_carrier_fee' => 'Actual carrier fee',
         'cancel_shipment' => 'Cancel shipment',
         'carrier' => 'Carrier',
         'cod_amount' => 'COD',

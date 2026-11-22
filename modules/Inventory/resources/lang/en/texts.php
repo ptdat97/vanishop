@@ -9,6 +9,8 @@ return [
         'edit_main_warehouse_details_create' => 'Edit the main warehouse details, create the main warehouse (Owner level)',
         'inventory' => 'Inventory',
         'low_stock_threshold' => '"Low stock" threshold',
+        'default_safety_stock' => 'Default safety stock',
+        'default_safety_stock_help' => 'Used when stock is first recorded for a SKU at a location. Existing stock levels keep their safety stock.',
         'sellable_quantity_calculation_ats' => 'Sellable quantity calculation (ATS)',
         'sellable_stock_strategy' => 'Sellable stock strategy',
         'strategy_only_reduce_ats_compared' => 'A strategy can only reduce ATS compared with the standard formula.',

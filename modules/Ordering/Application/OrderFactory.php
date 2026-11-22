@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Modules\Extension\Facades\Hook;
 use Modules\Ordering\Contracts\Data\OrderDraft;
+use Modules\Ordering\Contracts\Data\OrderLineDraft;
 use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
@@ -33,6 +35,8 @@ final class OrderFactory implements OrderWriter
     public function create(OrderDraft $draft): PlacedOrder
     {
         $this->assertBalanced($draft);
+        $variantIds = array_values(array_unique(array_map(fn (OrderLineDraft $line): int => $line->variantId, $draft->lines)));
+        $unitCosts = (array) Hook::filter('vani.pricing.unit_costs', [], $variantIds);
         $now = StoreClock::now();
         $period = OrderNumber::period($now);
         $number = OrderNumber::format((string) $this->settings->get('core', OrderSettings::NUMBER_PREFIX), $period, $this->sequences->next('order', $period));
@@ -51,12 +55,17 @@ final class OrderFactory implements OrderWriter
         ]);
 
         foreach ($draft->lines as $line) {
+            $meta = array_filter(['options' => $line->options, 'style_id' => $line->styleId, 'promotions' => $line->promotions]);
+            $unitCost = $unitCosts[$line->variantId] ?? null;
+            if (is_int($unitCost) && $unitCost >= 0) {
+                $meta['unit_cost_at_sale'] = $unitCost;
+            }
             $order->lines()->create([
                 'variant_id' => $line->variantId, 'sku' => $line->sku, 'product_name' => $line->productName, 'brand_id' => $line->brandId, 'brand_name' => $line->brandName,
                 'variant_options' => $line->variantOptions === [] ? null : $line->variantOptions, 'image_url' => $line->imageUrl, 'quantity' => $line->quantity, 'unit_amount' => $line->unitAmount,
                 'compare_at_amount' => $line->compareAtAmount, 'subtotal_amount' => $line->subtotalAmount, 'discount_amount' => $line->discountAmount,
                 'total_amount' => $line->totalAmount, 'tax_rate_bp' => $line->taxRateBp, 'tax_amount' => $line->taxAmount,
-                'meta' => array_filter(['options' => $line->options, 'style_id' => $line->styleId, 'promotions' => $line->promotions]) ?: null,
+                'meta' => $meta === [] ? null : $meta,
                 'price_list_code' => $line->priceListCode,
             ]);
         }

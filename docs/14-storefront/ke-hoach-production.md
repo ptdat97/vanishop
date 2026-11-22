@@ -104,7 +104,7 @@ Chạy k6 trên staging có đủ tồn, COD bật và IP máy chạy nằm tron
 k6 run -e BASE="$STAGING_BASE_URL" -e ORDERS_PER_MIN=500 -e PAGE_RPS=200 -e DURATION=10m scripts/load/storefront.js
 ```
 
-Ghi mức tải đã cấu hình, số đơn tạo thực tế mỗi phút, số lượt bị bỏ bởi bộ phát tải, p95 theo nhóm request và đối soát tồn sau test. Kết quả ApacheBench local chỉ dùng đo nhanh độ trễ. Nghiệm thu k6 có ghi đơn trên staging vẫn ở L47. [NFR](../02-architecture/overview.md#7-thuộc-tính-chất-lượng-nfr) · [Kịch bản k6](../../scripts/load/storefront.js)
+Kịch bản yêu cầu `BASE` rõ ràng. Chỉ bật lượt xem và đặt đơn khi `ORDERS_PER_MIN` lớn hơn 0. Lưu `orders_created`, tỷ lệ checkout thành công, số lượt bị bỏ bởi bộ phát tải, p95 theo nhóm request và đối soát tồn sau test. Kết quả ApacheBench local chỉ dùng đo nhanh độ trễ. Nghiệm thu k6 có ghi đơn trên staging vẫn ở L47. [NFR](../02-architecture/overview.md#7-thuộc-tính-chất-lượng-nfr) · [Kịch bản k6](../../scripts/load/storefront.js)
 
 Phiếu phát hành cần có commit, phiên bản plugin, chế độ cache, kết quả từng gate, người xác nhận và thời điểm thử. Kiểm `vani:plugin:doctor` sau khi nâng các plugin có migration riêng. Với Wishlist 1.4.0, plugin upgrade thêm nhóm giá vào mốc so sánh. Lưu health, hàng đợi, scheduler và bằng chứng khôi phục cùng phiếu phát hành. [Runbook production](../18-operations/production.md)
 

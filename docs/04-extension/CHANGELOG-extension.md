@@ -6,6 +6,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.71 — 2026-11-22 · Extension API 1.27.0
+
+- Ordering chụp giá vốn từng dòng lúc tạo đơn bằng `vani.pricing.unit_costs`. Listener chạy trong transaction, đọc giá vốn theo lô và trả số nguyên không âm. `OrderStatistics::variantSales()` trả thêm số lượng, doanh thu và giá vốn của các dòng có ảnh chụp.
+- `vani.reports` 1.3.5 tính lợi nhuận gộp theo ảnh chụp. Doanh thu của dòng thiếu giá vốn lúc đặt được báo riêng.
+- `DeliveryStatistics::cod()` thống kê theo thời điểm giao xong hoặc bắt đầu hoàn về. Bảng kê COD lưu phí hãng thực tế vào từng kiện đã khớp và hỗ trợ bổ sung phí cho kiện đối soát trước đó.
+- Inventory có cấu hình tồn an toàn mặc định cho ô kho mới. Ô đã có giữ mức riêng, kể cả mức 0. Form `vani.warehouse` 1.1.1 có danh sách nguồn quản lý và mức ưu tiên, cùng lựa chọn nhập giá trị riêng.
+- `vani.cms` 1.5.10 đóng góp nội dung demo và liên kết theo ID trang khi bật. Seeder của Core dùng được khi CMS vắng mặt.
+
 ## 0.5.70 — 2026-11-22 · Extension API 1.26.0
 
 - Bộ sưu tập có trang storefront riêng với banner, vùng nội dung trước và sau lưới sản phẩm, cùng API đọc nội dung theo locale.

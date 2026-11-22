@@ -4,6 +4,9 @@
 
 return [
     'locations_form' => [
+        'custom_authority' => 'Other stock authority',
+        'custom_priority' => 'Custom priority',
+        'priority' => 'Priority',
         'add_location' => 'Add location',
         'address' => 'Address',
         'back' => 'Back',

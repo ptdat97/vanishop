@@ -54,6 +54,7 @@ it('xem trước phân loại từng dòng, chưa ghi gì', function () {
         ->where('urls.apply', fn (?string $url) => $url !== null));
 
     expect(DB::table('reconciliation_entries')->count())->toBe(0)
+        ->and(DB::table('shipments')->whereNotNull('actual_carrier_fee')->exists())->toBeFalse()
         ->and(Payment::query()->withoutGlobalScopes()->where('order_id', $this->delivered)->value('status')->value)->toBe('pending');
 });
 
@@ -69,6 +70,7 @@ it('áp dụng: dòng khớp ghi nhận đã thu và vào sổ là khớp; dòng
     ])
         ->and(Payment::query()->withoutGlobalScopes()->where('order_id', $this->delivered)->value('status')->value)->toBe('paid')
         ->and(Payment::query()->withoutGlobalScopes()->where('order_id', $this->short)->value('status')->value)->toBe('pending')
+        ->and(DB::table('shipments')->whereNotNull('actual_carrier_fee')->pluck('actual_carrier_fee', 'tracking_number')->all())->toBe(['GHN001' => 22_000])
         ->and(DB::table('audit_logs')->where('action', 'payment.cod_statement.imported')->exists())->toBeTrue();
 
     // Token dùng một lần; tải lại cùng file → mọi dòng đã đối soát, không có gì để ghi.
@@ -76,6 +78,32 @@ it('áp dụng: dòng khớp ghi nhận đã thu và vào sổ là khớp; dòng
     $this->post('/admin/fulfillment/cod-statements/preview', ['file' => ($this->file)()])->assertInertia(fn (Assert $page) => $page
         ->where('preview.summary.already', 4)->where('urls.apply', null));
     expect(DB::table('reconciliation_entries')->count())->toBe(4);
+});
+
+it('bổ sung phí vào kiện đã khớp, giữ phí 0 và báo khi phí gửi lại khác số đã lưu', function () {
+    $preview = function (?int $fee = null): array {
+        $suffix = $fee === null ? '' : (string) $fee;
+        $file = UploadedFile::fake()->createWithContent('bang-ke.csv', "Mã vận đơn;Tiền thu hộ;Phí\nGHN001;330000;{$suffix}");
+
+        return $this->post('/admin/fulfillment/cod-statements/preview', ['file' => $file])->assertOk()->viewData('page')['props'];
+    };
+    $this->post($preview()['urls']['apply'])->assertSessionHas('success');
+    $withFee = $preview(0);
+    expect($withFee['preview']['summary'])->toBe(['fee_only' => 1]);
+    $this->post($withFee['urls']['apply'])->assertSessionHas('success');
+
+    expect(DB::table('shipments')->where('tracking_number', 'GHN001')->value('actual_carrier_fee'))->toBe(0)
+        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(1)
+        ->and($preview(0)['urls']['apply'])->toBeNull()
+        ->and($preview(120)['preview']['summary'])->toBe(['fee_conflict' => 1]);
+});
+
+it('không đoán hãng khi có hai kiện còn hiệu lực dùng cùng mã vận đơn', function () {
+    DB::table('shipments')->where('order_id', $this->transit)->update(['tracking_number' => 'GHN001', 'carrier_code' => 'other']);
+
+    $this->post('/admin/fulfillment/cod-statements/preview', ['file' => UploadedFile::fake()->createWithContent(
+        'bang-ke.csv', "Mã vận đơn;Tiền thu hộ;Phí\nGHN001;330000;22000",
+    )])->assertInertia(fn (Assert $page) => $page->where('preview.summary.ambiguous', 1)->where('urls.apply', null));
 });
 
 it('nhập lại vận đơn đã giao xử lý dòng lệch cũ và chỉ ghi thu COD một lần cho cùng kiện', function (bool $carrierReported) {
@@ -108,7 +136,7 @@ it('nhập lại vận đơn đã giao xử lý dòng lệch cũ và chỉ ghi t
 
 it('có thể thử lại cùng bản xem trước sau lỗi giữa chừng mà không ghi thu lặp', function () {
     DB::table('shipments')->where('order_id', $this->transit)->update(['status' => 'delivered']);
-    $file = UploadedFile::fake()->createWithContent('bang-ke.csv', "Mã vận đơn;Tiền thu hộ\nGHN001;330000\nGHN003;330000");
+    $file = UploadedFile::fake()->createWithContent('bang-ke.csv', "Mã vận đơn;Tiền thu hộ;Phí\nGHN001;330000;22000\nGHN003;330000;18000");
     $preview = $this->post('/admin/fulfillment/cod-statements/preview', ['file' => $file])->assertOk()->viewData('page')['props'];
     $apply = $preview['urls']['apply'];
     $payments = app(Payments::class);
@@ -122,11 +150,13 @@ it('có thể thử lại cùng bản xem trước sau lỗi giữa chừng mà 
     $this->withoutExceptionHandling();
     expect(fn () => $this->post($apply))->toThrow(RuntimeException::class, 'Lỗi tạm thời khi ghi kiện thứ hai');
     expect(DB::table('reconciliation_entries')->pluck('reference')->all())->toBe(['GHN001']);
+    expect(DB::table('shipments')->whereNotNull('actual_carrier_fee')->pluck('actual_carrier_fee', 'tracking_number')->all())->toBe(['GHN001' => 22_000]);
 
     app()->instance(Payments::class, $payments);
     $this->post($apply)->assertSessionHas('success');
     expect(DB::table('reconciliation_entries')->orderBy('reference')->pluck('reference')->all())->toBe(['GHN001', 'GHN003'])
-        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(2);
+        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(2)
+        ->and(DB::table('shipments')->whereNotNull('actual_carrier_fee')->orderBy('tracking_number')->pluck('actual_carrier_fee', 'tracking_number')->all())->toBe(['GHN001' => 22_000, 'GHN003' => 18_000]);
     $this->withExceptionHandling()->post($apply)->assertSessionHasErrors('file');
 });
 

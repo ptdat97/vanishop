@@ -144,7 +144,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.returns.before_approve` | validate | có (transaction duyệt) | Chặn duyệt đổi trả (cả tự duyệt); tham số `ReturnView`. **Implemented** (0.4.60) |
 | `vani.payment.before_refund` | validate | không | Chặn hoàn tiền do nhân viên tạo; tham số `(PaymentView, Money, reason)`. **Implemented** (0.4.60) |
 | `vani.pricing.bulk.warnings` | filter | không | Cảnh báo thêm theo SKU ở trang làm việc bảng giá / xem trước (chỉ thêm, không chặn). **Implemented** (0.4.62, EP v3 X4) |
-| `vani.pricing.unit_costs` | filter | không | Giá vốn đơn vị theo variant id cho báo cáo lợi nhuận gộp (vd. `vani.cost-price`); SKU không có giá vốn thì không có khoá. **Implemented** (0.5.19, A10) |
+| `vani.pricing.unit_costs` | filter | không | Giá vốn đơn vị theo variant id (vd. `vani.cost-price`). Từ 0.5.71, đọc theo lô trong transaction tạo đơn để chụp vào dòng đơn. Trả số nguyên không âm, bỏ khoá của SKU chưa có giá vốn. |
 | `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác; tham số `(payload, OrderData)`; chỉ được **thêm** khoá. **Implemented** (0.3) |
 | `vani.admin.dashboard.cards` | slot | — | Card trên dashboard Admin; trả `{title, body}`. **Implemented** (HelloWorld dùng) |
 | `vani.admin.dashboard.tasks` | slot | 0.3.101 | Ô "Việc cần làm" đầu trang tổng quan; trả `list<{key, label, count, url, tone?, hint?, order?}>`. **Implemented** (Ordering, Returns, Fulfillment, Payment, Inventory) |

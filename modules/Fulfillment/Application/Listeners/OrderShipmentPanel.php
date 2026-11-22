@@ -38,6 +38,7 @@ final class OrderShipmentPanel
     {
         $labels = (array) __('fulfillment::labels.shipment_status');
         $manage = Gate::allows('fulfillment.manage');
+        $viewFees = Gate::any(['payments.view', 'payments.confirm']);
         $base = route('admin.fulfillment.shipments.index');
         $shipments = Shipment::query()->where('order_id', $order->id)->orderBy('id')->get();
         $active = $shipments->filter(fn (Shipment $shipment): bool => $shipment->status !== ShipmentStatus::Cancelled);
@@ -51,6 +52,9 @@ final class OrderShipmentPanel
             $rows[] = ['label' => $prefix.$name, 'value' => ($shipment->tracking_number ?? __('fulfillment::texts.order_shipment_panel.no_code_yet')).' · '.($labels[$shipment->status->value] ?? $shipment->status->value)];
             if ($shipment->cod_amount > 0) {
                 $rows[] = ['label' => __('fulfillment::texts.order_shipment_panel.cod_amount'), 'value' => $this->money->formatAmount($shipment->cod_amount, $shipment->currency_code)];
+            }
+            if ($viewFees && $shipment->actual_carrier_fee !== null) {
+                $rows[] = ['label' => $prefix.__('fulfillment::texts.order_shipment_panel.actual_carrier_fee'), 'value' => $this->money->formatAmount($shipment->actual_carrier_fee, $shipment->currency_code)];
             }
             if ($shipment->last_error !== null && $shipment->status === ShipmentStatus::BookingFailed) {
                 $rows[] = ['label' => __('fulfillment::texts.order_shipment_panel.error'), 'value' => $shipment->last_error];

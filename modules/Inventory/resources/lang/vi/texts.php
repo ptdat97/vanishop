@@ -9,6 +9,8 @@ return [
         'edit_main_warehouse_details_create' => 'Sửa thông tin Kho chính, tạo Kho chính (cấp Owner)',
         'inventory' => 'Tồn kho',
         'low_stock_threshold' => 'Ngưỡng "sắp hết hàng"',
+        'default_safety_stock' => 'Tồn an toàn mặc định',
+        'default_safety_stock_help' => 'Áp dụng khi khởi tạo tồn cho một SKU tại một kho. Mức đã đặt riêng cho từng ô kho được giữ lại.',
         'sellable_quantity_calculation_ats' => 'Cách tính số bán được (ATS)',
         'sellable_stock_strategy' => 'Chiến lược tồn bán được',
         'strategy_only_reduce_ats_compared' => 'Strategy chỉ giảm được ATS so với công thức chuẩn.',

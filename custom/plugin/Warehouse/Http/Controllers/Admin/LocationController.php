@@ -66,11 +66,18 @@ final class LocationController
 
     private function form(?LocationData $location): Response
     {
+        $locations = $this->locations->all();
+        $authorities = array_unique([LocationData::AUTHORITY_VANISHOP, ...array_column($locations, 'stockAuthority')]);
+        $priorities = array_unique([-10, 0, 10, ...array_column($locations, 'priority')]);
+        sort($priorities, SORT_NUMERIC);
+
         return Inertia::render('Warehouse::Locations/Form', [
             'labels' => __('vani-warehouse::labels'),
             'baseUrl' => route('admin.plugins.vani-warehouse.locations.index'),
             'location' => $location?->toArray(),
             'types' => LocationData::TYPES,
+            'stockAuthorities' => array_values($authorities),
+            'priorities' => $priorities,
         ]);
     }
 }

@@ -4,13 +4,25 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Style;
 
 /**
- * Ảnh của sản phẩm demo (Thư viện ảnh) để dùng lại cho trình chiếu, banner, lookbook, bài viết.
+ * Danh mục, sản phẩm và ảnh từ catalog dùng cho nội dung demo.
  */
-final class DemoMedia
+final class DemoCatalog
 {
+    /** @return list<int> */
+    public static function styleIds(): array
+    {
+        return Style::query()->where('style_code', 'like', 'VS-%')->orderBy('id')->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+    }
+
+    public static function categoryId(string $slug): ?int
+    {
+        return Category::query()->where('slug', $slug)->first(['id'])?->id;
+    }
+
     /**
      * Mã sản phẩm → id ảnh theo thứ tự, chỉ sản phẩm "Vani Studio" đang bán.
      *

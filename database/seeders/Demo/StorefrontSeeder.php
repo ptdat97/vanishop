@@ -10,11 +10,11 @@ use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\Style;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Application\Menus\MenuRepository;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Application\Theme\ThemeSettings;
-use Plugin\Cms\Persistence\Page;
 
 /**
  * Giao diện: trang chủ (trình chiếu, cam kết, hàng mới, lưới banner, tab sản phẩm, bán chạy, lookbook, tin tức, đã xem),
@@ -49,14 +49,14 @@ final class StorefrontSeeder extends Seeder
     {
         $available = $blocks->types();
         // Ảnh từ Thư viện ảnh (id) — khối tự có bản vừa màn hình.
-        $images = DemoMedia::covers(6);
+        $images = DemoCatalog::covers(6);
         $image = fn (int $index): ?int => $images[$index] ?? null;
 
         $candidates = [
             ['extras_slideshow', ['interval' => 5,
-                'slide_1_media' => $image(0), 'slide_1_title' => 'Thu Đông 2026', 'slide_1_text' => 'Len, dạ và lụa cho mùa se lạnh', 'slide_1_link' => '/tim-kiem?collection=thu-dong-2026', 'slide_1_label' => 'Khám phá',
+                'slide_1_media' => $image(0), 'slide_1_title' => 'Thu Đông 2026', 'slide_1_text' => 'Len, dạ và lụa cho mùa se lạnh', 'slide_1_link' => '/bo-suu-tap/thu-dong-2026', 'slide_1_label' => 'Khám phá',
                 'slide_2_media' => $image(1), 'slide_2_title' => 'Đầm cho mọi dịp', 'slide_2_text' => 'Giảm đến 20% nhiều mẫu', 'slide_2_link' => '/danh-muc/dam', 'slide_2_label' => 'Mua ngay',
-                'slide_3_media' => $image(2), 'slide_3_title' => 'Công sở thanh lịch', 'slide_3_text' => 'Chỉn chu mà vẫn thoải mái', 'slide_3_link' => '/tim-kiem?collection=cong-so-thanh-lich', 'slide_3_label' => 'Xem bộ sưu tập']],
+                'slide_3_media' => $image(2), 'slide_3_title' => 'Công sở thanh lịch', 'slide_3_text' => 'Chỉn chu mà vẫn thoải mái', 'slide_3_link' => '/bo-suu-tap/cong-so-thanh-lich', 'slide_3_label' => 'Xem bộ sưu tập']],
             ['hero', ['title' => 'Thu Đông 2026', 'subtitle' => 'Len, dạ và lụa cho mùa se lạnh.', 'image' => $image(0), 'link_label' => 'Khám phá', 'link_url' => '/danh-muc/hang-moi-ve']],
             ['extras_features', ['item_1_icon' => 'truck', 'item_1_title' => 'Giao nhanh 2h', 'item_1_text' => 'Nội thành TP. HCM',
                 'item_2_icon' => 'return', 'item_2_title' => 'Đổi trả 7 ngày', 'item_2_text' => 'Đổi size miễn phí',
@@ -98,7 +98,7 @@ final class StorefrontSeeder extends Seeder
      */
     public function mobileMenu(): array
     {
-        $covers = DemoMedia::byStyle();
+        $covers = DemoCatalog::byStyle();
         $used = [];
         // Ảnh đầu tiên chưa dùng của các sản phẩm thoả điều kiện — mỗi ô một ảnh khác nhau.
         $cover = function (callable $scope) use ($covers, &$used): ?int {
@@ -136,6 +136,7 @@ final class StorefrontSeeder extends Seeder
 
         $women = $categoryId('nu');
         $newArrivals = $categoryId(CatalogSeeder::NEW_ARRIVALS);
+        $content = $this->contentLinks();
 
         return array_values(array_filter([
             $newArrivals === null ? null : $item(['type' => 'category', 'value' => (string) $newArrivals], null, $newest, $anyCover(), 'new'),
@@ -146,7 +147,7 @@ final class StorefrontSeeder extends Seeder
             $collections === [] ? null : $item(null, 'Bộ sưu tập', array_map(fn (array $entry): array => [...$entry, 'id' => (string) Str::ulid(), 'image_media_id' => $anyCover() ?? $entry['image_media_id']], $collections), $anyCover()),
             $brands === [] ? null : $item(['type' => 'route', 'value' => 'storefront.brands'], 'Thương hiệu', $brands, $anyCover()),
             ContentSeeder::enabled('vani.lookbook') ? $item(['type' => 'url', 'value' => '/lookbook'], 'Lookbook') : null,
-            ContentSeeder::enabled('vani.cms') ? $item(['type' => 'url', 'value' => '/tin-tuc'], 'Tin tức') : null,
+            isset($content['news']) ? $item($content['news'], 'Tin tức') : null,
         ]));
     }
 
@@ -163,24 +164,24 @@ final class StorefrontSeeder extends Seeder
 
         $women = array_values(array_filter(array_map(fn (string $slug): ?array => ($link = $category($slug)) === null ? null : $item($link), array_keys(CatalogSeeder::CATEGORIES))));
         $collections = ProductCollection::query()->orderBy('position')->pluck('id')->map(fn ($id): array => $item(['type' => 'collection', 'value' => (string) $id]))->all();
+        $content = $this->contentLinks();
+        $page = fn (string $key, string $label): ?array => isset($content[$key]) ? $item($content[$key], $label) : null;
 
         $header = array_values(array_filter([
             ($link = $category(CatalogSeeder::NEW_ARRIVALS)) === null ? null : $item($link, null, [], 'new'),
             ($link = $category('nu')) === null ? null : $item($link, null, $women),
             $collections === [] ? null : $item(null, 'Bộ sưu tập', $collections),
             ContentSeeder::enabled('vani.lookbook') ? $item(['type' => 'url', 'value' => '/lookbook'], 'Lookbook') : null,
-            ContentSeeder::enabled('vani.cms') ? $item(['type' => 'url', 'value' => '/tin-tuc'], 'Tin tức') : null,
+            $page('news', 'Tin tức'),
         ]));
 
-        $page = fn (string $slug, string $label): ?array => ContentSeeder::enabled('vani.cms') && ($id = Page::query()->where('slug', $slug)->value('id')) !== null
-            ? $item(['type' => 'page', 'value' => (string) $id], $label) : null;
         $support = array_values(array_filter([
             $item(['type' => 'route', 'value' => 'storefront.track'], 'Tra cứu đơn hàng'),
-            $page('chinh-sach-doi-tra', 'Đổi trả'), $page('huong-dan-chon-size', 'Chọn size'), $page('chinh-sach-bao-mat', 'Bảo mật'),
+            $page('returns', 'Đổi trả'), $page('size_guide', 'Chọn size'), $page('privacy', 'Bảo mật'),
         ]));
         $about = array_values(array_filter([
-            $page('gioi-thieu', 'Giới thiệu'),
-            ContentSeeder::enabled('vani.cms') ? $item(['type' => 'url', 'value' => '/tin-tuc'], 'Tin tức') : null,
+            $page('about', 'Giới thiệu'),
+            $page('news', 'Tin tức'),
             $item(['type' => 'route', 'value' => 'storefront.brands'], 'Thương hiệu'),
         ]));
 
@@ -191,5 +192,18 @@ final class StorefrontSeeder extends Seeder
             'footer_1' => $support,
             'footer_2' => $about,
         ];
+    }
+
+    /** @return array<string, array{type: string, value: string}> */
+    private function contentLinks(): array
+    {
+        $links = [];
+        foreach (app(Extensions::class)->tagged(DemoContent::TAG) as $content) {
+            if ($content instanceof DemoContent) {
+                $links += $content->links();
+            }
+        }
+
+        return $links;
     }
 }

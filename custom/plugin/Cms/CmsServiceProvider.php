@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Plugin\Cms;
 
+use Database\Seeders\Demo\DemoContent;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Identity\Contracts\PermissionRegistry;
@@ -13,6 +14,7 @@ use Modules\Storefront\Contracts\LinkType;
 use Modules\Storefront\Contracts\SitemapProvider;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Contracts\StorefrontEnricher;
+use Plugin\Cms\Database\CmsDemoContent;
 use Plugin\Cms\Infrastructure\ArticleCategoryLinkType;
 use Plugin\Cms\Infrastructure\ArticleLinkType;
 use Plugin\Cms\Infrastructure\CmsSitemap;
@@ -47,6 +49,9 @@ final class CmsServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->runningInConsole() && ! $this->app->isProduction()) {
+            $this->contribute(DemoContent::TAG, CmsDemoContent::class);
+        }
         // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
         $this->translations($this->pluginPath('Resources/lang'), 'vani-cms');
         $this->permissions(['cms.view' => 'vani-cms::texts.cms_service_provider.view_content_pages_posts', 'cms.manage' => 'vani-cms::texts.cms_service_provider.write_publish_delete_content'], [PermissionRegistry::PRESET_CONTENT]);

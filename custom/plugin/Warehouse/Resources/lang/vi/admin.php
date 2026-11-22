@@ -4,6 +4,9 @@
 
 return [
     'locations_form' => [
+        'custom_authority' => 'Mã nguồn quản lý tồn khác',
+        'custom_priority' => 'Mức ưu tiên riêng',
+        'priority' => 'Mức ưu tiên',
         'add_location' => 'Thêm location',
         'address' => 'Địa chỉ',
         'back' => 'Quay lại',

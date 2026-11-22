@@ -24,7 +24,7 @@ final class CodStatement
     public const SOURCE = 'cod_statement';
 
     /** Dòng chỉ hiện ở xem trước, không ghi vào sổ. */
-    private const SKIPPED = ['already', 'duplicate', 'invalid', 'header_missing'];
+    private const SKIPPED = ['already', 'duplicate', 'invalid', 'header_missing', 'ambiguous', 'fee_conflict'];
 
     private const CACHE_PREFIX = 'payment:cod-statement:';
 
@@ -63,7 +63,7 @@ final class CodStatement
     /**
      * Ghi file đã xem trước và chỉ xoá token khi áp dụng xong. Lần thử lại bỏ qua các dòng đã ghi.
      *
-     * @return array{matched: int, mismatched: int, skipped: int}|null null = token hết hạn
+     * @return array{matched: int, mismatched: int, skipped: int, fees: int}|null null = token hết hạn
      */
     public function apply(string $token): ?array
     {
@@ -72,7 +72,7 @@ final class CodStatement
         if (! is_array($pending) || ! isset($pending['rows'])) {
             return null;
         }
-        $result = ['matched' => 0, 'mismatched' => 0, 'skipped' => 0];
+        $result = ['matched' => 0, 'mismatched' => 0, 'skipped' => 0, 'fees' => 0];
         foreach ($this->classify($pending['rows']) as $line) {
             if (in_array($line['status'], self::SKIPPED, true)) {
                 $result['skipped']++;
@@ -80,7 +80,13 @@ final class CodStatement
                 continue;
             }
             $matched = $line['status'] === 'matched';
-            $recorded = DB::transaction(function () use ($line, $matched): bool {
+            [$recorded, $feeRecorded] = DB::transaction(function () use ($line, $matched): array {
+                $feeOnly = $line['status'] === 'fee_only';
+                $feeRecorded = ($matched || $feeOnly) && $line['fee'] !== null
+                    && Shipment::query()->whereKey($line['shipment_id'])->whereNull('actual_carrier_fee')->update(['actual_carrier_fee' => $line['fee']]) > 0;
+                if ($feeOnly) {
+                    return [false, $feeRecorded];
+                }
                 $note = $this->note($line);
                 $recorded = $this->ledger->record(self::SOURCE, $line['tracking'], $matched, $line['order_id'], null, $line['expected'], $line['amount'], $note);
                 if ($matched) {
@@ -90,9 +96,17 @@ final class CodStatement
                     }
                 }
 
-                return $recorded;
+                return [$recorded, $feeRecorded];
             });
-            $result[$recorded ? ($matched ? 'matched' : 'mismatched') : 'skipped']++;
+            if ($recorded) {
+                $result[$matched ? 'matched' : 'mismatched']++;
+            }
+            if ($feeRecorded) {
+                $result['fees']++;
+            }
+            if (! $recorded && ! $feeRecorded) {
+                $result['skipped']++;
+            }
         }
         $this->audit->record('payment.cod_statement.imported', 'reconciliation', null, ['file' => (string) ($pending['file'] ?? ''), ...$result]);
         Cache::forget($cacheKey);
@@ -126,9 +140,13 @@ final class CodStatement
         $seen = [];
         $lines = [];
         foreach ($parsed as $row) {
-            $shipment = $shipments[$row['tracking']] ?? null;
+            $candidates = $shipments[$row['tracking']] ?? [];
+            $active = array_filter($candidates, fn (array $candidate): bool => $candidate['status'] !== ShipmentStatus::Cancelled->value);
+            $shipment = count($active) > 1 ? null : (array_values($active)[0] ?? $candidates[0] ?? null);
+            $existingFee = $shipment['actual_carrier_fee'] ?? null;
             $status = match (true) {
                 $row['amount'] === null => 'invalid',
+                count($active) > 1 => 'ambiguous',
                 $shipment === null => 'not_found',
                 $shipment['status'] !== 'delivered' => 'not_delivered',
                 $row['amount'] !== $shipment['cod_amount'] => 'amount_mismatch',
@@ -137,7 +155,11 @@ final class CodStatement
             $previous = $recorded[$row['tracking']] ?? null;
             if (isset($seen[$row['tracking']])) {
                 $status = 'duplicate';
-            } elseif ($previous !== null && ($previous !== 'mismatch' || $status !== 'matched')) {
+            } elseif ($status === 'matched' && $row['fee'] !== null && $existingFee !== null && $row['fee'] !== $existingFee) {
+                $status = 'fee_conflict';
+            } elseif ($previous === 'matched' && $status === 'matched' && $row['fee'] !== null && $existingFee === null) {
+                $status = 'fee_only';
+            } elseif ($previous !== null && ! in_array($status, ['invalid', 'ambiguous'], true) && ($previous !== 'mismatch' || $status !== 'matched')) {
                 $status = 'already';
             }
             $seen[$row['tracking']] = true;
@@ -148,20 +170,18 @@ final class CodStatement
     }
 
     /**
-     * Vận đơn theo mã (khoá viết hoa), bỏ vận đơn đã huỷ khi trùng mã với vận đơn còn hiệu lực.
+     * Các vận đơn theo mã (khoá viết hoa).
      *
      * @param  list<string>  $trackingNumbers
-     * @return array<string, array{id: int, order_id: int, status: string, cod_amount: int}>
+     * @return array<string, list<array{id: int, order_id: int, status: string, cod_amount: int, actual_carrier_fee: int|null}>>
      */
     private function shipments(array $trackingNumbers): array
     {
         $result = [];
         foreach (array_chunk(array_values(array_unique($trackingNumbers)), 500) as $chunk) {
-            foreach (Shipment::query()->whereIn('tracking_number', $chunk)->orderBy('id')->get(['id', 'order_id', 'status', 'cod_amount', 'tracking_number']) as $shipment) {
+            foreach (Shipment::query()->whereIn('tracking_number', $chunk)->orderBy('id')->get(['id', 'order_id', 'status', 'cod_amount', 'tracking_number', 'actual_carrier_fee']) as $shipment) {
                 $key = mb_strtoupper((string) $shipment->tracking_number);
-                if (! isset($result[$key]) || $shipment->status !== ShipmentStatus::Cancelled) {
-                    $result[$key] = ['id' => $shipment->id, 'order_id' => (int) $shipment->order_id, 'status' => $shipment->status->value, 'cod_amount' => (int) $shipment->cod_amount];
-                }
+                $result[$key][] = ['id' => $shipment->id, 'order_id' => $shipment->order_id, 'status' => $shipment->status->value, 'cod_amount' => $shipment->cod_amount, 'actual_carrier_fee' => $shipment->actual_carrier_fee];
             }
         }
 
@@ -194,7 +214,12 @@ final class CodStatement
             $value = str_replace(['.', ','], '', $value);
         }
 
-        return ctype_digit($value) ? (int) $value : null;
+        if (! ctype_digit($value)) {
+            return null;
+        }
+        $amount = filter_var(ltrim($value, '0') ?: '0', FILTER_VALIDATE_INT);
+
+        return $amount === false ? null : $amount;
     }
 
     /**

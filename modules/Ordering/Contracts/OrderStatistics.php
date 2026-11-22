@@ -42,7 +42,9 @@ interface OrderStatistics
      * `$timezone`; số lượng sau huỷ một phần, doanh thu = `order_lines.total_amount` (đã trừ giảm giá phân bổ, chưa gồm phí
      * giao); hàng trả lại không trừ. `sku`/`product_name` là ảnh chụp lúc đặt (lấy dòng mới nhất). Sắp theo ngày rồi SKU.
      *
-     * @return list<array{day: string, variant_id: int, sku: string, product_name: string, quantity: int, revenue: int}>
+     * `costed_quantity` và `costed_revenue` chỉ đếm dòng đã chụp giá vốn; `cost_at_sale` là tổng giá vốn của các dòng đó.
+     *
+     * @return list<array{day: string, variant_id: int, sku: string, product_name: string, quantity: int, revenue: int, costed_quantity: int, costed_revenue: int, cost_at_sale: int}>
      */
     public function variantSales(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array;
 

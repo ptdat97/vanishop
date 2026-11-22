@@ -94,7 +94,7 @@ return [
     ],
     'return_reasons_report' => [
         'cod_failed_delivery_rate' => 'Tỷ lệ giao thất bại COD',
-        'cod_shipments_cod_shipments_delivered' => 'Trên :cod_shipments vận đơn COD · đã giao :delivered',
+        'cod_shipments_cod_shipments_delivered' => 'Trong :cod_shipments kiện COD có kết quả · đã giao :delivered',
         'customer_side' => 'Phía khách',
         'failed_cod_deliveries' => 'COD giao thất bại',
         'group' => 'Nhóm',

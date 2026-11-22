@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Customer\Tests\Feature\CustomerTestHelpers as Cu;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Contracts\Data\Metric;
 use Modules\Extension\Contracts\Data\ReportPeriod;
@@ -12,6 +14,7 @@ use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Plugin\CostPrice\CostPriceServiceProvider;
+use Plugin\CostPrice\Infrastructure\CostPrices;
 use Plugin\Reports\Infrastructure\Reports\GrossProfitByProductReport;
 use Plugin\Reports\Infrastructure\Reports\GrossProfitDailyReport;
 use Plugin\Reports\Infrastructure\Reports\ReturnReasonsReport;
@@ -20,6 +23,7 @@ use Plugin\Reports\ReportsServiceProvider;
 
 require_once __DIR__.'/../../../../../modules/Inventory/Tests/Feature/InventoryTestHelpers.php';
 require_once __DIR__.'/../../../../../modules/Pricing/Tests/Feature/PricingTestHelpers.php';
+require_once __DIR__.'/../../../../../modules/Customer/Tests/Feature/CustomerTestHelpers.php';
 
 /*
 | Stabilization A10: lợi nhuận gộp (giá vốn qua hook `vani.pricing.unit_costs` — plugin vani.cost-price), SKU thiếu giá vốn báo
@@ -96,7 +100,7 @@ it('chưa có nguồn giá vốn: không tính lợi nhuận, báo rõ thiếu g
 
 it('có giá vốn (vani.cost-price): lợi nhuận theo SKU và theo ngày; SKU thiếu giá vốn tách riêng', function () {
     enableReportPlugin(CostPriceServiceProvider::ID, CostPriceServiceProvider::class);
-    DB::table('plg_cost_prices')->insert(['variant_id' => $this->a, 'amount' => 120_000, 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('order_lines')->where('variant_id', $this->a)->update(['meta' => '{"unit_cost_at_sale":120000}']);
 
     $byProduct = app(GrossProfitByProductReport::class)->run($this->period);
     expect($byProduct->table->rows[0])->toMatchArray(['sku' => "SKU-{$this->a}", 'quantity' => 3, 'revenue' => 600_000, 'cost' => 360_000, 'profit' => 240_000, 'margin' => 40.0, 'note' => ''])
@@ -113,15 +117,48 @@ it('có giá vốn (vani.cost-price): lợi nhuận theo SKU và theo ngày; SKU
     ])->and($daily->chart->values)->toBe([160_000, 80_000]);
 });
 
+it('chụp giá vốn theo từng lần đặt, giữ giá vốn bằng 0 và tách dòng không có giá vốn lúc bán', function () {
+    enableReportPlugin(CostPriceServiceProvider::ID, CostPriceServiceProvider::class);
+    C::autoConfirmCod();
+    ['s' => $variant] = C::store();
+    $costs = app(CostPrices::class);
+    Cu::guestOrder($this, $variant->id, 'cost-missing', ['full_name' => 'Lan', 'phone' => '0912345678']);
+    $costs->set($variant->id, 0);
+    Cu::guestOrder($this, $variant->id, 'cost-zero', ['full_name' => 'Lan', 'phone' => '0912345678']);
+    $costs->set($variant->id, 110_000);
+    Cu::guestOrder($this, $variant->id, 'cost-known', ['full_name' => 'Lan', 'phone' => '0912345678']);
+    $costs->set($variant->id, 200_000);
+
+    $period = new ReportPeriod(now()->subDay()->toDateTimeImmutable(), now()->addDay()->toDateTimeImmutable());
+    $product = app(GrossProfitByProductReport::class)->run($period);
+    expect($product->table->rows[0])->toMatchArray([
+        'sku' => $variant->sku, 'quantity' => 3, 'revenue' => 900_000, 'cost' => 110_000, 'profit' => 490_000, 'note' => 'Thiếu giá vốn',
+    ]);
+    expect(($this->summary)(app(GrossProfitDailyReport::class)->run($period)))->toMatchArray([
+        'Lợi nhuận gộp' => [490_000, 'Biên 81.7%'],
+        'Giá vốn' => [110_000, null],
+        'Doanh thu thiếu giá vốn' => [300_000, null],
+    ]);
+});
+
 it('đổi trả: theo SKU (tỷ lệ so với số bán trong kỳ), theo lý do (tách lỗi do cửa hàng, phí ship trả shop chịu — L10); bỏ yêu cầu bị từ chối; COD giao thất bại', function () {
     grossProfitReturn($this->lines[0], $this->a, 1, 'wrong_size');
     grossProfitReturn($this->lines[2], $this->a, 1, 'defective', status: 'resolved');
     DB::table('return_requests')->where('reason_code', 'defective')->update(['return_shipping_fee' => 30_000, 'return_shipping_payer' => 'store']);
     grossProfitReturn($this->lines[1], $this->b, 1, 'wrong_size', status: 'rejected');
     $location = I::location();
-    foreach ([['delivered', 300_000], ['returned', 250_000], ['returning', 100_000], ['delivered', 0]] as $i => [$status, $cod]) {
+    foreach ([
+        ['delivered', 300_000, '2026-10-02 03:00:00'],
+        ['returned', 250_000, '2026-10-02 03:00:00'],
+        ['returning', 100_000, '2026-10-02 03:00:00'],
+        ['delivered', 0, '2026-10-02 03:00:00'],
+        ['returned', 150_000, '2026-09-30 16:59:59'],
+        ['returned', 200_000, '2026-10-02 17:00:00'],
+        ['in_transit', 500_000, null],
+    ] as [$status, $cod, $at]) {
         DB::table('shipments')->insert(['public_id' => strtoupper(Str::ulid()), 'order_id' => DB::table('orders')->value('id'), 'location_id' => $location->id, 'carrier_code' => 'manual',
-            'cod_amount' => $cod, 'currency_code' => 'VND', 'status' => $status, 'created_at' => '2026-10-02 03:00:00', 'updated_at' => '2026-10-02 03:00:00']);
+            'cod_amount' => $cod, 'currency_code' => 'VND', 'status' => $status, 'created_at' => '2026-09-27 03:00:00', 'updated_at' => '2026-10-02 17:15:00',
+            'delivered_at' => $status === 'delivered' ? $at : null, 'delivery_failed_at' => $status === 'delivered' ? null : $at]);
     }
 
     $byProduct = app(ReturnsByProductReport::class)->run($this->period);
@@ -135,7 +172,7 @@ it('đổi trả: theo SKU (tỷ lệ so với số bán trong kỳ), theo lý d
         ->and(($this->summary)($reasons))->toMatchArray([
             'Lỗi do cửa hàng' => [50.0, '1 yêu cầu'],
             'Phí ship trả shop chịu' => [30_000, null],
-            'COD giao thất bại' => [2, 'Trên 3 vận đơn COD · đã giao 1'],
+            'COD giao thất bại' => [2, 'Trong 3 kiện COD có kết quả · đã giao 1'],
             'Tiền COD không thu được' => [350_000, null],
         ]);
 });

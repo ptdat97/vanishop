@@ -11,17 +11,20 @@ use Modules\Inventory\Domain\StockLevel;
 use Modules\Inventory\Persistence\Models\StockLevelRecord;
 use Modules\Inventory\Persistence\Models\StockMovement;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Đọc/ghi dòng tồn có khoá và ghi sổ biến động. Chỉ dùng BÊN TRONG transaction.
  */
 final class StockLedger
 {
-    public function __construct(private readonly CurrentContext $context) {}
+    public const DEFAULT_SAFETY_STOCK = 'inventory.default_safety_stock';
+
+    public function __construct(private readonly CurrentContext $context, private readonly Settings $settings) {}
 
     /**
      * Khoá (FOR UPDATE) các dòng tồn theo thứ tự (location_id, variant_id) cố định để tránh deadlock.
-     * Dòng chưa tồn tại được tạo với số 0 trước khi khoá.
+     * Dòng chưa tồn tại được tạo với tồn thực tế và số giữ bằng 0 trước khi khoá.
      *
      * @param  list<array{0: int, 1: int}>  $pairs  [location_id, variant_id]
      * @return array<string, StockLevelRecord> "loc:variant" => record
@@ -51,7 +54,7 @@ final class StockLedger
     }
 
     /**
-     * Tạo dòng tồn 0 cho cặp [location, variant] chưa có (không khoá, không ghi biến động).
+     * Khởi tạo tồn cho cặp [location, variant] chưa có bằng mức an toàn mặc định của cửa hàng.
      *
      * @param  list<array{0: int, 1: int}>  $pairs
      */
@@ -60,8 +63,9 @@ final class StockLedger
         if ($pairs === []) {
             return;
         }
+        $safetyStock = max(0, (int) $this->settings->get('core', self::DEFAULT_SAFETY_STOCK, 0));
         DB::table('stock_levels')->insertOrIgnore(array_map(fn (array $pair): array => [
-            'location_id' => $pair[0], 'variant_id' => $pair[1], 'on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0,
+            'location_id' => $pair[0], 'variant_id' => $pair[1], 'on_hand' => 0, 'reserved' => 0, 'safety_stock' => $safetyStock,
             'created_at' => now(), 'updated_at' => now(),
         ], $pairs));
     }

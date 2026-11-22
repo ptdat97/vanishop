@@ -409,6 +409,9 @@ final class FulfillmentService implements ShipmentBooking
             'status' => $to,
             'shipped_at' => $to->hasLeftWarehouse() && $shipment->shipped_at === null ? now() : $shipment->shipped_at,
             'delivered_at' => $to === ShipmentStatus::Delivered ? ($occurredAt ?? now()) : $shipment->delivered_at,
+            'delivery_failed_at' => in_array($to, [ShipmentStatus::Returning, ShipmentStatus::Returned], true)
+                ? ($shipment->delivery_failed_at ?? $occurredAt ?? now())
+                : $shipment->delivery_failed_at,
             'lock_version' => $shipment->lock_version + 1,
         ]);
 

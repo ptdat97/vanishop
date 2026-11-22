@@ -358,9 +358,13 @@ it('hàng đang hoàn về và đã hoàn về đều nằm ở hàng đợi "S�
     foreach (['picked_up', 'returning'] as $status) {
         $this->post("{$this->ship}/{$shipment->id}/status", ['status' => $status])->assertSessionHasNoErrors();
     }
+    $failureAt = $shipment->refresh()->delivery_failed_at;
+    expect($failureAt)->not->toBeNull();
     $this->get('/admin/orders/orders?stage=issue')->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.delivery_issue', 'returning'));
 
+    $this->travel(1)->day();
     $this->post("{$this->ship}/{$shipment->id}/status", ['status' => 'returned'])->assertSessionHasNoErrors();
+    expect($shipment->refresh()->delivery_failed_at?->getTimestamp())->toBe($failureAt->getTimestamp());
     expect(($this->order)()->delivery_issue)->toBeNull();
     $this->get('/admin/orders/orders?stage=issue')->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.delivery_issue', 'returned'));
 });

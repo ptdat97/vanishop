@@ -8,12 +8,19 @@
 // Sau khi chạy: kiểm tra 0 oversell (tồn không âm, đối soát tồn kho) — xem overview §7.
 import http from 'k6/http';
 import { check, fail } from 'k6';
-import { randomItem } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
+import { Counter, Rate } from 'k6/metrics';
 
-const BASE = (__ENV.BASE || 'http://vanishop.test').replace(/\/$/, '');
+const BASE = (__ENV.BASE || '').replace(/\/$/, '');
+const ORDERS_PER_MIN = Number(__ENV.ORDERS_PER_MIN || 0);
+if (!/^https?:\/\/[^/?#\s]+$/.test(BASE) || !Number.isSafeInteger(ORDERS_PER_MIN) || ORDERS_PER_MIN < 0) {
+    throw new Error('Cần BASE là origin HTTP(S) và ORDERS_PER_MIN là số nguyên không âm.');
+}
 const API = `${BASE}/api/storefront/v1`;
 const DURATION = __ENV.DURATION || '5m';
 const JSON_HEADERS = { 'Content-Type': 'application/json', Accept: 'application/json' };
+const ordersCreated = new Counter('orders_created');
+const checkoutSucceeded = new Rate('checkout_succeeded');
+const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
 
 export const options = {
     scenarios: {
@@ -22,14 +29,21 @@ export const options = {
         // Ứng dụng/headless gọi Storefront API.
         api: { executor: 'constant-arrival-rate', exec: 'api', rate: Number(__ENV.API_RPS || 30), timeUnit: '1s', duration: DURATION, preAllocatedVUs: 30, maxVUs: 300 },
         // Đặt đơn COD: tạo giỏ → thêm hàng → báo giá → đặt đơn. NFR: 500 đơn/phút giờ cao điểm.
-        checkout: { executor: 'constant-arrival-rate', exec: 'checkout', rate: Number(__ENV.ORDERS_PER_MIN || 60), timeUnit: '1m', duration: DURATION, preAllocatedVUs: 20, maxVUs: 400 },
+        ...(ORDERS_PER_MIN > 0 ? {
+            checkout: { executor: 'constant-arrival-rate', exec: 'checkout', rate: ORDERS_PER_MIN, timeUnit: '1m', duration: DURATION, preAllocatedVUs: 20, maxVUs: 400 },
+        } : {}),
     },
     thresholds: {
         'http_req_duration{kind:page}': ['p(95)<300'],
         'http_req_duration{kind:api}': ['p(95)<200'],
-        'http_req_duration{kind:checkout}': ['p(95)<1000'],
         'http_req_failed': ['rate<0.01'],
         'checks': ['rate>0.99'],
+        ...(ORDERS_PER_MIN > 0 ? {
+            'http_req_duration{kind:checkout}': ['p(95)<1000'],
+            'dropped_iterations{scenario:checkout}': ['count==0'],
+            checkout_succeeded: ['rate>0.99'],
+            orders_created: ['count>0'],
+        } : {}),
     },
 };
 
@@ -39,12 +53,16 @@ export function setup() {
     const slugs = products.map((product) => product.slug);
     const styleIds = products.map((product) => product.id);
     const variants = [];
-    for (const slug of slugs.slice(0, 20)) {
-        const detail = http.get(`${API}/products/${slug}`, { headers: JSON_HEADERS }).json('data');
-        (detail?.variants || []).filter((variant) => variant.available).forEach((variant) => variants.push(variant.id));
+    if (ORDERS_PER_MIN > 0) {
+        for (const slug of slugs.slice(0, 20)) {
+            const detail = http.get(`${API}/products/${slug}`, { headers: JSON_HEADERS }).json('data');
+            (detail?.variants || [])
+                .filter((variant) => variant.is_active && ['in_stock', 'low_stock'].includes(variant.availability))
+                .forEach((variant) => variants.push(variant.id));
+        }
     }
-    if (slugs.length === 0 || variants.length === 0) {
-        fail('Không có sản phẩm/biến thể còn hàng — seed dữ liệu staging trước.');
+    if (slugs.length === 0 || (ORDERS_PER_MIN > 0 && variants.length === 0)) {
+        fail('Cần sản phẩm demo để đo tải và biến thể còn hàng nếu bật checkout.');
     }
 
     return { slugs, styleIds, categories, variants };
@@ -70,7 +88,7 @@ export function api(data) {
         response = http.get(`${API}/products/${randomItem(data.slugs)}`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'product' } });
     } else if (roll < 0.85) {
         response = http.get(`${API}/search/suggestions?q=${encodeURIComponent(randomItem(['đầm', 'áo', 'quần', 'váy']))}`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'suggestions' } });
-    } else if (roll < 0.95) {
+    } else if (roll < 0.95 || ORDERS_PER_MIN === 0) {
         response = http.get(`${API}/store`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'store' } });
     } else {
         // Beacon lượt xem như trình duyệt (phiên cùng nguồn, miễn CSRF) → 204.
@@ -83,16 +101,26 @@ export function api(data) {
 }
 
 export function checkout(data) {
+    let created = false;
+    try {
+        created = placeOrder(data);
+    } finally {
+        checkoutSucceeded.add(created);
+        ordersCreated.add(created ? 1 : 0);
+    }
+}
+
+function placeOrder(data) {
     const tags = { kind: 'checkout' };
     const created = http.post(`${API}/carts`, null, { headers: JSON_HEADERS, tags: { ...tags, name: 'cart' } });
     if (!check(created, { 'tạo giỏ 201': (r) => r.status === 201 })) {
-        return;
+        return false;
     }
     const cart = created.json('data.id');
     const headers = { ...JSON_HEADERS, 'X-Vani-Cart-Token': created.json('meta.token') };
     const line = http.post(`${API}/carts/${cart}/lines`, JSON.stringify({ variant_id: randomItem(data.variants), quantity: 1 }), { headers, tags: { ...tags, name: 'line' } });
     if (!check(line, { 'thêm hàng 200': (r) => r.status === 200 })) {
-        return; // hết hàng: không tính là lỗi hệ thống nhưng vẫn ghi nhận ở checks
+        return false;
     }
     const order = {
         contact: { full_name: 'Khách Load Test', phone: `09${String(Math.floor(Math.random() * 1e8)).padStart(8, '0')}`, email: `load-${__VU}-${__ITER}@example.test` },
@@ -102,11 +130,11 @@ export function checkout(data) {
     };
     const quote = http.post(`${API}/checkout/${cart}/quote`, JSON.stringify(order), { headers, tags: { ...tags, name: 'quote' } });
     if (!check(quote, { 'báo giá 200': (r) => r.status === 200 })) {
-        return;
+        return false;
     }
     const placed = http.post(`${API}/checkout/${cart}/orders`, JSON.stringify({ ...order, expected_total: quote.json('data.total.amount') }), {
         headers: { ...headers, 'Idempotency-Key': `load-${__VU}-${__ITER}-${Date.now()}` },
         tags: { ...tags, name: 'order' },
     });
-    check(placed, { 'đặt đơn 201': (r) => r.status === 201 });
+    return check(placed, { 'đặt đơn 201 và có mã đơn': (r) => r.status === 201 && !!r.json('data.id') });
 }

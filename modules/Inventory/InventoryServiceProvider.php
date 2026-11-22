@@ -29,6 +29,7 @@ use Modules\Inventory\Application\StandardInventoryStrategy;
 use Modules\Inventory\Application\StockAvailability;
 use Modules\Inventory\Application\StockCountImporter;
 use Modules\Inventory\Application\StockedVariants;
+use Modules\Inventory\Application\StockLedger;
 use Modules\Inventory\Application\StockMovementService;
 use Modules\Inventory\Application\StockQueries;
 use Modules\Inventory\Application\VariantStockFields;
@@ -103,6 +104,12 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', LowStockThreshold::SETTING, 'inventory::texts.inventory_service_provider.low_stock_threshold', 'int', (int) config('vanishop.inventory.low_stock_threshold', 3),
             help: 'inventory::texts.inventory_service_provider.below_sellable_quantity_admin_highlights',
+            rules: ['min:0', 'max:1000'],
+            group: SettingGroup::Inventory,
+        ));
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', StockLedger::DEFAULT_SAFETY_STOCK, 'inventory::texts.inventory_service_provider.default_safety_stock', 'int', 0,
+            help: 'inventory::texts.inventory_service_provider.default_safety_stock_help',
             rules: ['min:0', 'max:1000'],
             group: SettingGroup::Inventory,
         ));

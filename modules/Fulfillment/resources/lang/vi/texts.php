@@ -49,6 +49,7 @@ return [
         'shipments' => 'Vận đơn',
     ],
     'order_shipment_panel' => [
+        'actual_carrier_fee' => 'Phí hãng thực tế',
         'cancel_shipment' => 'Huỷ vận đơn',
         'carrier' => 'Hãng vận chuyển',
         'cod_amount' => 'Thu hộ (COD)',

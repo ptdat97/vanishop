@@ -94,7 +94,7 @@ return [
     ],
     'return_reasons_report' => [
         'cod_failed_delivery_rate' => 'COD failed delivery rate',
-        'cod_shipments_cod_shipments_delivered' => 'Of :cod_shipments COD shipments · delivered :delivered',
+        'cod_shipments_cod_shipments_delivered' => 'Of :cod_shipments COD shipments with an outcome · delivered :delivered',
         'customer_side' => 'Customer side',
         'failed_cod_deliveries' => 'Failed COD deliveries',
         'group' => 'Group',

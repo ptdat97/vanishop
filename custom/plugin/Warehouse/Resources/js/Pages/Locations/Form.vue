@@ -7,6 +7,7 @@ import Select from '@admin/Components/Select.vue';
 import { codeOptions, labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import type { WarehouseLabels } from '../../labels';
 
 const props = defineProps<{
@@ -28,6 +29,8 @@ const props = defineProps<{
         lock_version: number;
     };
     types: string[];
+    stockAuthorities: string[];
+    priorities: number[];
 }>();
 
 const { form, save } = useAdminForm({
@@ -44,6 +47,23 @@ const { form, save } = useAdminForm({
     status: props.location?.status ?? 'active',
     lock_version: props.location?.lock_version ?? null,
 }, { lockVersion: () => props.location?.lock_version });
+
+const customAuthority = ref(false);
+const authority = computed<string | null>({
+    get: () => customAuthority.value ? null : form.stock_authority,
+    set: (value) => {
+        customAuthority.value = value === null;
+        form.stock_authority = value ?? '';
+    },
+});
+const customPriority = ref(false);
+const priority = computed<number | null>({
+    get: () => customPriority.value ? null : form.priority,
+    set: (value) => {
+        customPriority.value = value === null;
+        if (value !== null) form.priority = value;
+    },
+});
 
 function submit(): void {
     if (props.location) {
@@ -68,11 +88,17 @@ function submit(): void {
         </FormField>
         <FormField :label="t('vani-warehouse::admin.locations_form.address')" :error="form.errors.address"><input v-model="form.address" :class="inputClass" /></FormField>
         <FormField :label="t('vani-warehouse::admin.locations_form.province_city_code')" :error="form.errors.province_code"><input v-model="form.province_code" :class="inputClass" /></FormField>
-        <FormField label="Priority" :hint="t('vani-warehouse::admin.locations_form.higher_priority_reserves_stock_first')" :error="form.errors.priority">
-            <input v-model.number="form.priority" :class="inputClass" type="number" />
+        <FormField for="warehouse-priority" :label="t('vani-warehouse::admin.locations_form.priority')" :hint="t('vani-warehouse::admin.locations_form.higher_priority_reserves_stock_first')" :error="customPriority ? undefined : form.errors.priority">
+            <Select id="warehouse-priority" v-model="priority" :options="priorities.map((value) => ({ value, label: String(value) }))" :empty-label="t('vani-warehouse::admin.locations_form.custom_priority')" :empty-value="null" />
         </FormField>
-        <FormField :label="t('vani-warehouse::admin.locations_form.manages_physical_stock')" :hint="t('vani-warehouse::admin.locations_form.vanishop_adjusted_here_another_code')" :error="form.errors.stock_authority">
-            <input v-model="form.stock_authority" :class="inputClass" />
+        <FormField v-if="customPriority" for="warehouse-custom-priority" :label="t('vani-warehouse::admin.locations_form.custom_priority')" :error="form.errors.priority">
+            <input id="warehouse-custom-priority" v-model.number="form.priority" :class="inputClass" type="number" min="-1000" max="1000" required />
+        </FormField>
+        <FormField for="warehouse-authority" :label="t('vani-warehouse::admin.locations_form.manages_physical_stock')" :hint="t('vani-warehouse::admin.locations_form.vanishop_adjusted_here_another_code')" :error="customAuthority ? undefined : form.errors.stock_authority">
+            <Select id="warehouse-authority" v-model="authority" :options="stockAuthorities.map((value) => ({ value, label: value === 'vanishop' ? 'VaniShop' : value }))" :empty-label="t('vani-warehouse::admin.locations_form.custom_authority')" :empty-value="null" />
+        </FormField>
+        <FormField v-if="customAuthority" for="warehouse-custom-authority" :label="t('vani-warehouse::admin.locations_form.custom_authority')" :error="form.errors.stock_authority">
+            <input id="warehouse-custom-authority" v-model="form.stock_authority" :class="inputClass" maxlength="64" required />
         </FormField>
         <FormField :label="t('vani-warehouse::admin.locations_form.capabilities')" :error="form.errors.ships_online_orders">
             <div class="space-y-1 text-sm">

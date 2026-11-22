@@ -25,8 +25,9 @@ return [
         'type' => 'filter',
         'visibility' => 'public',
         'since' => '0.5.19',
+        'transaction' => true,
         'on_error' => 'skip',
         'args' => ['costs' => 'array<int, int>', 'variantIds' => 'list<int>'],
-        'description' => 'Giá vốn đơn vị theo variant id (đơn vị nhỏ nhất) — vd. plugin `vani.cost-price` — cho báo cáo lợi nhuận gộp. Chỉ thêm khoá thuộc `variantIds`; SKU không có giá vốn thì không có khoá (báo cáo ghi rõ là thiếu). Gọi một lần cho cả tập SKU: đọc theo lô, không truy vấn từng SKU.',
+        'description' => 'Giá vốn đơn vị theo variant id (đơn vị nhỏ nhất), chụp khi tạo đơn. Chỉ thêm khoá thuộc variantIds và giá nguyên không âm. Đọc theo lô trong transaction, không gọi mạng. Bỏ khoá nếu SKU chưa có giá vốn.',
     ],
 ];

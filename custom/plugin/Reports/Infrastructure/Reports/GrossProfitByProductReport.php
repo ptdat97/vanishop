@@ -43,17 +43,17 @@ final class GrossProfitByProductReport implements ReportProvider
     {
         $variants = [];
         foreach ($this->grossProfit->lines($period) as $line) {
-            $row = $variants[$line['variant_id']] ?? ['sku' => $line['sku'], 'product' => $line['product_name'], 'quantity' => 0, 'revenue' => 0, 'cost' => 0, 'missing' => false];
+            $row = $variants[$line['variant_id']] ?? ['sku' => $line['sku'], 'product' => $line['product_name'], 'quantity' => 0, 'revenue' => 0, 'costed_quantity' => 0, 'costed_revenue' => 0, 'cost_at_sale' => 0];
             $row['quantity'] += $line['quantity'];
             $row['revenue'] += $line['revenue'];
-            $row['missing'] = $row['missing'] || $line['cost'] === null;
-            $row['cost'] += (int) $line['cost'];
+            $row['costed_quantity'] += $line['costed_quantity'];
+            $row['costed_revenue'] += $line['costed_revenue'];
+            $row['cost_at_sale'] += $line['cost_at_sale'];
             $variants[$line['variant_id']] = $row;
         }
         uasort($variants, fn (array $a, array $b): int => [$b['revenue'], $a['sku']] <=> [$a['revenue'], $b['sku']]);
-        $lines = array_map(fn (array $row): array => ['revenue' => $row['revenue'], 'cost' => $row['missing'] ? null : $row['cost']], $variants);
-        $total = GrossProfit::sum(array_values($lines));
-        $missing = count(array_filter($variants, fn (array $row): bool => $row['missing']));
+        $total = GrossProfit::sum(array_values($variants));
+        $missing = count(array_filter($variants, fn (array $row): bool => $row['costed_quantity'] < $row['quantity']));
 
         return new ReportResult(
             new Table(
@@ -63,10 +63,10 @@ final class GrossProfitByProductReport implements ReportProvider
                 ],
                 array_map(fn (array $row): array => [
                     'sku' => $row['sku'], 'product' => $row['product'], 'quantity' => $row['quantity'], 'revenue' => $row['revenue'],
-                    'cost' => $row['missing'] ? null : $row['cost'],
-                    'profit' => $row['missing'] ? null : $row['revenue'] - $row['cost'],
-                    'margin' => $row['missing'] || $row['revenue'] === 0 ? null : round(($row['revenue'] - $row['cost']) * 100 / $row['revenue'], 1),
-                    'note' => $row['missing'] ? __('vani-reports::texts.gross_profit_by_product_report.missing_cost_price') : '',
+                    'cost' => $row['costed_quantity'] === 0 ? null : $row['cost_at_sale'],
+                    'profit' => $row['costed_quantity'] === 0 ? null : $row['costed_revenue'] - $row['cost_at_sale'],
+                    'margin' => $row['costed_revenue'] === 0 ? null : round(($row['costed_revenue'] - $row['cost_at_sale']) * 100 / $row['costed_revenue'], 1),
+                    'note' => $row['costed_quantity'] < $row['quantity'] ? __('vani-reports::texts.gross_profit_by_product_report.missing_cost_price') : '',
                 ], array_slice(array_values($variants), 0, self::LIMIT)),
             ),
             [
@@ -80,7 +80,7 @@ final class GrossProfitByProductReport implements ReportProvider
 
     private function missingHint(int $missing, int $uncostedRevenue, int $variants): ?string
     {
-        if (! $this->grossProfit->hasCostSource()) {
+        if ($missing > 0 && ! $this->grossProfit->hasCostSource()) {
             return __('vani-reports::texts.gross_profit_by_product_report.no_cost_price_source_enable');
         }
         $hint = $missing === 0 ? null : 'Doanh thu '.number_format($uncostedRevenue, 0, ',', '.').__('vani-reports::texts.gross_profit_by_product_report.not_included_profit');

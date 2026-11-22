@@ -125,16 +125,24 @@ final class EloquentOrderStatistics implements OrderStatistics
         $rows = [];
         // Nhóm theo ngày ở PHP (hàm múi giờ khác nhau giữa MySQL và SQLite); đọc theo con trỏ.
         $lines = $this->lines($from, $to)->where('order_lines.quantity', '>', 0)
-            ->select(['orders.placed_at', 'order_lines.variant_id', 'order_lines.sku', 'order_lines.product_name', 'order_lines.quantity', 'order_lines.total_amount'])
+            ->select(['orders.placed_at', 'order_lines.variant_id', 'order_lines.sku', 'order_lines.product_name', 'order_lines.quantity', 'order_lines.total_amount', 'order_lines.meta->unit_cost_at_sale as unit_cost_at_sale'])
             ->orderBy('order_lines.id');
         foreach ($lines->cursor() as $line) {
             $day = (new DateTimeImmutable((string) $line->placed_at, new DateTimeZone('UTC')))->setTimezone($zone)->format('Y-m-d');
             $key = "{$day}|{$line->variant_id}";
-            $rows[$key] ??= ['day' => $day, 'variant_id' => (int) $line->variant_id, 'sku' => '', 'product_name' => '', 'quantity' => 0, 'revenue' => 0];
+            $rows[$key] ??= [
+                'day' => $day, 'variant_id' => (int) $line->variant_id, 'sku' => '', 'product_name' => '',
+                'quantity' => 0, 'revenue' => 0, 'costed_quantity' => 0, 'costed_revenue' => 0, 'cost_at_sale' => 0,
+            ];
             $rows[$key]['sku'] = (string) $line->sku;
             $rows[$key]['product_name'] = (string) $line->product_name;
             $rows[$key]['quantity'] += (int) $line->quantity;
             $rows[$key]['revenue'] += (int) $line->total_amount;
+            if (is_numeric($line->unit_cost_at_sale)) {
+                $rows[$key]['costed_quantity'] += (int) $line->quantity;
+                $rows[$key]['costed_revenue'] += (int) $line->total_amount;
+                $rows[$key]['cost_at_sale'] += (int) $line->unit_cost_at_sale * (int) $line->quantity;
+            }
         }
         uasort($rows, fn (array $a, array $b): int => [$a['day'], $a['sku']] <=> [$b['day'], $b['sku']]);
 

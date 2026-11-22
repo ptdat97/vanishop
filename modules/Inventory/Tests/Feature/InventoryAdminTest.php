@@ -9,6 +9,7 @@ use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\StockGrid;
+use Modules\Inventory\Application\StockLedger;
 use Modules\Inventory\Application\StockQueries;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Persistence\Models\StockMovement;
@@ -77,6 +78,22 @@ it('không điều chỉnh tay location do hệ thống ngoài quản lý', func
 
     $this->post($this->stockUrl, ['location_id' => $this->erp->id, 'variant_id' => $this->s->id, 'action' => 'adjust', 'quantity' => 5, 'reason' => 'x'])
         ->assertSessionHasErrors('location_id');
+});
+
+it('áp dụng tồn an toàn mặc định cho ô mới và giữ giá trị 0 đã đặt riêng khi đổi cấu hình', function () {
+    T::seed(fn () => app(Settings::class)->set('core', StockLedger::DEFAULT_SAFETY_STOCK, 3));
+    $this->actingAs(T::staff(['admin.access', 'inventory.adjust']), 'staff');
+    $change = fn (int $id, array $data) => $this->post($this->stockUrl, ['location_id' => $this->hn->id, 'variant_id' => $id, ...$data]);
+    $receive = ['action' => 'adjust', 'quantity' => 7, 'reason' => 'Nhập hàng'];
+    $change($this->s->id, $receive)->assertSessionHasNoErrors();
+    $this->assertDatabaseHas('stock_levels', ['location_id' => $this->hn->id, 'variant_id' => $this->s->id, 'safety_stock' => 3]);
+
+    $change($this->s->id, ['action' => 'safety', 'quantity' => 0])->assertSessionHasNoErrors();
+    T::seed(fn () => app(Settings::class)->set('core', StockLedger::DEFAULT_SAFETY_STOCK, 5));
+    $change($this->s->id, $receive)->assertSessionHasNoErrors();
+    $change($this->m->id, $receive)->assertSessionHasNoErrors();
+    $this->assertDatabaseHas('stock_levels', ['location_id' => $this->hn->id, 'variant_id' => $this->s->id, 'safety_stock' => 0]);
+    $this->assertDatabaseHas('stock_levels', ['location_id' => $this->hn->id, 'variant_id' => $this->m->id, 'safety_stock' => 5]);
 });
 
 it('variant/location không tồn tại trả 404', function () {
