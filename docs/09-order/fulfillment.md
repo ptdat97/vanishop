@@ -10,7 +10,7 @@
 
 | Core (`modules/Fulfillment`) | Plugin |
 |---|---|
-| Shipment, shipment line, trạng thái chuẩn hoá, lịch sử | Hãng vận chuyển (`vani.ghn`, `vani.ghtk`…) |
+| Shipment, shipment line, trạng thái chuẩn hoá, lịch sử | Hãng vận chuyển kết nối API (plugin `ShippingCarrier`, vd. GHN, GHTK — chưa chốt hãng) |
 | `SourcingStrategy` mặc định `reserved_locations` | Sourcing nâng cao, ship-from-store |
 | `FulfillmentMethod` mặc định `delivery` | `pickup` (BOPIS) |
 | Carrier `flat_rate` (bảng phí) + `manual` (nhập mã vận đơn) | Đối soát COD (`vani.cod-reconciliation`) |

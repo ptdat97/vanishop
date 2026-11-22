@@ -67,8 +67,8 @@ Mỗi plugin là một lát độc lập; không gộp nhiều plugin vào một
 | M1 | ExtraContent | gộp vào `vani.cms` ✅ 1.5.0, 2026-11-05 ([đặc tả](specs/store-content.md)) | `StorefrontBlock`, slot danh mục/brand |
 | M1 | Bestseller | khối "Bán chạy" trong `vani.storefront-extras` ✅ 2026-11-05 ([đặc tả](specs/storefront-extras.md)) | `StorefrontBlock`, `OrderStatistics` |
 | M1 | StorefrontBlocks (Core đã có khung `StorefrontBlock` + page builder; chuyển khối đã xem, video hero; trang hàng mới đã có) | `vani.storefront-extras` ([đặc tả](specs/storefront-extras.md))  ✅ 2026-11-05| `StorefrontBlock`, Storefront API |
-| **M2** ❄️ | VnShipping (GHTK) | `vani.ghtk` (đóng băng — kết nối ngoài) | `ShippingCarrier` + `ShippingRateProvider` (mẫu `vani.ghn`) |
-| M2 ❄️ | OrderTracking (đóng băng — kết nối ngoài) | bổ sung `vani.ghn`/`vani.ghtk` + slot tra cứu đơn | Webhook/đồng bộ hãng, `shipment_events` |
+| **M2** ❄️ | VnShipping (GHTK) | `vani.ghtk` (đóng băng — kết nối ngoài) | `ShippingCarrier` + `ShippingRateProvider` (mẫu `FakeApiCarrier` trong test Fulfillment) |
+| M2 ❄️ | OrderTracking (đóng băng — kết nối ngoài) | bổ sung plugin hãng (`vani.ghtk`…) + slot tra cứu đơn | Webhook/đồng bộ hãng, `shipment_events` |
 | M2 ❄️ | CodReconcile (đóng băng — dữ liệu đối soát từ hãng) | `vani.cod-reconciliation` | Events fulfillment, `adminPages`, đối soát thanh toán |
 | M2 ❄️ | Social (đóng băng — kết nối ngoài) | `vani.social-login` | `AuthProvider` (W5b) |
 | M2 ❄️ | TwilioVerifyLogin (đóng băng — kết nối ngoài) | `vani.twilio-verify` | `OtpSender` |

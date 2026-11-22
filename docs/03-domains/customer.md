@@ -11,7 +11,7 @@
 | Core (`modules/Customer`) | Plugin |
 |---|---|
 | Tài khoản hợp nhất của cửa hàng, hồ sơ, sổ địa chỉ, nhóm khách, tag | Đăng nhập mạng xã hội (`vani.social-login`), đăng nhập OTP theo SĐT (`vani.phone-otp-login`) |
-| Consent theo kênh gửi × mục đích | Gửi OTP qua SMS/ZNS (`vani.sms-brandname`, `vani.zalo-zns`) |
+| Consent theo kênh gửi × mục đích | Gửi OTP qua ZNS (`vani.zalo-zns`) hoặc plugin SMS khi chốt nhà cung cấp |
 | Xác thực: email + mật khẩu (mặc định), khung OTP (`OtpSender`, contract `PhoneOtpLogin` cho plugin) | Loyalty, wishlist, size advisor, phân khúc RFM |
 | Hợp nhất trùng lặp (merge) có audit | |
 | Quyền của chủ thể dữ liệu (xuất, rút consent, xoá/ẩn danh) | |

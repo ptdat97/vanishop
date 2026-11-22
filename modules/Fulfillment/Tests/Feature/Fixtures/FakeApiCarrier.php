@@ -18,7 +18,7 @@ use Modules\Fulfillment\Contracts\ShippingCarrier;
 use RuntimeException;
 
 /**
- * Hãng giả có API đặt vận đơn + webhook ký HMAC — mô phỏng plugin như vani.ghn.
+ * Hãng giả có API đặt vận đơn + webhook ký HMAC — mô phỏng plugin hãng vận chuyển có API.
  */
 final class FakeApiCarrier implements ReturnPickup, ShippingCarrier
 {

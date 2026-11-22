@@ -6,7 +6,7 @@ Tin giao dịch và OTP qua **Zalo Notification Service (ZNS)**:
   Admin → Thông báo khai báo tham số thay cho nội dung:
   `{"template_id": "231234", "params": {"customer_name": "{{ customer_name }}", "order_code": "{{ order_number }}"}}`.
 - `OtpSender` kênh `zns` (priority 60, cao hơn SMS vì rẻ hơn). SĐT không dùng Zalo → lỗi → Core tự chuyển sang
-  kênh kế tiếp (vd. `vani.sms-brandname`).
+  kênh kế tiếp (vd. email trên hồ sơ).
 
 ## Cấu hình (`.env`)
 

@@ -6,6 +6,12 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.74 — 2026-11-22 · Extension API 1.29.0
+
+- Gỡ plugin `vani.ghn` (bản mô phỏng GHN) và `vani.sms-brandname` (SMS qua eSMS) vì chưa chốt nhà cung cấp. Extension point `ShippingCarrier`, `ShippingRateProvider`, `NotificationChannel`, `OtpSender` giữ nguyên; contract test vẫn chạy với implementation của Core và plugin khác.
+- Cửa hàng đã bật hai plugin: đơn có phương thức giao `ghn` được tạo vận đơn bằng carrier mặc định; OTP chuyển sang kênh kế tiếp (`vani.zalo-zns` hoặc email). Xoá biến `GHN_*` trong `.env` nếu không dùng.
+- `vani.phone-otp-login` 1.0.2 cập nhật mô tả kênh gửi mã.
+
 ## 0.5.73 — 2026-11-22 · Extension API 1.29.0
 
 - **Builder Engine** (storefront §4): Admin → Giao diện → **Nội dung trang** biên tập block cho mọi surface bằng một màn hình, dùng chung registry, schema, validation và renderer block với trang chủ và trang bộ sưu tập.

@@ -1,6 +1,6 @@
 # Notification
 
-> Trạng thái: **Partially Implemented** (2026-10-13). Module `modules/Notification` (context "CRUD domain", [ADR-002](../19-adr/ADR-002-ddd-boundaries.md)). Kênh ngoài email là plugin: [`vani.sms-brandname`](../../custom/plugin/SmsBrandname/README.md), [`vani.zalo-zns`](../../custom/plugin/ZaloZns/README.md).
+> Trạng thái: **Partially Implemented** (2026-10-13). Module `modules/Notification` (context "CRUD domain", [ADR-002](../19-adr/ADR-002-ddd-boundaries.md)). Kênh ngoài email là plugin: [`vani.zalo-zns`](../../custom/plugin/ZaloZns/README.md). Plugin SMS brandname chưa có (chưa chốt nhà cung cấp).
 >
 > Theo [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), mẫu tin và consent không có phạm vi brand: mẫu được chọn theo **loại × kênh gửi × locale**. ("Kênh" trong tài liệu này luôn là **kênh gửi tin**: mail, sms, zns.)
 

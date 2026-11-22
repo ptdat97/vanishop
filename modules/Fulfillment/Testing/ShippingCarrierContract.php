@@ -17,7 +17,7 @@ use Modules\Shared\Domain\Money\Money;
 /**
  * Bộ contract test cho mọi ShippingCarrier (Core và plugin hãng vận chuyển):
  *
- *   ShippingCarrierContract::define('vani.ghn', fn () => new GhnCarrier(...),
+ *   ShippingCarrierContract::define('vani.my-carrier', fn () => new MyCarrier(...),
  *       validWebhook: fn (string $tracking) => Request::create(...),
  *       tamperedWebhook: fn (string $tracking) => Request::create(...));
  *

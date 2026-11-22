@@ -12,8 +12,8 @@ use Plugin\PhoneOtpLogin\Http\Controllers\OtpLoginController;
  * Đăng nhập bằng mã OTP qua số điện thoại — phương thức **bổ sung** bên cạnh email + mật khẩu của Core (0.5.12). Core giữ khung
  * OTP và quy tắc tài khoản (contract `PhoneOtpLogin`: SĐT chưa có hồ sơ → tạo; hồ sơ khách vãng lai → thành tài khoản, giữ lịch
  * sử đơn); plugin thêm form vào trang đăng nhập (slot `vani.storefront.account.login`), route web `/p/vani-phone-otp-login/*`
- * và Storefront API `x/vani-phone-otp-login/*` (openapi.json). Mã gửi qua kênh OTP đang bật (`vani.sms-brandname`,
- * `vani.zalo-zns`, hoặc email trên hồ sơ).
+ * và Storefront API `x/vani-phone-otp-login/*` (openapi.json). Mã gửi qua kênh OTP đang bật (vd. `vani.zalo-zns`,
+ * hoặc email trên hồ sơ).
  */
 final class PhoneOtpLoginServiceProvider extends PluginServiceProvider
 {

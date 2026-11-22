@@ -5,16 +5,46 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Customer\Contracts\Data\CustomerContact;
+use Modules\Customer\Contracts\Data\OtpPurpose;
+use Modules\Customer\Contracts\OtpSender;
 use Modules\Customer\Contracts\PhoneOtpLogin;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Notification\Contracts\Data\OutgoingMessage;
 use Modules\Notification\Contracts\Data\Recipient;
-use Plugin\SmsBrandname\SmsBrandnameServiceProvider;
 use Plugin\ZaloZns\Infrastructure\ZnsChannel;
 use Plugin\ZaloZns\ZaloZnsServiceProvider;
 
 require_once __DIR__.'/../../../../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
+
+/** Kênh OTP dự phòng có priority thấp hơn ZNS (60), thay cho plugin SMS. */
+final class ZaloZnsFallbackOtpSender implements OtpSender
+{
+    /** @var list<string> */
+    public static array $sent = [];
+
+    public function channel(): string
+    {
+        return 'sms';
+    }
+
+    public function priority(): int
+    {
+        return 50;
+    }
+
+    public function isAvailable(CustomerContact $contact): bool
+    {
+        return true;
+    }
+
+    public function send(CustomerContact $contact, string $code, OtpPurpose $purpose): void
+    {
+        self::$sent[] = $contact->phone;
+    }
+}
 
 function enablePlugin(string $id, string $provider): void
 {
@@ -84,19 +114,18 @@ it('thiếu template_id hoặc lỗi dữ liệu → vĩnh viễn; 5xx → thử
         ->and(app(ZnsChannel::class)->send(znsMessage(['template_id' => 'T']))->kind)->toBe('retryable');
 });
 
-it('OTP: ưu tiên ZNS; SĐT không dùng Zalo → Core tự chuyển sang SMS brandname', function () {
-    config(['vani.sms-brandname.api_key' => 'k', 'vani.sms-brandname.secret_key' => 's', 'vani.sms-brandname.brandname' => 'VANISHOP']);
-    enablePlugin('vani.sms-brandname', SmsBrandnameServiceProvider::class);
+it('OTP: ưu tiên ZNS; SĐT không dùng Zalo → Core tự chuyển sang kênh kế tiếp', function () {
+    ZaloZnsFallbackOtpSender::$sent = [];
+    app(Extensions::class)->tag([ZaloZnsFallbackOtpSender::class], OtpSender::TAG);
     Cache::put('vani.zalo-zns.access_token', 'ok', 3600);
     Http::fake([
         'business.openapi.zalo.me/*' => Http::sequence()->push(['error' => 0, 'data' => ['msg_id' => 'otp-1']])->push(['error' => -118, 'message' => 'Zalo account not existed']),
-        'rest.esms.vn/*' => Http::response(['CodeResult' => '100', 'SMSID' => 'sms-otp']),
     ]);
 
     // Đăng nhập OTP là plugin `vani.phone-otp-login`; kênh gửi mã vẫn qua khung OtpSender của Core.
     expect(app(PhoneOtpLogin::class)->requestCode('0912345678', '127.0.0.1')['channel'])->toBe('zns');
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/message/template') && $request['template_id'] === 'OTP-TPL' && preg_match('/^\d{6}$/', $request['template_data']['otp']) === 1);
 
-    expect(app(PhoneOtpLogin::class)->requestCode('0987654321', '127.0.0.1')['channel'])->toBe('sms');
-    Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'esms') && str_contains($request['Content'], 'la ma xac thuc'));
+    expect(app(PhoneOtpLogin::class)->requestCode('0987654321', '127.0.0.1')['channel'])->toBe('sms')
+        ->and(ZaloZnsFallbackOtpSender::$sent)->toHaveCount(1);
 });

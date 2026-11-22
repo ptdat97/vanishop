@@ -17,7 +17,7 @@
 ## Decision
 
 1. **Fulfillment ở lại Core** (engine vận đơn, sổ `shipment_events`, chốt tồn khi rời kho, trạng thái giao của đơn, hoàn tất sau hạn đổi trả, contract `ShipmentReader`, sự kiện `ShipmentStatusChanged`).
-2. **Phần vận hành nâng cao là plugin, đã có điểm mở rộng:** hãng vận chuyển kết nối API (`ShippingCarrier` — vd. `vani.ghn`: tự đặt vận đơn, webhook), giao từ nhiều kho (`SourcingStrategy` + `vani.warehouse`), phí giao (`ShippingRateProvider`), thao tác trạng thái của hãng trên trang đơn (`OrderStatusAction`), cột/thao tác danh sách đơn (slot).
+2. **Phần vận hành nâng cao là plugin, đã có điểm mở rộng:** hãng vận chuyển kết nối API (`ShippingCarrier` — vd. plugin hãng: tự đặt vận đơn, webhook), giao từ nhiều kho (`SourcingStrategy` + `vani.warehouse`), phí giao (`ShippingRateProvider`), thao tác trạng thái của hãng trên trang đơn (`OrderStatusAction`), cột/thao tác danh sách đơn (slot).
 3. **Làm gọn cho SME ở giao diện, không ở module:**
    - Việc giao hàng hằng ngày làm trên danh sách đơn + trang đơn (hàng đợi "Chờ giao hãng", thẻ Giao hàng, xuất/nhập file cho hãng, in phiếu — 0.3.96–0.3.97).
    - Menu Admin "Giao hàng" (trang vận đơn riêng) **chỉ hiện khi cần**: có hãng tự đặt vận đơn qua API, hoặc từ 2 kho đang giao đơn online. Cấu hình `vanishop.fulfillment.admin_menu` (`VANI_FULFILLMENT_MENU` = `auto` | `always` | `never`). Trang vẫn mở được từ link trên trang đơn (0.3.100).

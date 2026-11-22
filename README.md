@@ -95,7 +95,6 @@ Một số plugin đã được triển khai:
 | `vani.vietqr` | Thanh toán QR động |
 | `vani.vnpay` | Cổng thanh toán VNPay |
 | `vani.shipping-flat-rate` | Phí giao hàng cố định |
-| `vani.ghn` | Tích hợp hãng vận chuyển GHN |
 | `vani.tax-vn-vat` | VAT Việt Nam |
 
 Mức độ tích hợp thực tế phụ thuộc cấu hình và trạng thái triển khai của từng plugin. Không phải mọi luồng đều đã sẵn sàng cho production.
@@ -236,7 +235,6 @@ vanishop/
 │   ├── plugin/
 │   │   ├── vani-cod/
 │   │   ├── vani-vietqr/
-│   │   ├── vani-ghn/
 │   │   └── ...
 │   │
 │   └── theme/

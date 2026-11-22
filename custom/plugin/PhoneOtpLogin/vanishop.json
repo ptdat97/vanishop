@@ -8,7 +8,7 @@
         "vi": "Thêm cách đăng nhập bằng mã OTP gửi tới số điện thoại (bên cạnh email + mật khẩu của Core). Mã gửi qua kênh OTP đang bật: SMS brandname, Zalo ZNS, hoặc email trên hồ sơ.",
         "en": "Adds sign-in with a one-time code sent to the customer's phone (alongside Core email + password). Codes go through the enabled OTP channels: SMS brandname, Zalo ZNS, or the email on file."
     },
-    "version": "1.0.1",
+    "version": "1.0.2",
     "kind": "feature",
     "provider": "Plugin\\PhoneOtpLogin\\PhoneOtpLoginServiceProvider",
     "requires": {

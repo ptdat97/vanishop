@@ -119,4 +119,4 @@ MySQL không rollback DDL: migration lỗi giữa chừng → plugin `failed`; s
 
 ## Giới hạn hiện tại
 
-- Plugin `VietQr`, `Ghn` vẫn đọc cấu hình từ `Config/*.php` + `.env`; `vani.sms-brandname` và 4 plugin hệ thống đọc `Settings` trước, thiếu thì theo `.env`.
+- Plugin `VietQr` vẫn đọc cấu hình từ `Config/*.php` + `.env`; 4 plugin hệ thống đọc `Settings` trước, thiếu thì theo `.env`.

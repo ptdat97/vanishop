@@ -97,8 +97,8 @@ Nếu phiên bản Pest đang dùng không hỗ trợ wildcard ở giữa namesp
 **Implemented** (P1-6, 2026-10-14). Mỗi contract mà plugin implement có một bộ test trong `Modules\<Ctx>\Testing` (plugin được phép dùng — không thuộc tầng nội bộ). Plugin gọi `define()` trong file test Pest của mình, truyền factory và dữ liệu/kịch bản mẫu; implementation mặc định của Core chạy cùng bộ test trong `tests/Feature/CoreExtensionContractsTest.php`.
 
 ```php
-// custom/plugin/SmsBrandname/Tests/Feature/SmsBrandnameContractTest.php
-NotificationChannelContract::define('vani.sms-brandname', fn () => app(SmsChannel::class), fn () => new OutgoingMessage(...),
+// custom/plugin/ZaloZns/Tests/Feature/ZaloZnsContractTest.php
+NotificationChannelContract::define('vani.zalo-zns', fn () => app(ZnsChannel::class), fn () => new OutgoingMessage(...),
     unreachable: new Recipient(email: 'lan@example.com'),
     succeed: fn () => Http::fake([... 200 ...]), failTemporarily: fn () => Http::fake([... 503 ...]));
 ```

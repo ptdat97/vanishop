@@ -5,11 +5,10 @@ vani.cms 1.5.10 c43c3db18ddbce24
 vani.cod 1.3.3 01faa91968ec858b
 vani.cod-risk-guard 1.1.2 a5efa0a3e9e3a5fd
 vani.cost-price 1.1.1 0d802659fb02178a
-vani.ghn 0.1.1 d757b4eb0e15a365
 vani.hello-world 0.3.1 030432e1cd6aed1a
 vani.lookbook 1.2.0 da03d7e997a16e02
 vani.media-webp 1.0.1 7d229d4e7adc3811
-vani.phone-otp-login 1.0.1 129a75ae475bf530
+vani.phone-otp-login 1.0.2 1e0485f41b824c78
 vani.phone-vn 1.0.0 faf3f5154b0ad326
 vani.preorder 1.1.4 5c7cccc4b0b69bf4
 vani.promotion-rules 0.3.1 29e0593cc161b0ed
@@ -18,7 +17,6 @@ vani.reports 1.3.6 7cce4874ffc9cad0
 vani.scarcity-signals 1.0.5 530e92d7321004f1
 vani.shipping-flat-rate 1.2.2 9a55ae539f276007
 vani.size-chart 1.0.7 8c4adfdb0cc572e2
-vani.sms-brandname 0.1.2 72e9d3f7272b0bcb
 vani.storefront-extras 1.4.1 03c359a3e016d3cf
 vani.tax-vn-vat 1.0.2 e5c053b53e3d9538
 vani.tracking-pixels 1.0.4 12fcbd2ea75b7007

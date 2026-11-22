@@ -7,12 +7,6 @@ parameters:
 			path: custom/plugin/Cod/Config/cod.php
 
 		-
-			message: '#^Property Plugin\\Ghn\\Infrastructure\\GhnCarrier\:\:\$shopId is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: custom/plugin/Ghn/Infrastructure/GhnCarrier.php
-
-		-
 			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
 			identifier: argument.type
 			count: 1
