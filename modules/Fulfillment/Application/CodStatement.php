@@ -42,7 +42,7 @@ final class CodStatement
 
     /**
      * @param  list<list<string>>  $rows
-     * @return array{token: string|null, file: string, lines: list<array{line: int, tracking: string, amount: int|null, fee: int|null, expected: int|null, order_id: int|null, status: string}>, summary: array<string, int>, total: int}
+     * @return array{token: string|null, file: string, lines: list<array{line: int, tracking: string, amount: int|null, fee: int|null, expected: int|null, order_id: int|null, shipment_id?: int|null, status: string}>, summary: array<string, int>, total: int}
      */
     public function preview(array $rows, string $fileName): array
     {
@@ -79,13 +79,19 @@ final class CodStatement
                 continue;
             }
             $matched = $line['status'] === 'matched';
-            DB::transaction(function () use ($line, $matched): void {
+            $recorded = DB::transaction(function () use ($line, $matched): bool {
+                $note = $this->note($line);
+                $recorded = $this->ledger->record(self::SOURCE, $line['tracking'], $matched, $line['order_id'], null, $line['expected'], $line['amount'], $note);
                 if ($matched) {
-                    $this->payments->collectCod((int) $line['order_id'], (int) $line['amount'], "cod-statement:{$line['tracking']}", (int) $line['expected']);
+                    $recorded = $recorded || $this->ledger->matchOpen(self::SOURCE, $line['tracking'], (int) $line['order_id'], (int) $line['expected'], (int) $line['amount'], $note);
+                    if ($recorded) {
+                        $this->payments->collectCod((int) $line['order_id'], (int) $line['amount'], "shipment:{$line['shipment_id']}", (int) $line['expected']);
+                    }
                 }
-                $this->ledger->record(self::SOURCE, $line['tracking'], $matched, $line['order_id'], null, $line['expected'], $line['amount'], $this->note($line));
+
+                return $recorded;
             });
-            $matched ? $result['matched']++ : $result['mismatched']++;
+            $result[$recorded ? ($matched ? 'matched' : 'mismatched') : 'skipped']++;
         }
         $this->audit->record('payment.cod_statement.imported', 'reconciliation', null, ['file' => (string) ($pending['file'] ?? ''), ...$result]);
 
@@ -94,7 +100,7 @@ final class CodStatement
 
     /**
      * @param  list<list<string>>  $rows
-     * @return list<array{line: int, tracking: string, amount: int|null, fee: int|null, expected: int|null, order_id: int|null, status: string}>
+     * @return list<array{line: int, tracking: string, amount: int|null, fee: int|null, expected: int|null, order_id: int|null, shipment_id?: int|null, status: string}>
      */
     private function classify(array $rows): array
     {
@@ -114,22 +120,26 @@ final class CodStatement
             }
         }
         $shipments = $this->shipments(array_column($parsed, 'tracking'));
-        $done = array_flip($this->ledger->recorded(self::SOURCE, array_column($parsed, 'tracking')));
+        $recorded = $this->ledger->statuses(self::SOURCE, array_column($parsed, 'tracking'));
         $seen = [];
         $lines = [];
         foreach ($parsed as $row) {
             $shipment = $shipments[$row['tracking']] ?? null;
             $status = match (true) {
-                isset($seen[$row['tracking']]) => 'duplicate',
-                isset($done[$row['tracking']]) => 'already',
                 $row['amount'] === null => 'invalid',
                 $shipment === null => 'not_found',
                 $shipment['status'] !== 'delivered' => 'not_delivered',
                 $row['amount'] !== $shipment['cod_amount'] => 'amount_mismatch',
                 default => 'matched',
             };
+            $previous = $recorded[$row['tracking']] ?? null;
+            if (isset($seen[$row['tracking']])) {
+                $status = 'duplicate';
+            } elseif ($previous !== null && ($previous !== 'mismatch' || $status !== 'matched')) {
+                $status = 'already';
+            }
             $seen[$row['tracking']] = true;
-            $lines[] = [...$row, 'expected' => $shipment['cod_amount'] ?? null, 'order_id' => $shipment['order_id'] ?? null, 'status' => $status];
+            $lines[] = [...$row, 'expected' => $shipment['cod_amount'] ?? null, 'order_id' => $shipment['order_id'] ?? null, 'shipment_id' => $shipment['id'] ?? null, 'status' => $status];
         }
 
         return $lines;
@@ -139,16 +149,16 @@ final class CodStatement
      * Vận đơn theo mã (khoá viết hoa), bỏ vận đơn đã huỷ khi trùng mã với vận đơn còn hiệu lực.
      *
      * @param  list<string>  $trackingNumbers
-     * @return array<string, array{order_id: int, status: string, cod_amount: int}>
+     * @return array<string, array{id: int, order_id: int, status: string, cod_amount: int}>
      */
     private function shipments(array $trackingNumbers): array
     {
         $result = [];
         foreach (array_chunk(array_values(array_unique($trackingNumbers)), 500) as $chunk) {
-            foreach (Shipment::query()->whereIn('tracking_number', $chunk)->orderBy('id')->get(['order_id', 'status', 'cod_amount', 'tracking_number']) as $shipment) {
+            foreach (Shipment::query()->whereIn('tracking_number', $chunk)->orderBy('id')->get(['id', 'order_id', 'status', 'cod_amount', 'tracking_number']) as $shipment) {
                 $key = mb_strtoupper((string) $shipment->tracking_number);
                 if (! isset($result[$key]) || $shipment->status !== ShipmentStatus::Cancelled) {
-                    $result[$key] = ['order_id' => (int) $shipment->order_id, 'status' => $shipment->status->value, 'cod_amount' => (int) $shipment->cod_amount];
+                    $result[$key] = ['id' => $shipment->id, 'order_id' => (int) $shipment->order_id, 'status' => $shipment->status->value, 'cod_amount' => (int) $shipment->cod_amount];
                 }
             }
         }

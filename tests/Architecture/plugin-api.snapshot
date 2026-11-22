@@ -1,4 +1,4 @@
-Extension API 1.24.0
+Extension API 1.25.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -754,6 +754,8 @@ interface Modules\Payment\Contracts\ReceivesCallbacks
 interface Modules\Payment\Contracts\Reconciliations [experimental]
   record(string $source, string $reference, bool $matched, ?int $orderId = NULL, ?int $paymentId = NULL, ?int $expected = NULL, ?int $actual = NULL, ?string $note = NULL): bool
   recorded(string $source, array $references): array
+  statuses(string $source, array $references): array
+  matchOpen(string $source, string $reference, int $orderId, int $expected, int $actual, string $note): bool
 interface Modules\Payment\Contracts\RefundPayout [experimental]
   const TAG = 'vani.payment.refund_payouts'
   code(): string

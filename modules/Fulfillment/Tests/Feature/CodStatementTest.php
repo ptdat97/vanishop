@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Persistence\Models\Payment;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -76,6 +77,34 @@ it('áp dụng: dòng khớp ghi nhận đã thu và vào sổ là khớp; dòng
         ->where('preview.summary.already', 4)->where('urls.apply', null));
     expect(DB::table('reconciliation_entries')->count())->toBe(4);
 });
+
+it('nhập lại vận đơn đã giao xử lý dòng lệch cũ và chỉ ghi thu COD một lần cho cùng kiện', function (bool $carrierReported) {
+    $file = fn () => UploadedFile::fake()->createWithContent('bang-ke.csv', "Mã vận đơn;Tiền thu hộ\nGHN003;100000");
+    $preview = fn () => $this->post('/admin/fulfillment/cod-statements/preview', ['file' => $file()])->assertOk()->viewData('page')['props'];
+    $shipment = DB::table('shipments')->where('order_id', $this->transit)->first();
+    DB::table('shipments')->where('id', $shipment->id)->update(['cod_amount' => 100_000]);
+    $first = $preview();
+    expect($first['preview']['summary'])->toBe(['not_delivered' => 1]);
+    $this->post($first['urls']['apply'])->assertSessionHas('success');
+    $oldEntry = DB::table('reconciliation_entries')->sole();
+
+    DB::table('shipments')->where('id', $shipment->id)->update(['status' => 'delivered']);
+    if ($carrierReported) {
+        app(Payments::class)->collectCod($this->transit, 100_000, "shipment:{$shipment->id}", 100_000);
+    }
+    $retry = $preview();
+    expect($retry['preview']['summary'])->toBe(['matched' => 1]);
+    $this->post($retry['urls']['apply'])->assertSessionHas('success');
+    app(Payments::class)->collectCod($this->transit, 100_000, "shipment:{$shipment->id}", 100_000);
+
+    $entry = DB::table('reconciliation_entries')->sole();
+    $transaction = DB::table('payment_transactions')->where('type', 'cod_collected')->sole();
+    expect($entry->id)->toBe($oldEntry->id)
+        ->and($entry->status)->toBe('matched')
+        ->and((int) $transaction->amount)->toBe(100_000)
+        ->and(Payment::query()->withoutGlobalScopes()->where('order_id', $this->transit)->value('status')->value)->toBe('pending')
+        ->and($preview()['urls']['apply'])->toBeNull();
+})->with([false, true]);
 
 it('file thiếu cột mã vận đơn / tiền thu hộ: báo, không cho áp dụng; không có quyền xác nhận thì bị chặn', function () {
     $file = UploadedFile::fake()->createWithContent('sai.csv', "Đơn,Số tiền khác\nGHN001,330000\n");

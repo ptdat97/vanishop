@@ -28,4 +28,13 @@ interface Reconciliations
      * @return list<string>
      */
     public function recorded(string $source, array $references): array;
+
+    /**
+     * @param  list<string>  $references
+     * @return array<string, string> trạng thái theo tham chiếu
+     */
+    public function statuses(string $source, array $references): array;
+
+    /** Chuyển một dòng lệch còn mở sang khớp. Dòng đã xử lý thủ công hoặc đã khớp trả false. */
+    public function matchOpen(string $source, string $reference, int $orderId, int $expected, int $actual, string $note): bool;
 }

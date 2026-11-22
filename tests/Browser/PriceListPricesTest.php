@@ -89,3 +89,21 @@ it('SkuPicker: mặc định hiện sản phẩm; mở rộng để chọn từn
     expect(Price::query()->where('price_list_id', $this->list->id)->pluck('variant_id')->all())->not->toContain($this->s->id)
         ->and(Price::query()->where('price_list_id', $this->list->id)->count())->toBe(3);
 });
+
+it('đóng hộp thêm SKU còn thay đổi thì hỏi lại và giữ lựa chọn nếu ở lại', function () {
+    $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices")
+        ->click('[data-add-products]')
+        ->type('input[aria-label="Tìm sản phẩm"]', $this->style->style_code)
+        ->click("[data-product=\"{$this->style->style_code}\"]")
+        ->keys('[role="dialog"]', 'Escape')
+        ->assertSee('Đóng khi còn thay đổi chưa lưu?');
+
+    $page->click('[role="alertdialog"] button[type="button"]')
+        ->assertDontSee('Đóng khi còn thay đổi chưa lưu?')
+        ->assertScript("!document.querySelector('[data-continue]').disabled", true)
+        ->keys('[role="dialog"]', 'Escape')
+        ->click('[role="alertdialog"] button[type="submit"]')
+        ->assertMissing('[data-continue]')
+        ->assertScript("document.activeElement?.matches('[data-add-products]')", true)
+        ->assertNoJavaScriptErrors();
+});

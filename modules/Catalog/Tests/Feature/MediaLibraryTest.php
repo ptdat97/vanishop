@@ -227,6 +227,19 @@ function fakeMp4(string $name, int $width, int $height): UploadedFile
     return UploadedFile::fake()->createWithContent($name, $bytes.str_repeat("\0", 2048));
 }
 
+it('đọc khung WebM từ track video ngay cả khi Segment không có kích thước cố định', function () {
+    $element = fn (string $id, string $payload): string => $id.chr(0x80 | strlen($payload)).$payload;
+    $entry = fn (int $type, int $width, int $height): string => $element("\xAE",
+        $element("\x83", chr($type)).$element("\xE0",
+            $element("\xB0", pack('n', $width)).$element("\xBA", pack('n', $height))));
+    $header = $element("\x1A\x45\xDF\xA3", $element("\x42\x82", 'webm'));
+    $tracks = $element("\x16\x54\xAE\x6B", $entry(2, 1, 1).$entry(1, 720, 1280));
+    $webm = UploadedFile::fake()->createWithContent('hero.webm', $header."\x18\x53\x80\x67\x01".str_repeat("\xFF", 7).$tracks);
+
+    [$video] = uploadTo('', [$webm]);
+    expect($video)->toMatchArray(['kind' => 'video', 'mime_type' => 'video/webm', 'width' => 720, 'height' => 1280, 'thumb_url' => null]);
+});
+
 it('video: tải lên MP4/WebM (giới hạn dung lượng riêng), đọc khung hình MP4, không có bản thu nhỏ; duyệt lọc theo loại', function () {
     [$mp4] = uploadTo('', [fakeMp4('hero.mp4', 1920, 1080)]);
     $webm = UploadedFile::fake()->createWithContent('doc.webm', "\x1A\x45\xDF\xA3\x9F\x42\x86\x81\x01\x42\xF7\x81\x01\x42\xF2\x81\x04\x42\xF3\x81\x08\x42\x82\x84webm\x42\x87\x81\x04\x42\x85\x81\x02".str_repeat("\0", 2048));

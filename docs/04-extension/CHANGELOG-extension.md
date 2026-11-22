@@ -6,6 +6,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.68 — 2026-11-22 · Extension API 1.25.0
+
+- `Reconciliations::statuses()` đọc trạng thái theo tham chiếu. `matchOpen()` chuyển dòng lệch còn mở sang khớp khi nhập lại bảng kê COD. Dòng đã khớp hoặc đã xử lý thủ công giữ trạng thái hiện tại.
+- Thư viện ảnh đọc kích thước WebM từ track video trong 4 MB đầu khi tải tệp lên.
+
 ## 0.5.67 — 2026-11-22 · Extension API 1.24.0
 
 - `CustomerProductPrices::forCustomer()` dùng bộ tính giá hiện hành để lấy giá tối thiểu theo sản phẩm cho chính khách nhận nội dung riêng.
