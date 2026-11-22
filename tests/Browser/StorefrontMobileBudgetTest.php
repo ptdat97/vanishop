@@ -4,6 +4,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\VariantImages;
+use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
@@ -232,6 +233,11 @@ it('bộ sưu tập nổi bật vừa màn hình nhỏ và dẫn tới đúng t�
         $collection->syncTranslations(['vi' => ['name' => 'Bộ sưu tập mùa hè']]);
         $collection->styles()->attach($this->product->id);
         $cover = app(MediaLibrary::class)->store(UploadedFile::fake()->image('collection.jpg', 800, 1000));
+        app(CollectionPages::class)->save($collection->id, [
+            ['type' => 'hero', 'zone' => 'banner', 'config' => ['title' => 'Bộ sưu tập mùa hè', 'image' => $cover->id]],
+            ['type' => 'rich_text', 'zone' => 'before', 'config' => ['body' => '<p>Chất liệu cho ngày nắng</p>']],
+            ['type' => 'rich_text', 'zone' => 'after', 'config' => ['body' => '<p>Gợi ý phối đồ</p>']],
+        ], [$cover->id]);
         app(PageBlocks::class)->saveHome([['type' => 'extras_featured_collection', 'config' => [
             'collection' => (string) $collection->id,
             'image' => $cover->id,
@@ -244,7 +250,15 @@ it('bộ sưu tập nổi bật vừa màn hình nhỏ và dẫn tới đúng t�
     $page->resize(1280, 844)->assertSee('Bộ sưu tập mùa hè');
     expect(mobilePageMetrics($page)['overflow'])->toBeLessThanOrEqual(0);
     $page->click('Xem bộ sưu tập')
-        ->assertPathIs('/tim-kiem')
+        ->assertPathIs('/bo-suu-tap/mua-he')
+        ->assertVisible('[data-collection-banner] img')
         ->assertVisible('[data-vani-product="'.$this->product->slug.'"]')
+        ->assertSee('Chất liệu cho ngày nắng')
+        ->assertSee('Gợi ý phối đồ')
         ->assertNoJavaScriptErrors();
+    $page->resize(320, 844);
+    $metrics = mobilePageMetrics($page);
+    expect($metrics['overflow'])->toBeLessThanOrEqual(0)
+        ->and($metrics['unsized'])->toBe([])
+        ->and($metrics['lazy_first_screen'])->toBe([]);
 });

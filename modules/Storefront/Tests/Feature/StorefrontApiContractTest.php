@@ -5,6 +5,7 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as Cu;
@@ -147,6 +148,8 @@ it('khách vãng lai: vỏ trang, catalog, địa chỉ, giỏ, checkout, đơn,
     $get('/pages/home', '/pages/home');
     $get('/categories', '/categories');
     $get('/categories/dam-vay', '/categories/{slug}');
+    T::seed(fn () => ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']));
+    $get('/collections/mua-he', '/collections/{slug}');
     $get('/brands', '/brands');
     $get("/brands/{$this->brand->slug}", '/brands/{slug}');
     $slug = $get('/products', '/products')->json('data.0.slug');
@@ -290,6 +293,7 @@ it('phản hồi lỗi khớp error.v1 với đúng mã: 401, 404, 409, 422, 400
     $cases = [
         [$this->getJson("{$this->api}/me"), '/me', 'GET', 401, 'customer.unauthenticated'],
         [$this->getJson("{$this->api}/products/khong-co"), '/products/{slug}', 'GET', 404, null],
+        [$this->getJson("{$this->api}/collections/khong-co"), '/collections/{slug}', 'GET', 404, null],
         [$this->postJson("{$this->api}/auth/social/khong-co/start", ['redirect_uri' => 'https://shop.example/x']), '/auth/social/{provider}/start', 'POST', 404, null],
         [$this->postJson("{$this->api}/auth/social/khong-co/complete"), '/auth/social/{provider}/complete', 'POST', 422, 'validation.failed'],
         [$this->postJson("{$this->api}/carts/{$cart}/lines", ['quantity' => 1], $headers), '/carts/{cart}/lines', 'POST', 422, 'validation.failed'],

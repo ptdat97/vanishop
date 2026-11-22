@@ -356,6 +356,7 @@ it('L45: mỗi cặp Blade ↔ API gọi cùng service tầng Application/Contra
 const STOREFRONT_API_READ_PAIRS = [
     'storefront.home' => ['api.storefront.v1.pages.home', 'api.storefront.v1.store.show', 'api.storefront.v1.menus.show'],
     'storefront.categories' => ['api.storefront.v1.categories.index'],
+    'storefront.collection' => ['api.storefront.v1.collections.show', 'api.storefront.v1.products.index'],
     'storefront.category' => ['api.storefront.v1.categories.show', 'api.storefront.v1.products.index'],
     'storefront.brands' => ['api.storefront.v1.brands.index'],
     'storefront.brand' => ['api.storefront.v1.brands.show', 'api.storefront.v1.products.index'],

@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.69',
+    'version' => '0.5.70',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
@@ -179,6 +179,7 @@ return [
                 'home' => '/',
                 'categories' => 'danh-muc',
                 'category' => 'danh-muc/{slug}',
+                'collection' => 'bo-suu-tap/{slug}',
                 'brands' => 'thuong-hieu',
                 'brand' => 'thuong-hieu/{slug}',
                 'search' => 'tim-kiem',
@@ -222,6 +223,7 @@ return [
                 'home' => '/',
                 'categories' => 'categories',
                 'category' => 'category/{slug}',
+                'collection' => 'collections/{slug}',
                 'brands' => 'brands',
                 'brand' => 'brands/{slug}',
                 'search' => 'search',

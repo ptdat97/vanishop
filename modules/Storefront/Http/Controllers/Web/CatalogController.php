@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Shared\Support\StoreLocale;
@@ -81,6 +82,30 @@ final class CatalogController
             'crumbs' => $crumbs,
             // Tiêu đề/mô tả/ảnh chia sẻ có dự phòng (PageMeta): meta nhập ở Admin → tên/đoạn đầu mô tả.
             'meta' => PageMeta::for($category, $category['image_url'] ?? null),
+            ...$this->listing($request),
+        ]);
+    }
+
+    public function collection(ProductListRequest $request, string $slug, CollectionPages $pages, PageBlocks $blocks, PageSeo $seo): View|RedirectResponse
+    {
+        $collection = $pages->published($slug, App::getLocale());
+        abort_if($collection === null, 404);
+        if ($collection['slug'] !== $slug) {
+            return redirect()->to(LocalizedUrls::route('storefront.collection', ['slug' => $collection['slug']] + $request->query()), 301);
+        }
+        $seo->alternates(PageAlternates::forSlugs('storefront.collection', $collection['slugs']), $collection['locales']);
+        $request->merge(['collection' => $slug]);
+        $zones = PageBlocks::collectionZones($collection['blocks']);
+        $banner = $blocks->resolve($zones['banner'])[0]['data'] ?? [];
+        unset($zones['banner']);
+        unset($collection['blocks'], $collection['status']);
+
+        return view('theme::pages.collection', [
+            'collection' => $collection,
+            'crumbs' => [['label' => $collection['name']]],
+            'meta' => PageMeta::for($collection, ($banner['imageUrl'] ?? '') ?: null),
+            'banner' => $banner,
+            'zones' => array_map($blocks->render(...), $zones),
             ...$this->listing($request),
         ]);
     }

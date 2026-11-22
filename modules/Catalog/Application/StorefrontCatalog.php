@@ -172,7 +172,7 @@ final class StorefrontCatalog implements CatalogReader
         $categoryId = $filters->categorySlug === null ? null
             : (Category::query()->whereLocalizedSlug($filters->categorySlug, $locale)->where('status', 'active')->orderBy('id')->value('id') ?? -1);
         $collectionId = $filters->collectionSlug === null ? null
-            : (ProductCollection::query()->whereLocalizedSlug($filters->collectionSlug, $locale)->where('status', 'active')->orderBy('id')->value('id') ?? -1);
+            : (ProductCollection::query()->wherePublishedSlug($filters->collectionSlug, $locale)->value('id') ?? -1);
 
         $brandIds = $filters->brandSlugs === [] ? []
             : (Brand::query()->whereIn('slug', $filters->brandSlugs)->where('status', Brand::ACTIVE)->pluck('id')->map(fn ($id): int => (int) $id)->all() ?: [-1]);

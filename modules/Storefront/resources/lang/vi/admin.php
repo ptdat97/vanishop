@@ -3,6 +3,15 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'collection_pages' => [
+        'title' => 'Nội dung bộ sưu tập :name',
+        'back' => 'Về bộ sưu tập',
+        'help' => 'Dùng một block Hero cho banner. Các block khác có thể đặt trước hoặc sau lưới sản phẩm.',
+        'zone' => 'Vị trí',
+        'banner' => 'Banner',
+        'before' => 'Trước lưới sản phẩm',
+        'after' => 'Sau lưới sản phẩm',
+    ],
     'design_home_blocks' => [
         'add_block' => 'Thêm khối',
         'block_type' => 'Loại khối',
@@ -23,6 +32,7 @@ return [
         'use_default' => 'Dùng mặc định',
         'use_default_home_page_again' => 'Dùng lại trang chủ mặc định?',
         'using_theme_s_default_home' => 'Đang dùng trang chủ mặc định của giao diện',
+        'view_page' => 'Xem trang',
     ],
     'design_menus' => [
         'add_item' => '+ Thêm mục',

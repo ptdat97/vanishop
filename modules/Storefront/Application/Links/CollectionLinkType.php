@@ -20,6 +20,6 @@ final class CollectionLinkType extends CatalogLinkType
 
     protected function url(string $slug, string $locale): string
     {
-        return LocalizedUrls::route('storefront.search', ['collection' => $slug], $locale);
+        return LocalizedUrls::route('storefront.collection', $slug, $locale);
     }
 }

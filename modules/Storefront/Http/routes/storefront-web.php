@@ -36,6 +36,7 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::get($p('home'), HomeController::class)->name('home');
                 Route::get($p('categories'), [CatalogController::class, 'categories'])->name('categories');
                 Route::get($p('category'), [CatalogController::class, 'category'])->name('category');
+                Route::get($p('collection'), [CatalogController::class, 'collection'])->name('collection');
                 Route::get($p('brands'), [CatalogController::class, 'brands'])->name('brands');
                 Route::get($p('brand'), [CatalogController::class, 'brand'])->name('brand');
                 Route::get($p('search'), [CatalogController::class, 'search'])->name('search');

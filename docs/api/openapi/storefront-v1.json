@@ -225,6 +225,25 @@
                 }
             }
         },
+        "/collections/{slug}": {
+            "get": {
+                "tags": ["Catalog"],
+                "summary": "Nội dung trang bộ sưu tập",
+                "description": "Trả tên, mô tả, slug theo locale và các vùng blocks.banner, blocks.before, blocks.after. Lấy sản phẩm bằng GET /products?collection={slug} với slug trả về.",
+                "parameters": [
+                    {"name": "slug", "in": "path", "required": true, "schema": {"type": "string"}}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Nội dung đã xuất bản",
+                        "content": {"application/json": {"schema": {"$ref": "../schemas/storefront/responses/collection.json"}}}
+                    },
+                    "404": {"$ref": "#/components/responses/NotFound"},
+                    "429": {"$ref": "#/components/responses/RateLimited"}
+                },
+                "security": [{}, {"customerBearer": []}, {"firstPartySession": []}]
+            }
+        },
         "/products": {
             "get": {
                 "tags": [

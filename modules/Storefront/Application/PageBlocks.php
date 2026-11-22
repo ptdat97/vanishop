@@ -26,6 +26,8 @@ final class PageBlocks
 {
     public const MAX_BLOCKS = 30;
 
+    public const COLLECTION_ZONES = ['banner', 'before', 'after'];
+
     private const SETTING = 'storefront.home_blocks';
 
     /** Chủ sở hữu khai báo ảnh đang dùng của các trường `media` trong khối trang chủ (Thư viện ảnh không cho xoá). */
@@ -59,6 +61,17 @@ final class PageBlocks
      * @param  list<array{type?: mixed, config?: mixed}>  $blocks
      */
     public function saveHome(array $blocks): void
+    {
+        ['blocks' => $clean, 'media_ids' => $mediaIds] = $this->validate($blocks);
+        $this->settings->set('core', self::SETTING, $clean);
+        $this->media->syncUsages(self::MEDIA_OWNER, 1, 'blocks', $mediaIds);
+    }
+
+    /**
+     * @param  list<array{type?: mixed, config?: mixed}>  $blocks
+     * @return array{blocks: list<array{type: string, config: array<string, mixed>}>, media_ids: list<int>}
+     */
+    public function validate(array $blocks): array
     {
         if (count($blocks) > self::MAX_BLOCKS) {
             throw ValidationException::withMessages(['blocks' => __('storefront::texts.page_blocks.most').self::MAX_BLOCKS.__('storefront::texts.page_blocks.blocks')]);
@@ -105,8 +118,22 @@ final class PageBlocks
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
         }
-        $this->settings->set('core', self::SETTING, $clean);
-        $this->media->syncUsages(self::MEDIA_OWNER, 1, 'blocks', $mediaIds);
+
+        return ['blocks' => $clean, 'media_ids' => $mediaIds];
+    }
+
+    /**
+     * @param  list<array{type: string, config: array<string, mixed>, zone: string}>  $blocks
+     * @return array<string, list<array{type: string, config: array<string, mixed>}>>
+     */
+    public static function collectionZones(array $blocks): array
+    {
+        $zones = array_fill_keys(self::COLLECTION_ZONES, []);
+        foreach ($blocks as $block) {
+            $zones[$block['zone']][] = ['type' => $block['type'], 'config' => $block['config']];
+        }
+
+        return $zones;
     }
 
     public function resetHome(): void
@@ -138,7 +165,7 @@ final class PageBlocks
                 }
             } catch (Throwable $exception) {
                 report($exception);
-                Log::warning('Dựng khối trang chủ lỗi, bỏ qua.', ['type' => $block['type']]);
+                Log::warning('Dựng khối storefront lỗi, bỏ qua.', ['type' => $block['type']]);
             }
         }
 
@@ -160,7 +187,7 @@ final class PageBlocks
                 $rendered[] = ['type' => $block['type'], 'html' => new HtmlString(view($types[$block['type']]->view(), $block['data'])->render())];
             } catch (Throwable $exception) {
                 report($exception);
-                Log::warning('Render khối trang chủ lỗi, bỏ qua.', ['type' => $block['type']]);
+                Log::warning('Render khối storefront lỗi, bỏ qua.', ['type' => $block['type']]);
             }
         }
 

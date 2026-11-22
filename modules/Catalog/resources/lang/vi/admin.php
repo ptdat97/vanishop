@@ -40,6 +40,7 @@ return [
         'hidden' => 'ẩn',
     ],
     'collections_form' => [
+        'edit_content' => 'Sửa trang bộ sưu tập',
         'add_collection' => 'Thêm bộ sưu tập',
         'back' => 'Quay lại',
         'delete' => 'Xoá',

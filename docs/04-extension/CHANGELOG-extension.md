@@ -6,6 +6,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.70 — 2026-11-22 · Extension API 1.26.0
+
+- Bộ sưu tập có trang storefront riêng với banner, vùng nội dung trước và sau lưới sản phẩm, cùng API đọc nội dung theo locale.
+- `vani.storefront-extras` 1.4.1 trỏ khối Bộ sưu tập nổi bật tới trang mới.
+
 ## 0.5.69 — 2026-11-22 · Extension API 1.26.0
 
 - `Inventory\Contracts\StockJournal` đọc biến động của một SKU, có thể lọc theo kho. Plugin Warehouse 1.1.0 dùng contract này cho lệnh `vani:warehouse:stock-card`.

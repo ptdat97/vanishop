@@ -28,6 +28,11 @@ Các đợt dưới đây có thể phát hành độc lập. Ưu tiên đề xu
 | 5 · Mua lại từ lịch sử đơn | Khách đã đăng nhập mở đơn cũ, chọn món muốn mua lại và xem giá hiện tại trước khi thêm giỏ. | Đề xuất hành vi mới qua Storefront Application hoặc plugin tài khoản, dùng quyền đọc đơn, dữ liệu catalog và lệnh giỏ hiện hành. Dùng snapshot cũ để nhận diện món. Định nghĩa API cùng lúc với giao diện. | Không truy cập được đơn của khách khác. Món đã gỡ hoặc hết hàng có lý do riêng. Xác nhận số lượng/giá mới, thêm đúng dòng đã chọn và không tạo đơn thanh toán tự động. |
 | 6 · Tự phục vụ sau mua | Khách nhìn thấy bước xử lý hiện tại và hành động tiếp theo trên một trang đơn, cả khi mua vãng lai. | Dùng order receipt, dữ liệu vận chuyển và order-returns sẵn có. Rà dữ liệu mốc thời gian trong DTO rồi bổ sung trình bày tiến độ giao, liên kết vận đơn và trạng thái đổi trả cho từng kiện khi có dữ liệu. | Đối chiếu một đơn giao nhiều kiện, huỷ một phần, đổi size và hoàn tiền. Hiển thị đúng lịch sử, giờ địa phương và quyền truy cập của đơn token/tài khoản. |
 
+### Nghiệm thu trang bộ sưu tập
+
+- Mở trang bộ sưu tập có sẵn để kiểm tra banner mặc định. Lưu ảnh Hero, thêm khối trước và sau lưới rồi kiểm tra thứ tự trên desktop và mobile.
+- Mở trang từ menu và khối Bộ sưu tập nổi bật. Kiểm tra đổi ngôn ngữ, lọc, sắp xếp và phân trang giữ trong bộ sưu tập. Bộ sưu tập ẩn trả 404.
+
 ### Tái cấu trúc theo đường đi của dữ liệu
 
 | Phạm vi | Thay đổi và thứ tự chuyển | Cách bảo toàn tương thích |

@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'collection_banner_rule' => 'Chỉ dùng một block Hero ở vùng banner.',
+    'collection_page_saved' => 'Đã lưu trang bộ sưu tập.',
     'menu_location_unknown' => 'Vị trí menu không có trong giao diện.',
     'sign_in_to_view_prices' => 'Vui lòng đăng nhập để xem giá và đặt hàng.',
     'sign_in_for_price' => 'Đăng nhập để xem giá',

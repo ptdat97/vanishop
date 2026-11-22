@@ -3,6 +3,15 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'collection_pages' => [
+        'title' => 'Collection content for :name',
+        'back' => 'Back to collection',
+        'help' => 'Use one Hero block as the banner. Other blocks can appear before or after the product grid.',
+        'zone' => 'Placement',
+        'banner' => 'Banner',
+        'before' => 'Before product grid',
+        'after' => 'After product grid',
+    ],
     'design_home_blocks' => [
         'add_block' => 'Add block',
         'block_type' => 'Block type',
@@ -23,6 +32,7 @@ return [
         'use_default' => 'Use default',
         'use_default_home_page_again' => 'Use the default home page again?',
         'using_theme_s_default_home' => 'Using the theme\'s default home page',
+        'view_page' => 'View page',
     ],
     'design_menus' => [
         'add_item' => '+ Add item',

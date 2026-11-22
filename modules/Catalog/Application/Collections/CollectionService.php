@@ -6,6 +6,8 @@ namespace Modules\Catalog\Application\Collections;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Contracts\CollectionPages;
+use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\Style;
@@ -16,7 +18,7 @@ use Modules\Identity\Contracts\AuditLogger;
  */
 final class CollectionService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly MediaDirectory $media) {}
 
     /**
      * @param  array{slug: string, status: string, position: int, translations: array<string, array{name: string, description?: string|null}>}  $data
@@ -61,7 +63,9 @@ final class CollectionService
     public function delete(ProductCollection $collection): void
     {
         DB::transaction(function () use ($collection): void {
+            $collection = ProductCollection::query()->lockForUpdate()->findOrFail($collection->id);
             $styles = Style::query()->whereIn('id', $collection->styles()->pluck('styles.id'))->get();
+            $this->media->releaseUsages(CollectionPages::MEDIA_OWNER, $collection->id);
             $collection->delete();
             $this->audit->record('catalog.collection.deleted', 'collection', $collection->id, ['slug' => $collection->slug]);
 

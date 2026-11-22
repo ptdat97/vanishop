@@ -6,6 +6,7 @@ namespace Modules\Catalog\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Application\AdminQueries;
@@ -77,6 +78,9 @@ final class CollectionController
         return Inertia::render('Catalog::Collections/Form', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
+            'contentUrl' => $collection !== null && Gate::allows('storefront.manage') && Route::has('admin.storefront.collection-pages.edit')
+                ? route('admin.storefront.collection-pages.edit', $collection->id)
+                : null,
             'collection' => $collection === null ? null : [
                 'id' => $collection->id,
                 'slug' => $collection->slug,

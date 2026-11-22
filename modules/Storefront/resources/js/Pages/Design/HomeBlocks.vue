@@ -11,17 +11,22 @@ import { confirmAction } from '@admin/confirm';
 import { labelOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionField, ExtensionFieldValue } from '@admin/types';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import DesignTabs from '../../Components/DesignTabs.vue';
 import RichTextEditor from '../../Components/RichTextEditor.vue';
 
 type BlockType = { type: string; label: string; fields: ExtensionField[] };
-type Block = { type: string; config: Record<string, ExtensionFieldValue> };
+type Block = { type: string; config: Record<string, ExtensionFieldValue>; zone?: string };
 
-const props = defineProps<{ types: BlockType[]; blocks: Block[]; configured: boolean; previewUrl: string }>();
+const props = defineProps<{ types: BlockType[]; blocks: Block[]; configured: boolean; previewUrl: string | null; collectionName?: string; collectionUrl?: string | null }>();
 
-const form = useForm<{ blocks: Block[] }>({ blocks: props.blocks.map((block) => ({ type: block.type, config: { ...block.config } })) });
+const form = useForm<{ blocks: Block[] }>({ blocks: props.blocks.map((block) => ({ ...block, config: { ...block.config } })) });
+const collectionPage = computed(() => props.collectionName !== undefined);
+const title = computed(() => collectionPage.value
+    ? t('storefront::admin.collection_pages.title', { name: props.collectionName ?? '' })
+    : t('storefront::admin.design_home_blocks.home_page'));
+const zones = ['banner', 'before', 'after'];
 const adding = ref(props.types[0]?.type ?? '');
 const typeOf = (type: string): BlockType | undefined => props.types.find((candidate) => candidate.type === type);
 const errors = computed(() => form.errors as Record<string, string | undefined>);
@@ -74,7 +79,8 @@ function add(): void {
     if (!type) return;
     const config: Record<string, ExtensionFieldValue> = {};
     for (const field of type.fields) config[field.key] = field.type === 'bool' ? false : null;
-    form.blocks.push({ type: type.type, config });
+    const zone = type.type === 'hero' && !form.blocks.some((block) => block.zone === 'banner') ? 'banner' : 'before';
+    form.blocks.push({ type: type.type, config, ...(collectionPage.value ? { zone } : {}) });
     expanded.value.add(form.blocks[form.blocks.length - 1]);
 }
 
@@ -90,14 +96,16 @@ async function reset(): Promise<void> {
 </script>
 
 <template>
-    <Head :title="t('storefront::admin.design_home_blocks.home_page')" />
+    <Head :title="title" />
     <p class="mb-2 text-sm text-slate-500">{{ t('storefront::admin.design_home_blocks.storefront_design') }}</p>
-    <PageHeader :title="t('storefront::admin.design_home_blocks.home_page')" :subtitle="configured ? t('storefront::admin.design_home_blocks.count_blocks', { count: form.blocks.length }) : t('storefront::admin.design_home_blocks.using_theme_s_default_home')">
-        <a :href="previewUrl" target="_blank" rel="noopener" :class="secondaryButton">Xem trang</a>
-        <button v-if="configured" type="button" :class="dangerButton" @click="reset">{{ t('storefront::admin.design_home_blocks.use_default') }}</button>
+    <PageHeader :title="title" :subtitle="collectionPage || configured ? t('storefront::admin.design_home_blocks.count_blocks', { count: form.blocks.length }) : t('storefront::admin.design_home_blocks.using_theme_s_default_home')">
+        <Link v-if="collectionUrl" :href="collectionUrl" :class="secondaryButton">{{ t('storefront::admin.collection_pages.back') }}</Link>
+        <a v-if="previewUrl" :href="previewUrl" target="_blank" rel="noopener" :class="secondaryButton">{{ t('storefront::admin.design_home_blocks.view_page') }}</a>
+        <button v-if="configured && !collectionPage" type="button" :class="dangerButton" @click="reset">{{ t('storefront::admin.design_home_blocks.use_default') }}</button>
         <button type="button" :class="primaryButton" :disabled="form.processing" @click="save">{{ t('storefront::admin.design_home_blocks.save') }}</button>
     </PageHeader>
-    <DesignTabs active="home" />
+    <DesignTabs v-if="!collectionPage" active="home" />
+    <p v-else class="mb-4 text-sm text-slate-600">{{ t('storefront::admin.collection_pages.help') }}</p>
 
     <div class="space-y-4">
         <div v-if="form.blocks.length > 1" class="flex items-center justify-between text-sm text-slate-500">
@@ -118,6 +126,7 @@ async function reset(): Promise<void> {
                         <path fill-rule="evenodd" d="M7.2 14.8a.75.75 0 0 1 0-1.06L10.94 10 7.2 6.26a.75.75 0 1 1 1.06-1.06l4.27 4.27a.75.75 0 0 1 0 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd" />
                     </svg>
                     <span class="shrink-0 font-semibold">{{ index + 1 }}. {{ typeOf(block.type)?.label ?? t('storefront::admin.design_home_blocks.type_plugin_disabled', { type: block.type }) }}</span>
+                    <span v-if="collectionPage && block.zone" class="truncate text-sm text-slate-500">{{ t(`storefront::admin.collection_pages.${block.zone}`) }}</span>
                     <span v-if="!isExpanded(block)" class="truncate text-sm text-slate-500">{{ summary(block) }}</span>
                     <span v-if="!isExpanded(block) && Object.keys(errors).some((key) => key.startsWith(`blocks.${index}.`))" class="shrink-0 text-xs font-medium text-red-600">{{ t('storefront::admin.design_home_blocks.has_errors') }}</span>
                 </button>
@@ -126,6 +135,9 @@ async function reset(): Promise<void> {
             <div v-if="isExpanded(block)" class="border-t border-slate-100 p-4">
             <p v-if="errors[`blocks.${index}.type`]" class="mb-2 text-sm text-red-600">{{ errors[`blocks.${index}.type`] }}</p>
             <div class="grid gap-3 md:grid-cols-2">
+                <FormField v-if="collectionPage" :label="t('storefront::admin.collection_pages.zone')" :error="errors[`blocks.${index}.zone`]">
+                    <Select v-model="block.zone" :options="zones.filter((zone) => zone !== 'banner' || block.type === 'hero').map((zone) => ({ value: zone, label: t(`storefront::admin.collection_pages.${zone}`) }))" />
+                </FormField>
                 <FormField v-for="field in typeOf(block.type)?.fields ?? []" :key="field.key" :label="field.label + (field.required ? ' *' : '')" :hint="field.help ?? undefined" :error="errors[`blocks.${index}.config.${field.key}`]">
                     <RichTextEditor v-if="block.type === 'rich_text' && field.key === 'body'" v-model="block.config[field.key] as string | null" />
                     <textarea v-else-if="field.type === 'text'" v-model="block.config[field.key] as string | null" :class="inputClass" rows="3" />

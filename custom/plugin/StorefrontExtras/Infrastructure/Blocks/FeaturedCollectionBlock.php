@@ -51,7 +51,7 @@ final class FeaturedCollectionBlock implements StorefrontBlock
 
         return [
             'title' => $collection['name'] ?? '',
-            'url' => $collection === null ? null : LocalizedUrls::route('storefront.search', ['collection' => $collection['slug']], $locale),
+            'url' => $collection === null ? null : LocalizedUrls::route('storefront.collection', $collection['slug'], $locale),
             'description' => trim((string) ($config['description'] ?? '')),
             'image' => $image,
             'alt' => trim((string) ($config['image_alt'] ?? '')),

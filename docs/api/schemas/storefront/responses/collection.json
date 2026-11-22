@@ -1,0 +1,51 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/responses/collection.json",
+    "title": "GET /collections/{slug}",
+    "type": "object",
+    "required": ["data"],
+    "properties": {
+        "data": {
+            "type": "object",
+            "required": ["id", "slug", "slugs", "locales", "name", "description", "blocks"],
+            "properties": {
+                "id": {"type": "integer"},
+                "slug": {"type": "string"},
+                "slugs": {"type": "object", "additionalProperties": {"type": "string"}},
+                "locales": {"type": "array", "items": {"type": "string"}},
+                "name": {"type": "string"},
+                "description": {"type": ["string", "null"]},
+                "blocks": {
+                    "type": "object",
+                    "required": ["banner", "before", "after"],
+                    "properties": {
+                        "banner": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["type", "data"],
+                                "properties": {"type": {"type": "string", "enum": ["hero"]}, "data": {"type": "object"}}
+                            }
+                        },
+                        "before": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["type", "data"],
+                                "properties": {"type": {"type": "string"}, "data": {"type": "object"}}
+                            }
+                        },
+                        "after": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["type", "data"],
+                                "properties": {"type": {"type": "string"}, "data": {"type": "object"}}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -15,6 +15,7 @@ import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { CatalogLabels, NavItem, Translations } from '../../types';
 
 const props = defineProps<{
+    contentUrl: string | null;
     nav: NavItem[];
     labels: CatalogLabels;
     collection: null | { id: number; slug: string; status: string; position: number; translations: Translations<'name' | 'slug' | 'description'>; style_codes: string };
@@ -52,6 +53,7 @@ async function destroy(): Promise<void> {
     <PageHeader :title="collection ? t('catalog::admin.collections_form.edit_collection') : t('catalog::admin.collections_form.add_collection')">
         <Link :href="baseUrl" :class="secondaryButton">{{ t('catalog::admin.collections_form.back') }}</Link>
         <button v-if="collection" type="button" :class="dangerButton" @click="destroy">{{ t('catalog::admin.collections_form.delete') }}</button>
+        <Link v-if="contentUrl" :href="contentUrl" :class="secondaryButton">{{ t('catalog::admin.collections_form.edit_content') }}</Link>
     </PageHeader>
 
     <form class="grid max-w-4xl gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2" @submit.prevent="submit">

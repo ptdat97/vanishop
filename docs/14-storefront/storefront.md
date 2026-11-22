@@ -98,7 +98,14 @@ Admin → Giao diện → Trang chủ lưu danh sách block vào `core.storefron
 
 StorefrontExtras dùng Swiper chung của theme cho slideshow từ hai ảnh trở lên. Khoảng chuyển lấy từ cấu hình, rời focus/rê chuột mới chạy tiếp và tắt tự chuyển khi người dùng chọn giảm chuyển động. Slide đầu ưu tiên tải, ảnh sau tải lười và dải ảnh cuộn ngang khi thư viện chưa tải được. Lookbook render các liên kết được đánh số trên ảnh và danh sách tên sản phẩm tương ứng bên dưới.
 
-StorefrontExtras 1.4.0 có block `extras_featured_collection` tại Admin → Giao diện → Trang chủ → **Bộ sưu tập nổi bật**. Chọn bộ sưu tập trong danh sách tối đa 200 mục và thêm ảnh từ Thư viện nếu cần. Block dùng tên và slug theo locale, ảnh responsive và hai thẻ sản phẩm đầu từ catalog. Bộ sưu tập ẩn hoặc hết sản phẩm hiển thị sẽ bỏ qua block. Bản giới thiệu và mô tả ảnh là nội dung cấu hình của block.
+StorefrontExtras có block `extras_featured_collection` tại Admin → Giao diện → Trang chủ → **Bộ sưu tập nổi bật**. Chọn bộ sưu tập trong danh sách tối đa 200 mục và thêm ảnh từ Thư viện nếu cần. Block dùng tên và slug theo locale, ảnh responsive và hai thẻ sản phẩm đầu từ catalog. Bộ sưu tập ẩn hoặc hết sản phẩm hiển thị sẽ bỏ qua block. Từ 1.4.1, nút xem bộ sưu tập dẫn tới trang riêng.
+
+### Trang bộ sưu tập
+
+- Mở bộ sưu tập đã lưu trong Admin → Catalog → Bộ sưu tập → **Nội dung trang**. Biên tập nội dung cần quyền `storefront.manage`.
+- Vùng **Banner** nhận một khối Hero để đặt ảnh, tiêu đề, mô tả ngắn và nút. Khi chưa cấu hình Hero, banner hiển thị tên và mô tả bộ sưu tập trên nền mặc định, kèm nút cuộn tới lưới sản phẩm.
+- Vùng **Trước lưới sản phẩm** và **Sau lưới sản phẩm** nhận nhiều khối và dùng thứ tự kéo thả trong từng vùng. Có thể dùng Rich Text, Lookbook hoặc khối từ StorefrontExtras khi plugin đang bật. Cấu hình khối dùng chung giữa các ngôn ngữ.
+- Trang công khai ở `/bo-suu-tap/{slug}` và `/en/collections/{slug}`. Bộ lọc và phân trang giữ phạm vi bộ sưu tập. Storefront API `GET /collections/{slug}` trả ba vùng đã phân giải, còn `GET /products?collection={slug}` trả sản phẩm. URL tìm kiếm cũ với tham số `collection` vẫn truy cập được.
 
 ## 3a. URL theo ngôn ngữ
 
@@ -123,7 +130,7 @@ StorefrontExtras 1.4.0 có block `extras_featured_collection` tại Admin → Gi
 
 > **Implemented** (Core 0.3.58, [ADR-040](../19-adr/ADR-040-typed-links-menus.md)).
 
-- **Link có kiểu** `LinkTarget {type, value, label?}` phân giải lúc render bằng `LinkResolver` (URL + nhãn theo ngôn ngữ; đối tượng đã ẩn/xoá → bỏ). Loại Core: `category`, `collection` (→ `/tim-kiem?collection=`), `brand`, `product`, `route` (trang công khai cho phép), `url` (`/…`, `http(s)://`, `mailto:`, `tel:`). Plugin thêm loại qua `LinkType` (vd. `vani.cms`: `page`, `article`).
+- **Link có kiểu** `LinkTarget {type, value, label?}` phân giải lúc render bằng `LinkResolver` (URL + nhãn theo ngôn ngữ; đối tượng đã ẩn/xoá → bỏ). Loại Core: `category`, `collection` (→ trang bộ sưu tập), `brand`, `product`, `route` (trang công khai cho phép), `url` (`/…`, `http(s)://`, `mailto:`, `tel:`). Plugin thêm loại qua `LinkType` (vd. `vani.cms`: `page`, `article`).
 - **Vị trí menu** do `theme.json` khai báo (`menus`); `vani-base`: `header` 3 cấp (cấp 2–3 mở khi rê chuột/focus), `mobile` 3 cấp (mặc định dùng menu `header`), `footer_1..4` 1 cấp. Vị trí chưa xuất bản → link mặc định của theme.
 - **Admin → Giao diện → Menu** (quyền `storefront.manage`): cây theo vị trí, sắp bằng nút ↑ ↓ ← →; mỗi mục có link, nhãn theo ngôn ngữ, huy hiệu Mới/Sale, ảnh (cấp 1), bật/tắt, khung giờ hiển thị. Lưu nháp → Xuất bản; bỏ nháp; khôi phục 10 bản xuất bản trước. Lưu ở `core.storefront.menu.<vị trí>`.
 - Theme render: `$menus->items('header', app()->getLocale())` (layout) → `list<{label, url|null, badge, image_url, children}>` hoặc `null` (chưa xuất bản). Partial `theme::partials.menu` (ngang, nhiều cấp), `theme::partials.menu-list` (dọc).

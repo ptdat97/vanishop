@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Storefront\Http\Controllers\Admin\CollectionPageController;
 use Modules\Storefront\Http\Controllers\Admin\HomeBlocksController;
 use Modules\Storefront\Http\Controllers\Admin\MaintenancePreviewController;
 use Modules\Storefront\Http\Controllers\Admin\MenuController;
@@ -10,6 +11,9 @@ Route::get('home-blocks', [HomeBlocksController::class, 'edit'])->name('home-blo
 Route::put('home-blocks', [HomeBlocksController::class, 'update'])->name('home-blocks.update');
 Route::delete('home-blocks', [HomeBlocksController::class, 'reset'])->name('home-blocks.reset');
 Route::get('maintenance-preview', MaintenancePreviewController::class)->name('maintenance.preview');
+
+Route::get('collection-pages/{collection}', [CollectionPageController::class, 'edit'])->whereNumber('collection')->name('collection-pages.edit');
+Route::put('collection-pages/{collection}', [CollectionPageController::class, 'update'])->whereNumber('collection')->name('collection-pages.update');
 
 Route::get('menus', [MenuController::class, 'edit'])->name('menus.edit');
 Route::get('menus/links', [MenuController::class, 'links'])->name('menus.links');

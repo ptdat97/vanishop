@@ -219,7 +219,7 @@ it('bộ sưu tập nổi bật dùng đúng locale, ảnh và thẻ sản phẩ
         ->assertSee('srcset="'.$cover->srcset().'"', false)
         ->assertSee('<strong>Phối đồ mùa hè</strong>')->assertDontSee('<strong>Phối đồ mùa hè</strong>', false)
         ->assertSee('data-vani-product="'.$this->s->style->slug.'"', false);
-    $this->get('/en')->assertOk()->assertSee('Summer edit')->assertSee('/en/search?collection=summer-edit');
+    $this->get('/en')->assertOk()->assertSee('Summer edit')->assertSee('/en/collections/summer-edit');
     $this->getJson('/api/storefront/v1/pages/home', ['X-Vani-Locale' => 'en'])->assertOk()
         ->assertJsonPath('data.0.data.title', 'Summer edit')
         ->assertJsonCount(1, 'data.0.data.products')

@@ -7,6 +7,7 @@ namespace Modules\Storefront\Http\Controllers\Web;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Extension\Contracts\Extensions;
@@ -40,9 +41,9 @@ final class SeoController
         return response(implode("\n", $lines)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
-    public function sitemap(CatalogReader $catalog, Extensions $extensions): Response
+    public function sitemap(CatalogReader $catalog, CollectionPages $collections, Extensions $extensions): Response
     {
-        $files = $this->files($catalog, $extensions);
+        $files = $this->files($catalog, $collections, $extensions);
         if (count($files) === 1) {
             return $this->xml($files[0]);
         }
@@ -55,9 +56,9 @@ final class SeoController
         return $this->xml('<?xml version="1.0" encoding="UTF-8"?>'."\n".'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.$body.'</sitemapindex>'."\n");
     }
 
-    public function sitemapPage(int $page, CatalogReader $catalog, Extensions $extensions): Response
+    public function sitemapPage(int $page, CatalogReader $catalog, CollectionPages $collections, Extensions $extensions): Response
     {
-        $files = $this->files($catalog, $extensions);
+        $files = $this->files($catalog, $collections, $extensions);
         abort_unless(count($files) > 1 && isset($files[$page - 1]), 404);
 
         return $this->xml($files[$page - 1]);
@@ -66,9 +67,9 @@ final class SeoController
     /**
      * @return list<string> XML từng file sitemap
      */
-    private function files(CatalogReader $catalog, Extensions $extensions): array
+    private function files(CatalogReader $catalog, CollectionPages $collections, Extensions $extensions): array
     {
-        return Cache::remember('vani:sitemap:files', 3600, fn (): array => $this->build($catalog, $extensions));
+        return Cache::remember('vani:sitemap:files', 3600, fn (): array => $this->build($catalog, $collections, $extensions));
     }
 
     private function xml(string $xml): Response
@@ -82,7 +83,7 @@ final class SeoController
      *
      * @return list<string>
      */
-    private function build(CatalogReader $catalog, Extensions $extensions): array
+    private function build(CatalogReader $catalog, CollectionPages $collections, Extensions $extensions): array
     {
         $locales = StoreLocale::supported();
         $default = StoreLocale::default();
@@ -99,6 +100,9 @@ final class SeoController
             }
         };
         $walk($catalog->categoryTree($default));
+        foreach ($collections->sitemapSlugs(max(0, self::MAX_URLS - count($groups))) as $collection) {
+            $groups[] = array_intersect_key(PageAlternates::forSlugs('storefront.collection', $collection['slugs']), array_flip($collection['locales']));
+        }
         foreach ($catalog->brands() as $brand) {
             $groups[] = $all('storefront.brand', $brand['slug']);
         }

@@ -40,6 +40,7 @@ return [
         'hidden' => 'hidden',
     ],
     'collections_form' => [
+        'edit_content' => 'Edit collection page',
         'add_collection' => 'Add collection',
         'back' => 'Back',
         'delete' => 'Delete',

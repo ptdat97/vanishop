@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.65
+Storefront API v1 — VaniShop 0.5.70
 GET /address/provinces security[]
   200
     $: object
@@ -1148,6 +1148,44 @@ POST /checkout/{cart}/quote security[cartToken,customerBearer,firstPartySession]
     $.error.details: object|array optional
     $.error.message: string
   422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /collections/{slug} security[none,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.blocks: object
+    $.data.blocks.after: array
+    $.data.blocks.after[]: object
+    $.data.blocks.after[].data: object
+    $.data.blocks.after[].type: string
+    $.data.blocks.banner: array
+    $.data.blocks.banner[]: object
+    $.data.blocks.banner[].data: object
+    $.data.blocks.banner[].type: string enum[hero]
+    $.data.blocks.before: array
+    $.data.blocks.before[]: object
+    $.data.blocks.before[].data: object
+    $.data.blocks.before[].type: string
+    $.data.description: string|null
+    $.data.id: integer
+    $.data.locales: array
+    $.data.locales[]: string
+    $.data.name: string
+    $.data.slug: string
+    $.data.slugs: object
+  404
     $: object closed
     $.error: object closed
     $.error.code: string

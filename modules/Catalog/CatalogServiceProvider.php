@@ -11,6 +11,7 @@ use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
 use Modules\Catalog\Application\Collections\EloquentCollectionDirectory;
+use Modules\Catalog\Application\Collections\EloquentCollectionPages;
 use Modules\Catalog\Application\EloquentCatalogLookup;
 use Modules\Catalog\Application\Media\EloquentMediaDirectory;
 use Modules\Catalog\Application\Media\EloquentMediaUrls;
@@ -28,6 +29,7 @@ use Modules\Catalog\Contracts\CatalogImporter;
 use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\CollectionDirectory;
+use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Contracts\Data\DefaultWeight;
 use Modules\Catalog\Contracts\ImageFormat;
 use Modules\Catalog\Contracts\ListPrices;
@@ -82,6 +84,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
         $this->app->bind(ListPrices::class, StyleListPrices::class);
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
+        $this->app->bind(CollectionPages::class, EloquentCollectionPages::class);
         $this->app->bind(CatalogLookup::class, EloquentCatalogLookup::class);
         // Định dạng ảnh thu nhỏ (WebP/AVIF…) là plugin (vani.media-webp); không có → giữ định dạng gốc.
         $this->app->make(Extensions::class)->kindContract('image_format', ImageFormat::TAG);
