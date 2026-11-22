@@ -9,6 +9,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\App;
 use JsonSerializable;
+use Modules\Storefront\Application\Builder\BuilderEngine;
 use Modules\Storefront\Application\Menus\MenuPresenter;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Application\StoreProfile;
@@ -42,9 +43,9 @@ final class StoreController
      * dữ liệu view của khối trên Blade (HTML đã làm sạch ở dạng chuỗi, vd. `bodyHtml`). Chưa cấu hình → `data: null`,
      * `meta.configured: false` (client dùng trang chủ mặc định của mình).
      */
-    public function home(PageBlocks $blocks): JsonResponse
+    public function home(BuilderEngine $builder, PageBlocks $blocks): JsonResponse
     {
-        $configured = $blocks->home();
+        $configured = $builder->zone(BuilderEngine::HOME, 'main');
 
         return response()->json([
             'data' => $configured === null ? null : array_map(fn (array $block): array => ['type' => $block['type'], 'data' => self::json($block['data'])], $blocks->resolve($configured)),

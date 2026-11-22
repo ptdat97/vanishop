@@ -3,14 +3,14 @@ import { t } from '@admin/i18n';
 import { Link } from '@inertiajs/vue3';
 
 /** Chuyển giữa các màn hình của Admin → Giao diện. */
-defineProps<{ active: 'home' | 'menus' | 'theme-settings' }>();
+defineProps<{ active: 'builder' | 'menus' | 'theme-settings' }>();
 
 const tabs = [
-    { key: 'home', label: t('storefront::admin.design_tabs.home_page'), route: 'home-blocks' },
+    { key: 'builder', label: t('storefront::admin.design_tabs.builder'), route: 'builder/home' },
     { key: 'menus', label: 'Menu', route: 'menus' },
     { key: 'theme-settings', label: t('storefront::admin.design_tabs.header_footer'), route: 'theme-settings' },
 ] as const;
-const base = window.location.pathname.replace(/\/(home-blocks|menus|theme-settings)(\/.*)?$/, '');
+const base = window.location.pathname.replace(/\/(builder|menus|theme-settings)(\/.*)?$/, '');
 </script>
 
 <template>

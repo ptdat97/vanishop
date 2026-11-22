@@ -3,6 +3,31 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'builder' => [
+        'surfaces' => [
+            'home' => 'Home page',
+            'product' => 'Product page',
+            'listing' => 'Product listings',
+            'cart' => 'Cart',
+            'brands' => 'Brands',
+        ],
+        'zones' => [
+            'home_main' => 'Home page body',
+            'pdp_after_details' => 'After product description',
+            'pdp_after_related_products' => 'End of product page',
+            'plp_before_listing' => 'Above product grid',
+            'plp_after_listing' => 'Below product grid',
+            'plp_empty' => 'When no products match',
+            'cart_empty' => 'When the cart is empty',
+            'brands_before_list' => 'Above brand list',
+            'brands_after_list' => 'Below brand list',
+        ],
+        'surface_nav' => 'Edited page',
+        'not_configured' => 'No blocks yet',
+        'slot_help' => 'Blocks show on every page with this position, alongside plugin content placed there.',
+        'reset' => 'Clear configuration',
+        'reset_title' => 'Remove all blocks from this page?',
+    ],
     'collection_pages' => [
         'title' => 'Collection content for :name',
         'back' => 'Back to collection',
@@ -61,6 +86,7 @@ return [
         'unsaved_changes' => 'Unsaved changes',
     ],
     'design_tabs' => [
+        'builder' => 'Page content',
         'header_footer' => 'Header & footer',
         'home_page' => 'Home page',
         'storefront_design' => 'Storefront design',

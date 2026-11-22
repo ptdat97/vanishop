@@ -54,7 +54,7 @@ describe('bảo trì', function () {
 
     it('nhân viên xem trước qua Admin: cookie có chữ ký, xem bình thường nhưng không cache công khai; có audit', function () {
         $staff = StaffUser::factory()->withPermissions(['admin.access', 'storefront.manage'])->create();
-        $this->actingAs($staff, 'staff')->get(route('admin.storefront.home-blocks.edit'))->assertOk()
+        $this->actingAs($staff, 'staff')->get(route('admin.storefront.builder.edit', 'home'))->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('previewUrl', route('admin.storefront.maintenance.preview')));
 
         $cookie = collect($this->get(route('admin.storefront.maintenance.preview'))->assertRedirect(route('storefront.home'))->headers->getCookies())

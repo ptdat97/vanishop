@@ -25,6 +25,12 @@ use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
+use Modules\Storefront\Application\Builder\BuilderEngine;
+use Modules\Storefront\Application\Builder\Surfaces\BrandsSurface;
+use Modules\Storefront\Application\Builder\Surfaces\CartSurface;
+use Modules\Storefront\Application\Builder\Surfaces\HomeSurface;
+use Modules\Storefront\Application\Builder\Surfaces\ListingSurface;
+use Modules\Storefront\Application\Builder\Surfaces\ProductPageSurface;
 use Modules\Storefront\Application\Links\BrandLinkType;
 use Modules\Storefront\Application\Links\CategoryLinkType;
 use Modules\Storefront\Application\Links\CollectionLinkType;
@@ -42,6 +48,7 @@ use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Application\Theme\ThemeTranslationLoader;
+use Modules\Storefront\Contracts\BuilderSurface;
 use Modules\Storefront\Contracts\CustomerProductPrices;
 use Modules\Storefront\Contracts\CustomerSignIn;
 use Modules\Storefront\Contracts\LinkResolver;
@@ -79,6 +86,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        $this->app->scoped(BuilderEngine::class);
         $this->app->singleton(StorefrontRouteMiddleware::class, fn (): StorefrontRouteMiddleware => new StorefrontRouteMiddleware(
             api: ['api', 'vani.first-party-session', 'throttle:storefront-api', 'vani.storefront-context', 'vani.maintenance'],
             page: ['web', 'vani.storefront-context:{locale}', 'vani.customer-session', 'vani.theme', 'vani.maintenance'],
@@ -108,6 +116,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     public function boot(Router $router, PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class], StorefrontBlock::TAG);
+        $this->app->make(Extensions::class)->tag([HomeSurface::class, ProductPageSurface::class, ListingSurface::class, CartSurface::class, BrandsSurface::class], BuilderSurface::TAG);
         $this->app->make(Extensions::class)->tag([CategoryLinkType::class, CollectionLinkType::class, BrandLinkType::class, ProductLinkType::class, RouteLinkType::class, UrlLinkType::class], LinkType::TAG);
         $permissions->register('storefront.manage', 'storefront::texts.storefront_service_provider.edit_storefront_design_home_page', [PermissionRegistry::PRESET_CONTENT]);
         $navigation->group('content', 'storefront::texts.storefront_service_provider.content_design', 590);

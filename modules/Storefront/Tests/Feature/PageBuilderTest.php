@@ -13,6 +13,7 @@ use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
+use Modules\Storefront\Application\Builder\BuilderEngine;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Testing\StorefrontBlockContract;
@@ -28,7 +29,7 @@ StorefrontBlockContract::define('core rich_text', fn () => app(RichTextBlock::cl
 beforeEach(function () {
     ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'storefront.manage'])->create(), 'staff');
-    $this->url = '/admin/storefront/home-blocks';
+    $this->url = '/admin/storefront/builder/home';
 });
 
 it('chưa cấu hình → trang chủ mặc định; cấu hình khối → trang chủ render đúng thứ tự, escape nội dung, chặn link javascript:', function () {
@@ -44,7 +45,7 @@ it('chưa cấu hình → trang chủ mặc định; cấu hình khối → tran
     expect($html)->toContain('Bộ sưu tập Hè')->toContain('Đầm lụa')->toContain('&lt;script&gt;')
         ->not->toContain('javascript:alert')
         ->and(strpos($html, 'data-block="hero"'))->toBeLessThan(strpos($html, 'data-block="product_grid"'))
-        ->and(AuditLog::query()->where('action', 'storefront.home_blocks_updated')->exists())->toBeTrue();
+        ->and(AuditLog::query()->where('action', 'storefront.builder_updated')->exists())->toBeTrue();
 });
 
 it('renders formatted rich text safely and rejects documents over the character limit', function () {
@@ -81,7 +82,7 @@ it('validate theo fields của từng loại; loại không có bị từ chối
     $this->put($this->url, ['blocks' => [['type' => 'khong_co', 'config' => []]]])->assertSessionHasErrors('blocks.0.type');
 
     $this->put($this->url, ['blocks' => [['type' => 'brand_grid', 'config' => ['title' => 'TH', 'la' => 'x']]]])->assertSessionHasNoErrors();
-    $this->get($this->url)->assertInertia(fn (Assert $page) => $page->component('Storefront::Design/HomeBlocks')
+    $this->get($this->url)->assertInertia(fn (Assert $page) => $page->component('Storefront::Design/Builder')
         ->where('blocks', [['type' => 'brand_grid', 'config' => ['title' => 'TH']]])->where('configured', true));
 
     $this->delete($this->url)->assertSessionHasNoErrors();
@@ -133,11 +134,11 @@ it('khối có trường ảnh (media): ảnh Thư viện ảnh có srcset, đư
     $this->put($this->url, ['blocks' => [['type' => 'hero', 'config' => ['title' => 'Hè', 'image' => 'abc']]]])->assertSessionHasErrors('blocks.0.config.image');
     $this->put($this->url, ['blocks' => [['type' => 'hero', 'config' => ['title' => 'Hè', 'image' => $media->id]]]])->assertSessionHasNoErrors();
 
-    expect(DB::table('mediables')->where(['media_id' => $media->id, 'mediable_type' => 'storefront.home'])->exists())->toBeTrue();
+    expect(DB::table('mediables')->where(['media_id' => $media->id, 'mediable_type' => 'storefront.builder', 'role' => 'home'])->exists())->toBeTrue();
     $html = $this->get('/')->assertOk()->getContent();
     expect($html)->toContain('srcset="'.e($media->srcset()).'"')->toContain('fetchpriority="high"');
 
-    app(PageBlocks::class)->resetHome();
+    app(BuilderEngine::class)->reset(BuilderEngine::HOME);
     expect(DB::table('mediables')->where('media_id', $media->id)->exists())->toBeFalse();
 });
 
@@ -169,14 +170,16 @@ it('migration chuyển URL ảnh cũ của khối sang id Thư viện ảnh (b�
     ]);
 
     (require base_path('modules/Storefront/Persistence/Database/migrations/2026_11_06_000300_home_block_images_to_media.php'))->up();
+    (require base_path('modules/Storefront/Persistence/Database/migrations/2026_11_22_000100_home_blocks_to_builder_engine.php'))->up();
     app()->forgetInstance(Settings::class);
-    $blocks = app(PageBlocks::class)->home();
+    app()->forgetScopedInstances();
+    $blocks = app(BuilderEngine::class)->blocks(BuilderEngine::HOME);
 
     expect($blocks[0]['config'])->toBe(['title' => 'Hè', 'image' => $hero->id])
         ->and($blocks[2]['config'])->toBe(['title' => 'Ngoài', 'image_url' => 'https://cdn.khac.test/a.jpg'])
         ->and($blocks[3]['config'])->toBe(['title' => 'Gốc', 'image' => $slide->id])
         ->and($blocks[4]['config'])->toBe(['layout' => '2', 'cell_1_title' => 'A', 'cell_1_media' => $hero->id, 'cell_2_media' => $slide->id])
-        ->and(DB::table('mediables')->where('mediable_type', 'storefront.home')->pluck('media_id')->sort()->values()->all())->toBe(collect([$hero->id, $slide->id])->sort()->values()->all());
+        ->and(DB::table('mediables')->where(['mediable_type' => 'storefront.builder', 'role' => 'home'])->pluck('media_id')->sort()->values()->all())->toBe(collect([$hero->id, $slide->id])->sort()->values()->all());
     // Cấu hình cũ còn URL ngoài vẫn hiện.
     $this->get('/')->assertOk()->assertSee('https://cdn.khac.test/a.jpg', false);
 });

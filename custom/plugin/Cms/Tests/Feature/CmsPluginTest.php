@@ -13,6 +13,7 @@ use Modules\Extension\Testing\StorefrontApiContract as Api;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Storefront\Application\Builder\BuilderEngine;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Testing\LinkTypeContract;
 use Modules\Storefront\Testing\SitemapProviderContract;
@@ -213,7 +214,7 @@ it('khối "Bài viết mới" cho page builder trang chủ', function () {
     $blocks = app(PageBlocks::class);
     expect(array_keys($blocks->types()))->toContain('cms_latest_posts');
 
-    $blocks->saveHome([['type' => 'cms_latest_posts', 'config' => ['title' => 'Góc thời trang', 'limit' => 3]]]);
+    app(BuilderEngine::class)->save(BuilderEngine::HOME, [['type' => 'cms_latest_posts', 'config' => ['title' => 'Góc thời trang', 'limit' => 3]]]);
     $this->get('/')->assertOk()->assertSee('Góc thời trang')->assertSee('Bộ sưu tập thu');
 });
 

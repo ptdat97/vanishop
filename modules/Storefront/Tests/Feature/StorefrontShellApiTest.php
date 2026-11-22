@@ -69,7 +69,7 @@ it('GET /menus/{location}: menu đã xuất bản giống hệt dữ liệu layo
 it('GET /pages/home: chưa cấu hình → null; có khối → [{type, data}] theo thứ tự, HTML đã làm sạch ở dạng chuỗi, khối lỗi bị bỏ', function () {
     $this->getJson("{$this->api}/pages/home")->assertOk()->assertJsonPath('data', null)->assertJsonPath('meta.configured', false);
 
-    $this->put('/admin/storefront/home-blocks', ['blocks' => [
+    $this->put('/admin/storefront/builder/home', ['blocks' => [
         ['type' => 'hero', 'config' => ['title' => 'Bộ sưu tập Hè', 'link_label' => 'Mua ngay', 'link_url' => 'javascript:alert(1)']],
         ['type' => 'rich_text', 'config' => ['body' => '<script>alert(1)</script>Miễn phí giao']],
         ['type' => 'product_grid', 'config' => ['title' => 'Bán chạy', 'source' => 'brand', 'slug' => $this->brand->slug, 'limit' => 4]],

@@ -3,6 +3,31 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'builder' => [
+        'surfaces' => [
+            'home' => 'Trang chủ',
+            'product' => 'Trang sản phẩm',
+            'listing' => 'Danh sách sản phẩm',
+            'cart' => 'Giỏ hàng',
+            'brands' => 'Thương hiệu',
+        ],
+        'zones' => [
+            'home_main' => 'Thân trang chủ',
+            'pdp_after_details' => 'Sau mô tả sản phẩm',
+            'pdp_after_related_products' => 'Cuối trang sản phẩm',
+            'plp_before_listing' => 'Trên lưới sản phẩm',
+            'plp_after_listing' => 'Dưới lưới sản phẩm',
+            'plp_empty' => 'Khi không có sản phẩm',
+            'cart_empty' => 'Khi giỏ hàng trống',
+            'brands_before_list' => 'Trên danh sách thương hiệu',
+            'brands_after_list' => 'Dưới danh sách thương hiệu',
+        ],
+        'surface_nav' => 'Trang được biên tập',
+        'not_configured' => 'Chưa có block nào',
+        'slot_help' => 'Block hiện trên mọi trang có vị trí này, cùng nội dung plugin đặt ở đó.',
+        'reset' => 'Xoá cấu hình',
+        'reset_title' => 'Xoá toàn bộ block của trang này?',
+    ],
     'collection_pages' => [
         'title' => 'Nội dung bộ sưu tập :name',
         'back' => 'Về bộ sưu tập',
@@ -61,6 +86,7 @@ return [
         'unsaved_changes' => 'Có thay đổi chưa lưu',
     ],
     'design_tabs' => [
+        'builder' => 'Nội dung trang',
         'header_footer' => 'Đầu & chân trang',
         'home_page' => 'Trang chủ',
         'storefront_design' => 'Giao diện',

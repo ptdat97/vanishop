@@ -194,7 +194,7 @@ it('khối trang chủ của plugin: thêm qua Admin, hiện trên trang chủ; 
     CheckoutTestHelpers::store();
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'storefront.manage'])->create(), 'staff');
 
-    $this->put('/admin/storefront/home-blocks', ['blocks' => [['type' => 'hello_banner', 'config' => ['message' => 'Chào mừng!']], ['type' => 'rich_text', 'config' => ['body' => 'Khối Core']]]])->assertSessionHasNoErrors();
+    $this->put('/admin/storefront/builder/home', ['blocks' => [['type' => 'hello_banner', 'config' => ['message' => 'Chào mừng!']], ['type' => 'rich_text', 'config' => ['body' => 'Khối Core']]]])->assertSessionHasNoErrors();
     $this->get('/')->assertSee('Chào mừng!')->assertSee('Khối Core');
 
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable('vani.hello-world'));

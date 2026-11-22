@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Modules\Storefront\Application\Builder\BuilderEngine;
 use Modules\Storefront\Application\Menus\MenuRepository;
-use Modules\Storefront\Application\PageBlocks;
 
 /*
 | Dữ liệu demo toàn dự án (database/seeders/DemoSeeder — gộp từ plugin vani.demo-catalog cũ, 2026-11-05).
@@ -88,7 +88,8 @@ it('DemoSeeder dựng cả cửa hàng (catalog có ảnh, kho, nội dung, tran
         ->and(DB::table('plg_lookbooks')->count())->toBeGreaterThan(0)
         ->and(DB::table('plg_size_charts')->where('is_default', true)->count())->toBe(1)
         ->and(DB::table('plg_cms_category_banners')->count())->toBeGreaterThan(0)
-        ->and(app(PageBlocks::class)->home())->not->toBeEmpty()
+        ->and(app(BuilderEngine::class)->blocks(BuilderEngine::HOME))->not->toBeEmpty()
+        ->and(collect(['product', 'listing', 'cart', 'brands'])->every(fn (string $surface): bool => app(BuilderEngine::class)->blocks($surface) !== null))->toBeTrue()
         ->and(app(MenuRepository::class)->published('header'))->not->toBeEmpty()
         ->and(app(MenuRepository::class)->published('footer_1'))->not->toBeEmpty();
 
@@ -104,7 +105,12 @@ it('DemoSeeder dựng cả cửa hàng (catalog có ảnh, kho, nội dung, tran
     // Storefront hiển thị được.
     $this->get('/')->assertOk()->assertSee('Hàng mới về');
     $this->get('/danh-muc/dam')->assertOk()->assertSee('data-vani-cms-category-banner', false);
-    $this->get('/san-pham/'.$style->slug)->assertOk();
+    $this->get('/san-pham/'.$style->slug)->assertOk()
+        ->assertSeeInOrder(['data-slot="vani.storefront.pdp.after_details"', 'Cam kết của Vani Studio'], false);
+    $this->get('/bo-suu-tap/thu-dong-2026')->assertOk()
+        ->assertSeeInOrder(['data-collection-banner', 'Thu Đông 2026', 'Chất liệu mùa này', 'data-vani-listing'], false);
+    $this->get(route('storefront.brands'))->assertOk()->assertSee('Nổi bật từ Vani Studio');
+    $this->get(route('storefront.cart'))->assertOk()->assertSee('Khách hàng đang mua');
 
     $before = $counts();
     $this->seed(DemoSeeder::class);

@@ -92,11 +92,20 @@ GET /thuong-hieu/{slug}
 
 ## 4. Block (page builder)
 
-Admin → Giao diện → Trang chủ lưu danh sách block vào `core.storefront.home_blocks`. `StorefrontBlock` khai báo `type()`, `label()`, `fields(): list<FieldDefinition>`, `resolve(array $config, string $locale)` và `view()`. Core đăng ký `hero`, `product_grid`, `brand_grid`, `rich_text`. Plugin đóng góp thêm qua `StorefrontBlock::TAG` (`vani.storefront.blocks`).
+Admin → Giao diện → **Nội dung trang** là Builder Engine: một màn hình biên tập block cho mọi surface. `StorefrontBlock` khai báo `type()`, `label()`, `fields(): list<FieldDefinition>`, `resolve(array $config, string $locale)` và `view()`. Core đăng ký `hero`, `product_grid`, `brand_grid`, `rich_text`. Plugin đóng góp thêm qua `StorefrontBlock::TAG` (`vani.storefront.blocks`).
 
 `PageBlocks` validate cấu hình và kiểm tra ID ảnh/video có trong Thư viện ảnh, đúng loại trường. Khi ghi cấu hình, module đồng bộ ghi nhận media đang dùng để Thư viện bảo vệ các tệp còn tham chiếu. Thứ tự block theo cấu hình áp dụng cho cả HTML và dữ liệu home API. Khi chưa có cấu hình, theme dùng trang chủ mặc định.
 
-Trang chủ và trang bộ sưu tập dùng chung một page builder: registry `StorefrontBlock`, schema cấu hình, trình biên tập Admin và validation/renderer `PageBlocks`. Mỗi trang chỉ khác `BlockLayout` (danh sách vùng, loại block và số block tối đa mỗi vùng) và nơi lưu cấu hình. Trang chủ có một vùng, lưu block không kèm `zone`. Trang bộ sưu tập có vùng `banner` (tối đa một Hero), `before`, `after`. Renderer nhận thêm ngữ cảnh theo vùng: Hero ở vùng banner nhận `pageHeader` để dùng bố cục banner có h1 của theme. Thêm trang mới dùng builder chỉ cần khai báo `BlockLayout` và nơi lưu, không tạo hệ thống riêng.
+Mọi trang dùng chung một lõi block: registry `StorefrontBlock`, schema cấu hình, trình biên tập Admin và validation/renderer `PageBlocks`. Mỗi trang chỉ khác `BlockLayout` (vùng, loại block và số block tối đa mỗi vùng, dựng từ `BuilderZone`) và nơi lưu cấu hình. Bố cục một vùng lưu block không kèm `zone`. Bố cục nhiều vùng lưu `zone` là khoá vùng.
+
+### Builder Engine và surface
+
+- `BuilderEngine` quản lý các `BuilderSurface` (tag `vani.storefront.builder_surfaces`). Cấu hình của surface lưu ở `core.storefront.builder.{surface}`. Ảnh đang dùng ghi dưới `storefront.builder`, role là mã surface. Route Admin là `admin/storefront/builder/{surface}`.
+- `BuilderZone::page()` là vùng do controller của trang tự render. Surface `home` có vùng `main`. Khi surface `home` chưa cấu hình, theme dùng trang chủ mặc định.
+- `BuilderZone::slot()` gắn vùng vào slot có sẵn. Slot phải khai báo `builder: true` trong `hooks.php` của Core hoặc plugin. Vùng gắn vào slot khác bị bỏ và ghi log. `<x-vani::hook-slot>` render block của mọi surface gắn vào slot đó, sau phần tử của listener `onSlot`. Block trong slot không nhận args của slot nên dùng được với cache CDN.
+- Surface Core: **Trang chủ**, **Trang sản phẩm** (sau mô tả: chỉ Rich Text, tối đa 3; cuối trang), **Danh sách sản phẩm** (trên, dưới lưới và khi không có kết quả; áp dụng cho danh mục, tìm kiếm, thương hiệu và bộ sưu tập), **Giỏ hàng** (khi trống), **Thương hiệu** (trên và dưới danh sách).
+- Plugin mở rộng theo ba cách, kết hợp được: thêm block (`StorefrontBlock`), thêm surface trên slot có sẵn (`BuilderSurface`, contract test `BuilderSurfaceContract`), công bố slot mới có `builder: true` trong `hooks.php` của plugin. Surface của plugin đã tắt không hiện trong Admin và không render.
+- Trang bộ sưu tập lưu theo từng bộ sưu tập ở Catalog nên dùng `BlockLayout::collection()` thay vì surface: vùng `banner` (tối đa một Hero), `before`, `after`. Renderer nhận thêm ngữ cảnh theo vùng: Hero ở vùng banner nhận `pageHeader` để dùng bố cục banner có h1 của theme.
 
 StorefrontExtras dùng Swiper chung của theme cho slideshow từ hai ảnh trở lên. Khoảng chuyển lấy từ cấu hình, rời focus/rê chuột mới chạy tiếp và tắt tự chuyển khi người dùng chọn giảm chuyển động. Slide đầu ưu tiên tải, ảnh sau tải lười và dải ảnh cuộn ngang khi thư viện chưa tải được. Lookbook render các liên kết được đánh số trên ảnh và danh sách tên sản phẩm tương ứng bên dưới.
 

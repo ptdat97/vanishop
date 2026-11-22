@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Component;
 use Modules\Extension\Facades\Hook;
+use Modules\Storefront\Application\Builder\BuilderEngine;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Throwable;
 
@@ -17,6 +18,7 @@ use Throwable;
  * `<x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />` — render các phần tử plugin
  * trả cho slot theo priority (ADR-025). Chỉ nối thêm; phần tử lỗi (listener hoặc lúc render) bị bỏ, ghi log.
  * Phần tử hợp lệ: SlotView, Htmlable (vd. view()), hoặc null (không có gì để hiện). Chuỗi thô bị bỏ để không chèn HTML chưa escape.
+ * Sau phần tử plugin là block admin đặt vào slot qua Builder Engine (slot khai báo `builder: true`).
  */
 final class HookSlot extends Component
 {
@@ -53,6 +55,11 @@ final class HookSlot extends Component
             } catch (Throwable $exception) {
                 Log::error('Render phần tử slot storefront lỗi, bỏ qua.', ['hook' => $this->name, 'exception' => $exception]);
             }
+        }
+        try {
+            $html .= app(BuilderEngine::class)->renderSlot($this->name)->toHtml();
+        } catch (Throwable $exception) {
+            Log::error('Render block Builder Engine tại slot lỗi, bỏ qua.', ['hook' => $this->name, 'exception' => $exception]);
         }
 
         if ($html === '') {

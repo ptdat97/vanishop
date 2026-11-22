@@ -28,6 +28,11 @@ final readonly class HookDefinition
          * không khai báo mà lại chạy trong transaction — khai báo luôn khớp thực tế.
          */
         public bool $transaction = false,
+        /**
+         * Slot nhận block của page builder (khoá `builder: true`): chủ catalog xác nhận vị trí là vùng nội dung rộng,
+         * hợp với khối HTML đầy đủ (không nằm trong `<head>`, form hay thẻ sản phẩm). Chỉ có nghĩa với hook `slot`.
+         */
+        public bool $builder = false,
     ) {}
 
     /**
@@ -40,11 +45,11 @@ final readonly class HookDefinition
 
     public function withName(string $name): self
     {
-        return new self($name, $this->type, $this->public, $this->since, $this->args, $this->description, $this->stability, $this->onError, $this->deprecated, $this->transaction);
+        return new self($name, $this->type, $this->public, $this->since, $this->args, $this->description, $this->stability, $this->onError, $this->deprecated, $this->transaction, $this->builder);
     }
 
     /**
-     * @param  array{type: string, visibility?: string, since?: string, args?: array<string, string>, description?: string, stability?: string, on_error?: string, deprecated?: string, transaction?: bool}  $definition
+     * @param  array{type: string, visibility?: string, since?: string, args?: array<string, string>, description?: string, stability?: string, on_error?: string, deprecated?: string, transaction?: bool, builder?: bool}  $definition
      */
     public static function fromArray(string $name, array $definition): self
     {
@@ -59,6 +64,7 @@ final readonly class HookDefinition
             onError: $definition['on_error'] ?? 'fail',
             deprecated: isset($definition['deprecated']) ? (string) $definition['deprecated'] : null,
             transaction: (bool) ($definition['transaction'] ?? false),
+            builder: (bool) ($definition['builder'] ?? false),
         );
     }
 }

@@ -6,6 +6,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.73 — 2026-11-22 · Extension API 1.29.0
+
+- **Builder Engine** (storefront §4): Admin → Giao diện → **Nội dung trang** biên tập block cho mọi surface bằng một màn hình, dùng chung registry, schema, validation và renderer block với trang chủ và trang bộ sưu tập.
+- Extension point mới `BuilderSurface` (tag `vani.storefront.builder_surfaces`) và DTO `BuilderZone` (`slot()` / `page()`): plugin gom các slot có sẵn thành một màn hình biên tập, giới hạn loại và số block mỗi vùng. Contract test `BuilderSurfaceContract`.
+- Khoá `builder: true` trong `hooks.php` (Core và plugin) đánh dấu slot nhận block; `Hook::acceptsBlocks()`. Block admin đặt vào slot render tại `<x-vani::hook-slot>` sau phần tử của listener `onSlot`, không nhận args của slot. Core mở các slot: `pdp.after_details`, `pdp.after_related_products`, `plp.before_listing`, `plp.after_listing`, `plp.empty`, `cart.empty`, `brands.before_list`, `brands.after_list`.
+- Surface Core: `home`, `product`, `listing`, `cart`, `brands`. Trang chủ chuyển sang surface `home`: cấu hình `core.storefront.builder.home`, ảnh đang dùng ghi dưới `storefront.builder` role `home` (migration chuyển dữ liệu cũ).
+- **Plugin cần cập nhật**: `PageBlocks::home()`, `saveHome()`, `resetHome()` và `MEDIA_OWNER` được thay bằng `BuilderEngine::blocks()`, `save()`, `reset()`; `PageBlocks::validate()` nhận `BlockLayout`. Route Admin `home-blocks` thành `builder/{surface}`. Test của `vani.cms`, `vani.storefront-extras`, `vani.hello-world` đã cập nhật.
+
 ## 0.5.72 — 2026-11-22 · Extension API 1.28.0
 
 - Ordering dùng chỉ mục cho hàng đợi. `OrderActions::cancel()` nhận tùy chọn `reasonCode`. Core đọc thêm mã lý do huỷ qua `vani.order.cancellation_reasons` và thống kê qua `OrderStatistics::cancellations()`.

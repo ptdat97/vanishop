@@ -8,15 +8,16 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
+use Modules\Storefront\Application\Builder\BuilderEngine;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Application\ProductViews;
 
 final class HomeController
 {
-    public function __invoke(CatalogReader $catalog, ProductViews $products, PageBlocks $pageBlocks): View
+    public function __invoke(CatalogReader $catalog, ProductViews $products, BuilderEngine $builder, PageBlocks $pageBlocks): View
     {
         $now = now()->getTimestamp();
-        $configured = $pageBlocks->home();
+        $configured = $builder->zone(BuilderEngine::HOME, 'main');
 
         if ($configured !== null) {
             return view('theme::pages.home', ['blocks' => $pageBlocks->render($configured)]);

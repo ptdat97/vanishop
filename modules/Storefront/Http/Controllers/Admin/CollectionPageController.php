@@ -24,7 +24,7 @@ final class CollectionPageController
         $page = $pages->editable($collection, App::getLocale());
         abort_if($page === null, 404);
 
-        return Inertia::render('Storefront::Design/HomeBlocks', [
+        return Inertia::render('Storefront::Design/Builder', [
             'types' => $blocks->editorTypes(),
             'zones' => BlockLayout::collection()->toArray(),
             'blocks' => $page['blocks'],

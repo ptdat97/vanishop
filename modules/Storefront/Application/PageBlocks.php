@@ -17,25 +17,18 @@ use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
 use Modules\Storefront\Application\Blocks\RichTextRenderer;
 use Modules\Storefront\Contracts\StorefrontBlock;
-use Modules\Tenancy\Contracts\Settings;
 use Throwable;
 
 /**
- * Page builder chung của storefront: registry khối, schema biên tập, validation và renderer.
- * Mỗi trang chỉ khác {@see BlockLayout} (vùng + giới hạn) và nơi lưu cấu hình; trang chủ lưu ở `core.storefront.home_blocks`.
+ * Lõi block dùng chung của storefront: registry khối, schema biên tập, validation theo {@see BlockLayout} và renderer.
+ * Nơi lưu cấu hình thuộc về người dùng lõi này: Builder Engine (surface) hoặc trang theo thực thể (bộ sưu tập).
  */
 final class PageBlocks
 {
     public const MAX_BLOCKS = 30;
 
-    private const SETTING = 'storefront.home_blocks';
-
-    /** Chủ sở hữu khai báo ảnh đang dùng của các trường `media` trong khối trang chủ (Thư viện ảnh không cho xoá). */
-    public const MEDIA_OWNER = 'storefront.home';
-
     public function __construct(
         private readonly Extensions $extensions,
-        private readonly Settings $settings,
         private readonly MediaDirectory $media,
     ) {}
 
@@ -69,34 +62,13 @@ final class PageBlocks
     }
 
     /**
-     * @return list<array{type: string, config: array<string, mixed>}>|null null = chưa cấu hình
-     */
-    public function home(): ?array
-    {
-        $blocks = $this->settings->get('core', self::SETTING);
-
-        return is_array($blocks) ? array_values($blocks) : null;
-    }
-
-    /**
-     * @param  list<array{type?: mixed, config?: mixed}>  $blocks
-     */
-    public function saveHome(array $blocks): void
-    {
-        ['blocks' => $clean, 'media_ids' => $mediaIds] = $this->validate($blocks);
-        $this->settings->set('core', self::SETTING, $clean);
-        $this->media->syncUsages(self::MEDIA_OWNER, 1, 'blocks', $mediaIds);
-    }
-
-    /**
      * Validate theo schema khối và bố cục trang; trang nhiều vùng giữ `zone` của từng khối.
      *
      * @param  list<array{type?: mixed, config?: mixed, zone?: mixed}>  $blocks
      * @return array{blocks: list<array{type: string, config: array<string, mixed>, zone?: string}>, media_ids: list<int>}
      */
-    public function validate(array $blocks, ?BlockLayout $layout = null): array
+    public function validate(array $blocks, BlockLayout $layout): array
     {
-        $layout ??= BlockLayout::home();
         $blocks = array_values($blocks);
         if (count($blocks) > self::MAX_BLOCKS) {
             throw ValidationException::withMessages(['blocks' => __('storefront::texts.page_blocks.most').self::MAX_BLOCKS.__('storefront::texts.page_blocks.blocks')]);
@@ -166,12 +138,6 @@ final class PageBlocks
                 throw ValidationException::withMessages(["blocks.{$index}.zone" => __('storefront::messages.block_zone_rule')]);
             }
         }
-    }
-
-    public function resetHome(): void
-    {
-        $this->settings->forget('core', self::SETTING);
-        $this->media->releaseUsages(self::MEDIA_OWNER, 1);
     }
 
     /**

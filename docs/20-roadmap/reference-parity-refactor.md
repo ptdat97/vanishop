@@ -450,6 +450,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L47 🟡 | Kịch bản k6 yêu cầu origin chỉ định và tách lượt duyệt khỏi lượt ghi. Khi bật checkout, đo số đơn thực, tỷ lệ thành công và lượt checkout bị rớt. | Vận hành | Chạy đủ tải 500 đơn/phút trên staging và đối soát tồn trước go-live ([operations §9](../18-operations/operations.md)). |
 | L48 ❄️ (từ nhật ký slice Notification, 2026-10-13) | Plugin SMS brandname / Zalo ZNS chưa chạy thử với tài khoản sandbox eSMS / OA Zalo thật, chưa đối chiếu mã lỗi nhà cung cấp | `vani.sms-brandname`, `vani.zalo-zns` | Chạy thử khi mở lại kết nối ngoài (đang đóng băng) |
 | L49 🟡 | Admin có danh mục mã lý do huỷ, ghi chú tự do và cấu hình bổ sung theo dạng mã/nhãn. Plugin có hook thêm mã. Reports đếm lý do theo ngày huỷ, gồm nhóm chưa phân loại. | Ordering, Reports | Còn mở danh mục cho luồng khách tự huỷ và các thao tác chuyển trạng thái khác của Admin. |
+| L50 🟡 | Block Builder Engine đặt vào slot chỉ render trên Blade. Storefront API chưa trả nội dung các surface ngoài trang chủ, và block trong slot không nhận args của slot (sản phẩm, giỏ) nên nội dung giống nhau trên mọi trang. | Storefront `BuilderEngine`, `BuilderZone` | Thêm `GET /pages/{surface}` khi có client headless cần. Nếu cần block theo ngữ cảnh, mở rộng `StorefrontBlock` nhận ngữ cảnh slot có kiểu và tính lại cache CDN. |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

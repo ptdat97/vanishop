@@ -19,18 +19,31 @@ import RichTextEditor from '../../Components/RichTextEditor.vue';
 type BlockType = { type: string; label: string; fields: ExtensionField[] };
 type Block = { type: string; config: Record<string, ExtensionFieldValue>; zone?: string };
 /** Vùng của bố cục trang (rỗng = trang một vùng); `types`/`max` null = không giới hạn. */
-type Zone = { key: string; types: string[] | null; max: number | null };
+type Zone = { key: string; label: string; slot: string | null; types: string[] | null; max: number | null };
+type Surface = { key: string; label: string; url?: string };
 
-const props = defineProps<{ types: BlockType[]; blocks: Block[]; configured: boolean; previewUrl: string | null; collectionName?: string; collectionUrl?: string | null; zones: Zone[] }>();
+const props = defineProps<{
+    types: BlockType[]; blocks: Block[]; configured: boolean; previewUrl: string | null; zones: Zone[];
+    /** Surface của Builder Engine (trang chủ, trang sản phẩm, surface plugin…); trang bộ sưu tập dùng collectionName. */
+    surfaces?: Surface[]; surface?: Surface; collectionName?: string; collectionUrl?: string | null;
+}>();
 
 const form = useForm<{ blocks: Block[] }>({ blocks: props.blocks.map((block) => ({ ...block, config: { ...block.config } })) });
 const collectionPage = computed(() => props.collectionName !== undefined);
 const title = computed(() => collectionPage.value
     ? t('storefront::admin.collection_pages.title', { name: props.collectionName ?? '' })
-    : t('storefront::admin.design_home_blocks.home_page'));
+    : (props.surface?.label ?? t('storefront::admin.design_home_blocks.home_page')));
+const home = computed(() => props.surface?.key === 'home');
+const zoneLabel = (key: string): string => props.zones.find((zone) => zone.key === key)?.label ?? key;
+const hasSlotZones = computed(() => props.zones.some((zone) => zone.slot !== null));
+const subtitle = computed(() => {
+    if (collectionPage.value || props.configured) return t('storefront::admin.design_home_blocks.count_blocks', { count: form.blocks.length });
+
+    return home.value ? t('storefront::admin.design_home_blocks.using_theme_s_default_home') : t('storefront::admin.builder.not_configured');
+});
 const zoned = computed(() => props.zones.length > 0);
 const accepts = (zone: Zone, type: string): boolean => zone.types === null || zone.types.includes(type);
-const zoneOptions = (type: string) => props.zones.filter((zone) => accepts(zone, type)).map((zone) => ({ value: zone.key, label: t(`storefront::admin.collection_pages.${zone.key}`) }));
+const zoneOptions = (type: string) => props.zones.filter((zone) => accepts(zone, type)).map((zone) => ({ value: zone.key, label: zone.label }));
 const adding = ref(props.types[0]?.type ?? '');
 const typeOf = (type: string): BlockType | undefined => props.types.find((candidate) => candidate.type === type);
 const errors = computed(() => form.errors as Record<string, string | undefined>);
@@ -94,7 +107,9 @@ function save(): void {
 }
 
 async function reset(): Promise<void> {
-    if ((await confirmAction({ title: t('storefront::admin.design_home_blocks.use_default_home_page_again'), message: t('storefront::admin.design_home_blocks.current_block_configuration_deleted'), confirmLabel: t('storefront::admin.design_home_blocks.use_default'), tone: 'danger' })) !== false) {
+    const title = home.value ? t('storefront::admin.design_home_blocks.use_default_home_page_again') : t('storefront::admin.builder.reset_title');
+    const confirmLabel = home.value ? t('storefront::admin.design_home_blocks.use_default') : t('storefront::admin.builder.reset');
+    if ((await confirmAction({ title, message: t('storefront::admin.design_home_blocks.current_block_configuration_deleted'), confirmLabel, tone: 'danger' })) !== false) {
         router.delete(window.location.pathname, { preserveScroll: true });
     }
 }
@@ -103,13 +118,26 @@ async function reset(): Promise<void> {
 <template>
     <Head :title="title" />
     <p class="mb-2 text-sm text-slate-500">{{ t('storefront::admin.design_home_blocks.storefront_design') }}</p>
-    <PageHeader :title="title" :subtitle="collectionPage || configured ? t('storefront::admin.design_home_blocks.count_blocks', { count: form.blocks.length }) : t('storefront::admin.design_home_blocks.using_theme_s_default_home')">
+    <PageHeader :title="title" :subtitle="subtitle">
         <Link v-if="collectionUrl" :href="collectionUrl" :class="secondaryButton">{{ t('storefront::admin.collection_pages.back') }}</Link>
         <a v-if="previewUrl" :href="previewUrl" target="_blank" rel="noopener" :class="secondaryButton">{{ t('storefront::admin.design_home_blocks.view_page') }}</a>
-        <button v-if="configured && !collectionPage" type="button" :class="dangerButton" @click="reset">{{ t('storefront::admin.design_home_blocks.use_default') }}</button>
+        <button v-if="configured && !collectionPage" type="button" :class="dangerButton" @click="reset">{{ home ? t('storefront::admin.design_home_blocks.use_default') : t('storefront::admin.builder.reset') }}</button>
         <button type="button" :class="primaryButton" :disabled="form.processing" @click="save">{{ t('storefront::admin.design_home_blocks.save') }}</button>
     </PageHeader>
-    <DesignTabs v-if="!collectionPage" active="home" />
+    <template v-if="!collectionPage">
+        <DesignTabs active="builder" />
+        <nav v-if="(surfaces?.length ?? 0) > 1" class="mb-4 flex flex-wrap gap-2 text-sm" :aria-label="t('storefront::admin.builder.surface_nav')" data-builder-surfaces>
+            <Link
+                v-for="candidate in surfaces"
+                :key="candidate.key"
+                :href="candidate.url ?? ''"
+                class="rounded-full border px-3 py-1"
+                :class="candidate.key === surface?.key ? 'border-indigo-600 bg-indigo-50 font-medium text-indigo-700' : 'border-slate-200 text-slate-600 hover:text-slate-900'"
+                :aria-current="candidate.key === surface?.key ? 'page' : undefined"
+            >{{ candidate.label }}</Link>
+        </nav>
+        <p v-if="hasSlotZones" class="mb-4 text-sm text-slate-600">{{ t('storefront::admin.builder.slot_help') }}</p>
+    </template>
     <p v-else class="mb-4 text-sm text-slate-600">{{ t('storefront::admin.collection_pages.help') }}</p>
 
     <div class="space-y-4">
@@ -131,7 +159,7 @@ async function reset(): Promise<void> {
                         <path fill-rule="evenodd" d="M7.2 14.8a.75.75 0 0 1 0-1.06L10.94 10 7.2 6.26a.75.75 0 1 1 1.06-1.06l4.27 4.27a.75.75 0 0 1 0 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd" />
                     </svg>
                     <span class="shrink-0 font-semibold">{{ index + 1 }}. {{ typeOf(block.type)?.label ?? t('storefront::admin.design_home_blocks.type_plugin_disabled', { type: block.type }) }}</span>
-                    <span v-if="zoned && block.zone" class="truncate text-sm text-slate-500">{{ t(`storefront::admin.collection_pages.${block.zone}`) }}</span>
+                    <span v-if="zoned && block.zone" class="truncate text-sm text-slate-500">{{ zoneLabel(block.zone) }}</span>
                     <span v-if="!isExpanded(block)" class="truncate text-sm text-slate-500">{{ summary(block) }}</span>
                     <span v-if="!isExpanded(block) && Object.keys(errors).some((key) => key.startsWith(`blocks.${index}.`))" class="shrink-0 text-xs font-medium text-red-600">{{ t('storefront::admin.design_home_blocks.has_errors') }}</span>
                 </button>

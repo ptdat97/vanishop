@@ -16,6 +16,7 @@ use Modules\Shared\Support\LocalizedUrls;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\BrandIndex;
+use Modules\Storefront\Application\Builder\BuilderEngine;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
@@ -34,7 +35,7 @@ final class CatalogController
         private readonly ProductViews $products,
     ) {}
 
-    public function categories(PageBlocks $pageBlocks): View
+    public function categories(BuilderEngine $builder, PageBlocks $pageBlocks): View
     {
         $locale = App::getLocale();
         $categoryTree = $this->catalog->categoryTree($locale);
@@ -52,7 +53,7 @@ final class CatalogController
         };
         $flatten($categoryTree);
 
-        $heroBlock = collect($pageBlocks->home() ?? [])->firstWhere('type', 'hero');
+        $heroBlock = collect($builder->zone(BuilderEngine::HOME, 'main') ?? [])->firstWhere('type', 'hero');
         $banner = $heroBlock === null ? [] : ($pageBlocks->resolve([$heroBlock])[0]['data'] ?? []);
         $now = now()->getTimestamp();
 

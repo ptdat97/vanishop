@@ -1,15 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Storefront\Http\Controllers\Admin\BuilderController;
 use Modules\Storefront\Http\Controllers\Admin\CollectionPageController;
-use Modules\Storefront\Http\Controllers\Admin\HomeBlocksController;
 use Modules\Storefront\Http\Controllers\Admin\MaintenancePreviewController;
 use Modules\Storefront\Http\Controllers\Admin\MenuController;
 use Modules\Storefront\Http\Controllers\Admin\ThemeSettingsController;
 
-Route::get('home-blocks', [HomeBlocksController::class, 'edit'])->name('home-blocks.edit');
-Route::put('home-blocks', [HomeBlocksController::class, 'update'])->name('home-blocks.update');
-Route::delete('home-blocks', [HomeBlocksController::class, 'reset'])->name('home-blocks.reset');
+Route::get('builder/{surface}', [BuilderController::class, 'edit'])->where('surface', '[a-z][a-z0-9_-]{0,39}')->name('builder.edit');
+Route::put('builder/{surface}', [BuilderController::class, 'update'])->where('surface', '[a-z][a-z0-9_-]{0,39}')->name('builder.update');
+Route::delete('builder/{surface}', [BuilderController::class, 'reset'])->where('surface', '[a-z][a-z0-9_-]{0,39}')->name('builder.reset');
 Route::get('maintenance-preview', MaintenancePreviewController::class)->name('maintenance.preview');
 
 Route::get('collection-pages/{collection}', [CollectionPageController::class, 'edit'])->whereNumber('collection')->name('collection-pages.edit');

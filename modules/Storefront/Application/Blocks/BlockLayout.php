@@ -4,30 +4,39 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application\Blocks;
 
+use Modules\Storefront\Contracts\Data\BuilderZone;
+
 /**
- * Bố cục vùng của một trang dùng page builder chung: mỗi vùng giới hạn loại khối và số khối tối đa.
- * Trang một vùng (trang chủ) lưu khối không kèm `zone`; trang nhiều vùng lưu `zone` cho từng khối.
+ * Bố cục vùng của một trang dùng page builder chung, dựng từ {@see BuilderZone}: mỗi vùng giới hạn loại khối và số khối.
+ * Bố cục một vùng lưu khối không kèm `zone`; bố cục nhiều vùng lưu `zone` (khoá vùng) cho từng khối.
  */
 final readonly class BlockLayout
 {
-    public const MAIN = 'main';
-
     /**
-     * @param  array<string, array{types: list<string>|null, max: int|null}>  $zones  null = không giới hạn
+     * @param  array<string, BuilderZone>  $zones
      */
     private function __construct(public array $zones) {}
 
-    public static function home(): self
+    /**
+     * @param  list<BuilderZone>  $zones
+     */
+    public static function of(array $zones): self
     {
-        return new self([self::MAIN => ['types' => null, 'max' => null]]);
+        $keyed = [];
+        foreach ($zones as $zone) {
+            $keyed[$zone->key] ??= $zone;
+        }
+
+        return new self($keyed);
     }
 
+    /** Trang bộ sưu tập: cấu hình lưu theo từng bộ sưu tập ở Catalog, render bởi controller của trang. */
     public static function collection(): self
     {
-        return new self([
-            'banner' => ['types' => [HeroBlock::TYPE], 'max' => 1],
-            'before' => ['types' => null, 'max' => null],
-            'after' => ['types' => null, 'max' => null],
+        return self::of([
+            BuilderZone::page('banner', __('storefront::admin.collection_pages.banner'), [HeroBlock::TYPE], 1),
+            BuilderZone::page('before', __('storefront::admin.collection_pages.before')),
+            BuilderZone::page('after', __('storefront::admin.collection_pages.after')),
         ]);
     }
 
@@ -44,27 +53,26 @@ final readonly class BlockLayout
 
     public function accepts(string $zone, string $type): bool
     {
-        $types = $this->zones[$zone]['types'] ?? null;
+        $definition = $this->zones[$zone] ?? null;
 
-        return isset($this->zones[$zone]) && ($types === null || in_array($type, $types, true));
+        return $definition !== null && ($definition->types === null || in_array($type, $definition->types, true));
     }
 
     public function limit(string $zone): ?int
     {
-        return $this->zones[$zone]['max'] ?? null;
+        return ($this->zones[$zone] ?? null)?->max;
     }
 
     /**
-     * @template TBlock of array{type: string, config: array<string, mixed>, zone?: string}
-     *
-     * @param  list<TBlock>  $blocks
+     * @param  list<array{type: string, config: array<string, mixed>, zone?: string}>  $blocks
      * @return array<string, list<array{type: string, config: array<string, mixed>}>>
      */
     public function group(array $blocks): array
     {
         $zones = array_fill_keys($this->zoneKeys(), []);
+        $only = $this->zoned() ? null : ($this->zoneKeys()[0] ?? null);
         foreach ($blocks as $block) {
-            $zone = $this->zoned() ? (string) ($block['zone'] ?? '') : self::MAIN;
+            $zone = $only ?? (string) ($block['zone'] ?? '');
             if (isset($zones[$zone])) {
                 $zones[$zone][] = ['type' => $block['type'], 'config' => $block['config']];
             }
@@ -73,13 +81,15 @@ final readonly class BlockLayout
         return $zones;
     }
 
-    /** @return list<array{key: string, types: list<string>|null, max: int|null}> */
+    /** @return list<array{key: string, label: string, slot: string|null, types: list<string>|null, max: int|null}> rỗng = một vùng */
     public function toArray(): array
     {
         if (! $this->zoned()) {
             return [];
         }
 
-        return array_map(fn (string $key): array => ['key' => $key, ...$this->zones[$key]], $this->zoneKeys());
+        return array_values(array_map(fn (BuilderZone $zone): array => [
+            'key' => $zone->key, 'label' => $zone->label, 'slot' => $zone->slot, 'types' => $zone->types, 'max' => $zone->max,
+        ], $this->zones));
     }
 }

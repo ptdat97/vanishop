@@ -78,17 +78,15 @@ it('biên tập banner và các vùng nội dung, render đúng thứ tự và g
 it('trang chủ và trang bộ sưu tập dùng cùng schema biên tập và view Hero', function () {
     $collection = T::seed(fn () => ProductCollection::query()->create(['slug' => 'bo-chung', 'status' => 'active']));
     $this->actingAs(T::staff(['admin.access', 'storefront.manage']), 'staff');
-    $home = route('admin.storefront.home-blocks.edit');
+    $home = route('admin.storefront.builder.edit', 'home');
     $editor = route('admin.storefront.collection-pages.edit', $collection->id);
     $homeProps = $this->get($home)->inertiaPage()['props'];
     expect($homeProps['zones'])->toBe([]);
 
-    $this->get($editor)->assertInertia(fn (Assert $page) => $page->component('Storefront::Design/HomeBlocks')
+    $this->get($editor)->assertInertia(fn (Assert $page) => $page->component('Storefront::Design/Builder')
         ->where('types', $homeProps['types'])
-        ->where('zones', [
-            ['key' => 'banner', 'types' => ['hero'], 'max' => 1],
-            ['key' => 'before', 'types' => null, 'max' => null],
-            ['key' => 'after', 'types' => null, 'max' => null],
+        ->where('zones', fn ($zones) => collect($zones)->map(fn (array $zone): array => [$zone['key'], $zone['types'], $zone['max'], $zone['slot']])->all() === [
+            ['banner', ['hero'], 1, null], ['before', null, null, null], ['after', null, null, null],
         ]));
 
     $invalid = ['type' => 'hero', 'config' => []];
