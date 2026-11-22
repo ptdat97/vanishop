@@ -10,11 +10,13 @@ use Modules\Storefront\Contracts\StorefrontBlock;
 
 final class HeroBlock implements StorefrontBlock
 {
+    public const TYPE = 'hero';
+
     public function __construct(private readonly MediaUrls $media) {}
 
     public function type(): string
     {
-        return 'hero';
+        return self::TYPE;
     }
 
     public function label(): string

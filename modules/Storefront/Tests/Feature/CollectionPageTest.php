@@ -3,6 +3,8 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
+use Illuminate\View\View as BladeView;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Contracts\CollectionPages;
@@ -71,4 +73,35 @@ it('biên tập banner và các vùng nội dung, render đúng thứ tự và g
     $this->getJson('/api/storefront/v1/collections/mua-he')->assertNotFound();
     $this->actingAs(T::staff(['admin.access', 'catalog.manage']), 'staff')
         ->put($editor, ['blocks' => $blocks])->assertForbidden();
+});
+
+it('trang chủ và trang bộ sưu tập dùng cùng schema biên tập và view Hero', function () {
+    $collection = T::seed(fn () => ProductCollection::query()->create(['slug' => 'bo-chung', 'status' => 'active']));
+    $this->actingAs(T::staff(['admin.access', 'storefront.manage']), 'staff');
+    $home = route('admin.storefront.home-blocks.edit');
+    $editor = route('admin.storefront.collection-pages.edit', $collection->id);
+    $homeProps = $this->get($home)->inertiaPage()['props'];
+    expect($homeProps['zones'])->toBe([]);
+
+    $this->get($editor)->assertInertia(fn (Assert $page) => $page->component('Storefront::Design/HomeBlocks')
+        ->where('types', $homeProps['types'])
+        ->where('zones', [
+            ['key' => 'banner', 'types' => ['hero'], 'max' => 1],
+            ['key' => 'before', 'types' => null, 'max' => null],
+            ['key' => 'after', 'types' => null, 'max' => null],
+        ]));
+
+    $invalid = ['type' => 'hero', 'config' => []];
+    $this->put($home, ['blocks' => [$invalid]])->assertSessionHasErrors('blocks.0.config.title');
+    $this->put($editor, ['blocks' => [$invalid + ['zone' => 'banner']]])->assertSessionHasErrors('blocks.0.config.title');
+
+    $hero = ['type' => 'hero', 'config' => ['title' => 'Cùng một khối']];
+    $this->put($home, ['blocks' => [$hero]])->assertSessionHasNoErrors();
+    $this->put($editor, ['blocks' => [$hero + ['zone' => 'banner']]])->assertSessionHasNoErrors();
+    View::composer('theme::blocks.hero', static function (BladeView $view): void {
+        $view->with('title', $view->getData()['title'].' · Hiển thị từ view Hero');
+    });
+
+    $this->get('/')->assertSee('Cùng một khối · Hiển thị từ view Hero');
+    $this->get('/bo-suu-tap/bo-chung')->assertSeeInOrder(['data-collection-banner', 'Cùng một khối · Hiển thị từ view Hero'], false);
 });

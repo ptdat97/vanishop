@@ -7,6 +7,7 @@ namespace Modules\Storefront\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CollectionPages;
+use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\PageBlocks;
 
 final class CollectionController
@@ -15,7 +16,7 @@ final class CollectionController
     {
         $page = $pages->published($slug, App::getLocale());
         abort_if($page === null, 404);
-        $page['blocks'] = array_map($blocks->resolve(...), PageBlocks::collectionZones($page['blocks']));
+        $page['blocks'] = $blocks->resolveZones(BlockLayout::collection(), $page['blocks']);
         unset($page['status']);
 
         return response()->json(['data' => $page]);

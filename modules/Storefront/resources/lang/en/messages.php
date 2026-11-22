@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'collection_banner_rule' => 'Use at most one Hero block in the banner area.',
+    'block_zone_rule' => 'This area does not accept the selected block type or is already full.',
     'collection_page_saved' => 'Collection page saved.',
     'menu_location_unknown' => 'This menu location is not part of the theme.',
     'sign_in_to_view_prices' => 'Please sign in to see prices and order.',

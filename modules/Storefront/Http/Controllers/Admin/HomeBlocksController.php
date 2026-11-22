@@ -9,11 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\Maintenance;
 use Modules\Storefront\Application\PageBlocks;
-use Modules\Storefront\Contracts\StorefrontBlock;
 
 /**
  * Admin → Giao diện → Trang chủ: sắp xếp khối (page builder), cấu hình theo fields() của từng loại khối.
@@ -28,15 +27,13 @@ final class HomeBlocksController
     public function edit(PageBlocks $blocks, Maintenance $maintenance): Response
     {
         Gate::authorize('storefront.manage');
+        $home = $blocks->home();
 
         return Inertia::render('Storefront::Design/HomeBlocks', [
-            'types' => array_values(array_map(fn (StorefrontBlock $type): array => [
-                'type' => $type->type(),
-                'label' => $type->label(),
-                'fields' => array_map(fn (FieldDefinition $field): array => $field->toArray(), $type->fields()),
-            ], $blocks->types())),
-            'blocks' => $blocks->home() ?? [],
-            'configured' => $blocks->home() !== null,
+            'types' => $blocks->editorTypes(),
+            'zones' => BlockLayout::home()->toArray(),
+            'blocks' => $home ?? [],
+            'configured' => $home !== null,
             // Đang bảo trì: đi qua route phát cookie xem trước, không thì nhân viên chỉ thấy trang 503.
             'previewUrl' => $maintenance->enabled() ? route('admin.storefront.maintenance.preview') : route('storefront.home'),
         ]);
@@ -45,7 +42,7 @@ final class HomeBlocksController
     public function update(Request $request, PageBlocks $blocks, AuditLogger $audit): RedirectResponse
     {
         Gate::authorize('storefront.manage');
-        $data = $request->validate(['blocks' => ['present', 'array'], 'blocks.*.type' => ['required', 'string', 'max:64'], 'blocks.*.config' => ['nullable', 'array']]);
+        $data = $request->validate($blocks->inputRules(BlockLayout::home()));
         $blocks->saveHome($data['blocks']);
         $audit->record('storefront.home_blocks_updated', 'storefront', 'home', ['count' => count($data['blocks'])]);
 

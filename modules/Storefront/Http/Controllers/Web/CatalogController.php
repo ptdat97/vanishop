@@ -14,6 +14,7 @@ use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Shared\Support\StoreLocale;
+use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\BrandIndex;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Application\ProductViews;
@@ -95,17 +96,16 @@ final class CatalogController
         }
         $seo->alternates(PageAlternates::forSlugs('storefront.collection', $collection['slugs']), $collection['locales']);
         $request->merge(['collection' => $slug]);
-        $zones = PageBlocks::collectionZones($collection['blocks']);
-        $banner = $blocks->resolve($zones['banner'])[0]['data'] ?? [];
-        unset($zones['banner']);
+        $zones = $blocks->renderZones(BlockLayout::collection(), $collection['blocks'], [
+            'banner' => ['pageHeader' => ['name' => $collection['name'], 'description' => $collection['description']]],
+        ]);
         unset($collection['blocks'], $collection['status']);
 
         return view('theme::pages.collection', [
             'collection' => $collection,
             'crumbs' => [['label' => $collection['name']]],
-            'meta' => PageMeta::for($collection, ($banner['imageUrl'] ?? '') ?: null),
-            'banner' => $banner,
-            'zones' => array_map($blocks->render(...), $zones),
+            'meta' => PageMeta::for($collection, ($zones['banner'][0]['data']['imageUrl'] ?? '') ?: null),
+            'zones' => $zones,
             ...$this->listing($request),
         ]);
     }
