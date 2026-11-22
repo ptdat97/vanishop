@@ -106,6 +106,30 @@ it('nhập lại vận đơn đã giao xử lý dòng lệch cũ và chỉ ghi t
         ->and($preview()['urls']['apply'])->toBeNull();
 })->with([false, true]);
 
+it('có thể thử lại cùng bản xem trước sau lỗi giữa chừng mà không ghi thu lặp', function () {
+    DB::table('shipments')->where('order_id', $this->transit)->update(['status' => 'delivered']);
+    $file = UploadedFile::fake()->createWithContent('bang-ke.csv', "Mã vận đơn;Tiền thu hộ\nGHN001;330000\nGHN003;330000");
+    $preview = $this->post('/admin/fulfillment/cod-statements/preview', ['file' => $file])->assertOk()->viewData('page')['props'];
+    $apply = $preview['urls']['apply'];
+    $payments = app(Payments::class);
+    $mock = Mockery::mock(Payments::class);
+    $mock->shouldReceive('collectCod')->once()->with($this->delivered, 330_000, Mockery::type('string'), 330_000)
+        ->andReturnUsing($payments->collectCod(...));
+    $mock->shouldReceive('collectCod')->once()->with($this->transit, 330_000, Mockery::type('string'), 330_000)
+        ->andThrow(new RuntimeException('Lỗi tạm thời khi ghi kiện thứ hai'));
+    app()->instance(Payments::class, $mock);
+
+    $this->withoutExceptionHandling();
+    expect(fn () => $this->post($apply))->toThrow(RuntimeException::class, 'Lỗi tạm thời khi ghi kiện thứ hai');
+    expect(DB::table('reconciliation_entries')->pluck('reference')->all())->toBe(['GHN001']);
+
+    app()->instance(Payments::class, $payments);
+    $this->post($apply)->assertSessionHas('success');
+    expect(DB::table('reconciliation_entries')->orderBy('reference')->pluck('reference')->all())->toBe(['GHN001', 'GHN003'])
+        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(2);
+    $this->withExceptionHandling()->post($apply)->assertSessionHasErrors('file');
+});
+
 it('file thiếu cột mã vận đơn / tiền thu hộ: báo, không cho áp dụng; không có quyền xác nhận thì bị chặn', function () {
     $file = UploadedFile::fake()->createWithContent('sai.csv', "Đơn,Số tiền khác\nGHN001,330000\n");
     $this->post('/admin/fulfillment/cod-statements/preview', ['file' => $file])->assertInertia(fn (Assert $page) => $page

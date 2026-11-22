@@ -61,13 +61,14 @@ final class CodStatement
     }
 
     /**
-     * Ghi file đã xem trước (phân loại lại trên dữ liệu hiện tại).
+     * Ghi file đã xem trước và chỉ xoá token khi áp dụng xong. Lần thử lại bỏ qua các dòng đã ghi.
      *
      * @return array{matched: int, mismatched: int, skipped: int}|null null = token hết hạn
      */
     public function apply(string $token): ?array
     {
-        $pending = Cache::pull(self::CACHE_PREFIX.$token);
+        $cacheKey = self::CACHE_PREFIX.$token;
+        $pending = Cache::get($cacheKey);
         if (! is_array($pending) || ! isset($pending['rows'])) {
             return null;
         }
@@ -94,6 +95,7 @@ final class CodStatement
             $result[$recorded ? ($matched ? 'matched' : 'mismatched') : 'skipped']++;
         }
         $this->audit->record('payment.cod_statement.imported', 'reconciliation', null, ['file' => (string) ($pending['file'] ?? ''), ...$result]);
+        Cache::forget($cacheKey);
 
         return $result;
     }
