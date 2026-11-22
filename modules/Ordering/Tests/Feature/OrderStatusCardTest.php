@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Facades\Hook;
+use Modules\Ordering\Application\CancellationReasons;
+use Modules\Ordering\Contracts\OrderStatistics;
 use Modules\Ordering\Contracts\OrderStatusAction;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Tests\Fixtures\RequeryPaymentStatusAction;
@@ -35,6 +38,31 @@ beforeEach(function () {
     $this->action = fn (Order $order, string $key): ?array => collect(($this->card)($order)['actions'])->firstWhere('key', $key);
     RequeryPaymentStatusAction::$mode = 'ok';
     RequeryPaymentStatusAction::$performed = [];
+});
+
+it('chọn lý do huỷ từ Admin hoặc plugin, lưu mã riêng và báo cáo cả ghi chú cũ', function () {
+    $configured = ($this->place)();
+    $legacy = ($this->place)();
+    ($this->staff)(['orders.cancel', 'settings.manage']);
+    $this->put('/admin/settings', ['namespace' => 'core', 'values' => [CancellationReasons::SETTING => 'Thiếu mã']])
+        ->assertSessionHasErrors('values.'.CancellationReasons::SETTING);
+    $this->put('/admin/settings', ['namespace' => 'core', 'values' => [CancellationReasons::SETTING => "invalid_address|Sai địa chỉ\nother|Lý do khác"]])
+        ->assertSessionHasNoErrors();
+    Hook::onFilter('vani.order.cancellation_reasons', fn (array $reasons): array => [...$reasons, 'packing_damage' => 'Hỏng khi đóng gói']);
+
+    $action = ($this->action)($configured, 'cancel');
+    expect(array_column($action['fields'][0]['options'], 'label', 'value'))
+        ->toMatchArray(['invalid_address' => 'Sai địa chỉ', 'packing_damage' => 'Hỏng khi đóng gói']);
+    $this->post($action['url'], ['reason_code' => 'unknown'])->assertSessionHasErrors('reason_code');
+    $this->post($action['url'], ['reason_code' => 'invalid_address', 'reason' => 'Đã gọi khách'])->assertSessionHasNoErrors();
+    $this->post(($this->action)($legacy, 'cancel')['url'], ['reason' => 'Ghi chú tự do'])->assertSessionHasNoErrors();
+
+    expect(DB::table('order_events')->where('order_id', $configured->id)->where('to_status', 'cancelled')->value('reason'))->toBe('Đã gọi khách');
+    expect(app(OrderStatistics::class)->cancellations(now()->subHour()->toDateTimeImmutable(), now()->addHour()->toDateTimeImmutable()))
+        ->toHaveCount(2)->toContain(
+            ['code' => 'invalid_address', 'label' => 'Sai địa chỉ', 'count' => 1],
+            ['code' => null, 'label' => 'Chưa phân loại', 'count' => 1],
+        );
 });
 
 it('Core: 4 chiều trạng thái; Xác nhận (bước tiếp theo) và Huỷ khi chờ xác nhận; Hoàn tất chỉ khi đã giao hết, không có đổi/trả đang mở', function () {

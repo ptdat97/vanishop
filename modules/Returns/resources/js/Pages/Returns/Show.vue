@@ -9,10 +9,11 @@ import type { ExtensionDetail } from '@admin/types';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
+import { useAdminForm } from '@admin/forms';
 import { useMoney } from '@admin/money';
 import { labelOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 import { type ReturnLabels, returnStatusTone } from '../../labels';
 
@@ -68,7 +69,7 @@ const url = computed(() => `${props.baseUrl}/${props.return.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const conditions = reactive<Record<number, string>>(Object.fromEntries(props.return.lines.map((line) => [line.id, 'sellable'])));
 // Phí ship trả hàng (L10): lý do "lỗi do cửa hàng" → mặc định cửa hàng chịu (không trừ tiền hoàn); CSKH đổi được.
-const resolveForm = useForm({
+const { form: resolveForm, save: saveResolution } = useAdminForm({
     amount: props.return.refundAmount,
     note: '',
     return_shipping_fee: 0 as number,
@@ -94,7 +95,7 @@ function receive(): void {
 }
 
 function resolve(): void {
-    resolveForm.post(`${url.value}/resolve`, { preserveScroll: true });
+    saveResolution('post', `${url.value}/resolve`, { preserveScroll: true });
 }
 </script>
 

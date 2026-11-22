@@ -26,7 +26,7 @@ interface OrderActions
      *
      * @throws OrderActionRejected
      */
-    public function cancel(int $orderId, string $reason, string $source): void;
+    public function cancel(int $orderId, string $reason, string $source, ?string $reasonCode = null): void;
 
     /**
      * Ghi chú nội bộ vào lịch sử đơn (vd. "Khách bấm Đồng ý qua Zalo OA lúc 10:02").

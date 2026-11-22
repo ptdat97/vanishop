@@ -3,6 +3,21 @@
 // Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
 
 return [
+    'cod_aging' => [
+        'title' => 'Delivered COD awaiting reconciliation',
+        'description' => 'Current unmatched COD volume by carrier and age since delivery.',
+        'carrier' => 'Carrier',
+        'bucket' => 'Days since delivery',
+        'shipments' => 'Shipments',
+        'amount' => 'COD amount',
+    ],
+    'order_cancellations' => [
+        'title' => 'Order cancellations by reason',
+        'description' => 'Counts cancellations by reason and cancellation time. Events without a code appear as unclassified.',
+        'code' => 'Code',
+        'reason' => 'Reason',
+        'count' => 'Cancellations',
+    ],
     'brand_sales_report' => [
         'brand' => 'Brand',
         'quantity_revenue_brand_order_lines' => 'Quantity and revenue by brand of order lines.',

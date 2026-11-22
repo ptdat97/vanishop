@@ -3,6 +3,21 @@
 // Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
 
 return [
+    'cod_aging' => [
+        'title' => 'COD đã giao chờ đối soát',
+        'description' => 'Số kiện và tiền COD chưa khớp bảng kê hiện tại, theo hãng và số ngày kể từ khi giao.',
+        'carrier' => 'Hãng vận chuyển',
+        'bucket' => 'Số ngày từ lúc giao',
+        'shipments' => 'Số kiện',
+        'amount' => 'Tiền COD',
+    ],
+    'order_cancellations' => [
+        'title' => 'Huỷ đơn theo lý do',
+        'description' => 'Đếm lượt huỷ đơn theo lý do và thời điểm huỷ. Các lượt chưa có mã nằm trong nhóm chưa phân loại.',
+        'code' => 'Mã',
+        'reason' => 'Lý do huỷ',
+        'count' => 'Lượt huỷ',
+    ],
     'brand_sales_report' => [
         'brand' => 'Thương hiệu',
         'quantity_revenue_brand_order_lines' => 'Số lượng và doanh thu theo thương hiệu của dòng đơn.',

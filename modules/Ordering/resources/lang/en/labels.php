@@ -5,6 +5,8 @@
 */
 
 return [
+    'cancellation_reasons' => ['changed_mind' => 'Customer changed their mind', 'unreachable' => 'Customer unreachable', 'out_of_stock' => 'Out of stock', 'other' => 'Other'],
+    'cancellation_unclassified' => 'Unclassified',
     'order_status' => ['pending' => 'Pending', 'confirmed' => 'Confirmed', 'processing' => 'Processing', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
     'payment_status' => ['unpaid' => 'Unpaid', 'authorized' => 'Authorized', 'paid' => 'Paid', 'partially_refunded' => 'Partially refunded', 'refunded' => 'Refunded', 'cod_pending' => 'COD pending', 'cod_collected' => 'COD collected', 'failed' => 'Failed', 'voided' => 'Voided'],
     'fulfillment_status' => ['unfulfilled' => 'Unfulfilled', 'allocated' => 'Awaiting carrier', 'partially_shipped' => 'Partially shipped', 'shipped' => 'Shipping', 'delivered' => 'Delivered', 'returned_to_sender' => 'Returned to sender'],

@@ -48,3 +48,18 @@ it('đơn hoàn tất ngoài trình tự (vận đơn huỷ, COD chưa thu, có 
 
     visit("/admin/orders/orders/{$order->id}")->assertSee("Đơn {$order->number}")->assertSee('Đã thu tiền')->assertNoJavaScriptErrors();
 });
+
+it('cảnh báo khi rời đơn đang sửa địa chỉ và gửi được lý do huỷ có mã', function () {
+    $order = ($this->place)();
+    $this->actingAs(T::staff(['admin.access', 'orders.view', 'orders.manage', 'orders.cancel']), 'staff');
+    $url = "/admin/orders/orders/{$order->id}";
+
+    visit($url)->click('#order-edit-address')->type('#order-street-line', '22 Lê Lợi')
+        ->click('Danh sách')->assertSee('Rời trang khi còn thay đổi chưa lưu?')
+        ->press('Rời trang')->assertPathIs('/admin/orders/orders')->assertNoJavaScriptErrors();
+
+    visit($url)->press('Huỷ đơn')
+        ->click('[aria-label="Lý do huỷ đơn"]')->click('[role="option"] >> text=Hết hàng')
+        ->click('[role="alertdialog"] button[type="submit"]')->assertSee('Đã huỷ đơn')->assertNoJavaScriptErrors();
+    expect($order->fresh()->order_status)->toBe(OrderStatus::Cancelled);
+});

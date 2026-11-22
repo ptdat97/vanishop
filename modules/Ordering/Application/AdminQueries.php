@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Ordering\Application;
 
 use Illuminate\Database\Eloquent\Collection;
-use Modules\Ordering\Domain\OrderStage;
 use Modules\Ordering\Persistence\Models\Order;
 
 /**
@@ -16,7 +15,7 @@ final class AdminQueries
     /** Giai đoạn vận hành của đơn (thanh tiến trình trang đơn). */
     public function stage(int $orderId): string
     {
-        return (string) Order::query()->whereKey($orderId)->selectRaw(OrderStage::sql().' as stage')->value('stage');
+        return (string) Order::query()->whereKey($orderId)->value('stage');
     }
 
     /**

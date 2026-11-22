@@ -17,7 +17,7 @@ interface OrderTransitions
     /**
      * @throws OrderTransitionRejected
      */
-    public function transition(int $orderId, OrderStatus $to, string $reason, string $source): bool;
+    public function transition(int $orderId, OrderStatus $to, string $reason, string $source, ?string $reasonCode = null): bool;
 
     public function can(int $orderId, OrderStatus $to): bool;
 

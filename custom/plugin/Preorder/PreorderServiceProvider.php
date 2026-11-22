@@ -19,6 +19,7 @@ use Modules\Inventory\Events\StockAdjusted;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Shared\Support\SpreadsheetRows;
+use Modules\Shared\Support\StoreClock;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\StorefrontEnricher;
 use Plugin\Preorder\Infrastructure\IncomingBackorderPolicy;
@@ -135,9 +136,15 @@ final class PreorderServiceProvider extends PluginServiceProvider
             $variants = $this->app->make(VariantDirectory::class)->find(array_keys($quantities));
             $status = $this->app->make(Backorders::class)->status(array_keys($quantities));
             $rows = [];
+            $today = now(StoreClock::timezone())->toDateString();
             foreach ($quantities as $variantId => $quantity) {
                 $date = $status[$variantId]['expected_on'] ?? null;
-                $rows[] = ['label' => ($variants[$variantId]->sku ?? "#{$variantId}")." × {$quantity}", 'value' => $date === null ? __('vani-preorder::texts.preorder_service_provider.awaiting_stock_2') : __('vani-preorder::texts.preorder_service_provider.expected').self::shortDate($date)];
+                $value = match (true) {
+                    $date === null => __('vani-preorder::texts.preorder_service_provider.awaiting_stock_2'),
+                    $date < $today => __('vani-preorder::texts.preorder_service_provider.overdue_expected', ['date' => self::shortDate($date)]),
+                    default => __('vani-preorder::texts.preorder_service_provider.expected').self::shortDate($date),
+                };
+                $rows[] = ['label' => ($variants[$variantId]->sku ?? "#{$variantId}")." × {$quantity}", 'value' => $value];
             }
 
             return $rows;
@@ -154,7 +161,7 @@ final class PreorderServiceProvider extends PluginServiceProvider
         });
         // Nhắc CSKH (L37): SKU đặt trước còn đơn chờ mà đã quá ngày dự kiến có hàng → cập nhật ngày hàng về hoặc báo khách.
         $this->onSlot('vani.admin.dashboard.tasks', function (): array {
-            $due = $this->app->make(IncomingStock::class)->dueBy(now()->subDay()->format('Y-m-d'));
+            $due = $this->app->make(IncomingStock::class)->dueBy(now(StoreClock::timezone())->subDay()->toDateString());
             $overdue = $due === [] ? 0 : count(array_filter($this->app->make(Backorders::class)->status(array_keys($due)), fn (array $row): bool => $row['waiting'] > 0));
 
             return [['key' => 'preorder.overdue', 'label' => __('vani-preorder::texts.preorder_service_provider.pre_orders_past_their_expected'), 'count' => $overdue, 'url' => route('admin.inventory.stock.index'), 'tone' => 'warning', 'order' => 35]];

@@ -54,6 +54,19 @@ final class ReconciliationLedger implements Reconciliations
             ->update(['status' => 'matched', 'order_id' => $orderId, 'expected' => $expected, 'actual' => $actual, 'note' => mb_substr($note, 0, 255)]) === 1;
     }
 
+    public function matchedOrders(string $source, array $references): array
+    {
+        $matched = [];
+        foreach (array_chunk(array_values(array_unique($references)), 500) as $chunk) {
+            foreach (DB::table('reconciliation_entries')->where('source', $source)->where('status', 'matched')
+                ->whereNotNull('order_id')->whereIn('reference', $chunk)->pluck('order_id', 'reference') as $reference => $orderId) {
+                $matched[(string) $reference] = (int) $orderId;
+            }
+        }
+
+        return $matched;
+    }
+
     public function openCount(): int
     {
         return DB::table('reconciliation_entries')->where('status', 'mismatch')->count();

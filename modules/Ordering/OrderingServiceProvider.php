@@ -10,6 +10,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
+use Modules\Ordering\Application\CancellationReasons;
 use Modules\Ordering\Application\CustomerDeletionGuard;
 use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;
@@ -86,6 +87,9 @@ final class OrderingServiceProvider extends ModuleServiceProvider
             new SettingDefinition('core', OrderSettings::RETURN_WINDOW_DAYS, $text('return_window_days'), 'int', (int) config('vanishop.fulfillment.return_window_days', 7), help: $text('return_window_days_help'), rules: ['min:0', 'max:90'], group: SettingGroup::Orders),
             new SettingDefinition('core', OrderSettings::CONFIRM_RECEIPT_AFTER_DAYS, $text('confirm_receipt_after_days'), 'int', (int) config('vanishop.fulfillment.confirm_receipt_after_days', 5), help: $text('confirm_receipt_after_days_help'), rules: ['min:1', 'max:60'], group: SettingGroup::Orders),
             new SettingDefinition('core', OrderSettings::AGED_HOURS, $text('aged_hours'), 'int', 24, help: $text('aged_hours_help'), rules: ['min:1', 'max:720'], group: SettingGroup::Orders),
+            new SettingDefinition('core', CancellationReasons::SETTING, $text('cancellation_reasons'), 'text', '', help: $text('cancellation_reasons_help'), rules: [
+                'max:8000', 'regex:/\A\s*(?:[a-z][a-z0-9_.-]{0,63}\h*\|(?=[^\r\n]*\S)[^\r\n]{1,120}(?:\R\h*|\z))*\z/u',
+            ], group: SettingGroup::Orders),
         ] as $definition) {
             $this->app->make(Settings::class)->define($definition);
         }

@@ -5,6 +5,8 @@
 */
 
 return [
+    'cancellation_reasons' => ['changed_mind' => 'Khách đổi ý', 'unreachable' => 'Không liên hệ được khách', 'out_of_stock' => 'Hết hàng', 'other' => 'Khác'],
+    'cancellation_unclassified' => 'Chưa phân loại',
     'order_status' => ['pending' => 'Chờ xác nhận', 'confirmed' => 'Đã xác nhận', 'processing' => 'Đang xử lý', 'completed' => 'Hoàn tất', 'cancelled' => 'Đã huỷ'],
     'payment_status' => ['unpaid' => 'Chưa thanh toán', 'authorized' => 'Đã cấp phép', 'paid' => 'Đã thanh toán', 'partially_refunded' => 'Hoàn một phần', 'refunded' => 'Đã hoàn tiền', 'cod_pending' => 'COD chờ thu', 'cod_collected' => 'COD đã thu', 'failed' => 'Thất bại', 'voided' => 'Đã huỷ thanh toán'],
     'fulfillment_status' => ['unfulfilled' => 'Chưa giao', 'allocated' => 'Chờ giao hãng', 'partially_shipped' => 'Giao một phần', 'shipped' => 'Đang giao', 'delivered' => 'Đã giao', 'returned_to_sender' => 'Hoàn về'],

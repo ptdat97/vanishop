@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.72 — 2026-11-22 · Extension API 1.28.0
+
+- Ordering dùng chỉ mục cho hàng đợi. `OrderActions::cancel()` nhận tùy chọn `reasonCode`. Core đọc thêm mã lý do huỷ qua `vani.order.cancellation_reasons` và thống kê qua `OrderStatistics::cancellations()`.
+- `DeliveryStatistics::codAging()` cung cấp tuổi COD chưa khớp bảng kê theo hãng. `vani.reports` 1.3.6 thêm báo cáo COD chờ đối soát và huỷ đơn theo lý do.
+- `vani.preorder` 1.1.4 hiện nhãn quá ngày dự kiến trên trang đơn.
+- Link đặt lại mật khẩu gắn với địa chỉ email lúc gửi. Link đã gửi theo định dạng cũ cần được yêu cầu lại sau nâng cấp.
+
 ## 0.5.71 — 2026-11-22 · Extension API 1.27.0
 
 - Ordering chụp giá vốn từng dòng lúc tạo đơn bằng `vani.pricing.unit_costs`. Listener chạy trong transaction, đọc giá vốn theo lô và trả số nguyên không âm. `OrderStatistics::variantSales()` trả thêm số lượng, doanh thu và giá vốn của các dòng có ảnh chụp.

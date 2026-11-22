@@ -11,9 +11,11 @@ use Modules\Identity\Contracts\PermissionRegistry;
 use Plugin\Reports\Infrastructure\CampaignResults;
 use Plugin\Reports\Infrastructure\Reports\BrandSalesReport;
 use Plugin\Reports\Infrastructure\Reports\ChannelSalesReport;
+use Plugin\Reports\Infrastructure\Reports\CodAgingReport;
 use Plugin\Reports\Infrastructure\Reports\DailySalesReport;
 use Plugin\Reports\Infrastructure\Reports\GrossProfitByProductReport;
 use Plugin\Reports\Infrastructure\Reports\GrossProfitDailyReport;
+use Plugin\Reports\Infrastructure\Reports\OrderCancellationReport;
 use Plugin\Reports\Infrastructure\Reports\PaymentMethodSalesReport;
 use Plugin\Reports\Infrastructure\Reports\ProductSalesReport;
 use Plugin\Reports\Infrastructure\Reports\ReturnReasonsReport;
@@ -55,7 +57,7 @@ final class ReportsServiceProvider extends PluginServiceProvider
             rows: fn (int $campaignId): array => $this->app->make(CampaignResults::class)->rows($campaignId), permission: self::PERMISSION);
 
         foreach ([DailySalesReport::class, ProductSalesReport::class, BrandSalesReport::class, PaymentMethodSalesReport::class, ChannelSalesReport::class,
-            GrossProfitDailyReport::class, GrossProfitByProductReport::class, ReturnsByProductReport::class, ReturnReasonsReport::class] as $report) {
+            GrossProfitDailyReport::class, GrossProfitByProductReport::class, ReturnsByProductReport::class, ReturnReasonsReport::class, OrderCancellationReport::class, CodAgingReport::class] as $report) {
             $this->contribute(ReportProvider::TAG, $report);
         }
     }

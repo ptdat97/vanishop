@@ -20,4 +20,11 @@ interface DeliveryStatistics
      * @return array{cod_shipments: int, delivered: int, failed: int, failed_cod_amount: int}
      */
     public function cod(DateTimeImmutable $from, DateTimeImmutable $to): array;
+
+    /**
+     * COD đã giao trong [from, to), hiện chưa khớp bảng kê. Tuổi tính theo số ngày đủ 24 giờ kể từ lúc giao.
+     *
+     * @return list<array{carrier: string, bucket: string, shipments: int, amount: int}>
+     */
+    public function codAging(DateTimeImmutable $from, DateTimeImmutable $to, DateTimeImmutable $now): array;
 }

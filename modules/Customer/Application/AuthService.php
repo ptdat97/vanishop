@@ -219,7 +219,7 @@ final class AuthService
         RateLimiter::hit("customer-reset:{$email}", 600);
 
         $token = Str::random(64);
-        Cache::put(self::RESET_KEY.hash('sha256', $token), $customer->id, now()->addMinutes($this->resetTtlMinutes));
+        Cache::put(self::RESET_KEY.hash('sha256', $token), ['customer_id' => $customer->id, 'email' => $email], now()->addMinutes($this->resetTtlMinutes));
         $this->emails->sendPasswordReset($email, $customer->full_name, $token, $this->resetTtlMinutes);
     }
 
@@ -229,14 +229,16 @@ final class AuthService
      */
     public function resetPassword(string $token, string $password): void
     {
-        $customerId = Cache::pull(self::RESET_KEY.hash('sha256', $token));
-        $customer = is_int($customerId) || is_numeric($customerId) ? Customer::query()->whereKey((int) $customerId)->where('status', CustomerStatus::Active)->first() : null;
-        if ($customer === null) {
-            throw CustomerRejected::passwordResetInvalid();
-        }
+        $pending = $this->consumeEmailChallenge(self::RESET_KEY, $token);
+        DB::transaction(function () use ($pending, $password): void {
+            $customer = $this->emailChallengeCustomer($pending);
+            if ($customer === null) {
+                throw CustomerRejected::passwordResetInvalid();
+            }
 
-        $customer->update(['password' => $password, 'email_verified_at' => $customer->email_verified_at ?? now()]);
-        $this->revokeAll($customer->id);
+            $customer->update(['password' => $password, 'email_verified_at' => $customer->email_verified_at ?? now()]);
+            $this->revokeAll($customer->id);
+        });
     }
 
     /**
@@ -320,16 +322,36 @@ final class AuthService
 
     public function verifyEmail(string $token): ?CustomerData
     {
-        $pending = Cache::pull(self::EMAIL_VERIFY_KEY.hash('sha256', $token));
-        $customer = is_array($pending) ? Customer::query()->find((int) $pending['customer_id']) : null;
-        if ($customer === null || $customer->email === null || self::normalizeEmail($customer->email) !== $pending['email']) {
+        $pending = $this->consumeEmailChallenge(self::EMAIL_VERIFY_KEY, $token);
+
+        return DB::transaction(function () use ($pending): ?CustomerData {
+            $customer = $this->emailChallengeCustomer($pending);
+            if ($customer === null) {
+                return null;
+            }
+            if ($customer->email_verified_at === null) {
+                $customer->update(['email_verified_at' => now()]);
+            }
+
+            return CustomerService::toData($customer->refresh());
+        });
+    }
+
+    private function consumeEmailChallenge(string $prefix, string $token): mixed
+    {
+        $key = $prefix.hash('sha256', $token);
+
+        return Cache::lock($key.':consume', 10)->get(fn (): mixed => Cache::pull($key));
+    }
+
+    private function emailChallengeCustomer(mixed $pending): ?Customer
+    {
+        if (! is_array($pending) || ! isset($pending['customer_id'], $pending['email'])) {
             return null;
         }
-        if ($customer->email_verified_at === null) {
-            $customer->update(['email_verified_at' => now()]);
-        }
+        $customer = Customer::query()->where('status', CustomerStatus::Active)->lockForUpdate()->find((int) $pending['customer_id']);
 
-        return CustomerService::toData($customer->refresh());
+        return $customer?->email !== null && self::normalizeEmail($customer->email) === $pending['email'] ? $customer : null;
     }
 
     private function activeByEmail(string $email): ?Customer

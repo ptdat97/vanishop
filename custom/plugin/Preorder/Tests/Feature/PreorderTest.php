@@ -110,6 +110,8 @@ it('L37: đơn COD có món có hàng + món đặt trước → "Giao trước 
     $this->actingAs(T::staff(['admin.access', 'orders.view', 'fulfillment.view', 'fulfillment.manage', 'inventory.view']), 'staff');
     $tasks = collect($this->get('/admin')->viewData('page')['props']['tasks'] ?? [])->keyBy('key');
     expect($tasks['preorder.overdue']['count'] ?? null)->toBe(1);
+    $panels = $this->get("/admin/orders/orders/{$order->id}")->viewData('page')['props']['panels'];
+    expect(collect($panels)->flatMap(fn (array $panel): array => $panel['rows'] ?? [])->pluck('value')->implode(' '))->toContain('Quá ngày dự kiến');
 
     // Trang đơn có thao tác tách, mỗi dòng một ô "giao sau".
     $actions = collect($this->get("/admin/orders/orders/{$order->id}")->viewData('page')['props']['panels'])->flatMap(fn ($panel) => $panel['actions'] ?? [])->keyBy('key');

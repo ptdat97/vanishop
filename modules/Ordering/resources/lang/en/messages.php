@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'invalid_cancellation_reason' => 'The selected cancellation reason is invalid.',
     'status_same' => 'The order already has this status.',
     'status_cancel_blocked' => 'Cannot cancel: goods have left the warehouse or the order is closed — use Returns.',
     'status_terminal' => 'The order is completed or cancelled and cannot be reopened.',

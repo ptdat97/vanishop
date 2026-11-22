@@ -107,7 +107,14 @@ it('widget Tổng quan + báo cáo của plugin; nhân viên thiếu quyền ch�
             ->where('navigation', fn (mixed $items) => collect($items)->pluck('key')->contains('reports')));
 
     $this->actingAs($manager, 'staff')->get('/admin/reports')
-        ->assertInertia(fn (Assert $page) => $page->has('reports', 9));
+        ->assertInertia(fn (Assert $page) => $page->has('reports', 11)
+            ->where('reports', fn (mixed $reports) => collect($reports)->pluck('key')->contains('cod-aging')
+                && collect($reports)->pluck('key')->contains('order-cancellations')));
+
+    $this->get('/admin/reports/cod-aging?preset=7d')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('result.table.columns', 4));
+    $this->get('/admin/reports/order-cancellations?preset=7d')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('result.table.columns', 3));
 
     $this->actingAs($manager, 'staff')->get('/admin/reports/sales-by-day?preset=7d')->assertOk()
         ->assertInertia(fn (Assert $page) => $page

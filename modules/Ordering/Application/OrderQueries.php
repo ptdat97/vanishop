@@ -34,7 +34,6 @@ final class OrderQueries
     public function search(array $filters, int $perPage = 30, ?ListSort $sort = null): LengthAwarePaginator
     {
         return $this->filtered($filters)
-            ->select('orders.*')->selectRaw(OrderStage::sql().' as stage')
             ->with('lines')
             ->when($sort,
                 fn ($query) => $sort->apply($query, 'orders.id'),
@@ -100,7 +99,7 @@ final class OrderQueries
     {
         $counts = $this->filtered([...$filters, 'stage' => null])
             ->toBase()
-            ->selectRaw(OrderStage::sql().' as stage, count(*) as total')
+            ->selectRaw('stage, count(*) as total')
             ->groupBy('stage')
             ->pluck('total', 'stage');
 
@@ -170,10 +169,10 @@ final class OrderQueries
             ->when($value('payment_status') !== '', fn ($query) => $query->where('payment_status', $value('payment_status')))
             ->when($value('payment_method') !== '', fn ($query) => $query->where('payment_method', $value('payment_method')))
             ->when($value('source') !== '', fn ($query) => $query->where('source', $value('source')))
-            ->when(in_array($stage, OrderStage::STAGES, true), fn ($query) => $query->whereRaw('('.OrderStage::sql().') = ?', [$stage]))
-            ->when($value('actionable') === '1', fn ($query) => $query->whereIn(DB::raw('('.OrderStage::sql().')'), OrderStage::ACTIONABLE))
+            ->when(in_array($stage, OrderStage::STAGES, true), fn ($query) => $query->where('stage', $stage))
+            ->when($value('actionable') === '1', fn ($query) => $query->whereIn('stage', OrderStage::ACTIONABLE))
             // `aged` (giờ): đơn đang chờ xác nhận / chờ giao hãng đặt quá N giờ — chưa được xử lý kịp.
-            ->when((int) $value('aged') > 0, fn ($query) => $query->whereRaw('('.OrderStage::sql().") in ('to_confirm', 'to_ship')")->where('placed_at', '<', now()->subHours((int) $value('aged'))))
+            ->when((int) $value('aged') > 0, fn ($query) => $query->whereIn('stage', ['to_confirm', 'to_ship'])->where('placed_at', '<', now()->subHours((int) $value('aged'))))
             ->when($date('from', false) !== null, fn ($query) => $query->where('placed_at', '>=', $date('from', false)->utc()))
             ->when($date('to', true) !== null, fn ($query) => $query->where('placed_at', '<', $date('to', true)->utc()))
             ->when($q !== '', fn ($query) => $phone !== null

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Fulfillment\Contracts\DeliveryStatistics;
 use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Persistence\Models\Payment;
 
@@ -43,6 +44,17 @@ beforeEach(function () {
         '6;GHN009;abc;0',
     ]));
     $this->actingAs(T::staff(['admin.access', 'fulfillment.view', 'payments.confirm']), 'staff');
+});
+
+it('tính tuổi COD của kiện đã giao chưa khớp bảng kê và bỏ kiện đã khớp', function () {
+    $asOf = new DateTimeImmutable('2026-11-20T00:00:00+00:00');
+    DB::table('shipments')->where('order_id', $this->delivered)->update(['delivered_at' => '2026-11-16 00:00:00']);
+    DB::table('shipments')->where('order_id', $this->short)->update(['delivered_at' => '2026-11-13 00:00:00']);
+    $preview = $this->post('/admin/fulfillment/cod-statements/preview', ['file' => ($this->file)()]);
+    $this->post($preview->viewData('page')['props']['urls']['apply'])->assertSessionHas('success');
+
+    expect(app(DeliveryStatistics::class)->codAging($asOf->modify('-30 days'), $asOf, $asOf))
+        ->toBe([['carrier' => 'manual', 'bucket' => '7-14', 'shipments' => 1, 'amount' => 330_000]]);
 });
 
 it('xem trước phân loại từng dòng, chưa ghi gì', function () {

@@ -11,6 +11,7 @@ return [
         'csv_xlsx_file_column_1' => '.csv/.xlsx file: column 1 SKU, column 2 incoming quantity (0 = delete), column 3 expected date dd/mm/yyyy (optional).',
         'do_not_hand_orders_still' => 'Do not hand orders still waiting for stock to the carrier',
         'expected' => 'expected',
+        'overdue_expected' => 'Past expected date :date',
         'file_has_no_matching_sku' => 'The file has no matching SKU in the first column.',
         'import_incoming_stock' => 'Import incoming stock',
         'incoming' => 'Incoming',

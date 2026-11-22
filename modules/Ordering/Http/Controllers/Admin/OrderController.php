@@ -20,6 +20,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Application\AdminQueries;
+use Modules\Ordering\Application\CancellationReasons;
 use Modules\Ordering\Application\CustomerStatusLabel;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
@@ -272,8 +273,13 @@ final class OrderController
         }
 
         if (Gate::allows('orders.cancel') && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status)) {
+            $reasons = app(CancellationReasons::class)->options();
             $actions[] = ['key' => 'cancel', 'label' => __('ordering::texts.order_controller.cancel_order'), 'url' => "{$url}/cancel", 'tone' => 'danger',
-                'fields' => [['key' => 'reason', 'label' => __('ordering::texts.order_controller.reason_cancelling_reserved_stock_goes'), 'required' => true]]];
+                'fields' => [
+                    ['key' => 'reason_code', 'label' => __('ordering::texts.order_controller.cancellation_reason_code'), 'required' => true,
+                        'options' => array_map(fn (string $value, string $label): array => ['value' => $value, 'label' => $label], array_keys($reasons), array_values($reasons))],
+                    ['key' => 'reason', 'label' => __('ordering::texts.order_controller.cancellation_note')],
+                ]];
         }
 
         $row = function (string $key, string $label, string $code, string $labels): array {
@@ -610,8 +616,11 @@ final class OrderController
     public function cancel(Order $order, Request $request, OrderCommands $commands): RedirectResponse
     {
         Gate::authorize('orders.cancel');
-        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
-        $commands->cancel($order->id, $data['reason'], 'staff');
+        $data = $request->validate([
+            'reason' => ['required_without:reason_code', 'nullable', 'string', 'max:255'],
+            'reason_code' => ['nullable', 'string', 'max:64'],
+        ]);
+        $commands->cancel($order->id, $data['reason'] ?? '', 'staff', $data['reason_code'] ?? null);
 
         return back()->with('success', __('ordering::messages.cancelled'));
     }

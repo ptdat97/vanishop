@@ -4,9 +4,10 @@ import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
+import { useAdminForm, useLeaveGuard } from '@admin/forms';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { useStoreLocales } from '@admin/locales';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 type Template = {
@@ -32,7 +33,7 @@ const props = defineProps<{
 const { locales, defaultLocale } = useStoreLocales();
 const editing = ref<Template | null>(null);
 const creating = ref(false);
-const form = useForm({
+const { form, save } = useAdminForm({
     type: 'order_placed',
     channel: 'mail',
     locale: defaultLocale,
@@ -41,7 +42,11 @@ const form = useForm({
     meta_json: '',
     active: true,
     lock_version: 0,
+}, {
+    leaveGuard: false,
+    lockVersion: () => props.templates.find((template) => template.id === editing.value?.id)?.lock_version,
 });
+useLeaveGuard(() => (creating.value || editing.value !== null) && form.isDirty);
 const metaError = ref<string | null>(null);
 const typeOptions = computed(() => Object.entries(props.types).map(([value, type]) => ({ value, label: type.label })));
 const localeOptions = locales.map((option) => ({ value: option.code, label: option.label }));
@@ -80,17 +85,20 @@ function submit(): void {
         metaError.value = t('notification::admin.templates_index.invalid_json');
         return;
     }
-    const payload = form.transform((data) => ({
+    form.transform((data) => ({
         ...data,
         meta,
         meta_json: undefined,
     }));
     const options = {
         preserveScroll: true,
-        onSuccess: () => ((editing.value = null), (creating.value = false)),
+        onSuccess: () => {
+            editing.value = null;
+            creating.value = false;
+        },
     };
-    if (editing.value) payload.put(`${props.baseUrl}/${editing.value.id}`, options);
-    else payload.post(props.baseUrl, options);
+    if (editing.value) save('put', `${props.baseUrl}/${editing.value.id}`, options);
+    else save('post', props.baseUrl, options);
 }
 
 async function remove(template: Template): Promise<void> {

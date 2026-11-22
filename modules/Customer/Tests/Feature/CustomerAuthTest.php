@@ -147,3 +147,16 @@ it('quên mật khẩu: luôn 202; link đặt lại một lần, thu hồi mọ
 
     $this->postJson(H::API.'/auth/login', ['email' => $customer->email, 'password' => 'moi-12345'], H::CHANNEL)->assertOk();
 });
+
+it('link đặt lại từ email cũ không đặt mật khẩu hay xác minh email mới', function () {
+    $customer = H::account();
+    $token = H::login($this);
+    $this->postJson(H::API.'/auth/password/forgot', ['email' => $customer->email])->assertStatus(202);
+    $reset = H::mailedToken($customer->email);
+    $this->patchJson(H::API.'/me', ['email' => 'new-address@example.test'], H::auth($token))->assertOk();
+
+    $this->postJson(H::API.'/auth/password/reset', ['token' => $reset, 'password' => 'moi-12345', 'password_confirmation' => 'moi-12345'])
+        ->assertUnprocessable()->assertJsonPath('error.code', 'customer.password_reset_invalid');
+    expect($customer->fresh()->email_verified_at)->toBeNull();
+    $this->getJson(H::API.'/me', H::auth($token))->assertOk();
+});

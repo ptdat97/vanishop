@@ -23,6 +23,28 @@ final class EloquentOrderStatistics implements OrderStatistics
     /** …hoặc hàng đã rời kho (COD đang giao). */
     private const CONFIRMED_FULFILLMENT = ['partially_shipped', 'shipped', 'delivered'];
 
+    public function __construct(private readonly CancellationReasons $cancellationReasons) {}
+
+    public function cancellations(DateTimeImmutable $from, DateTimeImmutable $to): array
+    {
+        $this->guardRange($from, $to);
+        $labels = $this->cancellationReasons->options();
+
+        return DB::table('order_events')->whereIn('type', ['status_changed', 'status_overridden'])
+            ->where('to_status', OrderStatus::Cancelled->value)
+            ->where('created_at', '>=', $this->utc($from))->where('created_at', '<', $this->utc($to))
+            ->select('data->reason_code as reason_code')->selectRaw('count(*) as total')
+            ->groupBy('data->reason_code')->orderByDesc('total')->orderBy('reason_code')
+            ->get()->map(function (object $row) use ($labels): array {
+                $code = is_string($row->reason_code) && $row->reason_code !== '' ? $row->reason_code : null;
+
+                return [
+                    'code' => $code, 'label' => $code === null ? __('ordering::labels.cancellation_unclassified') : ($labels[$code] ?? $code),
+                    'count' => (int) $row->total,
+                ];
+            })->all();
+    }
+
     public function totals(DateTimeImmutable $from, DateTimeImmutable $to): SalesTotals
     {
         $this->guardRange($from, $to);

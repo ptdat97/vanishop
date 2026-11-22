@@ -12,6 +12,8 @@ return [
         'revoke_promotions_no_longer_qualify' => 'Revoke promotions that no longer qualify',
     ],
     'order_controller' => [
+        'cancellation_reason_code' => 'Cancellation reason',
+        'cancellation_note' => 'Optional note',
         'cancel_order' => 'Cancel order',
         'change_status' => 'Change status',
         'complete_order' => 'Complete order',
@@ -100,6 +102,8 @@ return [
         'customer_note' => 'Customer note: :note',
     ],
     'settings' => [
+        'cancellation_reasons' => 'Additional cancellation reasons',
+        'cancellation_reasons_help' => 'Enter one code|label pair per line, for example bad_address|Incorrect address. Keep codes stable for reporting.',
         'aged_hours' => 'Flag stale orders after (hours)',
         'aged_hours_help' => 'Orders not confirmed or not shipped for longer than this appear in the dashboard to-do list.',
         'confirm_receipt_after_days' => 'Allow "I\'ve received it" after (days)',

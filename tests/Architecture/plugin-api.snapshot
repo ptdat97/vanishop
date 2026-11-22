@@ -1,4 +1,4 @@
-Extension API 1.27.0
+Extension API 1.28.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -345,6 +345,7 @@ class Modules\Fulfillment\Contracts\Data\SourcingRequest
   __construct(int $orderId, array $lines, array $reserved, array $shippingAddress)
 interface Modules\Fulfillment\Contracts\DeliveryStatistics
   cod(DateTimeImmutable $from, DateTimeImmutable $to): array
+  codAging(DateTimeImmutable $from, DateTimeImmutable $to, DateTimeImmutable $now): array
 class Modules\Fulfillment\Contracts\InvalidCarrierEvent extends RuntimeException
 interface Modules\Fulfillment\Contracts\ShipmentReader [experimental]
   forOrder(int $orderId): array
@@ -594,7 +595,7 @@ class Modules\Ordering\Contracts\OrderActionRejected extends Modules\Shared\Doma
   status(): int
 interface Modules\Ordering\Contracts\OrderActions [experimental]
   confirm(int $orderId, string $reason, string $source): void
-  cancel(int $orderId, string $reason, string $source): void
+  cancel(int $orderId, string $reason, string $source, ?string $reasonCode = NULL): void
   addNote(int $orderId, string $note, string $source): void
 interface Modules\Ordering\Contracts\OrderReader
   find(int $orderId): ?Modules\Ordering\Contracts\Data\OrderData
@@ -621,6 +622,7 @@ interface Modules\Ordering\Contracts\OrderStatistics
   daily(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array
   breakdown(Modules\Ordering\Contracts\Data\SalesDimension $dimension, DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
   variantSales(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array
+  cancellations(DateTimeImmutable $from, DateTimeImmutable $to): array
   topStyles(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
   confirmedQuantitiesByStyle(DateTimeImmutable $from, DateTimeImmutable $to, ?array $styleIds = NULL): array
   countByStatus(): array
@@ -758,6 +760,7 @@ interface Modules\Payment\Contracts\Reconciliations [experimental]
   record(string $source, string $reference, bool $matched, ?int $orderId = NULL, ?int $paymentId = NULL, ?int $expected = NULL, ?int $actual = NULL, ?string $note = NULL): bool
   recorded(string $source, array $references): array
   statuses(string $source, array $references): array
+  matchedOrders(string $source, array $references): array
   matchOpen(string $source, string $reference, int $orderId, int $expected, int $actual, string $note): bool
 interface Modules\Payment\Contracts\RefundPayout [experimental]
   const TAG = 'vani.payment.refund_payouts'
@@ -1027,6 +1030,7 @@ hook vani.integration.order_payload filter(payload: array, order: Modules\Orderi
 hook vani.order.after_create action(order: Modules\Ordering\Contracts\Data\PlacedOrder)
 hook vani.order.before_confirm validate(order: Modules\Ordering\Contracts\Data\OrderData)
 hook vani.order.before_create filter(meta: array, request: Modules\Checkout\Contracts\Data\CheckoutRequest, totals: Modules\Checkout\Contracts\Data\Totals)
+hook vani.order.cancellation_reasons filter(reasons: array<string, string>, builtIn: array<string, string>)
 hook vani.payment.before_refund validate(payment: Modules\Payment\Contracts\Data\PaymentView, amount: Modules\Shared\Domain\Money\Money, reason: string)
 hook vani.pricing.bulk.warnings filter(warnings: array, variantId: int, listAmount: ?int, amount: int, priceList: string)
 hook vani.pricing.unit_costs filter(costs: array<int, int>, variantIds: list<int>)

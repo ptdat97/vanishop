@@ -7,6 +7,7 @@ namespace Modules\Ordering\Application;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\InventoryReservation;
@@ -43,6 +44,7 @@ final class OrderCommands implements OrderActions
         private readonly PromotionEngine $promotions,
         private readonly Settings $settings,
         private readonly OrderReader $orders,
+        private readonly CancellationReasons $cancellationReasons,
     ) {}
 
     /**
@@ -80,9 +82,16 @@ final class OrderCommands implements OrderActions
         $this->audit->record('order.completed', 'order', $orderId, ['reason' => $reason]);
     }
 
-    public function cancel(int $orderId, string $reason, string $source): void
+    public function cancel(int $orderId, string $reason, string $source, ?string $reasonCode = null): void
     {
-        DB::transaction(function () use ($orderId, $reason, $source): void {
+        if ($reasonCode !== null) {
+            $label = $this->cancellationReasons->options()[$reasonCode] ?? null;
+            if ($label === null) {
+                throw ValidationException::withMessages(['reason_code' => __('ordering::messages.invalid_cancellation_reason')]);
+            }
+            $reason = trim($reason) === '' ? $label : $reason;
+        }
+        DB::transaction(function () use ($orderId, $reason, $source, $reasonCode): void {
             $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
             $allowed = $source === 'customer'
                 ? OrderPolicy::customerCanCancel($order->order_status, (string) $order->fulfillment_status)
@@ -91,11 +100,11 @@ final class OrderCommands implements OrderActions
                 throw OrderActionRejected::cannotCancel();
             }
 
-            $this->transitions->transition($order->id, OrderStatus::Cancelled, $reason, $source);
+            $this->transitions->transition($order->id, OrderStatus::Cancelled, $reason, $source, $reasonCode);
         });
 
         if ($source !== 'customer') {
-            $this->audit->record('order.cancelled', 'order', $orderId, ['reason' => $reason, 'source' => $source]);
+            $this->audit->record('order.cancelled', 'order', $orderId, ['reason' => $reason, 'source' => $source, 'reason_code' => $reasonCode]);
         }
     }
 

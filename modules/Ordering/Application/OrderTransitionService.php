@@ -25,9 +25,9 @@ final class OrderTransitionService implements OrderTransitions
 {
     public function __construct(private readonly CurrentContext $context) {}
 
-    public function transition(int $orderId, OrderStatus $to, string $reason, string $source): bool
+    public function transition(int $orderId, OrderStatus $to, string $reason, string $source, ?string $reasonCode = null): bool
     {
-        return DB::transaction(function () use ($orderId, $to, $reason, $source): bool {
+        return DB::transaction(function () use ($orderId, $to, $reason, $source, $reasonCode): bool {
             $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
             $from = $order->order_status;
 
@@ -39,7 +39,7 @@ final class OrderTransitionService implements OrderTransitions
             }
 
             $order->update(['order_status' => $to, 'lock_version' => $order->lock_version + 1]);
-            $this->record($order->id, 'status_changed', $from->value, $to->value, $reason, $source);
+            $this->record($order->id, 'status_changed', $from->value, $to->value, $reason, $source, $to === OrderStatus::Cancelled ? $reasonCode : null);
 
             match ($to) {
                 OrderStatus::Confirmed => event(new OrderConfirmed($order->id, $order->public_id, $reason)),
@@ -170,14 +170,14 @@ final class OrderTransitionService implements OrderTransitions
         Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
     }
 
-    private function record(int $orderId, string $type, ?string $from, ?string $to, string $reason, string $source): void
+    private function record(int $orderId, string $type, ?string $from, ?string $to, string $reason, string $source, ?string $reasonCode = null): void
     {
         $actor = $this->context->has() ? $this->context->actor() : null;
 
         DB::table('order_events')->insert([
             'order_id' => $orderId, 'type' => $type, 'from_status' => $from, 'to_status' => $to, 'reason' => $reason,
             'actor_type' => $actor?->type->value, 'actor_id' => $actor?->id, 'source' => $source,
-            'correlation_id' => Context::get('correlation_id'), 'data' => null, 'created_at' => now(),
+            'correlation_id' => Context::get('correlation_id'), 'data' => $reasonCode === null ? null : json_encode(['reason_code' => $reasonCode], JSON_THROW_ON_ERROR), 'created_at' => now(),
         ]);
     }
 }

@@ -35,6 +35,12 @@ interface Reconciliations
      */
     public function statuses(string $source, array $references): array;
 
+    /**
+     * @param  list<string>  $references
+     * @return array<string, int> mã đã khớp => id đơn
+     */
+    public function matchedOrders(string $source, array $references): array;
+
     /** Chuyển một dòng lệch còn mở sang khớp. Dòng đã xử lý thủ công hoặc đã khớp trả false. */
     public function matchOpen(string $source, string $reference, int $orderId, int $expected, int $actual, string $note): bool;
 }

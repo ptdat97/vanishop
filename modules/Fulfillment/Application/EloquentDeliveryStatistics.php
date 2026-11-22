@@ -10,9 +10,49 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\Fulfillment\Contracts\DeliveryStatistics;
 use Modules\Fulfillment\Domain\ShipmentStatus;
+use Modules\Payment\Contracts\Reconciliations;
 
 final class EloquentDeliveryStatistics implements DeliveryStatistics
 {
+    public function __construct(private readonly Reconciliations $reconciliations) {}
+
+    public function codAging(DateTimeImmutable $from, DateTimeImmutable $to, DateTimeImmutable $now): array
+    {
+        $utc = new DateTimeZone('UTC');
+        $rows = [];
+        $delivered = DB::table('shipments')->where('status', ShipmentStatus::Delivered->value)->where('cod_amount', '>', 0)
+            ->where('delivered_at', '>=', $from->setTimezone($utc))->where('delivered_at', '<', $to->setTimezone($utc))
+            ->where('delivered_at', '<=', $now->setTimezone($utc))
+            ->select(['id', 'order_id', 'carrier_code', 'tracking_number', 'cod_amount', 'delivered_at']);
+        foreach ($delivered->lazyById(500)->chunk(500) as $shipments) {
+            $references = $shipments->pluck('tracking_number')->filter()->map(fn (string $code): string => mb_strtoupper($code))->values()->all();
+            $matched = $this->reconciliations->matchedOrders(CodStatement::SOURCE, $references);
+            foreach ($shipments as $shipment) {
+                if (($matched[mb_strtoupper((string) $shipment->tracking_number)] ?? null) === (int) $shipment->order_id) {
+                    continue;
+                }
+                $days = intdiv($now->getTimestamp() - (new DateTimeImmutable((string) $shipment->delivered_at, $utc))->getTimestamp(), 86400);
+                $bucket = match (true) {
+                    $days < 7 => '0-6',
+                    $days < 15 => '7-14',
+                    $days < 30 => '15-29',
+                    default => '30+',
+                };
+                $carrier = (string) $shipment->carrier_code;
+                $rows[$carrier][$bucket] ??= ['carrier' => $carrier, 'bucket' => $bucket, 'shipments' => 0, 'amount' => 0];
+                $rows[$carrier][$bucket]['shipments']++;
+                $rows[$carrier][$bucket]['amount'] += (int) $shipment->cod_amount;
+            }
+        }
+        ksort($rows);
+
+        return array_merge(...array_map(static function (array $buckets): array {
+            uksort($buckets, fn (string $a, string $b): int => (int) $a <=> (int) $b);
+
+            return array_values($buckets);
+        }, array_values($rows)));
+    }
+
     public function cod(DateTimeImmutable $from, DateTimeImmutable $to): array
     {
         $utc = fn (DateTimeImmutable $at): string => $at->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'invalid_cancellation_reason' => 'Lý do huỷ đã chọn không hợp lệ.',
     'status_same' => 'Đơn đang ở trạng thái này.',
     'status_cancel_blocked' => 'Không huỷ được: hàng đã rời kho hoặc đơn đã kết thúc — dùng Đổi/trả.',
     'status_terminal' => 'Đơn đã hoàn tất hoặc đã huỷ — không mở lại được.',

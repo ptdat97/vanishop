@@ -70,4 +70,12 @@ return [
         'args' => ['order' => 'Modules\\Ordering\\Contracts\\Data\\OrderData'],
         'description' => 'Chặn xác nhận đơn (chốt ① ADR-046, EP v3 X2) — nhân viên bấm, xác nhận hàng loạt và tự động hoá (OrderActions, vani.cod) đều qua đây. Listener trả list<string> lý do; có lý do thì từ chối (order.confirm_blocked), đơn giữ "Cần xác nhận". Chỉ đọc, không I/O mạng chậm.',
     ],
+    'vani.order.cancellation_reasons' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.5.72',
+        'on_error' => 'skip',
+        'args' => ['reasons' => 'array<string, string>', 'builtIn' => 'array<string, string>'],
+        'description' => 'Thêm mã lý do huỷ và nhãn theo ngôn ngữ. Chỉ thêm mã mới, giữ mã do Core hoặc Admin khai báo.',
+    ],
 ];

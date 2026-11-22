@@ -11,6 +11,7 @@ return [
         'csv_xlsx_file_column_1' => 'File .csv/.xlsx: cột 1 SKU, cột 2 số lượng đang về (0 = xoá), cột 3 ngày dự kiến dd/mm/yyyy (tuỳ chọn).',
         'do_not_hand_orders_still' => 'Không cho đẩy lên hãng đơn còn chờ hàng',
         'expected' => 'dự kiến ',
+        'overdue_expected' => 'Quá ngày dự kiến :date',
         'file_has_no_matching_sku' => 'File không có SKU nào khớp ở cột đầu.',
         'import_incoming_stock' => 'Nhập hàng đang về',
         'incoming' => 'Đang về',

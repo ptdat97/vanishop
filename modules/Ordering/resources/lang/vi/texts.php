@@ -12,6 +12,8 @@ return [
         'revoke_promotions_no_longer_qualify' => 'Thu hồi khuyến mãi không còn đủ điều kiện',
     ],
     'order_controller' => [
+        'cancellation_reason_code' => 'Lý do huỷ đơn',
+        'cancellation_note' => 'Ghi chú (không bắt buộc)',
         'cancel_order' => 'Huỷ đơn',
         'change_status' => 'Đổi trạng thái',
         'complete_order' => 'Hoàn tất đơn',
@@ -100,6 +102,8 @@ return [
         'customer_note' => 'Ghi chú của khách: :note',
     ],
     'settings' => [
+        'cancellation_reasons' => 'Lý do huỷ đơn bổ sung',
+        'cancellation_reasons_help' => 'Mỗi dòng theo dạng mã|nhãn. Ví dụ: loi_dia_chi|Sai địa chỉ. Giữ mã ổn định để báo cáo theo kỳ.',
         'aged_hours' => 'Cảnh báo đơn tồn đọng sau (giờ)',
         'aged_hours_help' => 'Đơn chưa xác nhận hoặc chưa gửi quá số giờ này hiện ở "Việc cần làm" trên trang tổng quan.',
         'confirm_receipt_after_days' => 'Cho khách bấm "Đã nhận hàng" sau (ngày)',

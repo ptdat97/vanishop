@@ -11,6 +11,7 @@ import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { toast } from '@admin/toast';
 import { confirmAction, promptFields, type ConfirmField } from '@admin/confirm';
+import { useAdminForm, useLeaveGuard } from '@admin/forms';
 import { useMoney } from '@admin/money';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionDetail } from '@admin/types';
@@ -196,38 +197,50 @@ const actionClass = (action: PanelAction): string => (action.tone === 'primary' 
 const url = computed(() => `${props.baseUrl}/${props.order.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const editingAddress = ref(false);
-const address = props.order.shippingAddress;
-const addressForm = useForm({
-    street_line: address.street_line ?? '',
-    ward_name: address.ward_name ?? '',
-    ward_code: address.ward_code ?? '',
-    province_name: address.province_name ?? '',
-    province_code: address.province_code ?? '',
+const addressData = () => ({
+    street_line: props.order.shippingAddress.street_line ?? '',
+    ward_name: props.order.shippingAddress.ward_name ?? '',
+    ward_code: props.order.shippingAddress.ward_code ?? '',
+    province_name: props.order.shippingAddress.province_name ?? '',
+    province_code: props.order.shippingAddress.province_code ?? '',
     reason: '',
     lock_version: props.order.lockVersion,
 });
+const { form: addressForm, save: submitAddress } = useAdminForm(addressData(), { leaveGuard: false, lockVersion: () => props.order.lockVersion });
 // Khoá lạc quan: lấy phiên bản đơn **lúc bắt đầu sửa** (mở form) — các thao tác trước đó trên trang (đổi trạng thái, huỷ một phần…)
 // đã tăng phiên bản; chỉ thay đổi của người khác trong lúc đang sửa mới bị báo xung đột.
 watch(editingAddress, (open) => {
-    if (open) addressForm.lock_version = props.order.lockVersion;
+    if (open) {
+        addressForm.defaults(addressData());
+        addressForm.reset();
+        addressForm.clearErrors();
+        wards.value = props.addressDirectory?.wards ?? [];
+        wardsError.value = false;
+    }
 });
 const wards = ref<Division[]>(props.addressDirectory?.wards ?? []);
 const wardsError = ref(false);
 const noteForm = useForm({ note: '' });
 const cancellingLines = ref(false);
-const cancelLinesForm = useForm({
+const cancelLinesData = () => ({
     lines: Object.fromEntries(props.order.lines.map((line) => [line.id, 0])) as Record<number, number>,
     reason: '',
     cause: 'shop',
     lock_version: props.order.lockVersion,
 });
+const { form: cancelLinesForm, save: submitCancelLines } = useAdminForm(cancelLinesData(), { leaveGuard: false, lockVersion: () => props.order.lockVersion });
 watch(cancellingLines, (open) => {
-    if (open) cancelLinesForm.lock_version = props.order.lockVersion;
+    if (open) {
+        cancelLinesForm.defaults(cancelLinesData());
+        cancelLinesForm.reset();
+        cancelLinesForm.clearErrors();
+    }
 });
+useLeaveGuard(() => (editingAddress.value && addressForm.isDirty) || (cancellingLines.value && cancelLinesForm.isDirty));
 const cancelTotal = computed(() => Object.values(cancelLinesForm.lines).reduce((sum, quantity) => sum + Number(quantity || 0), 0));
 
 function cancelLines(): void {
-    cancelLinesForm.post(`${url.value}/cancel-lines`, { preserveScroll: true, onSuccess: () => (cancellingLines.value = false) });
+    submitCancelLines('post', `${url.value}/cancel-lines`, { preserveScroll: true, onSuccess: () => { cancellingLines.value = false; } });
 }
 
 async function loadWards(): Promise<void> {
@@ -250,7 +263,6 @@ const causeOptions = [
     { value: 'shop', label: t('ordering::admin.orders_show.store_error_out_stock_wrong') },
     { value: 'customer', label: t('ordering::admin.orders_show.customer_asked_remove_items') },
 ];
-watch(() => addressForm.province_code, loadWards);
 const lineColumns = computed(() => [
     { key: 'name', label: t('ordering::admin.orders_show.products') },
     { key: 'quantity', label: 'SL' },
@@ -266,9 +278,8 @@ function statusLabel(status: string): string {
 }
 
 function saveAddress(): void {
-    addressForm.put(`${url.value}/shipping-address`, {
-        preserveScroll: true,
-        onSuccess: () => (editingAddress.value = false),
+    submitAddress('put', `${url.value}/shipping-address`, {
+        onSuccess: () => { editingAddress.value = false; },
     });
 }
 
@@ -493,6 +504,7 @@ function addNote(): void {
                     <h2 class="font-semibold">{{ t('ordering::admin.orders_show.deliver') }}</h2>
                     <button
                         v-if="can.change_address && !editingAddress"
+                        id="order-edit-address"
                         type="button"
                         class="text-xs text-indigo-600 hover:underline"
                         @click="editingAddress = true"
@@ -508,12 +520,12 @@ function addNote(): void {
                     </p>
                 </template>
                 <form v-else class="space-y-2" @submit.prevent="saveAddress">
-                    <FormField :label="t('ordering::admin.orders_show.house_number_street')" :error="addressForm.errors.street_line"
-                        ><input v-model="addressForm.street_line" :class="inputClass"
+                    <FormField for="order-street-line" :label="t('ordering::admin.orders_show.house_number_street')" :error="addressForm.errors.street_line"
+                        ><input id="order-street-line" v-model="addressForm.street_line" :class="inputClass"
                     /></FormField>
                     <template v-if="addressDirectory">
                         <FormField :label="t('ordering::admin.orders_show.province_city')" for="order-province" :error="addressForm.errors.province_code">
-                            <Combobox id="order-province" v-model="addressForm.province_code" :options="provinceOptions" :placeholder="t('ordering::admin.orders_show.type_search_provinces_cities')" />
+                            <Combobox id="order-province" v-model="addressForm.province_code" :options="provinceOptions" :placeholder="t('ordering::admin.orders_show.type_search_provinces_cities')" @select="loadWards" />
                         </FormField>
                         <FormField :label="t('ordering::admin.orders_show.ward')" for="order-ward" :error="addressForm.errors.ward_code || (wardsError ? t('ordering::admin.orders_show.could_not_load_list_wards') : undefined)">
                             <Combobox id="order-ward" v-model="addressForm.ward_code" :options="wardOptions" :placeholder="t('ordering::admin.orders_show.type_search_wards')" :disabled="!addressForm.province_code" />

@@ -48,6 +48,9 @@ interface OrderStatistics
      */
     public function variantSales(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array;
 
+    /** @return list<array{code: string|null, label: string, count: int}> Tổng theo mốc huỷ trong [from, to). */
+    public function cancellations(DateTimeImmutable $from, DateTimeImmutable $to): array;
+
     /**
      * Sản phẩm (style) bán chạy theo **số lượng** trong khoảng (0.3.43): đơn không huỷ, số lượng dòng sau huỷ một phần (`quantity` đã trừ phần huỷ), không tính
      * đơn thay thế khi đổi hàng; hàng trả lại không trừ; dòng không có id style (đơn cũ) bị bỏ. Số lượng giảm dần, cùng số lượng thì id nhỏ trước. Tối đa 100.

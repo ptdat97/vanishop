@@ -140,6 +140,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.order.before_create` | filter | có (không I/O mạng) | Bổ sung `orders.meta` (khoá theo plugin id) trước khi lưu; tham số `(meta, CheckoutRequest, Totals)`; không sửa giá/dòng. Đọc lại qua `OrderData::$meta`. **Implemented** (0.3) |
 | `vani.order.after_create` | action | có (chỉ ghi DB) | Plugin ghi dữ liệu gắn với đơn (attribution, điểm chờ); tham số `PlacedOrder`. **Implemented** |
 | `vani.order.before_confirm` | validate | không | Chặn xác nhận đơn (nhân viên, hàng loạt, tự động hoá); trả lý do. **Implemented** (0.4.60, EP v3 X2) |
+| `vani.order.cancellation_reasons` | filter | không | Bổ sung mã và nhãn lý do huỷ đơn theo locale. Mã đã khai báo bởi Core hoặc Admin được ưu tiên. **Implemented** (0.5.72) |
 | `vani.fulfillment.before_push` | validate | không | Chặn đẩy vận đơn lên hãng / nhập mã tay; tham số `ShipmentData`. **Implemented** (0.4.60) |
 | `vani.returns.before_approve` | validate | có (transaction duyệt) | Chặn duyệt đổi trả (cả tự duyệt); tham số `ReturnView`. **Implemented** (0.4.60) |
 | `vani.payment.before_refund` | validate | không | Chặn hoàn tiền do nhân viên tạo; tham số `(PaymentView, Money, reason)`. **Implemented** (0.4.60) |
