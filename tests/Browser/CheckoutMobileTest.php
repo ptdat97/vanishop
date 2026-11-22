@@ -56,6 +56,43 @@ it('đặt hàng thiếu thông tin: tóm tắt lỗi đầu trang nhận focus,
     expect(Order::query()->count())->toBe(0);
 });
 
+it('chỉ áp dụng báo giá mới nhất và giữ nút đặt hàng chờ báo giá', function () {
+    $page = ($this->buyNow)();
+    $page->script(<<<'JS'
+        async () => {
+            if (document.readyState !== 'complete') {
+                await new Promise((resolve) => window.addEventListener('load', resolve, { once: true }));
+            }
+            const original = window.fetch;
+            const form = document.querySelector('[data-checkout-form]');
+            const radio = form.querySelector('input[name="payment_method"]');
+            window.quoteRequests = [];
+            window.fetch = (url, options) => options?.body?.get?.('action') === 'quote'
+                ? new Promise((resolve) => window.quoteRequests.push({ resolve, signal: options.signal }))
+                : original(url, options);
+            window.completeQuote = async (index, total) => {
+                const page = new DOMParser().parseFromString(document.documentElement.outerHTML, 'text/html');
+                page.querySelector('[name="expected_total"]').setAttribute('value', total);
+                window.quoteRequests[index].resolve(new Response(page.documentElement.outerHTML));
+                await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            };
+            radio.dispatchEvent(new Event('change', { bubbles: true }));
+            radio.dispatchEvent(new Event('change', { bubbles: true }));
+            const submitter = form.querySelector('[data-checkout-bar] [data-checkout-submit]');
+            window.placementPrevented = !form.dispatchEvent(new SubmitEvent('submit', { submitter, cancelable: true }));
+        }
+    JS);
+    $page->assertScript('window.quoteRequests[0].signal.aborted', true)
+        ->assertScript('window.placementPrevented', true)
+        ->assertPresent('[data-checkout-bar] [data-checkout-submit][aria-disabled="true"]')
+        ->script('() => window.completeQuote(1, 350000)');
+    $page->assertValue('input[name="expected_total"]', '350000')
+        ->script('() => window.completeQuote(0, 340000)');
+    $page->assertValue('input[name="expected_total"]', '350000')
+        ->assertNotPresent('[data-checkout-submit][aria-disabled="true"]')
+        ->assertNoJavaScriptErrors();
+});
+
 it('khách đăng nhập chọn địa chỉ đã lưu: điền người nhận, tỉnh, phường', function () {
     $customer = H::account('0912345678');
     foreach ([['Nhà', '01', 'Thành phố Hà Nội', '10101003', 'Phường Ba Đình', true], ['Công ty', '29', 'Thành phố Hồ Chí Minh', '70101065', 'Phường Bến Thành', false]] as [$label, $province, $provinceName, $ward, $wardName, $default]) {

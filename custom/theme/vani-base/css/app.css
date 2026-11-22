@@ -832,6 +832,82 @@ html:has(.vani-modal[open]) {
     text-underline-offset: 0.35em;
 }
 
+.vani-site-header {
+    color: var(--color-foreground);
+}
+
+.vani-product-card-link::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+}
+
+.vani-product-card-link:focus-visible::after {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
+.vani-product-card-link:hover,
+.vani-product-card-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.vani-product-card [data-vani-price-for],
+.vani-product-card [data-slot='vani.storefront.plp.card.actions'] {
+    position: relative;
+    z-index: 1;
+}
+
+.vani-product-card [data-vani-wishlist-button] {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: none;
+}
+
+.vani-product-card [data-vani-wishlist-button][aria-pressed='true'] svg {
+    fill: currentColor;
+}
+
+.js .vani-icon-fallback,
+html:not(.js) .vani-site-header i[data-lucide] {
+    display: none;
+}
+
+.vani-catalog-banner-copy {
+    padding: clamp(1.5rem, 5vw, 4.5rem);
+}
+
+.vani-catalog-banner-media {
+    aspect-ratio: 16 / 10;
+}
+
+.vani-product-title {
+    font-size: clamp(1.875rem, 4vw, 3rem);
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+    font-weight: 500;
+}
+
+.vani-pdp-shortcut {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    padding: 0.625rem 1rem max(0.625rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+}
+
+@media (width < 768px) {
+    .vani-pdp-gallery {
+        width: 100%;
+        max-height: min(48svh, 28rem);
+    }
+}
+
 [data-lookbook-products] a:hover,
 [data-lookbook-products] a:focus-visible {
     text-decoration-thickness: 2px;
@@ -851,9 +927,46 @@ html:has(.vani-modal[open]) {
         grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
         align-content: stretch;
     }
+
+    .vani-catalog-banner:has(.vani-catalog-banner-media) {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
 }
 
 @layer components {
+    .vani-header-action {
+        @apply inline-flex min-h-11 items-center justify-center rounded-[var(--radius-theme)] px-2 text-foreground hover:bg-subtle;
+    }
+
+    .js .vani-header-action {
+        @apply w-11 px-0;
+    }
+
+    .vani-text-link {
+        @apply inline-flex min-h-11 items-center text-sm underline underline-offset-4;
+    }
+
+    .vani-text-link:hover {
+        text-decoration-thickness: 2px;
+    }
+
+    .vani-checkout-group {
+        @apply min-w-0 border-b border-border pb-6;
+    }
+
+    .vani-checkout-choice {
+        @apply flex min-h-12 cursor-pointer items-center gap-3 rounded-[var(--radius-theme)] border border-border px-3 py-2 text-sm;
+    }
+
+    .vani-checkout-choice:has(input:checked) {
+        @apply border-primary bg-subtle;
+    }
+
+    .vani-checkout-choice input {
+        @apply shrink-0 accent-primary;
+    }
+
     .vani-button-primary {
         @apply inline-flex min-h-12 items-center justify-center rounded-[var(--radius-theme)] bg-primary px-6 py-3 text-center font-medium text-white;
     }

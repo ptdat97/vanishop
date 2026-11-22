@@ -1,6 +1,6 @@
 {{-- data-vani-listing (0.3.93): app.js thay vùng này khi lọc/phân trang (không tải lại trang); link thường cho SEO.
      $listingView: link lọc/sắp xếp/phân trang Core dựng sẵn (Storefront\View\Composers\ListingComposer) — partial chỉ in ra. --}}
-<div data-vani-listing>
+<div class="scroll-mt-20" data-vani-listing>
     <x-vani::hook-slot name="vani.storefront.plp.before_listing" :args="[$listingView['context'], $listing]" />
     @include('theme::partials.drawer', [
         'id' => 'vani-listing-filters',
@@ -10,20 +10,12 @@
     ])
 
     <section>
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-y border-border py-2 text-sm">
             <div class="flex flex-wrap items-center gap-3">
-                <button type="button" class="rounded-[var(--radius-theme)] border border-border px-4 py-2 font-medium"
+                <button type="button" class="vani-text-link font-medium"
                         data-vani-drawer-open="vani-listing-filters" aria-haspopup="dialog" aria-controls="vani-listing-filters"
                         commandfor="vani-listing-filters" command="show-modal">{{ __('theme::catalog.filters') }}</button>
                 <p class="text-slate-500">{{ trans_choice('theme::catalog.product_count', $listing['total'], ['count' => $listing['total']]) }}</p>
-                @foreach ($listingView['active_filters'] as $chip)
-                    <a href="{{ $chip['url'] }}" aria-label="{{ __('theme::catalog.remove_filter', ['filter' => $chip['label']]) }}" class="rounded-[var(--radius-theme)] border px-3 py-1">
-                        {{ $chip['label'] }} <span aria-hidden="true">×</span>
-                    </a>
-                @endforeach
-                @if ($listingView['clear_filters_url'])
-                    <a class="text-primary underline" href="{{ $listingView['clear_filters_url'] }}">{{ __('theme::catalog.clear_filters') }}</a>
-                @endif
             </div>
             {{-- Sắp xếp: form GET thường, giữ bộ lọc đang chọn; sắp theo giá ẩn khi cửa hàng ẩn giá với khách chưa đăng nhập. --}}
             <form method="get" action="{{ $listingView['action'] }}" class="flex items-center gap-2" data-vani-sort>
@@ -31,7 +23,7 @@
                     <input type="hidden" name="{{ $name }}" value="{{ $value }}">
                 @endforeach
                 <label for="vani-listing-sort" class="text-slate-500">{{ __('theme::catalog.sort_by') }}</label>
-                <select id="vani-listing-sort" name="sort" class="rounded-[var(--radius-theme)] border border-slate-300 px-2 py-1.5" onchange="this.form.submit()">
+                <select id="vani-listing-sort" name="sort" class="min-h-11 rounded-[var(--radius-theme)] border border-transparent bg-surface px-2 text-primary hover:border-border focus:border-primary" onchange="this.form.submit()">
                     <option value="newest" @selected($listingView['sort']['current'] === 'newest')>{{ __('theme::catalog.newest') }}</option>
                     @if ($listingView['sort']['by_price'])
                         <option value="price_asc" @selected($listingView['sort']['current'] === 'price_asc')>{{ __('theme::catalog.price_low_high') }}</option>
@@ -41,6 +33,18 @@
                 <noscript><button type="submit" class="rounded border px-3 py-1.5">{{ __('theme::common.apply') }}</button></noscript>
             </form>
         </div>
+        @if ($listingView['active_filters'] !== [] || $listingView['clear_filters_url'])
+            <div class="mb-5 flex flex-wrap items-center gap-2 text-sm">
+                @foreach ($listingView['active_filters'] as $chip)
+                    <a href="{{ $chip['url'] }}" aria-label="{{ __('theme::catalog.remove_filter', ['filter' => $chip['label']]) }}" class="inline-flex min-h-10 max-w-full items-center gap-2 break-words border border-border bg-subtle px-3">
+                        {{ $chip['label'] }} <span aria-hidden="true">×</span>
+                    </a>
+                @endforeach
+                @if ($listingView['clear_filters_url'])
+                    <a class="vani-text-link" href="{{ $listingView['clear_filters_url'] }}">{{ __('theme::catalog.clear_filters') }}</a>
+                @endif
+            </div>
+        @endif
         @if ($listing['items'] === [])
             @include('theme::partials.empty-state', [
                 'emptyMessage' => __('theme::catalog.no_matching_products'),

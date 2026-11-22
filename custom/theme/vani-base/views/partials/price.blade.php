@@ -10,9 +10,9 @@
         {{ $price['min']['formatted'] }}@if ($price['max']['amount'] !== $price['min']['amount']) – {{ $price['max']['formatted'] }}@endif
     </span>
     @if ($price['compare_at'])
-        <s class="ml-1 text-sm text-slate-400" data-vani-value="price.compare_at" data-vani-amount="{{ $price['compare_at']['amount'] }}">{{ $price['compare_at']['formatted'] }}</s>
+        <s class="ms-1 whitespace-nowrap text-sm tabular-nums text-accent" data-vani-value="price.compare_at" data-vani-amount="{{ $price['compare_at']['amount'] }}">{{ $price['compare_at']['formatted'] }}</s>
     @endif
     @if ($price['discount_percent'])
-        <span class="ml-1 text-xs font-medium text-accent" data-vani-value="price.discount_percent" data-vani-amount="{{ $price['discount_percent'] }}">-{{ $price['discount_percent'] }}%</span>
+        <span class="ms-1 whitespace-nowrap text-xs font-medium tabular-nums text-accent" data-vani-value="price.discount_percent" data-vani-amount="{{ $price['discount_percent'] }}">-{{ $price['discount_percent'] }}%</span>
     @endif
 @endif

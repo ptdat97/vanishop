@@ -1,8 +1,31 @@
 <?php
 
+use Modules\Catalog\Application\Products\ProductOptions;
+use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
+use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
+
+it('thêm sản phẩm chỉ có một SKU từ trang mobile mà không yêu cầu chọn biến thể', function () {
+    ['location' => $location] = C::store();
+    $style = T::product(null, ['name' => 'Khăn lụa']);
+    $variant = T::seed(fn () => app(ProductOptions::class)->createVariant($style, [], ['sku' => 'KHAN-LUA']));
+    P::priceList([], [$variant->id => [200_000]]);
+    I::stock($location, $variant->id, 5);
+
+    visit("/san-pham/{$style->slug}")->on()->mobile()->resize(390, 550)
+        ->assertPresent('input[type="hidden"][name="variant_id"]')
+        ->assertVisible('[data-pdp-shortcut]')
+        ->click('[data-pdp-shortcut] a')
+        ->assertScript("document.activeElement?.id === 'vani-purchase'", true)
+        ->assertMissing('[data-pdp-shortcut]')
+        ->click('[data-pdp-purchase]')
+        ->assertVisible('[data-vani-offcanvas-cart][open]')
+        ->assertSeeIn('[data-vani-mini-cart-body]', 'Khăn lụa')
+        ->assertNoJavaScriptErrors();
+});
 
 it('bấm thêm hai lần chỉ thêm một món và phát một sự kiện, giỏ mini cho phép đổi số lượng', function () {
     ['s' => $variant] = C::store();

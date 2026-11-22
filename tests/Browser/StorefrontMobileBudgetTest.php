@@ -12,7 +12,9 @@ use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Storefront\Application\PageBlocks;
+use Modules\Tenancy\Contracts\Settings;
 use Plugin\StorefrontExtras\StorefrontExtrasServiceProvider;
+use Plugin\Wishlist\WishlistServiceProvider;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -123,6 +125,34 @@ it('mở bộ lọc bằng bàn phím và trả focus về nút lọc sau khi ch
         ->assertVisible('#vani-listing-filters [data-filter="brand"] a[aria-current="true"]')
         ->assertNoJavaScriptErrors();
 })->with([375, 1280]);
+
+it('thẻ sản phẩm mở ảnh, lưu yêu thích và mở đăng nhập xem giá bằng các điểm bấm riêng', function () {
+    T::seed(function (): void {
+        app(Settings::class)->set('core', 'storefront.price_visibility', 'members');
+        app(PluginManager::class)->install(WishlistServiceProvider::ID);
+        app(PluginManager::class)->enable(WishlistServiceProvider::ID);
+    });
+    app()->register(WishlistServiceProvider::class);
+    $card = '[data-vani-product="'.$this->product->slug.'"]';
+    $wishlist = $card.' [data-vani-wishlist-button]';
+    $page = visit('/danh-muc/dam')->resize(390, 844);
+
+    $page->assertAttribute($wishlist, 'aria-pressed', 'false')
+        ->click($wishlist)
+        ->assertAttribute($wishlist, 'aria-pressed', 'true')
+        ->assertPathIs('/danh-muc/dam');
+    $page->script(<<<'JS'
+        () => {
+            const image = document.querySelector('[data-vani-product] img');
+            const { left, top, width, height } = image.getBoundingClientRect();
+            document.elementFromPoint(left + width / 2, top + height / 2).click();
+        }
+    JS);
+    $page->assertPathIs('/san-pham/'.$this->product->slug)
+        ->back()->keys($card.' [data-vani-price-for]', 'Enter')
+        ->assertPathIs('/tai-khoan/dang-nhap')
+        ->assertNoJavaScriptErrors();
+});
 
 it('trang chủ mặc định và trang chủ có khối thương hiệu đều dành kích thước cho logo', function (bool $configured) {
     T::seed(function () use ($configured): void {

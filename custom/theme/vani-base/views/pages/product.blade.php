@@ -19,7 +19,7 @@
 @section('content')
     @include('theme::partials.breadcrumb', ['crumbs' => $page['crumbs']])
 
-    <div class="grid items-start gap-6 md:grid-cols-[minmax(0,4fr)_minmax(0,3fr)] lg:gap-12">
+    <div class="grid items-start gap-3 md:grid-cols-[minmax(0,4fr)_minmax(0,3fr)] md:gap-6 lg:gap-12">
         @php($gallery = $page['gallery'])
         {{--
             Gallery: Swiper (vuốt, mũi tên) + PhotoSwipe (phóng to) — cài qua npm, tải theo nhu cầu (app.js). HTML render
@@ -28,7 +28,7 @@
         <div class="min-w-0">
             <x-vani::hook-slot name="vani.storefront.pdp.before_gallery" :args="[$product]" />
             <div data-product-gallery>
-                <div class="vani-carousel swiper rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $gallery['aspect'] }}" data-gallery-slider
+                <div class="vani-carousel vani-pdp-gallery swiper rounded-[var(--radius-theme)] bg-subtle" style="aspect-ratio: {{ $gallery['aspect'] }}" data-gallery-slider
                      aria-roledescription="carousel" aria-label="{{ $gallery['label'] }}">
                     <div class="swiper-wrapper">
                         @foreach ($gallery['slides'] as $slide)
@@ -37,7 +37,7 @@
                                    aria-label="{{ $slide['zoom_label'] }}">
                                     <img {{ $slide['main'] ? 'data-gallery-main' : 'data-gallery-image' }} src="{{ $slide['url'] }}" alt="{{ $slide['alt'] }}" width="{{ $slide['width'] }}" height="{{ $slide['height'] }}"
                                          @if ($slide['srcset']) srcset="{{ $slide['srcset'] }}" sizes="(min-width: 1536px) 760px, (min-width: 1280px) 640px, (min-width: 768px) 57vw, 100vw" @endif
-                                         @if ($slide['main']) fetchpriority="high" @else loading="lazy" @endif decoding="async" class="h-full w-full object-cover">
+                                         @if ($slide['main']) fetchpriority="high" @else loading="lazy" @endif decoding="async" class="h-full w-full object-contain md:object-cover">
                                 </a>
                             </div>
                         @endforeach
@@ -48,9 +48,9 @@
                     @endif
                 </div>
                 @if ($gallery['thumbs'] !== [])
-                    <div class="mt-3 flex gap-2 overflow-x-auto pb-1" data-gallery-thumbs>
+                    <div class="mt-2 flex gap-2 overflow-x-auto pb-1 md:mt-3" data-gallery-thumbs data-js-only>
                         @foreach ($gallery['thumbs'] as $thumb)
-                            <button type="button" data-gallery-thumb data-src="{{ $thumb['url'] }}" data-index="{{ $thumb['index'] }}" @class(['w-1/5 shrink-0 overflow-hidden rounded border', 'border-primary' => $thumb['active'], 'border-slate-200' => ! $thumb['active']]) style="aspect-ratio: {{ $gallery['aspect'] }}" aria-label="{{ $thumb['label'] }}">
+                            <button type="button" data-gallery-thumb data-src="{{ $thumb['url'] }}" data-index="{{ $thumb['index'] }}" @class(['w-12 shrink-0 overflow-hidden rounded-[var(--radius-theme)] border md:w-20', 'border-primary' => $thumb['active'], 'border-slate-200' => ! $thumb['active']]) style="aspect-ratio: {{ $gallery['aspect'] }}" aria-label="{{ $thumb['label'] }}" @if ($thumb['active']) aria-current="true" @endif>
                                 <img src="{{ $thumb['thumb_url'] }}" alt="" loading="lazy" decoding="async" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" class="h-full w-full object-cover">
                             </button>
                         @endforeach
@@ -60,14 +60,14 @@
             </div>
         </div>
 
-        <div class="min-w-0 break-words">
+        <div class="min-w-0 break-words md:sticky md:top-24">
             @if ($product['brand'])
-                <a href="{{ vani_route('storefront.brand', $product['brand']['slug']) }}" class="text-sm uppercase tracking-wide text-slate-500">{{ $product['brand']['name'] }}</a>
+                <a href="{{ vani_route('storefront.brand', $product['brand']['slug']) }}" class="vani-text-link text-xs uppercase tracking-[0.14em] text-accent">{{ $product['brand']['name'] }}</a>
             @endif
-            <h1 class="mt-1 text-3xl font-medium tracking-tight lg:text-4xl">{{ $product['name'] }}</h1>
+            <h1 class="vani-product-title mt-1">{{ $product['name'] }}</h1>
             <x-vani::hook-slot name="vani.storefront.pdp.after_title" :args="[$product]" />
 
-            <p class="mt-3 text-lg" data-product-price data-vani-value="in_stock" data-vani-code="{{ $product['in_stock'] ? '1' : '0' }}">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
+            <p class="mt-2 text-lg md:mt-3" aria-live="polite" aria-atomic="true" data-product-price data-vani-value="in_stock" data-vani-code="{{ $product['in_stock'] ? '1' : '0' }}">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
             {{-- Giá thành viên (Phase 8): trang cache được hiện giá chung; JS điền giá theo nhóm của khách đăng nhập. --}}
             <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ route('api.storefront.v1.me.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
@@ -76,7 +76,7 @@
             {{-- Không @csrf/old() để HTML như nhau ở cả chế độ cache CDN (không phiên); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
             @php($selector = $page['selector'])
             @php($primary = $selector['primary'])
-            <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form data-choose-message="{{ $selector['choose_message'] }}">
+            <form id="vani-purchase" tabindex="-1" action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 scroll-mt-24 space-y-4" data-variant-form data-choose-message="{{ $selector['choose_message'] }}">
                 {{-- Bộ chọn 1–3 trục (ADR-045): trục đầu là radio/danh sách (ô màu / nút / thả xuống); mỗi giá trị một nhóm SKU theo
                      các trục còn lại, chỉ nhóm của giá trị đang chọn hiện ra — CSS :has() ($page['variant_css']), không cần JS. --}}
                 @if ($selector['hidden_variant_id'] !== null)
@@ -105,7 +105,7 @@
                                 @foreach ($primary['values'] as $value)
                                     <label @class([
                                         'relative cursor-pointer has-[:focus-visible]:outline has-[:focus-visible]:outline-2',
-                                        'rounded-full p-0.5 ring-1 ring-slate-200 has-[:checked]:ring-2 has-[:checked]:ring-primary' => $swatch,
+                                        'rounded-full p-1.5 ring-1 ring-border has-[:checked]:ring-2 has-[:checked]:ring-primary' => $swatch,
                                         'flex min-h-11 min-w-12 flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white' => ! $swatch,
                                         'cursor-not-allowed border-dashed text-slate-400 line-through' => ! $swatch && $value['disabled'],
                                     ]) title="{{ $value['name'] }}">
@@ -118,7 +118,7 @@
                                         @elseif ($value['hex'])
                                             <span class="block h-8 w-8 rounded-full border border-black/10" style="background: {{ $value['hex'] }}"></span>
                                         @elseif ($value['image_url'])
-                                            <img src="{{ $value['image_url'] }}" alt="" class="block h-8 w-8 rounded-full object-cover" loading="lazy">
+                                            <img src="{{ $value['image_url'] }}" alt="" class="block h-8 w-8 rounded-full object-cover" width="32" height="32" loading="lazy">
                                         @else
                                             <span class="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs">{{ $value['name'] }}</span>
                                         @endif
@@ -154,19 +154,24 @@
 
                 <div class="flex items-center gap-3">
                     <label for="quantity" class="text-sm">{{ __('theme::common.quantity') }}</label>
-                    <input id="quantity" name="quantity" type="number" min="{{ $product['purchase']['min_quantity'] }}" max="{{ $product['purchase']['max_quantity'] }}" value="{{ $product['purchase']['min_quantity'] }}" class="w-20 rounded border border-slate-300 px-2 py-1.5">
+                    <input id="quantity" name="quantity" type="number" min="{{ $product['purchase']['min_quantity'] }}" max="{{ $product['purchase']['max_quantity'] }}" value="{{ $product['purchase']['min_quantity'] }}" inputmode="numeric" class="min-h-11 w-20 rounded-[var(--radius-theme)] border border-slate-300 px-2 py-1.5">
                 </div>
                 <x-vani::hook-slot name="vani.storefront.pdp.add_to_cart_fields" :args="[$product]" />
                 <div class="grid gap-2">
-                    <button type="submit" class="vani-button-primary w-full" @disabled(! $page['can_buy'])>
+                    <button type="submit" class="vani-button-primary w-full" data-pdp-purchase @disabled(! $page['can_buy'])>
                         {{ $product['in_stock'] ? __('theme::product.add_to_cart') : __('theme::product.out_of_stock') }}
                     </button>
                     {{-- Mua ngay (§3.8): thêm rồi chỉ thanh toán riêng món này; món khác vẫn ở lại giỏ. --}}
                     @if ($product['in_stock'])
-                        <button type="submit" name="buy_now" value="1" class="min-h-12 w-full rounded-[var(--radius-theme)] border border-primary px-6 py-3 font-medium text-primary disabled:opacity-50" @disabled(! $page['can_buy'])>{{ __('theme::product.buy_now') }}</button>
+                        <button type="submit" name="buy_now" value="1" class="vani-text-link mx-auto font-medium text-primary disabled:opacity-50" @disabled(! $page['can_buy'])>{{ __('theme::product.buy_now') }}</button>
                     @endif
                 </div>
             </form>
+            @if ($page['can_buy'])
+                <div class="vani-pdp-shortcut md:hidden" data-pdp-shortcut hidden>
+                    <a href="#vani-purchase" class="vani-button-primary w-full">{{ __('theme::product.shop_product') }}</a>
+                </div>
+            @endif
             <x-vani::hook-slot name="vani.storefront.pdp.after_add_to_cart" :args="[$product]" />
 
             @if ($product['description'])
@@ -184,7 +189,10 @@
                 </dl>
             @endif
             @if ($product['care_instructions'])
-                <p class="mt-4 text-sm text-slate-600">{{ $product['care_instructions'] }}</p>
+                <details class="mt-4 border-b border-border pb-3">
+                    <summary class="cursor-pointer py-2 font-medium">{{ __('theme::product.care') }}</summary>
+                    <p class="mt-2 text-sm text-accent">{{ $product['care_instructions'] }}</p>
+                </details>
             @endif
             <x-vani::hook-slot name="vani.storefront.pdp.after_details" :args="[$product]" />
         </div>

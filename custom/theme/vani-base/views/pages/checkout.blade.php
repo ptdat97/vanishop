@@ -3,7 +3,7 @@
 @section('title', __('theme::checkout.checkout'))
 
 @section('content')
-    <h1 class="mb-6 text-3xl font-medium tracking-tight">{{ __('theme::checkout.checkout') }}</h1>
+    <h1 class="vani-editorial-title mb-6">{{ __('theme::checkout.checkout') }}</h1>
 
     {{-- $form (CheckoutForm): values = giá trị từng ô (lần gửi trước hoặc điền sẵn từ tài khoản), saved_addresses, errors = tóm tắt lỗi. --}}
     @php($values = $form['values'])
@@ -18,15 +18,15 @@
         </div>
     @endif
 
-    <form action="{{ vani_route('storefront.checkout.store') }}" method="post" class="grid gap-8 pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:pb-0" data-checkout-form>
+    <form action="{{ vani_route('storefront.checkout.store') }}" method="post" class="grid items-start gap-8 pb-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14 lg:pb-0" data-checkout-form>
         @csrf
         <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', $idempotencyKey) }}">
         <input type="hidden" name="expected_total" value="{{ $quote['total']['amount'] }}">
 
         <div class="space-y-8">
             <x-vani::hook-slot name="vani.storefront.checkout.contact_before" :args="[$quote]" />
-            <fieldset class="space-y-3">
-                <legend class="mb-2 font-semibold">{{ __('theme::common.recipient') }}</legend>
+            <fieldset class="vani-checkout-group space-y-3">
+                <legend class="mb-3 text-lg font-medium">{{ __('theme::common.recipient') }}</legend>
                 @if (count($form['saved_addresses']) > 1)
                     {{-- app.js hiện ô này và điền các ô theo địa chỉ chọn; form đã điền sẵn địa chỉ mặc định. --}}
                     <div hidden data-checkout-saved-address-wrap>
@@ -49,8 +49,8 @@
             </fieldset>
             <x-vani::hook-slot name="vani.storefront.checkout.contact_after" :args="[$quote]" />
 
-            <fieldset class="space-y-3">
-                <legend class="mb-2 font-semibold">{{ __('theme::common.delivery_address') }}</legend>
+            <fieldset class="vani-checkout-group space-y-3">
+                <legend class="mb-3 text-lg font-medium">{{ __('theme::common.delivery_address') }}</legend>
                 @if ($provinces !== null)
                     <div>
                         <label for="province_code" class="block text-sm">{{ __('theme::common.province_city') }}</label>
@@ -91,12 +91,12 @@
             </fieldset>
             <x-vani::hook-slot name="vani.storefront.checkout.address_after" :args="[$quote]" />
 
-            <fieldset id="checkout-shipping" tabindex="-1" data-checkout-shipping>
-                <legend class="mb-2 font-semibold">{{ __('theme::checkout.delivery') }}</legend>
+            <fieldset id="checkout-shipping" tabindex="-1" class="vani-checkout-group space-y-2" data-checkout-shipping>
+                <legend class="mb-3 text-lg font-medium">{{ __('theme::checkout.delivery') }}</legend>
                 @forelse ($quote['shipping_options'] as $option)
-                    <label class="flex items-center gap-2 py-1">
+                    <label class="vani-checkout-choice">
                         <input type="radio" name="shipping_method" value="{{ $option['code'] }}" @checked(($values['shipping_method'] ?? $quote['shipping']['code'] ?? null) === $option['code'])>
-                        {{ $option['label'] }} — {{ $option['fee']['formatted'] }}
+                        <span class="min-w-0 flex-1 break-words">{{ $option['label'] }}</span><span class="shrink-0 font-medium">{{ $option['fee']['formatted'] }}</span>
                     </label>
                 @empty
                     <p class="text-sm text-red-600">{{ __('theme::checkout.no_delivery_method') }}</p>
@@ -105,10 +105,10 @@
             </fieldset>
             <x-vani::hook-slot name="vani.storefront.checkout.after_shipping" :args="[$quote]" />
 
-            <fieldset id="checkout-payment" tabindex="-1" data-checkout-payment>
-                <legend class="mb-2 font-semibold">{{ __('theme::checkout.checkout') }}</legend>
+            <fieldset id="checkout-payment" tabindex="-1" class="vani-checkout-group space-y-2" data-checkout-payment>
+                <legend class="mb-3 text-lg font-medium">{{ __('theme::checkout.checkout') }}</legend>
                 @forelse ($quote['payment_methods'] as $method)
-                    <label class="flex items-center gap-2 py-1">
+                    <label class="vani-checkout-choice">
                         <input type="radio" name="payment_method" value="{{ $method['code'] }}" @checked(($values['payment_method'] ?? $quote['payment_methods'][0]['code'] ?? null) === $method['code'])>
                         {{ $method['label'] }}
                     </label>
@@ -125,7 +125,13 @@
             </div>
         </div>
 
-        @include('theme::partials.checkout-summary')
+        <div class="min-w-0 lg:sticky lg:top-24">
+            <p class="sr-only mb-3 text-sm text-accent" role="status" data-checkout-quote-status
+                data-updating="{{ __('theme::checkout.quote_updating') }}"
+                data-updated="{{ __('theme::checkout.quote_updated') }}"
+                data-failed="{{ __('theme::checkout.quote_failed') }}"></p>
+            @include('theme::partials.checkout-summary')
+        </div>
 
         {{-- Điện thoại: tổng + nút đặt hàng luôn thấy ở đáy màn hình (nút trong khung tóm tắt chỉ hiện từ lg). Đặt cuối form để
              Enter trong ô nhập vẫn bấm nút đầu tiên ("Áp dụng" — tính lại), không đặt hàng ngoài ý muốn. --}}
@@ -134,7 +140,7 @@
                 <span class="block text-slate-500">{{ __('theme::checkout.total') }}</span>
                 <span class="text-base font-semibold" data-total>{{ $quote['total']['formatted'] }}</span>
             </div>
-            <button type="submit" class="vani-button-primary">{{ __('theme::checkout.place_order') }}</button>
+            <button type="submit" class="vani-button-primary min-w-36 px-4" data-checkout-submit>{{ __('theme::checkout.place_order') }}</button>
         </div>
     </form>
 @endsection

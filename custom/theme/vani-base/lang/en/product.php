@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'shop_product' => 'Shop this item',
+    'care' => 'Care instructions',
     'add_to_cart' => 'Add to cart',
     'browse_all_products' => 'Browse all products',
     'browse_category' => 'Browse the category',

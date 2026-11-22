@@ -3,6 +3,8 @@ import { createIcons, Heart, House, LayoutGrid, Menu, Search, ShoppingBag, Spark
 import { listing, mountListingNavigation } from './listing.js';
 import { mountAccountMenu, mountDialogs, mountSearchSuggestions } from './header.js';
 import { createSession } from './session.js';
+import { mountProduct } from './product.js';
+import { mountCheckout } from './checkout.js';
 
 mountAccountMenu();
 
@@ -226,104 +228,7 @@ if (lightboxes.length) {
         .catch(() => {});
 }
 
-// PDP: gallery Swiper + phóng to PhotoSwipe; bấm ảnh nhỏ / chọn giá trị hoặc SKU → tới ảnh đầu của lựa chọn (data-images:
-// ảnh của SKU đầu tiên mang giá trị trục đầu, hoặc ảnh của chính SKU — ADR-045 ảnh theo SKU).
-document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
-    const slider = gallery.querySelector('[data-gallery-slider]');
-    const form = document.querySelector('[data-variant-form]');
-    const thumbs = [...gallery.querySelectorAll('[data-gallery-thumb]')];
-    if (!slider) {
-        return;
-    }
-    let swiper = null;
-
-    const highlight = (index) => {
-        thumbs.forEach((thumb) => {
-            const active = Number(thumb.dataset.index) === index;
-            thumb.classList.toggle('border-primary', active);
-            thumb.classList.toggle('border-slate-200', !active);
-            thumb.setAttribute('aria-current', active ? 'true' : 'false');
-            if (active) thumb.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-        });
-    };
-    // Chưa có Swiper (đang tải/lỗi): cuộn dải ảnh scroll-snap tới ảnh.
-    const go = (index) => {
-        if (index < 0) return;
-        if (swiper) {
-            swiper.slideTo(index);
-        } else {
-            const slide = slider.querySelectorAll('[data-gallery-slide]')[index];
-            slide?.parentElement.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
-            highlight(index);
-        }
-    };
-
-    thumbs.forEach((thumb) => thumb.addEventListener('click', () => go(Number(thumb.dataset.index))));
-    form?.addEventListener('change', (event) => {
-        const choice = event.target.tagName === 'SELECT' ? event.target.selectedOptions[0] : event.target;
-        if (!choice?.dataset.images) return;
-        const images = JSON.parse(choice.dataset.images || '[]');
-        const first = images[0]?.url ?? images[0];
-        if (first) go(thumbs.findIndex((thumb) => thumb.dataset.src === first));
-    });
-
-    if (slider.querySelectorAll('[data-gallery-slide]').length > 1) {
-        loadVendor('swiper')
-            .then((Swiper) => {
-                swiper = mountCarousel(Swiper, slider, { on: { slideChange: (instance) => highlight(instance.activeIndex) } });
-            })
-            .catch(() => {});
-    }
-    loadVendor('photoswipe')
-        .then((PhotoSwipeLightbox) => mountLightbox(PhotoSwipeLightbox, slider, (index) => go(index)))
-        .catch(() => {});
-});
-
-// PDP bộ chọn 1–3 trục (ADR-045): đổi giá trị trục đầu thì bỏ chọn SKU của nhóm khác (nhóm đó đang ẩn) và trả giá về khoảng giá
-// của sản phẩm; chọn SKU thì hiện đúng giá của SKU (data-price-html). Nhóm SKU hiện theo CSS :has().
-document.querySelectorAll('form[data-variant-form]').forEach((form) => {
-    const chosen = (element) => (element.tagName === 'SELECT' ? element.selectedOptions[0] : element);
-    const selectedVariant = () => form.querySelector('input[name="variant_id"]:checked, select[name="variant_id"]');
-    // Chưa chọn đủ: báo ngay tại nhóm đang hiện (viền + thông báo + focus), không gửi lên server.
-    form.addEventListener('submit', (event) => {
-        if (selectedVariant() || !form.querySelector('[name="variant_id"]')) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        const group = [...form.querySelectorAll('[data-option-group]')].find((fieldset) => fieldset.offsetParent !== null) ?? form.querySelector('[data-primary-option]');
-        group?.setAttribute('aria-invalid', 'true');
-        group?.classList.add('rounded', 'ring-2', 'ring-red-500', 'ring-offset-4');
-        const error = form.querySelector('[data-vani-error-for="variant_id"]');
-        if (error) {
-            error.textContent = form.dataset.chooseMessage || error.textContent;
-            error.hidden = false;
-        }
-        group?.querySelector('[name="variant_id"]:not(:disabled)')?.focus();
-    });
-    form.addEventListener('change', (event) => {
-        if (event.target.name !== 'variant_id') return;
-        form.querySelectorAll('[aria-invalid]').forEach((fieldset) => {
-            fieldset.removeAttribute('aria-invalid');
-            fieldset.classList.remove('rounded', 'ring-2', 'ring-red-500', 'ring-offset-4');
-        });
-        const error = form.querySelector('[data-vani-error-for="variant_id"]');
-        if (error) error.hidden = true;
-    });
-    const price = document.querySelector('[data-product-price]');
-    const rangeHtml = price?.innerHTML;
-    form.addEventListener('change', (event) => {
-        const input = event.target;
-        const choice = chosen(input);
-        if (input.name === 'variant_id') {
-            if (price) price.innerHTML = choice?.dataset.priceHtml || rangeHtml || '';
-        } else if (choice?.hasAttribute('data-primary')) {
-            const code = choice.dataset.optionValue;
-            form.querySelectorAll('input[name="variant_id"]:checked').forEach((radio) => {
-                if (radio.closest('[data-option-group]')?.dataset.optionGroup !== code) radio.checked = false;
-            });
-            if (price && rangeHtml !== undefined) price.innerHTML = rangeHtml;
-        }
-    });
-});
+mountProduct({ loadVendor, mountCarousel, mountLightbox });
 
 mountCartPage();
 
@@ -371,8 +276,12 @@ document.querySelectorAll('[data-province-select]').forEach((province) => {
     }
     const filter = province.form.querySelector('[data-ward-filter]');
     const rememberWards = filter ? mountWardFilter(filter, ward) : () => {};
+    let wardRequest;
 
     province.vaniLoadWards = async (selected = '') => {
+        wardRequest?.abort();
+        const request = new AbortController();
+        wardRequest = request;
         ward.replaceChildren(new Option(t('wards_loading'), ''));
         if (!province.value) {
             ward.replaceChildren(new Option(t('province_first'), ''));
@@ -382,10 +291,13 @@ document.querySelectorAll('[data-province-select]').forEach((province) => {
         try {
             const response = await fetch(`${province.dataset.wardsUrl}/${encodeURIComponent(province.value)}/wards`, {
                 headers: { Accept: 'application/json' },
+                signal: request.signal,
             });
             const { data } = await response.json();
+            if (request.signal.aborted) return;
             ward.replaceChildren(new Option(t('choose_ward'), ''), ...data.map((item) => new Option(item.name, item.code, false, item.code === selected)));
         } catch {
+            if (request.signal.aborted) return;
             ward.replaceChildren(new Option(t('wards_failed'), ''));
         }
         rememberWards();
@@ -393,72 +305,7 @@ document.querySelectorAll('[data-province-select]').forEach((province) => {
     province.addEventListener('change', () => province.vaniLoadWards());
 });
 
-/*
- * Checkout (`form[data-checkout-form]`):
- * - Đổi phường/xã, phương thức giao hoặc thanh toán → tính lại như nút "Áp dụng" (POST `action=quote`), rồi thay khung
- *   tóm tắt, danh sách phương thức, thanh tổng ở đáy và `expected_total` bằng bản server vừa render — phí giao theo địa
- *   chỉ (plugin hãng vận chuyển) luôn khớp tổng khách thấy.
- * - "Địa chỉ đã lưu": điền người nhận + địa chỉ vào form.
- * - Có tóm tắt lỗi: đưa focus tới đó (trình đọc màn hình đọc ngay, điện thoại không phải cuộn tìm).
- */
-const checkoutForm = document.querySelector('form[data-checkout-form]');
-if (checkoutForm) {
-    document.querySelector('[data-checkout-errors]')?.focus();
-
-    let quoteController = null;
-    const requote = async () => {
-        quoteController?.abort();
-        quoteController = new AbortController();
-        const data = new FormData(checkoutForm);
-        data.set('action', 'quote');
-        const summary = checkoutForm.querySelector('[data-checkout-summary]');
-        summary?.setAttribute('aria-busy', 'true');
-        try {
-            // `getAttribute`: nút `name="action"` (Áp dụng) che thuộc tính `form.action`.
-            const response = await fetch(checkoutForm.getAttribute('action'), { method: 'POST', body: data, credentials: 'same-origin', headers: { Accept: 'text/html' }, signal: quoteController.signal });
-            if (!response.ok) return;
-            const next = new DOMParser().parseFromString(await response.text(), 'text/html');
-            ['[data-checkout-summary]', '[data-checkout-shipping]', '[data-checkout-payment]', '[data-checkout-bar]'].forEach((selector) => {
-                const fresh = next.querySelector(selector);
-                const current = checkoutForm.querySelector(selector);
-                if (fresh && current) current.replaceWith(document.importNode(fresh, true));
-            });
-            const total = next.querySelector('input[name="expected_total"]');
-            if (total) checkoutForm.querySelector('input[name="expected_total"]').value = total.value;
-            document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: checkoutForm } }));
-        } catch (error) {
-            if (error.name !== 'AbortError') console.error('Không tính lại được đơn hàng.', error);
-        } finally {
-            checkoutForm.querySelector('[data-checkout-summary]')?.removeAttribute('aria-busy');
-        }
-    };
-    checkoutForm.addEventListener('change', (event) => {
-        if (event.target.matches('[data-ward-select], input[name="shipping_method"], input[name="payment_method"]')) {
-            requote();
-        }
-    });
-
-    const saved = checkoutForm.querySelector('[data-checkout-saved-address]');
-    if (saved) {
-        checkoutForm.querySelector('[data-checkout-saved-address-wrap]').hidden = false;
-        saved.addEventListener('change', async () => {
-            const option = saved.selectedOptions[0];
-            if (!option?.dataset.fields) return;
-            const fields = JSON.parse(option.dataset.fields);
-            const byName = (key) => checkoutForm.elements.namedItem(key.replace(/^(\w+)\.(\w+)$/, '$1[$2]'));
-            ['contact.full_name', 'contact.phone', 'shipping_address.street_line', 'shipping_address.province_name', 'shipping_address.ward_name'].forEach((key) => {
-                const input = byName(key);
-                if (input && fields[key] !== undefined) input.value = fields[key];
-            });
-            const province = checkoutForm.querySelector('[data-province-select]');
-            if (province && fields['shipping_address.province_code']) {
-                province.value = fields['shipping_address.province_code'];
-                await province.vaniLoadWards?.(fields['shipping_address.ward_code'] ?? '');
-            }
-            requote();
-        });
-    }
-}
+mountCheckout();
 
 // Form cần xác nhận (xoá địa chỉ…).
 document.querySelectorAll('form[data-confirm]').forEach((form) => {

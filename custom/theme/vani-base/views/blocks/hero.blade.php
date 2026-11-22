@@ -1,16 +1,18 @@
-<section class="mb-10 overflow-hidden bg-subtle" data-block="hero" data-vani-motion="rise">
-    <div @class(['grid items-center', 'md:grid-cols-[2fr_3fr]' => $imageUrl !== ''])>
-        <div class="p-5 sm:p-8 lg:p-12">
+<section class="mb-12 overflow-hidden bg-subtle md:mb-16" data-block="hero" data-vani-motion="rise">
+    <div @class(['grid items-center', 'md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]' => $imageUrl !== ''])>
+        <div class="min-w-0 px-5 py-7 sm:p-8 lg:p-12">
             <h2 class="vani-editorial-title text-primary">{{ $title }}</h2>
-            @if ($subtitle !== '')<p class="mt-3 text-slate-600">{{ $subtitle }}</p>@endif
+            @if ($subtitle !== '')<p class="mt-3 max-w-prose break-words text-sm leading-relaxed text-accent sm:text-base">{{ $subtitle }}</p>@endif
             @if ($linkUrl !== '' && $linkLabel !== '')
                 <a href="{{ $linkUrl }}" class="vani-button-primary mt-6">{{ $linkLabel }}</a>
             @endif
         </div>
         @if ($imageUrl !== '')
             {{-- Banner đầu trang thường là ảnh lớn nhất (LCP): tải ngay, ưu tiên cao; srcset khi ảnh từ Thư viện ảnh. --}}
-            <img src="{{ $imageUrl }}" alt="" class="row-start-1 h-full max-h-[36rem] md:col-start-2 w-full object-cover" width="800" height="600" fetchpriority="high" decoding="async" data-vani-motion-hover
-                 @if (($imageSrcset ?? '') !== '') srcset="{{ $imageSrcset }}" sizes="(min-width: 768px) 60vw, 100vw" @endif>
+            <div class="row-start-1 aspect-[4/3] max-h-[36rem] overflow-hidden md:col-start-2">
+                <img src="{{ $imageUrl }}" alt="" class="h-full w-full object-cover" width="800" height="600" fetchpriority="high" decoding="async"
+                     @if (($imageSrcset ?? '') !== '') srcset="{{ $imageSrcset }}" sizes="(min-width: 1440px) 760px, (min-width: 768px) 60vw, 100vw" @endif>
+            </div>
         @endif
     </div>
 </section>

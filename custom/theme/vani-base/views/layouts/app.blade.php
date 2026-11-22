@@ -51,9 +51,9 @@
         </div>
     @endif
     <x-vani::hook-slot name="vani.storefront.layout.header.before" />
-    <header class="border-b border-slate-200 sticky top-0 z-50 bg-white">
+    <header class="vani-site-header sticky top-0 z-50 border-b border-border bg-surface">
         <div class="mx-auto grid container grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 px-4 py-2 md:grid-cols-[1fr_auto_1fr]">
-            <a href="{{ vani_route('storefront.home') }}" class="col-start-1 row-start-1 min-w-0 break-words justify-self-start text-xl font-medium tracking-tight text-primary">{{ config('app.name') }}</a>
+            <a href="{{ vani_route('storefront.home') }}" class="col-start-1 row-start-1 min-w-0 break-words justify-self-start text-lg font-semibold tracking-[-0.035em] text-primary sm:text-xl">{{ config('app.name') }}</a>
             <nav class="hidden md:col-start-2 md:row-start-1 md:flex md:items-center md:justify-center md:gap-4" aria-label="{{ __('theme::layout.main_menu') }}">
                 @if ($shell['menus']['header'] !== null)
                     @include('theme::partials.menu', ['items' => $shell['menus']['header']])
@@ -78,15 +78,15 @@
                     </datalist>
                 @endif
             </form>
-            <div class="col-start-2 row-start-1 flex items-center justify-self-end gap-1 md:col-start-3">
-                <button type="button" class="inline-flex size-10 cursor-pointer items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                    data-js-only data-vani-search-open data-vani-modal-open="vani-search-modal" aria-label="{{ __('theme::common.search') }}" aria-haspopup="dialog" aria-controls="vani-search-modal">
-                    <i data-lucide="search" class="size-5" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="hidden cursor-pointer items-center justify-center rounded text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:hidden"
+            <div class="col-start-2 row-start-1 flex items-center justify-self-end gap-0.5 md:col-start-3 md:gap-1">
+                <button type="button" class="vani-header-action hidden md:hidden"
                     data-vani-mobile-menu-open data-vani-drawer-open="vani-mobile-menu" aria-label="{{ __('theme::common.categories') }}" aria-haspopup="dialog" aria-controls="vani-mobile-menu">
                     <span class="sr-only">{{ __('theme::common.categories') }}</span>
                     <i data-lucide="menu" class="size-5" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="vani-header-action"
+                    data-js-only data-vani-search-open data-vani-modal-open="vani-search-modal" aria-label="{{ __('theme::common.search') }}" aria-haspopup="dialog" aria-controls="vani-search-modal">
+                    <i data-lucide="search" class="size-5" aria-hidden="true"></i>
                 </button>
                 <x-vani::hook-slot name="vani.storefront.header.actions" />
                 @if (count($seo['switcher'] ?? []) > 1)
@@ -98,15 +98,17 @@
                 @endif
                 {{-- Không CDN: render sẵn theo khách. Trang cache CDN: render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
                 <a href="{{ $shell['account']['url'] }}"
-                    class="inline-flex size-10 items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    class="vani-header-action"
                     data-vani-account aria-label="{{ $shell['account']['label'] }}" title="{{ $shell['account']['label'] }}">
                     <i data-lucide="user-round" class="size-5" aria-hidden="true"></i>
+                    <span class="vani-icon-fallback text-xs">{{ $shell['account']['label'] }}</span>
                 </a>
                 {{-- Giỏ mini (0.3.93): bấm mở offcanvas bên phải (app.js tải nội dung qua JSON); link tới trang giỏ khi mở tab mới. --}}
                 <a href="{{ vani_route('storefront.cart') }}" data-vani-cart-open aria-haspopup="dialog"
-                    class="relative inline-flex size-10 items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    class="relative vani-header-action"
                     aria-label="{{ __('theme::common.cart') }}" title="{{ __('theme::common.cart') }}">
                     <i data-lucide="shopping-bag" class="size-5" aria-hidden="true"></i>
+                    <span class="vani-icon-fallback text-xs">{{ __('theme::common.cart') }}</span>
                     <span data-vani-cart-count @if (($customerState['cart']['count'] ?? 0) === 0) hidden @endif
                         class="absolute -right-1 -top-1 min-w-5 rounded-full bg-primary px-1.5 text-center text-xs leading-5 text-white">{{ ($customerState['cart']['count'] ?? 0) ?: '' }}</span>
                 </a>

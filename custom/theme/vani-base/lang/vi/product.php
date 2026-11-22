@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'shop_product' => 'Chọn mua',
+    'care' => 'Hướng dẫn bảo quản',
     'add_to_cart' => 'Thêm vào giỏ',
     'browse_all_products' => 'Xem tất cả sản phẩm',
     'browse_category' => 'Xem cùng danh mục',

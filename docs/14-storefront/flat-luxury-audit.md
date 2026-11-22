@@ -52,3 +52,17 @@ Chromium trên Herd, viewport 390 × 844, bỏ tài nguyên `/herd-studio/` củ
 Lần đo bổ sung trên trang chủ mô phỏng CPU chậm 4×, mạng tải xuống 200.000 B/s và độ trễ 80 ms cho LCP 1.040 ms, CLS 0, sáu tài nguyên ảnh và 40 ms từ chạm mở tìm kiếm đến lần vẽ tiếp theo. Đo INP p75 cần nhiều lượt truy cập thực tế. Các test ngân sách riêng dùng kích thước giải nén trên fixture.
 
 Bản build nghiệm thu đạt 1.805 test Pest, bỏ qua 3; 26 test browser storefront đạt với 291 assertion. PHPStan báo 0 lỗi, Pint và Vite build thành công.
+
+## Hoàn thiện hành trình mua hàng · 2026-11-22
+
+- Trang chủ mặc định đưa hàng mới và danh mục lên đầu. Danh mục và bộ sưu tập dùng chung banner hai cột khi có ảnh, bố cục chữ gọn khi chưa có ảnh. Các khung nội dung đã cấu hình của bộ sưu tập vẫn hiển thị theo thứ tự của cửa hàng.
+- Bộ lọc dùng drawer chung. Nút lọc, bộ chọn SKU, nút chỉnh số lượng và nút mua có vùng chạm rộng hơn. Trên mobile, thư viện ảnh giữ trọn hình và nút **Chọn mua** đưa focus tới form chọn biến thể nếu nút thêm giỏ nằm dưới màn hình. Sản phẩm chỉ có một SKU có thể thêm giỏ ngay.
+- Checkout chỉ nhận phản hồi báo giá mới nhất, giữ nút đặt hàng trong trạng thái chờ khi đang tính lại và lấy HTML tóm tắt từ server. Cart và Checkout tiếp tục quyết định giá, tồn và điều kiện đặt hàng.
+- Nghiệm thu local dùng Chromium cho luồng thêm giỏ, COD, bộ lọc bàn phím và ngân sách asset. Trang chủ, tìm kiếm và bộ sưu tập đã được mở trên Herd ở 320 px với JavaScript bật và tắt. Kiểm tra Safari/iOS, thiết bị thật, thanh toán và vận chuyển của cửa hàng vẫn thuộc đợt nghiệm thu staging. [Kế hoạch production](ke-hoach-production.md#ma-trận-nghiệm-thu-staging)
+- Bộ Pest mặc định đạt 1.833 ca, bỏ qua 3. Nhóm browser storefront đạt 31 ca và giữ ngân sách kiểm thử 64 KiB JS và 96 KiB CSS giải nén. Vite build, Pint và PHPStan đều thành công.
+
+## Thẻ sản phẩm và khối nội dung · 2026-11-22
+
+- Lưới dùng chung ưu tiên ảnh, tên và giá, rồi đến thương hiệu và tồn kho. Ảnh dùng tỷ lệ cửa hàng cấu hình. Giá cũ và mức giảm giữ nguyên dữ liệu báo giá và có thể xuống dòng riêng ở màn hẹp.
+- Ảnh và tên mở cùng một trang sản phẩm qua một liên kết. Nút Wishlist và liên kết đăng nhập để xem giá nhận thao tác độc lập. Ca browser đi qua cả ba điểm bấm trên trang danh mục.
+- Hero, khối hàng và lưới thương hiệu dùng khoảng cách đồng nhất. Hero dành sẵn khung ảnh và dùng `srcset` nếu thư viện media cung cấp. Các khối giữ thứ tự cấu hình trong page builder.
