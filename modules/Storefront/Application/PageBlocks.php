@@ -217,6 +217,9 @@ final class PageBlocks
      */
     public function resolve(array $blocks, ?BlockContext $blockContext = null): array
     {
+        if ($blocks === []) {
+            return [];
+        }
         $types = $this->types();
         $resolved = [];
         foreach ($blocks as $block) {

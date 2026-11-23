@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.76
+Storefront API v1 — VaniShop 0.5.78
 GET /address/provinces security[]
   200
     $: object
@@ -3646,6 +3646,47 @@ GET /pages/home security[none,customerBearer,firstPartySession]
     $.data[].type: string
     $.meta: object
     $.meta.configured: boolean
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /pages/layouts/{surface} security[none,customerBearer,firstPartySession]
+  200
+    $: object closed
+    $.data: array
+    $.data[]: object closed
+    $.data[].blocks: array
+    $.data[].blocks[]: object closed
+    $.data[].blocks[].data: object
+    $.data[].blocks[].type: string
+    $.data[].key: string
+    $.meta: object closed
+    $.meta.configured: boolean
+    $.meta.surface: string enum[listing,product,brands,cart]
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
   429
     $: object closed
     $.error: object closed

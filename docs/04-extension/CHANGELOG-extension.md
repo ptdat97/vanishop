@@ -6,6 +6,10 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.78 — 2026-11-23 · Extension API 1.31.0
+
+- Storefront API v1 thêm `GET /pages/layouts/{surface}` cho danh sách sản phẩm, chi tiết sản phẩm, danh sách thương hiệu và giỏ hàng. Phản hồi trả các vùng theo thứ tự Builder, gồm block của Core và plugin dùng chung slot. Client tiếp tục dùng `GET /pages/home` cho trang chủ.
+
 ## 0.5.77 — 2026-11-23 · Extension API 1.31.0
 
 - `CustomerOrders` cung cấp danh mục lý do huỷ cho khách và nhận mã lý do khi huỷ bằng tài khoản hoặc token đơn. Hai endpoint Storefront API nhận `reason_code` và tiếp tục chấp nhận lý do tự do từ client cũ.

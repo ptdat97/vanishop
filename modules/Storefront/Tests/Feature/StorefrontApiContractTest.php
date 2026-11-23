@@ -146,6 +146,7 @@ it('khách vãng lai: vỏ trang, catalog, địa chỉ, giỏ, checkout, đơn,
     $get('/store', '/store');
     $get('/menus/header', '/menus/{location}');
     $get('/pages/home', '/pages/home');
+    $get('/pages/layouts/cart', '/pages/layouts/{surface}');
     $get('/categories', '/categories');
     $get('/categories/dam-vay', '/categories/{slug}');
     T::seed(fn () => ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']));
@@ -294,6 +295,9 @@ it('phản hồi lỗi khớp error.v1 với đúng mã: 401, 404, 409, 422, 400
         [$this->getJson("{$this->api}/me"), '/me', 'GET', 401, 'customer.unauthenticated'],
         [$this->getJson("{$this->api}/products/khong-co"), '/products/{slug}', 'GET', 404, null],
         [$this->getJson("{$this->api}/collections/khong-co"), '/collections/{slug}', 'GET', 404, null],
+        [$this->getJson("{$this->api}/pages/layouts/product?slug=khong-co"), '/pages/layouts/{surface}', 'GET', 404, null],
+        [$this->getJson("{$this->api}/pages/layouts/listing"), '/pages/layouts/{surface}', 'GET', 422, 'validation.failed'],
+        [$this->getJson("{$this->api}/pages/layouts/cart", ['Authorization' => 'Bearer invalid']), '/pages/layouts/{surface}', 'GET', 401, 'customer.unauthenticated'],
         [$this->postJson("{$this->api}/auth/social/khong-co/start", ['redirect_uri' => 'https://shop.example/x']), '/auth/social/{provider}/start', 'POST', 404, null],
         [$this->postJson("{$this->api}/auth/social/khong-co/complete"), '/auth/social/{provider}/complete', 'POST', 422, 'validation.failed'],
         [$this->postJson("{$this->api}/carts/{$cart}/lines", ['quantity' => 1], $headers), '/carts/{cart}/lines', 'POST', 422, 'validation.failed'],

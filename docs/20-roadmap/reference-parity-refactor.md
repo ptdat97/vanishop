@@ -453,7 +453,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L47 🟡 | Kịch bản k6 yêu cầu origin chỉ định và tách lượt duyệt khỏi lượt ghi. Khi bật checkout, đo số đơn thực, tỷ lệ thành công và lượt checkout bị rớt. | Vận hành | Chạy đủ tải 500 đơn/phút trên staging và đối soát tồn trước go-live ([operations §9](../18-operations/operations.md)). |
 | L48 ❄️ (từ nhật ký slice Notification, 2026-10-13) | Plugin Zalo ZNS chưa chạy thử với OA Zalo thật, chưa đối chiếu mã lỗi nhà cung cấp. Plugin SMS brandname (eSMS) đã gỡ ở 0.5.74, chờ chốt nhà cung cấp | `vani.zalo-zns` | Chạy thử khi mở lại kết nối ngoài (đang đóng băng) |
 | L49 ✅ | Admin có danh mục lý do theo trạng thái đích ở trang đơn và thao tác hàng loạt. Đổi ngoài trình tự vẫn bắt buộc ghi chú. Khách chọn lý do huỷ ở trang tài khoản hoặc Storefront API. Lịch sử lưu mã lý do; Reports đếm theo mã và ngày huỷ. | Ordering, Storefront, Reports | — |
-| L50 🟡 | Builder Engine 2.0 truyền ngữ cảnh công khai có kiểu theo slot. Lưới sản phẩm theo ngữ cảnh đọc danh mục, bộ sưu tập hoặc thương hiệu đang xem. | Storefront `BuilderEngine`, `BuilderZone` | Thêm API đọc bố cục ngoài trang chủ khi có client headless cần. |
+| L50 ✅ | Builder Engine 2.0 truyền ngữ cảnh công khai theo slot. Storefront API v1 đọc các vùng Builder của trang danh sách sản phẩm, chi tiết sản phẩm, danh sách thương hiệu và giỏ hàng. Lưới theo ngữ cảnh dùng slug công khai của danh mục, bộ sưu tập hoặc thương hiệu. | Storefront `BuilderEngine`, `BuilderZone` | — |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

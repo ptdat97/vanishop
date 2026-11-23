@@ -139,19 +139,54 @@ final class BuilderEngine
     /** @param list<mixed> $args */
     public function renderSlot(string $slot, array $args = []): HtmlString
     {
-        $zones = $this->slotZones()[$slot] ?? [];
-        if ($zones === []) {
+        $blocks = $this->slotBlocks($slot)['blocks'];
+        if ($blocks === []) {
             return new HtmlString('');
         }
-        $context = $this->slotContext($slot, $args);
         $html = '';
-        foreach ($zones as ['surface' => $surface, 'zone' => $zone]) {
-            foreach ($this->blocks->render($this->zone($surface, $zone) ?? [], blockContext: $context) as $block) {
-                $html .= $block['html']->toHtml();
-            }
+        foreach ($this->blocks->render($blocks, blockContext: $this->slotContext($slot, $args)) as $block) {
+            $html .= $block['html']->toHtml();
         }
 
         return new HtmlString($html);
+    }
+
+    /**
+     * @param  array<string, mixed>  $publicContext
+     * @return array{configured: bool, zones: list<array{key: string, blocks: list<array{type: string, data: array<string, mixed>}>}>}
+     */
+    public function resolveLayout(string $surface, array $publicContext): array
+    {
+        $zones = [];
+        $configured = $this->blocks($surface) !== null;
+        foreach ($this->layout($this->require($surface))->zones as $zone) {
+            if ($zone->slot === null) {
+                $resolved = $this->blocks->resolve($this->zone($surface, $zone->key) ?? []);
+            } else {
+                $slot = $this->slotBlocks($zone->slot);
+                $configured = $configured || $slot['configured'];
+                $resolved = $this->blocks->resolve($slot['blocks'], $this->slotContext($zone->slot, [$publicContext]));
+            }
+            $zones[] = ['key' => $zone->key, 'blocks' => $resolved];
+        }
+
+        return ['configured' => $configured, 'zones' => $zones];
+    }
+
+    /** @return array{configured: bool, blocks: list<array{type: string, config: array<string, mixed>}>} */
+    private function slotBlocks(string $slot): array
+    {
+        $blocks = [];
+        $configured = false;
+        foreach ($this->slotZones()[$slot] ?? [] as ['surface' => $surface, 'zone' => $zone]) {
+            $stored = $this->zone($surface, $zone);
+            if ($stored !== null) {
+                $configured = true;
+                array_push($blocks, ...$stored);
+            }
+        }
+
+        return ['configured' => $configured, 'blocks' => $blocks];
     }
 
     /** @param list<mixed> $args */

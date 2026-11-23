@@ -2,6 +2,9 @@
 
 use Illuminate\Support\HtmlString;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\ProductCollection;
+use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Contracts\Extensions;
@@ -14,6 +17,7 @@ use Modules\Storefront\Application\Builder\Surfaces\ProductPageSurface;
 use Modules\Storefront\Contracts\BuilderSurface;
 use Modules\Storefront\Contracts\Data\BuilderZone;
 use Modules\Storefront\Testing\BuilderSurfaceContract;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -66,7 +70,7 @@ it('đặt block vào slot có sẵn của trang sản phẩm, render sau nội 
     $this->put($url, ['blocks' => [['type' => 'rich_text', 'zone' => 'vani.storefront.khong_co', 'config' => ['body' => 'x']]]])
         ->assertSessionHasErrors('blocks.0.zone');
     $this->put($url, ['blocks' => [
-        ['type' => 'rich_text', 'zone' => 'vani.storefront.pdp.after_details', 'config' => ['body' => '<p>Đổi trả trong 30 ngày</p>']],
+        ['type' => 'rich_text', 'zone' => 'vani.storefront.pdp.after_details', 'config' => ['body' => '<p>Đổi trả trong 30 ngày</p><script>alert(1)</script>']],
         ['type' => 'rich_text', 'zone' => 'vani.storefront.pdp.after_related_products', 'config' => ['body' => '<p>Cuối trang sản phẩm</p>']],
     ]])->assertSessionHasNoErrors();
 
@@ -74,9 +78,18 @@ it('đặt block vào slot có sẵn của trang sản phẩm, render sau nội 
         'data-slot="vani.storefront.pdp.after_details"', 'PLUGIN-PDP', 'Đổi trả trong 30 ngày',
         'data-slot="vani.storefront.pdp.after_related_products"', 'Cuối trang sản phẩm',
     ], false);
+    $api = '/api/storefront/v1/pages/layouts/product?slug='.$this->sku->style->slug;
+    $layout = $this->getJson($api)->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+        ->assertJsonPath('meta', ['surface' => 'product', 'configured' => true])
+        ->assertJsonPath('data.0.key', 'vani.storefront.pdp.after_details')
+        ->assertJsonPath('data.1.key', 'vani.storefront.pdp.after_related_products')
+        ->assertJsonPath('data.0.blocks.0.type', 'rich_text')->json();
+    expect($layout['data'][0]['blocks'][0]['data']['bodyHtml'])->toBeString()
+        ->toContain('Đổi trả trong 30 ngày')->not->toContain('<script>', 'PLUGIN-PDP');
 
     $this->delete($url)->assertSessionHasNoErrors();
     $this->get(route('storefront.product', $this->sku->style->slug))->assertOk()->assertDontSee('Đổi trả trong 30 ngày');
+    $this->getJson($api)->assertOk()->assertJsonPath('meta.configured', false)->assertJsonPath('data.0.blocks', []);
 });
 
 it('surface của plugin dùng slot Core khai báo builder; vùng gắn vào slot không nhận block bị bỏ', function () {
@@ -89,6 +102,10 @@ it('surface của plugin dùng slot Core khai báo builder; vùng gắn vào slo
         ->assertSeeInOrder(['data-slot="vani.storefront.brands.after_list"', 'Mã giảm giá thương hiệu'], false)->getContent();
     expect(substr($html, 0, (int) strpos($html, '</head>')))->not->toContain('Mã giảm giá thương hiệu');
     $this->get(route('admin.storefront.builder.edit', 'khong-co'))->assertNotFound();
+    $this->getJson('/api/storefront/v1/pages/layouts/brands')->assertOk()
+        ->assertJsonPath('meta.configured', true)->assertJsonCount(2, 'data')
+        ->assertJsonPath('data.1.blocks.0.data.bodyHtml', '&lt;p&gt;Mã giảm giá thương hiệu&lt;/p&gt;');
+    $this->getJson('/api/storefront/v1/pages/layouts/plugin-promo')->assertNotFound();
 });
 
 it('khối theo ngữ cảnh dùng phạm vi thương hiệu đang xem và chỉ xuất hiện trong vùng hỗ trợ', function () {
@@ -103,6 +120,49 @@ it('khối theo ngữ cảnh dùng phạm vi thương hiệu đang xem và chỉ
         'data-slot="vani.storefront.plp.after_listing"', $title, 'Đầm lụa',
     ], false);
     $this->get(route('storefront.search'))->assertDontSee($title);
+});
+
+it('API dựng lưới theo slug công khai của danh mục, bộ sưu tập và thương hiệu, đồng thời giữ chính sách ẩn giá', function () {
+    $style = $this->sku->style;
+    T::seed(function () use ($style): void {
+        $category = Category::factory()->create(['slug' => 'dam-lua']);
+        $category->syncTranslations(['vi' => ['name' => 'Đầm lụa']]);
+        $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']);
+        $collection->syncTranslations(['vi' => ['name' => 'Mùa hè'], 'en' => ['name' => 'Summer', 'slug' => 'summer']]);
+        $style->categories()->attach($category);
+        $collection->styles()->attach($style);
+    });
+    $this->put(route('admin.storefront.builder.edit', 'listing'), ['blocks' => [
+        ['type' => 'listing_product_grid', 'zone' => 'vani.storefront.plp.after_listing', 'config' => ['title' => 'Gợi ý']],
+    ]])->assertSessionHasNoErrors();
+
+    $api = '/api/storefront/v1/pages/layouts/listing';
+    foreach (['category' => 'dam-lua', 'collection' => 'mua-he', 'brand' => $this->brand->slug] as $type => $slug) {
+        $this->getJson("{$api}?type={$type}&slug={$slug}")->assertOk()
+            ->assertJsonPath('data.1.key', 'vani.storefront.plp.after_listing')
+            ->assertJsonPath('data.1.blocks.0.data.products.0.id', $style->id);
+    }
+    $this->getJson("{$api}?type=collection&slug=summer", ['X-Vani-Locale' => 'en'])->assertOk()
+        ->assertJsonPath('data.1.blocks.0.data.products.0.id', $style->id);
+    $this->getJson("{$api}?type=search")->assertOk()->assertJsonPath('data.1.blocks', []);
+    $this->getJson("{$api}?type=search&slug=dam-lua")->assertUnprocessable();
+    $this->getJson("{$api}?type=brand")->assertUnprocessable();
+    $this->getJson("{$api}?type=brand&slug=khong-co")->assertNotFound();
+
+    T::seed(fn () => app(Settings::class)->set('core', 'storefront.price_visibility', 'members'));
+    $this->getJson("{$api}?type=brand&slug={$this->brand->slug}")->assertOk()
+        ->assertJsonPath('data.1.blocks.0.data.products.0.price', null)
+        ->assertJsonPath('data.1.blocks.0.data.products.0.price_hidden', true);
+    T::seed(fn () => $style->update(['status' => 'draft']));
+    $this->getJson('/api/storefront/v1/pages/layouts/product?slug='.$style->slug)->assertNotFound();
+});
+
+it('API giỏ phân biệt bố cục chưa lưu với cấu hình lưu rỗng', function () {
+    $api = '/api/storefront/v1/pages/layouts/cart';
+    $this->getJson($api)->assertOk()->assertJsonPath('meta.configured', false)
+        ->assertJsonPath('data', [['key' => 'vani.storefront.cart.empty', 'blocks' => []]]);
+    $this->put(route('admin.storefront.builder.edit', 'cart'), ['blocks' => []])->assertSessionHasNoErrors();
+    $this->getJson($api)->assertOk()->assertJsonPath('meta.configured', true)->assertJsonPath('data.0.blocks', []);
 });
 
 it('xem trước block nháp bằng theme và nhập bố cục vào vùng phù hợp trước khi lưu', function () {
