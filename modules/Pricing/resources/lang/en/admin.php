@@ -91,6 +91,7 @@ return [
         'warnings_running_prices' => 'Warnings on running prices',
     ],
     'price_lists_prices' => [
+        'paste_price_rows' => 'Or paste from Excel, including the SKU, Price and optional Compare price headers',
         'add_count_products_name' => 'Add :count products to ":name"',
         'add_count_skus_name' => 'Add :count SKUs to ":name"',
         'add_product' => 'Add product',

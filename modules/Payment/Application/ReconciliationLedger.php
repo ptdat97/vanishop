@@ -75,9 +75,11 @@ final class ReconciliationLedger implements Reconciliations
     /**
      * @return list<array{id: int, source: string, reference: string, order_id: int|null, expected: int|null, actual: int|null, note: string|null, created_at: string}>
      */
-    public function open(int $limit = 50): array
+    public function open(int $limit = 50, ?int $orderId = null): array
     {
-        return DB::table('reconciliation_entries')->where('status', 'mismatch')->orderByDesc('id')->limit($limit)
+        return DB::table('reconciliation_entries')->where('status', 'mismatch')
+            ->when($orderId !== null, fn ($query) => $query->where('order_id', $orderId))
+            ->orderByDesc('id')->limit($limit)
             ->get(['id', 'source', 'reference', 'order_id', 'expected', 'actual', 'note', 'created_at'])
             ->map(fn (object $row): array => [
                 'id' => (int) $row->id, 'source' => (string) $row->source, 'reference' => (string) $row->reference, 'order_id' => $row->order_id === null ? null : (int) $row->order_id,
@@ -86,12 +88,29 @@ final class ReconciliationLedger implements Reconciliations
             ])->all();
     }
 
-    public function resolve(int $entryId, string $resolution): void
+    public function resolve(int $entryId, string $resolution): bool
     {
         $updated = DB::table('reconciliation_entries')->where('id', $entryId)->where('status', 'mismatch')
             ->update(['status' => 'resolved', 'resolution' => mb_substr($resolution, 0, 255), 'resolved_at' => now()]);
         if ($updated > 0) {
             $this->audit->record('payment.reconciliation_resolved', 'reconciliation_entry', $entryId, ['resolution' => $resolution]);
         }
+
+        return $updated > 0;
+    }
+
+    /** @param list<int> $entryIds */
+    public function resolveMany(array $entryIds, string $resolution): int
+    {
+        sort($entryIds);
+
+        return DB::transaction(function () use ($entryIds, $resolution): int {
+            $count = 0;
+            foreach ($entryIds as $entryId) {
+                $count += (int) $this->resolve($entryId, $resolution);
+            }
+
+            return $count;
+        }, 3);
     }
 }

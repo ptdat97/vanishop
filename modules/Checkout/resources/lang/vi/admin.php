@@ -4,6 +4,14 @@
 
 return [
     'admin_orders_create' => [
+        'paste_skus' => 'Dán nhiều SKU',
+        'paste_hint' => 'Mỗi dòng một SKU và số lượng, ví dụ SKU-001 3. Bỏ trống số lượng để thêm 1.',
+        'add_pasted_skus' => 'Thêm SKU đã dán',
+        'invalid_paste_row' => 'Dòng :row cần có SKU và số lượng từ 1 đến 1.000.',
+        'unknown_skus' => 'Không tìm thấy SKU đang bán: :skus.',
+        'sku_quantity_limit' => 'SKU :sku vượt số lượng tối đa 1.000.',
+        'too_many_skus' => 'Mỗi đơn có tối đa 100 SKU khác nhau.',
+        'could_not_read_skus' => 'Không đọc được danh sách SKU. Hãy thử lại.',
         'add_product' => 'Thêm sản phẩm',
         'amount' => 'Thành tiền',
         'calculate' => 'Tính tiền',

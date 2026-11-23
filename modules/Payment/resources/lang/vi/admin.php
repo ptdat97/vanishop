@@ -4,6 +4,11 @@
 
 return [
     'payments_index' => [
+        'resolve_count' => 'Xử lý :count dòng đã chọn',
+        'common_resolution_hint' => 'Ghi chú này áp dụng cho tất cả dòng đã chọn. Chỉ xác nhận các dòng đã kiểm tra.',
+        'reason_return' => 'Khách trả hàng',
+        'reason_missing' => 'Giao thiếu hàng',
+        'reason_overpayment' => 'Khách trả dư',
         'all' => 'Tất cả',
         'amount' => 'Số tiền',
         'awaiting_manual_refund' => 'Chờ hoàn tiền thủ công',

@@ -38,6 +38,7 @@ const props = defineProps<{
         last_error: string | null;
         next: string[];
         can_book: boolean;
+        can_hand_over: boolean;
         can_cancel: boolean;
     }>;
     canManage: boolean;
@@ -60,6 +61,9 @@ function submitCodStatement(): void {
 const filters = reactive({ ...props.filters });
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
+const handover = useForm({ shipment_ids: [] as number[] });
+const readySelected = computed(() => props.shipments.filter((row) => row.can_hand_over && selected.value.includes(row.id)).map((row) => row.id));
+const canSelectShipments = computed(() => props.canManage && props.shipments.some((row) => row.can_hand_over));
 const hasActiveFilters = computed(() => Boolean(filters.order || filters.status || Object.values(ext).some(Boolean)));
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const columns = [
@@ -121,6 +125,19 @@ function move(id: number, status: string): void {
     router.post(`${props.baseUrl}/${id}/status`, { status }, { preserveScroll: true });
 }
 
+async function handOverSelected(): Promise<void> {
+    const shipmentIds = [...readySelected.value];
+    if (handover.processing || !shipmentIds.length) return;
+    const confirmed = await confirmAction({
+        title: t('fulfillment::admin.shipments_index.handover_confirm', { count: shipmentIds.length }),
+        message: t('fulfillment::admin.shipments_index.handover_stock'),
+        confirmLabel: t('fulfillment::admin.shipments_index.handover'),
+    });
+    if (confirmed === false) return;
+    handover.shipment_ids = shipmentIds;
+    handover.post(`${props.baseUrl}/bulk-hand-over`, { preserveScroll: true, onSuccess: () => (selected.value = []) });
+}
+
 async function cancel(id: number): Promise<void> {
     const reason = await confirmAction({ title: t('fulfillment::admin.shipments_index.cancel_shipment'), confirmLabel: t('fulfillment::admin.shipments_index.cancel_shipment_2'), tone: 'danger', reason: { label: t('fulfillment::admin.shipments_index.reason_cancelling_shipment'), required: true } });
     if (reason !== false) {
@@ -130,6 +147,7 @@ async function cancel(id: number): Promise<void> {
 </script>
 
 <template>
+    <div>
     <Head :title="t('fulfillment::admin.shipments_index.fulfilment')" />
     <p class="mb-2 text-sm text-slate-500">{{ t('fulfillment::admin.shipments_index.fulfilment') }}</p>
     <PageHeader :title="t('fulfillment::admin.shipments_index.shipments')" :subtitle="t('fulfillment::admin.shipments_index.stock_deducted_once_every_shipment')">
@@ -158,11 +176,12 @@ async function cancel(id: number): Promise<void> {
         <button v-if="order.can_create && canManage" type="button" :class="primaryButton" @click="create">{{ t('fulfillment::admin.shipments_index.create_shipment') }}</button>
     </div>
 
-    <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
+    <div v-if="extensions.actions.length || selected.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
         <span class="text-slate-500">{{ t('fulfillment::admin.shipments_index.count_selected', { count: selected.length }) }}</span>
         <ExtensionActions :actions="extensions.actions" :ids="selected" :selection-description="t('fulfillment::admin.shipments_index.shipments_2')" />
+        <button v-if="canManage && readySelected.length" type="button" :class="secondaryButton" :disabled="handover.processing" data-bulk-handover @click="handOverSelected">{{ t('fulfillment::admin.shipments_index.handover_count', { count: readySelected.length }) }}</button>
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="shipments" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :extensions="extensions" :row-label="(row) => row.tracking_number ?? row.order_number ?? String(row.id)" :row-class="() => 'align-top'" :empty-text="t('fulfillment::admin.shipments_index.no_shipments_yet')">
+    <DataTable v-model:selected="selected" :selectable="canSelectShipments" :columns="columns" :rows="shipments" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :extensions="extensions" :row-label="(row) => row.tracking_number ?? row.order_number ?? String(row.id)" :row-class="() => 'align-top'" :empty-text="t('fulfillment::admin.shipments_index.no_shipments_yet')">
         <template #cell-order_number="{ row }">
             <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
             <div class="font-sans text-xs text-slate-400">{{ t('fulfillment::admin.shipments_index.items_products', { items: row.items }) }}</div>
@@ -186,4 +205,5 @@ async function cancel(id: number): Promise<void> {
     </DataTable>
 
     <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="goToPage" @per-page-change="changePageSize" />
+    </div>
 </template>

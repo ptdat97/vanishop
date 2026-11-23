@@ -59,10 +59,14 @@ it('tổng đổi so với lúc tính (giá vừa đổi) → báo, không tạo
 
 it('tìm SKU đang bán; nút Tạo đơn ở danh sách đơn; chỉ xem đơn thì không tạo được', function () {
     $this->getJson('/admin/orders/new/variants?q='.$this->s->sku)->assertOk()->assertJsonPath('data.0.variant_id', $this->s->id);
+    $this->postJson('/admin/orders/new/variants', ['skus' => [$this->s->sku, 'SKU-KHONG-CO']])->assertOk()
+        ->assertJsonCount(1, 'data')->assertJsonPath('data.0.variant_id', $this->s->id);
+    $this->postJson('/admin/orders/new/variants', ['skus' => []])->assertUnprocessable()->assertJsonValidationErrors('skus');
     expect($this->get('/admin/orders/orders')->viewData('page')['props']['createUrl'])->toBe(url('/admin/orders/new'));
 
     $this->actingAs(T::staff(['admin.access', 'orders.view']), 'staff');
     expect($this->get('/admin/orders/orders')->viewData('page')['props']['createUrl'])->toBeNull();
     $this->get('/admin/orders/new')->assertForbidden();
     $this->postJson('/admin/orders/new/quote', ($this->payload)())->assertForbidden();
+    $this->postJson('/admin/orders/new/variants', ['skus' => [$this->s->sku]])->assertForbidden();
 });

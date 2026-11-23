@@ -47,3 +47,45 @@ it('Combobox tìm SKU phía máy chủ đổi từ kết quả trống sang lự
         ->assertSeeIn('[data-order-lines]', $this->s->sku)
         ->assertNoJavaScriptErrors();
 });
+
+it('dán nhiều SKU vào đơn, báo mã sai và cộng các dòng trùng trước khi tính giá', function () {
+    $page = visit('/admin/orders/new')->click('Dán nhiều SKU');
+
+    $page->fill('[data-paste-skus]', "{$this->s->sku}\nSKU-KHONG-CO")->click('[data-add-pasted-skus]')
+        ->assertSee('Không tìm thấy SKU đang bán: SKU-KHONG-CO.')
+        ->assertSee('Chưa có sản phẩm nào.')
+        ->fill('[data-paste-skus]', "{$this->s->sku}\t2\n{$this->s->sku}")
+        ->click('[data-add-pasted-skus]')
+        ->assertValue('[data-order-lines] input[type="number"]', '3')
+        ->assertSeeIn('[data-order-total]', '900.000 ₫')
+        ->assertNoJavaScriptErrors();
+});
+
+it('chờ báo giá hiện tại rồi tính số lượng mới trên cùng giỏ trước khi cho tạo đơn', function () {
+    $page = visit('/admin/orders/new');
+    $page->script(<<<'JS'
+        () => {
+            const fetch = window.fetch.bind(window);
+            window.orderQuoteRequests = [];
+            window.fetch = async (url, options) => {
+                if (!String(url).endsWith('/orders/new/quote')) return fetch(url, options);
+                const index = window.orderQuoteRequests.push(JSON.parse(options.body)) - 1;
+                const response = await fetch(url, options);
+                if (index === 0) await new Promise((resolve) => { window.releaseOrderQuote = resolve; });
+                return response;
+            };
+        }
+    JS);
+
+    $page->type('[data-add-variant] input', $this->s->sku)->click('[role="option"]')
+        ->assertScript("typeof window.releaseOrderQuote === 'function'", true)
+        ->fill('[data-order-lines] input[type="number"]', '3')
+        ->assertPresent('[data-place]:disabled')
+        ->assertScript('window.orderQuoteRequests.length', 1)
+        ->script('() => window.releaseOrderQuote()');
+
+    $page->assertSeeIn('[data-order-total]', '900.000 ₫')
+        ->assertScript('window.orderQuoteRequests[1].lines[0].quantity', 3)
+        ->assertScript('window.orderQuoteRequests[1].cart_id.length', 26)
+        ->assertNoJavaScriptErrors();
+});

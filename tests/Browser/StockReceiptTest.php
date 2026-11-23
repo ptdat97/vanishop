@@ -33,3 +33,30 @@ it('quét SKU hai lần → số lượng 2; "SKU 5" → 5; Lưu và nhập kho 
     expect(DB::table('stock_levels')->where('location_id', $this->location->id)->orderBy('variant_id')->pluck('on_hand', 'variant_id')->all())
         ->toEqual([$this->s->id => 2, $this->m->id => 5]);
 });
+
+it('mất mạng khi đọc mã quét thì giữ lượt quét, thử lại không cộng trùng và báo mã sai ở dòng đầu', function () {
+    $page = visit('/admin/inventory/receipts/create');
+    $page->script(<<<'JS'
+        () => {
+            const fetch = window.fetch.bind(window);
+            let failed = false;
+            window.fetch = (url, options) => {
+                if (!failed && String(url).endsWith('/receipts/parse')) {
+                    failed = true;
+                    return Promise.resolve(new Response('{}', { status: 503 }));
+                }
+                return fetch(url, options);
+            };
+        }
+    JS);
+
+    $page->fill('[data-scan]', $this->s->sku)->keys('[data-scan]', 'Enter')
+        ->assertVisible('[data-retry-scans]')
+        ->assertPresent('[data-receive]:disabled')
+        ->click('[data-retry-scans]')
+        ->assertSee('1 SKU · 1 món')
+        ->fill('[data-scan]', 'SKU-KHONG-CO')->keys('[data-scan]', 'Enter')
+        ->assertSee('SKU-KHONG-CO')
+        ->assertSee('1 SKU · 1 món')
+        ->assertNoJavaScriptErrors();
+});

@@ -27,6 +27,7 @@ use Modules\Pricing\Http\Requests\BulkPricesRequest;
 use Modules\Pricing\Http\Requests\PriceListRequest;
 use Modules\Pricing\Http\Requests\PricesRequest;
 use Modules\Pricing\Persistence\Models\PriceList;
+use Modules\Shared\Support\DelimitedSpreadsheetRows;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\SimpleXlsx;
 use Modules\Shared\Support\SpreadsheetRows;
@@ -246,11 +247,17 @@ final class PriceListController
     {
         Gate::authorize('pricing.manage');
         $this->ensureEditable($priceList);
-        $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:xlsx,csv,txt']]);
+        $data = $request->validate([
+            'file' => ['required_without:text', 'prohibits:text', 'nullable', 'file', 'max:5120', 'extensions:xlsx,csv,txt'],
+            'text' => ['required_without:file', 'nullable', 'string', 'max:200000'],
+        ]);
+        $field = $request->hasFile('file') ? 'file' : 'text';
         try {
-            $rows = SpreadsheetRows::fromUpload($request->file('file'));
+            $rows = $field === 'file'
+                ? SpreadsheetRows::fromUpload($request->file('file'))
+                : DelimitedSpreadsheetRows::parse($data['text']);
         } catch (\RuntimeException $exception) {
-            throw ValidationException::withMessages(['file' => $exception->getMessage()]);
+            throw ValidationException::withMessages([$field => $exception->getMessage()]);
         }
         $result = $file->import($priceList, $rows);
         $redirect = back()->with('success', __('pricing::messages.imported', ['changed' => $result['changed'], 'unchanged' => $result['unchanged'], 'errors' => count($result['errors'])]));

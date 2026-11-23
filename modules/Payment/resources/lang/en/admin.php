@@ -4,6 +4,11 @@
 
 return [
     'payments_index' => [
+        'resolve_count' => 'Resolve :count selected entries',
+        'common_resolution_hint' => 'This note applies to every selected entry. Confirm only entries you have checked.',
+        'reason_return' => 'Customer return',
+        'reason_missing' => 'Missing items',
+        'reason_overpayment' => 'Overpayment',
         'all' => 'All',
         'amount' => 'Amount',
         'awaiting_manual_refund' => 'Awaiting manual refund',

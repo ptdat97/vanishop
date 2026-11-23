@@ -91,6 +91,7 @@ return [
         'warnings_running_prices' => 'Cảnh báo trên giá đang chạy',
     ],
     'price_lists_prices' => [
+        'paste_price_rows' => 'Hoặc dán từ Excel, gồm dòng tiêu đề SKU, Giá và Giá gạch (nếu có)',
         'add_count_products_name' => 'Đưa :count sản phẩm vào ":name"',
         'add_count_skus_name' => 'Thêm :count SKU vào ":name"',
         'add_product' => 'Thêm sản phẩm',

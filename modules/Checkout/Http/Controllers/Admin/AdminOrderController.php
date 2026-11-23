@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Cart\Contracts\Data\CartKey;
+use Modules\Catalog\Contracts\Data\VariantData;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Checkout\Application\AdminOrders;
@@ -49,9 +50,24 @@ final class AdminOrderController
         Gate::authorize('orders.manage');
         $text = trim((string) $request->validate(['q' => ['required', 'string', 'max:100']])['q']);
 
-        return response()->json(['data' => array_map(fn ($variant): array => [
+        return response()->json(['data' => array_map($this->variantRow(...), array_values(array_filter($variants->search($text, 40), fn ($variant): bool => $variant->status === 'active')))]);
+    }
+
+    public function resolveVariants(Request $request, VariantDirectory $variants): JsonResponse
+    {
+        Gate::authorize('orders.manage');
+        $skus = $request->validate(['skus' => ['required', 'array', 'list', 'max:100'], 'skus.*' => ['required', 'string', 'max:100']])['skus'];
+        $matches = array_filter($variants->findBySkus($skus), fn (VariantData $variant): bool => $variant->status === 'active');
+
+        return response()->json(['data' => array_values(array_map($this->variantRow(...), $matches))]);
+    }
+
+    /** @return array{variant_id: int, sku: string, name: string, status: string} */
+    private function variantRow(VariantData $variant): array
+    {
+        return [
             'variant_id' => $variant->id, 'sku' => $variant->sku, 'name' => trim($variant->styleName.' '.VariantOptionsText::label($variant->options)), 'status' => $variant->status,
-        ], array_values(array_filter($variants->search($text, 40), fn ($variant): bool => $variant->status === 'active')))]);
+        ];
     }
 
     /**

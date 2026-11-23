@@ -1,11 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
+use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderTransitionRejected;
@@ -13,6 +15,7 @@ use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
+use Modules\Payment\Application\ReconciliationLedger;
 use Modules\Payment\Application\RefundService;
 use Modules\Payment\Contracts\Data\GatewayPaymentStatus;
 use Modules\Payment\Contracts\Data\GatewayStatus;
@@ -197,8 +200,32 @@ it('chuyển khoản thủ công: hướng dẫn chuyển khoản, nhân viên x
         ->and(($this->orderRow)()->payment_status)->toBe('partially_refunded');
 
     $refundId = DB::table('refunds')->value('id');
+    $number = ($this->orderRow)()->number;
+    $this->get("{$base}/payments?q={$number}")->assertInertia(fn (Assert $page) => $page
+        ->has('refunds', 1)->where('refunds.0.id', $refundId)->where('refunds.0.order_number', $number));
+    $this->get("{$base}/payments?q=KHONG-CO")->assertInertia(fn (Assert $page) => $page->has('refunds', 0));
     $this->post("{$base}/refunds/{$refundId}/complete", ['note' => 'Đã CK trả'])->assertSessionHasNoErrors();
     expect(DB::table('refunds')->value('status'))->toBe('completed');
+});
+
+it('đánh dấu nhiều dòng đối soát bằng một ghi chú và chỉ ghi audit cho dòng còn mở', function () {
+    $ledger = app(ReconciliationLedger::class);
+    $ledger->record('test-bank', 'TX-1', false);
+    $ledger->record('test-bank', 'TX-2', false);
+    $ledger->record('test-bank', 'TX-3', true);
+    $ids = DB::table('reconciliation_entries')->orderBy('id')->pluck('id')->all();
+    $url = '/admin/payment/reconciliation/bulk-resolve';
+    $payload = ['ids' => $ids, 'note' => 'Đã kiểm tra sao kê'];
+    $this->actingAs(T::staff(['admin.access', 'payments.view']), 'staff')->post($url, $payload)->assertForbidden();
+    $this->actingAs(T::staff(['admin.access', 'payments.view', 'payments.confirm']), 'staff');
+    $this->post($url, ['ids' => $ids, 'note' => ''])->assertSessionHasErrors('note');
+
+    $this->post($url, $payload)->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Đã xử lý 2 dòng đối soát, bỏ qua 1 dòng không còn mở.');
+    $this->post($url, $payload)->assertSessionHas('success', 'Đã xử lý 0 dòng đối soát, bỏ qua 3 dòng không còn mở.');
+
+    expect(DB::table('reconciliation_entries')->where('resolution', $payload['note'])->where('status', 'resolved')->count())->toBe(2)
+        ->and(AuditLog::query()->where('action', 'payment.reconciliation_resolved')->count())->toBe(2);
 });
 
 it('state machine: không chuyển ngược trạng thái; chuyển trùng là no-op', function () {

@@ -38,10 +38,10 @@ final class SkuQuantityRows
             if ($sku === '') {
                 continue;
             }
+            if ($index === 0 && mb_strtolower($sku) === 'sku' && $quantity !== '' && ! ctype_digit($quantity)) {
+                continue;
+            }
             if ($quantity !== '' && ! ctype_digit($quantity)) {
-                if ($index === 0) {
-                    continue; // tiêu đề
-                }
                 $errors[] = __('inventory::messages.receipt_quantity_invalid', ['line' => $index + 1, 'sku' => $sku]);
 
                 continue;
@@ -56,9 +56,7 @@ final class SkuQuantityRows
         foreach ($parsed as $row) {
             $variant = $found[mb_strtoupper($row['sku'])] ?? null;
             if ($variant === null) {
-                if ($row['line'] !== 1) {
-                    $errors[] = __('inventory::messages.receipt_sku_unknown', ['line' => $row['line'], 'sku' => $row['sku']]);
-                }
+                $errors[] = __('inventory::messages.receipt_sku_unknown', ['line' => $row['line'], 'sku' => $row['sku']]);
 
                 continue;
             }

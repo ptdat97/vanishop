@@ -12,3 +12,4 @@ Route::post('payments/{payment}/refunds', [PaymentController::class, 'refund'])-
 Route::post('refunds/{refund}/complete', [PaymentController::class, 'completeRefund'])->name('refunds.complete');
 Route::post('refunds/{refund}/payout/{channel}', [PaymentController::class, 'payout'])->where('channel', '[a-z0-9_-]+')->name('refunds.payout');
 Route::post('reconciliation/{entry}/resolve', [PaymentController::class, 'resolveReconciliation'])->whereNumber('entry')->name('reconciliation.resolve');
+Route::post('reconciliation/bulk-resolve', [PaymentController::class, 'resolveReconciliations'])->name('reconciliation.bulk-resolve');

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'reconciliations_resolved' => 'Đã xử lý :count dòng đối soát, bỏ qua :skipped dòng không còn mở.',
     'gateway_unavailable' => 'Phương thức thanh toán không khả dụng.',
     'not_found' => 'Không tìm thấy thanh toán.',
     'invalid_state' => 'Thanh toán đang ở trạng thái :status, không thực hiện được thao tác này.',

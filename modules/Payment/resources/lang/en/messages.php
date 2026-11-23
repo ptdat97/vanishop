@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'reconciliations_resolved' => 'Resolved :count reconciliation entries and skipped :skipped that were no longer open.',
     'gateway_unavailable' => 'This payment method is not available.',
     'not_found' => 'Payment not found.',
     'invalid_state' => 'The payment is :status; this action is not allowed.',

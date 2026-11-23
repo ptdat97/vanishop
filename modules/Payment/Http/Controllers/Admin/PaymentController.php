@@ -48,10 +48,17 @@ final class PaymentController
         $search = is_string($request->query('q')) ? trim($request->query('q')) : '';
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
         $sort = ListSort::fromRequest($request, ['amount' => 'payments.amount', 'created_at' => 'payments.created_at']);
-        $page = $this->queries->payments(is_string($status) ? $status : '', $search === '' ? null : ($orders->findByNumber($search)->id ?? 0), $extensionIds, $perPage, $sort);
+        $orderId = $search === '' ? null : ($orders->findByNumber($search)->id ?? 0);
+        $page = $this->queries->payments(is_string($status) ? $status : '', $orderId, $extensionIds, $perPage, $sort);
         $payments = collect($page->items());
-        $numbers = $orders->numbers($payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
-        $refunds = $this->queries->refundsAwaitingPayout();
+        $refunds = $this->queries->refundsAwaitingPayout($orderId);
+        $refundOrders = $this->queries->paymentOrders($refunds->pluck('payment_id')->all());
+        $reconciliation = app(ReconciliationLedger::class)->open(orderId: $orderId);
+        $numbers = $orders->numbers(array_values(array_unique([
+            ...$payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all(),
+            ...array_values($refundOrders),
+            ...array_filter(array_column($reconciliation, 'order_id')),
+        ])));
 
         return Inertia::render('Payment::Payments/Index', [
             'baseUrl' => route('admin.payment.payments.index'),
@@ -80,10 +87,16 @@ final class PaymentController
             'perPageOptions' => self::PER_PAGE_OPTIONS,
             // EP v3 X5: kênh chuyển trả của plugin; dòng đối soát lệch chờ xử lý.
             'payouts' => array_values(array_map(fn ($payout): array => ['code' => $payout->code(), 'label' => $payout->label()], $service->payouts())),
-            'reconciliation' => app(ReconciliationLedger::class)->open(),
+            'reconciliationUrl' => route('admin.payment.reconciliation.bulk-resolve'),
+            'reconciliation' => array_map(fn (array $entry): array => $entry + [
+                'order_number' => $numbers[$entry['order_id']] ?? null,
+                'order_url' => $entry['order_id'] === null ? null : route('admin.orders.orders.show', ['order' => $entry['order_id']]),
+            ], $reconciliation),
             'refunds' => $refunds->map(fn (Refund $refund): array => [
                 'id' => $refund->id, 'payment_id' => $refund->payment_id, 'amount' => $refund->amount, 'reason' => $refund->reason, 'paying_out' => $refund->status === 'paying_out',
                 'created_at' => StoreClock::format($refund->created_at),
+                'order_number' => $numbers[$refundOrders[$refund->payment_id] ?? 0] ?? null,
+                'order_url' => isset($refundOrders[$refund->payment_id]) ? route('admin.orders.orders.show', ['order' => $refundOrders[$refund->payment_id]]) : null,
             ])->all(),
             'can' => [
                 'confirm' => Gate::allows('payments.confirm'),
@@ -158,6 +171,19 @@ final class PaymentController
         $ledger->resolve($entry, $data['note']);
 
         return back()->with('success', __('payment::messages.reconciliation_resolved'));
+    }
+
+    public function resolveReconciliations(Request $request, ReconciliationLedger $ledger): RedirectResponse
+    {
+        Gate::authorize('payments.confirm');
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'list', 'min:1', 'max:50'],
+            'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
+            'note' => ['required', 'string', 'max:255'],
+        ]);
+        $count = $ledger->resolveMany(array_map('intval', $data['ids']), $data['note']);
+
+        return back()->with('success', __('payment::messages.reconciliations_resolved', ['count' => $count, 'skipped' => count($data['ids']) - $count]));
     }
 
     public function completeRefund(Refund $refund, Request $request, PaymentService $payments): RedirectResponse

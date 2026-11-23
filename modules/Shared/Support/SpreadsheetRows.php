@@ -30,24 +30,6 @@ final class SpreadsheetRows
      */
     public static function csv(string $path, int $maxRows = SimpleXlsx::MAX_ROWS): array
     {
-        $content = (string) file_get_contents($path);
-        $content = str_starts_with($content, "\xEF\xBB\xBF") ? substr($content, 3) : $content;
-        if (! mb_check_encoding($content, 'UTF-8')) {
-            throw new RuntimeException('File CSV phải lưu dạng UTF-8.');
-        }
-        $first = strtok($content, "\n") ?: '';
-        $delimiter = collect([',', ';', "\t"])->sortByDesc(fn (string $candidate): int => substr_count($first, $candidate))->first();
-        $rows = [];
-        foreach (preg_split('/\r\n|\n|\r/', $content) ?: [] as $line) {
-            if (trim($line) === '') {
-                continue;
-            }
-            $rows[] = array_map('strval', str_getcsv($line, $delimiter, '"', ''));
-            if (count($rows) > $maxRows) {
-                throw new RuntimeException('File có quá '.$maxRows.' dòng.');
-            }
-        }
-
-        return $rows;
+        return DelimitedSpreadsheetRows::parse((string) file_get_contents($path), $maxRows);
     }
 }

@@ -5,6 +5,7 @@ import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue'
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
 import FileInput from '@admin/Components/FileInput.vue';
+import FormField from '@admin/Components/FormField.vue';
 import Dialog from '@admin/Components/Dialog.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -199,8 +200,8 @@ function continueToRule(): void {
 
 // Nhập/xuất file: file xuất cũng là mẫu nhập (sửa cột Giá / Giá gạch rồi nhập lại).
 const importOpen = ref(false);
-const importForm = useForm({ file: null as File | null });
-const importErrors = computed(() => Object.entries(importForm.errors as Record<string, string>).filter(([key]) => key.startsWith('import.') || key === 'file').map(([, message]) => message));
+const importForm = useForm({ file: null as File | null, text: '' });
+const importErrors = computed(() => Object.entries(importForm.errors as Record<string, string>).filter(([key]) => key.startsWith('import.') || key === 'file' || key === 'text').map(([, message]) => message));
 function submitImport(): void {
     importForm.post(`${listUrl.value}/import`, { forceFormData: true, preserveScroll: true, onSuccess: () => {
         if (!importErrors.value.length) {
@@ -229,6 +230,7 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? t('p
 </script>
 
 <template>
+    <div>
     <Head :title="t('pricing::admin.price_lists_prices.price_list_name', { name: priceList.name })" />
     <p class="mb-2 text-sm text-slate-500"><Link :href="baseUrl" class="hover:underline">{{ t('pricing::admin.price_lists_prices.price_lists') }}</Link></p>
     <PageHeader :title="priceList.name" :subtitle="`${labels.price_list_type[priceList.type] ?? priceList.type} · ${priceList.starts_at || priceList.ends_at ? `${priceList.starts_at ?? '—'} → ${priceList.ends_at ?? '—'}` : t('pricing::admin.price_lists_prices.no_time_limit')}`">
@@ -236,7 +238,7 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? t('p
         <Link v-if="canManage" :href="`${listUrl}/edit`" :class="secondaryButton">{{ t('pricing::admin.price_lists_prices.price_list_details') }}</Link>
         <button v-if="editable" type="button" :class="primaryButton" data-add-products @click="addOpen = true">{{ t('pricing::admin.price_lists_prices.add_product') }}</button>
         <a :href="`${listUrl}/export`" :class="secondaryButton" data-export>{{ t('pricing::admin.price_lists_prices.export_file') }}</a>
-        <button v-if="editable" type="button" :class="secondaryButton" data-import @click="importOpen = true">{{ t('pricing::admin.price_lists_prices.import_file') }}</button>
+        <button v-if="editable" type="button" :class="secondaryButton" data-import @click="importOpen = true">{{ t('pricing::admin.price_lists_prices.import_prices') }}</button>
         <Link v-if="readOnly" :href="productsUrl" :class="primaryButton">{{ t('pricing::admin.price_lists_prices.edit_prices_product_list') }}</Link>
     </PageHeader>
 
@@ -299,7 +301,7 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? t('p
     </div>
     <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="(page) => visit(page)" @per-page-change="(perPage) => visit(undefined, perPage)" />
 
-    <Dialog v-model:open="importOpen" :title="t('pricing::admin.price_lists_prices.import_prices_from_file')" :dirty="Boolean(importForm.file)">
+    <Dialog v-model:open="importOpen" :title="t('pricing::admin.price_lists_prices.import_prices')" :dirty="importForm.isDirty && !importForm.processing">
         <div class="space-y-3 text-sm">
             <p class="text-slate-600">
                 {{ t('pricing::admin.price_lists_prices.excel_xlsx_csv_file_columns') }} <strong>SKU</strong> {{ t('pricing::admin.price_lists_prices.text') }} <strong>{{ t('pricing::admin.price_lists_prices.price') }}</strong> {{ t('pricing::admin.price_lists_prices.first_row_column') }} <strong>{{ t('pricing::admin.price_lists_prices.compare_price') }}</strong> {{ t('pricing::admin.price_lists_prices.optional_easiest_click') }}
@@ -309,13 +311,16 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? t('p
                 <li>{{ t('pricing::admin.price_lists_prices.empty_price_cell_unchanged_0') }}</li>
                 <li>{{ t('pricing::admin.price_lists_prices.skus_not_yet_list_added') }}</li>
             </ul>
-            <FileInput v-model="importForm.file" accept=".xlsx,.csv" :max-kb="5120" :progress="importForm.progress?.percentage" />
+            <FileInput v-model="importForm.file" accept=".xlsx,.csv" :max-kb="5120" :progress="importForm.progress?.percentage" @update:model-value="(file) => { if (file) importForm.text = ''; }" />
+            <FormField :label="t('pricing::admin.price_lists_prices.paste_price_rows')">
+                <textarea v-model="importForm.text" :class="inputClass" rows="4" maxlength="200000" :disabled="importForm.processing" data-paste-prices @input="importForm.file = null"></textarea>
+            </FormField>
             <ul v-if="importErrors.length" class="max-h-48 space-y-1 overflow-y-auto rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700" data-import-errors>
                 <li v-for="message in importErrors" :key="message">{{ message }}</li>
             </ul>
         </div>
         <template #footer>
-            <button type="button" :class="primaryButton" :disabled="!importForm.file || importForm.processing" data-import-submit @click="submitImport">{{ t('pricing::admin.price_lists_prices.import_prices') }}</button>
+            <button type="button" :class="primaryButton" :disabled="(!importForm.file && !importForm.text.trim()) || importForm.processing" data-import-submit @click="submitImport">{{ t('pricing::admin.price_lists_prices.import_prices') }}</button>
         </template>
     </Dialog>
 
@@ -370,4 +375,5 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? t('p
             <button type="button" :class="primaryButton" :disabled="!preview || applying || preview.summary.changed === 0" data-apply @click="applyBulk">{{ t('pricing::admin.price_lists_prices.apply_changed_skus', { changed: preview?.summary.changed ?? 0 }) }}</button>
         </template>
     </Dialog>
+    </div>
 </template>

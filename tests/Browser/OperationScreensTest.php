@@ -3,6 +3,7 @@
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Payment\Application\ReconciliationLedger;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Plugin\HelloWorld\HelloWorldServiceProvider;
@@ -33,3 +34,20 @@ it('sáu màn vận hành hiện bộ lọc và công cụ của plugin, không 
     'khuyến mãi' => '/admin/promotion/promotions',
     'tồn kho' => '/admin/inventory/stock',
 ]);
+
+it('chọn hai dòng đối soát rồi đánh dấu cả hai bằng một ghi chú', function () {
+    $this->actingAs(T::staff(['admin.access', 'payments.view', 'payments.confirm']), 'staff');
+    $ledger = app(ReconciliationLedger::class);
+    $ledger->record('test-bank', 'TX-1', false);
+    $ledger->record('test-bank', 'TX-2', false);
+
+    visit('/admin/payment/payments')
+        ->click('[data-reconciliation] input[aria-label="TX-1"]')
+        ->click('[data-reconciliation] input[aria-label="TX-2"]')
+        ->click('[data-resolve-mismatches]')
+        ->fill('[role="alertdialog"] input', 'Đã kiểm tra sao kê')
+        ->click('[role="alertdialog"] button[type="submit"]')
+        ->assertSee('Đã xử lý 2 dòng đối soát')
+        ->assertMissing('[data-reconciliation]')
+        ->assertNoJavaScriptErrors();
+});

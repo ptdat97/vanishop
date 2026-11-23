@@ -53,6 +53,16 @@ final class AdminQueries
         return Shipment::query()->whereIn('order_id', $orderIds)->where('status', $status)->get();
     }
 
+    /**
+     * @param  list<int>  $shipmentIds
+     * @return Collection<int, Shipment>
+     */
+    public function readyShipments(array $shipmentIds): Collection
+    {
+        return Shipment::query()->whereKey($shipmentIds)->where('status', ShipmentStatus::Created)
+            ->whereNotNull('tracking_number')->where('tracking_number', '!=', '')->get();
+    }
+
     public function byTracking(string $carrier, string $trackingNumber): ?Shipment
     {
         return Shipment::query()->where('carrier_code', $carrier)->where('tracking_number', $trackingNumber)->first();

@@ -49,6 +49,10 @@ return [
         'upload_count_file' => 'Upload count file',
     ],
     'receipts_form' => [
+        'scans_pending' => ':count scans waiting to be read',
+        'retry_scans' => 'Retry scans',
+        'discard_scans' => 'Discard unread scans',
+        'dismiss_scan_errors' => 'Dismiss scan errors',
         'add' => 'Add',
         'add_from_file' => 'Add from file',
         'add_pasted_lines' => 'Add the pasted lines',

@@ -23,6 +23,10 @@ return [
         'tracking_number' => 'Tracking number',
     ],
     'shipments_index' => [
+        'handover' => 'Hand over',
+        'handover_count' => 'Hand over :count shipments',
+        'handover_confirm' => 'Confirm handover of :count shipments?',
+        'handover_stock' => 'Records pickup and updates inventory based on each order’s progress.',
         'all_statuses' => 'All statuses',
         'apply' => 'Apply',
         'cancel' => 'Cancel',

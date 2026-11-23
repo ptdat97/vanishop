@@ -4,6 +4,14 @@
 
 return [
     'admin_orders_create' => [
+        'paste_skus' => 'Paste multiple SKUs',
+        'paste_hint' => 'One SKU and quantity per line, for example SKU-001 3. Omit quantity to add one.',
+        'add_pasted_skus' => 'Add pasted SKUs',
+        'invalid_paste_row' => 'Row :row needs a SKU and a quantity from 1 to 1,000.',
+        'unknown_skus' => 'Active SKUs not found: :skus.',
+        'sku_quantity_limit' => 'SKU :sku exceeds the maximum quantity of 1,000.',
+        'too_many_skus' => 'An order can contain up to 100 distinct SKUs.',
+        'could_not_read_skus' => 'Could not read the SKU list. Try again.',
         'add_product' => 'Add product',
         'amount' => 'Amount',
         'calculate' => 'Calculate',

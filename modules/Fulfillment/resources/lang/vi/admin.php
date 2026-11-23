@@ -23,6 +23,10 @@ return [
         'tracking_number' => 'Mã vận đơn',
     ],
     'shipments_index' => [
+        'handover' => 'Bàn giao',
+        'handover_count' => 'Bàn giao :count vận đơn',
+        'handover_confirm' => 'Xác nhận bàn giao :count vận đơn?',
+        'handover_stock' => 'Ghi nhận đã lấy hàng và cập nhật tồn kho theo trạng thái của từng đơn.',
         'all_statuses' => 'Mọi trạng thái',
         'apply' => 'Áp dụng',
         'cancel' => 'Huỷ',

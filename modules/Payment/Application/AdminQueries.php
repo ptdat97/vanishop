@@ -36,10 +36,19 @@ final class AdminQueries
      *
      * @return Collection<int, Refund>
      */
-    public function refundsAwaitingPayout(): Collection
+    public function refundsAwaitingPayout(?int $orderId = null): Collection
     {
-        return Refund::query()->whereIn('payment_id', Payment::query()->select('id'))
+        return Refund::query()->whereIn('payment_id', Payment::query()->select('id')->when($orderId !== null, fn ($query) => $query->where('order_id', $orderId)))
             ->whereIn('status', [RefundStatus::Requested->value, RefundStatus::PayingOut->value])->orderBy('id')->get();
+    }
+
+    /**
+     * @param  list<int>  $paymentIds
+     * @return array<int, int>
+     */
+    public function paymentOrders(array $paymentIds): array
+    {
+        return Payment::query()->whereKey($paymentIds)->pluck('order_id', 'id')->map(fn ($id): int => (int) $id)->all();
     }
 
     public function paymentExists(int $paymentId): bool

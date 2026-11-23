@@ -49,6 +49,10 @@ return [
         'upload_count_file' => 'Tải file số đếm',
     ],
     'receipts_form' => [
+        'scans_pending' => 'Đang chờ đọc :count lượt quét',
+        'retry_scans' => 'Đọc lại lượt quét',
+        'discard_scans' => 'Bỏ lượt quét chưa đọc',
+        'dismiss_scan_errors' => 'Ẩn lỗi quét đã xem',
         'add' => 'Thêm',
         'add_from_file' => 'Thêm từ file',
         'add_pasted_lines' => 'Thêm các dòng đã dán',

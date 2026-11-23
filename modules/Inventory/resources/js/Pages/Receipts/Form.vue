@@ -9,9 +9,9 @@ import { confirmAction } from '@admin/confirm';
 import { HttpError, postJson } from '@admin/http';
 import { recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { useAdminForm } from '@admin/forms';
+import { useAdminForm, useLeaveGuard } from '@admin/forms';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, onUnmounted, ref } from 'vue';
 
 type Line = { variant_id: number; sku: string; name: string; quantity: number };
 
@@ -49,7 +49,14 @@ const scan = ref('');
 const paste = ref('');
 const file = ref<File | null>(null);
 const parseErrors = ref<string[]>([]);
+const scanErrors = ref<string[]>([]);
 const parsing = ref(false);
+const scanQueue = ref<string[]>([]);
+const scanFailed = ref(false);
+let scanTimer: ReturnType<typeof setTimeout> | undefined;
+onUnmounted(() => clearTimeout(scanTimer));
+const inputsPending = computed(() => parsing.value || scanQueue.value.length > 0);
+useLeaveGuard(() => scanQueue.value.length > 0);
 const units = computed(() => form.lines.reduce((sum, line) => sum + Number(line.quantity || 0), 0));
 
 function merge(lines: Line[]): void {
@@ -60,41 +67,68 @@ function merge(lines: Line[]): void {
     }
 }
 
-async function parse(body: FormData | Record<string, unknown>): Promise<void> {
+async function parse(body: FormData | Record<string, unknown>): Promise<boolean> {
     parsing.value = true;
     parseErrors.value = [];
     try {
         const result = await postJson<{ lines: Line[]; errors: string[] }>(props.urls.parse, body);
         merge(result.lines);
         parseErrors.value = result.errors;
+        return true;
     } catch (error) {
         parseErrors.value = [error instanceof HttpError ? error.message : t('inventory::admin.receipts_form.could_not_read_data')];
+        return false;
     } finally {
         parsing.value = false;
     }
 }
 
-async function addScan(): Promise<void> {
-    // Lấy mã và xoá ô ngay: máy quét gửi mã kế tiếp trước khi request trước xong — không được xoá mất mã đó.
+function scheduleScans(): void {
+    if (scanFailed.value || parsing.value || !scanQueue.value.length || scanTimer !== undefined) return;
+    scanTimer = setTimeout(() => {
+        scanTimer = undefined;
+        void flushScans();
+    }, 120);
+}
+
+async function flushScans(): Promise<void> {
+    if (parsing.value || !scanQueue.value.length) return;
+    scanFailed.value = false;
+    const batch = scanQueue.value.slice(0, 100);
+    if (await parse({ text: batch.join('\n') })) {
+        scanErrors.value = [...scanErrors.value, ...parseErrors.value].slice(-20);
+        parseErrors.value = [];
+        scanQueue.value.splice(0, batch.length);
+        scheduleScans();
+    } else {
+        scanFailed.value = true;
+    }
+}
+
+function addScan(): void {
+    if (form.processing) return;
     const text = scan.value.trim();
     scan.value = '';
-    if (text !== '') await parse({ text });
+    if (!text) return;
+    scanQueue.value.push(text);
+    scheduleScans();
 }
 
 async function addPaste(): Promise<void> {
-    await parse({ text: paste.value });
-    paste.value = '';
+    if (await parse({ text: paste.value })) paste.value = '';
+    scheduleScans();
 }
 
 async function addFile(): Promise<void> {
     if (!file.value) return;
     const body = new FormData();
     body.append('file', file.value);
-    await parse(body);
-    file.value = null;
+    if (await parse(body)) file.value = null;
+    scheduleScans();
 }
 
 function save(receive: boolean): void {
+    if (inputsPending.value) return;
     form.receive = receive;
     submit(props.receipt ? 'put' : 'post', props.urls.save);
 }
@@ -113,6 +147,7 @@ async function cancel(): Promise<void> {
 </script>
 
 <template>
+    <div>
     <Head :title="receipt ? t('inventory::admin.receipts_form.goods_receipt_number', { number: receipt.number }) : t('inventory::admin.receipts_form.create_goods_receipt')" />
     <PageHeader :title="receipt ? t('inventory::admin.receipts_form.goods_receipt_number', { number: receipt.number }) : t('inventory::admin.receipts_form.create_goods_receipt')" :subtitle="receipt?.received_at ? t('inventory::admin.receipts_form.received_received', { received_at: receipt.received_at }) : undefined">
         <StatusBadge v-if="receipt" :label="statusLabels[receipt.status] ?? receipt.status" :tone="receipt.status === 'received' ? 'success' : receipt.status === 'draft' ? 'warning' : 'neutral'" />
@@ -124,22 +159,33 @@ async function cancel(): Promise<void> {
         <section class="space-y-4 lg:col-span-2">
             <div v-if="editable" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <form class="flex gap-2" @submit.prevent="addScan">
-                    <input v-model="scan" :class="inputClass" autofocus :placeholder="t('inventory::admin.receipts_form.type_scan_sku_then_enter')" :aria-label="t('inventory::admin.receipts_form.scan_sku')" data-scan />
+                    <input v-model="scan" :class="inputClass" autofocus maxlength="160" :disabled="form.processing" :placeholder="t('inventory::admin.receipts_form.type_scan_sku_then_enter')" :aria-label="t('inventory::admin.receipts_form.scan_sku')" data-scan />
                     <!-- Không disable khi đang đọc: trình duyệt bỏ Enter nếu nút gửi mặc định bị disable — máy quét gửi liên tục. -->
                     <button type="submit" :class="secondaryButton">{{ t('inventory::admin.receipts_form.add') }}</button>
                 </form>
+                <p v-if="scanQueue.length" class="text-slate-600" role="status">{{ t('inventory::admin.receipts_form.scans_pending', { count: scanQueue.length }) }}</p>
+                <div v-if="scanFailed" class="flex flex-wrap gap-2">
+                    <button type="button" :class="secondaryButton" :disabled="parsing" data-retry-scans @click="flushScans">{{ t('inventory::admin.receipts_form.retry_scans') }}</button>
+                    <button type="button" class="text-red-600 hover:underline" @click="scanQueue = []; scanFailed = false; parseErrors = []">{{ t('inventory::admin.receipts_form.discard_scans') }}</button>
+                </div>
                 <details>
                     <summary class="cursor-pointer text-slate-600">{{ t('inventory::admin.receipts_form.paste_multiple_lines_upload_file') }}</summary>
                     <div class="mt-3 grid gap-3">
                         <textarea v-model="paste" :class="inputClass" rows="5" :placeholder="t('inventory::admin.receipts_form.each_line_sku_quantity')" :aria-label="t('inventory::admin.receipts_form.paste_multiple_lines')"></textarea>
-                        <div><button type="button" :class="secondaryButton" :disabled="parsing || !paste.trim()" @click="addPaste">{{ t('inventory::admin.receipts_form.add_pasted_lines') }}</button></div>
+                        <div><button type="button" :class="secondaryButton" :disabled="inputsPending || form.processing || !paste.trim()" @click="addPaste">{{ t('inventory::admin.receipts_form.add_pasted_lines') }}</button></div>
                         <FileInput v-model="file" accept=".xlsx,.csv" :max-kb="2048" :label="t('inventory::admin.receipts_form.excel_csv_file_sku_quantity')" />
-                        <div><button type="button" :class="secondaryButton" :disabled="parsing || !file" @click="addFile">{{ t('inventory::admin.receipts_form.add_from_file') }}</button></div>
+                        <div><button type="button" :class="secondaryButton" :disabled="inputsPending || form.processing || !file" @click="addFile">{{ t('inventory::admin.receipts_form.add_from_file') }}</button></div>
                     </div>
                 </details>
                 <ul v-if="parseErrors.length" class="list-inside list-disc text-red-600" role="alert">
                     <li v-for="error in parseErrors" :key="error">{{ error }}</li>
                 </ul>
+                <div v-if="scanErrors.length" class="space-y-1 text-red-600">
+                    <ul class="list-inside list-disc" role="alert">
+                        <li v-for="error in [...new Set(scanErrors)]" :key="error">{{ error }}</li>
+                    </ul>
+                    <button type="button" class="underline" @click="scanErrors = []">{{ t('inventory::admin.receipts_form.dismiss_scan_errors') }}</button>
+                </div>
             </div>
 
             <DataTable :columns="lineColumns" :rows="form.lines" :row-key="(line) => line.variant_id" :row-label="(line) => line.sku" :empty-text="t('inventory::admin.receipts_form.no_skus_yet')" data-receipt-lines>
@@ -172,9 +218,10 @@ async function cancel(): Promise<void> {
                 <span v-else>{{ receipt?.note ?? '—' }}</span>
             </label>
             <div v-if="editable" class="flex flex-wrap gap-2 pt-2">
-                <button type="button" :class="secondaryButton" :disabled="form.processing || !form.lines.length" data-save @click="save(false)">{{ t('inventory::admin.receipts_form.save_draft') }}</button>
-                <button type="button" :class="primaryButton" :disabled="form.processing || !form.lines.length" data-receive @click="saveAndReceive">{{ t('inventory::admin.receipts_form.save_receive') }}</button>
+                <button type="button" :class="secondaryButton" :disabled="inputsPending || form.processing || !form.lines.length" data-save @click="save(false)">{{ t('inventory::admin.receipts_form.save_draft') }}</button>
+                <button type="button" :class="primaryButton" :disabled="inputsPending || form.processing || !form.lines.length" data-receive @click="saveAndReceive">{{ t('inventory::admin.receipts_form.save_receive') }}</button>
             </div>
         </aside>
+    </div>
     </div>
 </template>

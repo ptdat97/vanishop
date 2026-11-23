@@ -92,6 +92,7 @@ final class ShipmentController
                 'last_error' => $shipment->last_error,
                 'next' => array_values(array_map(fn (ShipmentStatus $to): string => $to->value, array_filter(self::MANUAL_STATUSES, fn (ShipmentStatus $to): bool => $shipment->status->rank() >= 1 && $shipment->status->canMoveTo($to)))),
                 'can_book' => in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true),
+                'can_hand_over' => $shipment->status === ShipmentStatus::Created && filled($shipment->tracking_number),
                 'can_cancel' => $shipment->status->canMoveTo(ShipmentStatus::Cancelled),
             ])->all(),
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
@@ -198,18 +199,31 @@ final class ShipmentController
     public function bulkHandOver(Request $request, FulfillmentService $fulfillment): RedirectResponse
     {
         Gate::authorize('fulfillment.manage');
-        $shipments = $this->queries->shipmentsOf($this->orderIds($request), ShipmentStatus::Created);
+        if ($request->has('shipment_ids')) {
+            $ids = $request->validate([
+                'shipment_ids' => ['required', 'array', 'list', 'min:1', 'max:200', 'prohibits:ids'],
+                'shipment_ids.*' => ['required', 'integer', 'min:1', 'distinct'],
+            ])['shipment_ids'];
+            $shipments = $this->queries->readyShipments(array_map('intval', $ids));
+        } else {
+            $ids = null;
+            $shipments = $this->queries->shipmentsOf($this->orderIds($request), ShipmentStatus::Created);
+        }
         $moved = 0;
         foreach ($shipments as $shipment) {
             try {
-                $fulfillment->updateStatus($shipment->id, ShipmentStatus::PickedUp, 'staff:'.now()->format('Uu').':handover:'.$shipment->id, 'staff', null, strict: true);
-                $moved++;
+                $moved += (int) $fulfillment->updateStatus($shipment->id, ShipmentStatus::PickedUp, 'staff:'.now()->format('Uu').':handover:'.$shipment->id, 'staff', null, strict: true);
             } catch (BusinessRuleViolation) {
                 // Vận đơn vừa đổi trạng thái: bỏ qua.
             }
         }
 
-        return back()->with('success', __('fulfillment::messages.bulk_handed_over', ['count' => $moved]));
+        $message = __('fulfillment::messages.bulk_handed_over', ['count' => $moved]);
+        if ($ids !== null && $moved < count($ids)) {
+            $message .= ' '.__('fulfillment::messages.bulk_handed_over_skipped', ['count' => count($ids) - $moved]);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**

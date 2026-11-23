@@ -219,10 +219,14 @@ it('đơn giữ hàng ở hai kho → hai vận đơn; chỉ trừ tồn khi c�
     foreach ($shipments as $index => $shipment) {
         $this->post("{$this->ship}/{$shipment->id}/book", ['tracking_number' => "T{$index}"])->assertSessionHasNoErrors();
     }
-    $this->post("{$this->ship}/{$shipments[0]->id}/status", ['status' => 'picked_up']);
+    $this->post("{$this->ship}/bulk-hand-over", ['shipment_ids' => [$shipments[0]->id]])
+        ->assertSessionHasNoErrors()->assertSessionHas('success', 'Đã ghi nhận bàn giao 1 vận đơn cho hãng.');
     expect(($this->order)()->fulfillment_status)->toBe('partially_shipped')
+        ->and($shipments[1]->fresh()->status->value)->toBe('created')
         ->and((int) DB::table('stock_levels')->sum('reserved'))->toBe(3);
 
+    $this->post("{$this->ship}/bulk-hand-over", ['shipment_ids' => [$shipments[0]->id]])
+        ->assertSessionHasNoErrors()->assertSessionHas('success', fn (string $message): bool => str_contains($message, 'Bỏ qua 1 vận đơn'));
     $this->post("{$this->ship}/{$shipments[1]->id}/status", ['status' => 'picked_up']);
     expect(($this->order)()->fulfillment_status)->toBe('shipped')
         ->and((int) DB::table('stock_levels')->sum('reserved'))->toBe(0)

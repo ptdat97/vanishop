@@ -68,6 +68,19 @@ it('nhập giá từ file: chọn tệp, nhập, bảng hiện giá mới; dòng
     expect(Price::query()->where('price_list_id', $this->list->id)->pluck('amount', 'variant_id')->all())->toBe([$this->s->id => 150_000]);
 });
 
+it('dán hai dòng giá từ Excel và cập nhật cùng lúc', function () {
+    visit("/admin/pricing/price-lists/{$this->list->id}/prices")
+        ->click('[data-import]')
+        ->fill('[data-paste-prices]', "SKU\tGiá\tGiá gạch\n{$this->s->sku}\t180.000\t220.000\n{$this->m->sku}\t200000\t")
+        ->click('[data-import-submit]')
+        ->assertValue('input[aria-label="Giá '.$this->s->sku.'"]', '180000')
+        ->assertValue('input[aria-label="Giá '.$this->m->sku.'"]', '200000')
+        ->assertNoJavaScriptErrors();
+
+    expect(Price::query()->where('price_list_id', $this->list->id)->pluck('amount', 'variant_id')->all())
+        ->toMatchArray([$this->s->id => 180_000, $this->m->id => 200_000]);
+});
+
 it('SkuPicker: mặc định hiện sản phẩm; mở rộng để chọn từng SKU; lựa chọn giữ khi tìm tiếp', function () {
     $other = T::product();
     P::variants($other);
