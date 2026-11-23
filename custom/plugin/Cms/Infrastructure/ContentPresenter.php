@@ -74,6 +74,7 @@ final class ContentPresenter
     {
         return [
             ...$this->postSummary($post),
+            'cover_url' => $this->media->coverUrl($post, CmsImageSizes::POST_COVER),
             'html' => $this->markdown->html($post->body),
             'meta_title' => $post->meta_title ?: $post->title,
             'meta_description' => $post->meta_description ?: ($post->excerpt ?: $this->markdown->plain($post->body)),

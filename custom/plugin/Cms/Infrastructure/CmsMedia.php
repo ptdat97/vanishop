@@ -7,6 +7,7 @@ namespace Plugin\Cms\Infrastructure;
 use Illuminate\Support\Facades\Storage;
 use Modules\Catalog\Contracts\Data\MediaData;
 use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Catalog\Contracts\MediaUrls;
 use Plugin\Cms\Persistence\Post;
 
 /**
@@ -19,7 +20,7 @@ final class CmsMedia
 
     public const PAGE = 'plg.cms.page';
 
-    public function __construct(private readonly MediaDirectory $media) {}
+    public function __construct(private readonly MediaDirectory $media, private readonly MediaUrls $urls) {}
 
     public function cover(Post $post): ?MediaData
     {
@@ -28,10 +29,10 @@ final class CmsMedia
         return $id === null ? null : ($this->media->find([$id])[$id] ?? null);
     }
 
-    public function coverUrl(Post $post, int $width = 1600): ?string
+    public function coverUrl(Post $post, int|string $size = 1600): ?string
     {
         if ($post->cover_media_id !== null) {
-            return $this->cover($post)?->urlFor($width);
+            return is_int($size) ? $this->cover($post)?->urlFor($size) : $this->urls->url($post->cover_media_id, $size);
         }
 
         return $post->cover_path === null || $post->cover_path === '' ? null : Storage::disk((string) config('vanishop.media.disk', 'public'))->url($post->cover_path);

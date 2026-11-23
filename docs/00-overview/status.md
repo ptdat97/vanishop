@@ -20,7 +20,7 @@
 | Thanh toán | Payment abstraction: `PaymentGateway` chỉ phần lõi, nhận IPN/tra cứu/hoàn tiền là interface tuỳ chọn; hoàn tiền ba kết quả + `vani:payment:refunds`; cổng nhận đủ ngữ cảnh, Return URL chung | 0.5.60–0.5.62 |
 | Rà soát kiến trúc | Xuất file sản phẩm không N+1; nhập file lớn chạy nền (60.000 dòng); báo migration chưa chạy; gỡ extension point tìm kiếm (chỉ SQL); thu gọn API cho plugin (184 mục); version theo đợt việc + `PluginVersionTest`; publish asset an toàn khi chạy song song | 0.5.63–0.5.64 |
 
-**Chưa xong** (backlog [§6b](../20-roadmap/reference-parity-refactor.md)): L1 (CMS đa ngôn ngữ), L4 (purge CDN), L11 (plugin hãng vận chuyển gửi khối lượng — chưa chốt hãng), L12 (wishlist vãng lai), L14 (lượt xem, để sau), L17–L19 (khối nhiều mục, thanh thông báo khi cache, banner danh mục trong form), L21, L23–L27, L33 (phần còn lại), L37 (đặt cọc), L40 (OTP — đóng băng), L41–L43 (để plugin/báo cáo nâng cao), L47 (load test trên staging), L48 (chạy thử ZNS thật — đóng băng). Kết nối ngoài (GHTK, OAuth, OTP, dịch máy, Admin API) đóng băng theo Owner.
+**Chưa xong** (backlog [§6b](../20-roadmap/reference-parity-refactor.md)): L1 (CMS đa ngôn ngữ), L4 (purge CDN), L11 (khối lượng gửi hãng), L23–L27, L33, L37, L40–L43, L47–L50. Kết nối ngoài (GHTK, OAuth, OTP, dịch máy, Admin API) đóng băng theo Owner.
 
 ## Thang trạng thái
 

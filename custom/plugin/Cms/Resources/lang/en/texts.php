@@ -3,6 +3,11 @@
 // Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
 
 return [
+    'image_sizes' => [
+        'banner_desktop' => 'Desktop category banner',
+        'banner_mobile' => 'Mobile category banner',
+        'post_cover' => 'CMS article cover',
+    ],
     'article_category_link_type' => [
         'news_categories' => 'News categories',
     ],
@@ -61,6 +66,7 @@ return [
         'title_not_public_yet' => ':title (not public yet)',
     ],
     'extra_content' => [
+        'banner_image_required' => 'The selected file must be an image.',
         'after_add_cart_button' => 'After the add-to-cart button',
         'after_detailed_description' => 'After the detailed description',
         'after_price' => 'After the price',

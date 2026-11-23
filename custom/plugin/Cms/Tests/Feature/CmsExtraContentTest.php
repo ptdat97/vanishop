@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -14,8 +15,10 @@ use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\Cms\CmsServiceProvider;
+use Plugin\Cms\Infrastructure\CmsImageSizes;
 use Plugin\Cms\Infrastructure\ExtraContent;
 use Plugin\Cms\Persistence\CategoryBanner;
+use Plugin\Cms\Persistence\Post;
 
 require_once __DIR__.'/../../../../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -167,4 +170,90 @@ it('banner danh mục: chỉ ở danh mục của nó; thiếu ảnh mobile → 
 
     $this->delete("/admin/plugins/vani-cms/banners/{$banner->id}")->assertRedirect();
     expect(CategoryBanner::query()->count())->toBe(0)->and(DB::table('mediables')->where('media_id', $desktop->id)->exists())->toBeFalse();
+});
+
+it('tạo và sửa banner cùng danh mục, hiện đúng ngôn ngữ và dùng chung bản ghi với trang CMS', function () {
+    $this->actingAs(T::staff(['admin.access', 'catalog.manage', 'cms.manage', 'cms.view', 'media.view']), 'staff');
+    $desktop = cmsBannerMedia('category.jpg');
+    $input = [
+        'slug' => 'mua-he', 'status' => 'active', 'position' => 0,
+        'translations' => ['vi' => ['name' => 'Mùa hè'], 'en' => ['name' => 'Summer', 'slug' => 'summer']],
+    ];
+    $bannerFields = ['active' => true, 'desktop_media_id' => $desktop->id, 'title_vi' => 'Ưu đãi mùa hè', 'title_en' => 'Summer offer'];
+
+    $this->post('/admin/catalog/categories', [...$input, 'extensions' => ['vani-cms' => ['banner' => $bannerFields]]])
+        ->assertSessionHasNoErrors()->assertRedirect();
+    $category = Category::query()->where('slug', 'mua-he')->sole();
+    $banner = CategoryBanner::query()->sole();
+    expect($banner->category_id)->toBe($category->id);
+
+    $this->get("/admin/catalog/categories/{$category->id}/edit")->assertInertia(fn (Assert $page) => $page
+        ->where('extensionSections', fn (mixed $sections) => collect($sections)->firstWhere('key', 'banner')['values']['title_en'] === 'Summer offer'));
+    $this->get("/admin/plugins/vani-cms/banners/{$banner->id}")->assertInertia(fn (Assert $page) => $page
+        ->where('banner.content.vi.title', 'Ưu đãi mùa hè'));
+    $this->get('/danh-muc/mua-he')->assertSee('Ưu đãi mùa hè');
+    $this->get('/en/category/summer')->assertSee('Summer offer');
+    expect(DB::table('mediables')->where('media_id', $desktop->id)->exists())->toBeTrue();
+
+    $this->put("/admin/catalog/categories/{$category->id}", [...$input, 'lock_version' => $category->lock_version,
+        'extensions' => ['vani-cms' => ['banner' => ['active' => false]]],
+    ])->assertSessionHasNoErrors();
+    $this->get('/danh-muc/mua-he')->assertDontSee('data-vani-cms-category-banner', false);
+    expect($banner->fresh()->content['en']['title'])->toBe('Summer offer');
+});
+
+it('kiểm tra quyền CMS và rollback thay đổi danh mục nếu dữ liệu banner không hợp lệ', function () {
+    $category = Category::factory()->create(['slug' => 'ao-mua-he'])->refresh();
+    $input = [
+        'slug' => $category->slug, 'status' => 'active', 'position' => 1, 'lock_version' => $category->lock_version,
+        'translations' => ['vi' => ['name' => 'Áo mùa hè']],
+    ];
+    $edit = "/admin/catalog/categories/{$category->id}";
+    $video = cmsBannerMedia('other-media.mp4');
+    $video->update(['mime_type' => 'video/mp4']);
+
+    $this->actingAs(T::staff(['admin.access', 'catalog.manage', 'cms.manage']), 'staff');
+    $this->put($edit, [...$input, 'extensions' => ['vani-cms' => ['banner' => ['desktop_media_id' => $video->id]]]])
+        ->assertSessionHasErrors('extensions.vani-cms.banner.desktop_media_id');
+    $this->put($edit, [...$input, 'extensions' => ['vani-cms' => ['banner' => ['button_url' => '//other.test']]]])
+        ->assertSessionHasErrors('extensions.vani-cms.banner.button_url');
+    expect($category->fresh()->lock_version)->toBe($category->lock_version);
+    expect(CategoryBanner::query()->exists())->toBeFalse();
+
+    $this->actingAs(T::staff(['admin.access', 'catalog.manage', 'cms.view']), 'staff');
+    $this->get($edit.'/edit')->assertInertia(fn (Assert $page) => $page->where('extensionSections', []));
+    $this->put($edit, [...$input, 'extensions' => ['vani-cms' => ['banner' => ['active' => true, 'title_vi' => 'Tiêu đề trái quyền']]]])
+        ->assertSessionHasNoErrors();
+    expect(CategoryBanner::query()->exists())->toBeFalse();
+});
+
+it('ảnh CMS dùng kích thước theo tên và banner trên tablet vẫn có srcset', function () {
+    $category = Category::factory()->create(['slug' => 'banner-kich-thuoc']);
+    $category->syncTranslations(['vi' => ['name' => 'Banner kích thước']]);
+    $image = cmsBannerMedia('responsive.jpg');
+    T::seed(function () use ($category, $image): void {
+        $sizes = app(ImageSizes::class);
+        $sizes->save([
+            'widths' => [400, 800, 1200], 'product_ratio' => $sizes->ratioCode(), 'quality' => $sizes->quality(),
+            'overrides' => [
+                CmsImageSizes::BANNER_DESKTOP => ['width' => 1300, 'height' => null, 'crop' => false],
+                CmsImageSizes::BANNER_MOBILE => ['width' => 600, 'height' => null, 'crop' => false],
+                CmsImageSizes::POST_COVER => ['width' => 1000, 'height' => null, 'crop' => false],
+            ],
+        ]);
+        app(ExtraContent::class)->saveBanner(null, $category->id, ['desktop_media_id' => $image->id, 'active' => true]);
+        Post::query()->create([
+            'slug' => 'bia-theo-ten', 'title' => 'Bìa theo tên', 'body' => 'Bài viết mẫu',
+            'status' => Post::PUBLISHED, 'published_at' => now(), 'cover_media_id' => $image->id,
+        ]);
+    });
+
+    $html = $this->get('/danh-muc/banner-kich-thuoc')->assertOk()->getContent();
+    expect($html)->toMatch('/<source media="\(max-width: 767px\)" srcset="[^"]+-w600\.[^"]+"/')
+        ->toMatch('/<source media="\(min-width: 1280px\)" srcset="[^"]+-w1300\.[^"]+"/');
+    preg_match('/<img src="[^"]+-w1300\.[^"]+" alt=""\s+srcset="([^"]+)"/', $html, $img);
+    expect($img[1] ?? '')->toContain(' 400w', ' 800w', ' 1200w');
+
+    $article = $this->get('/tin-tuc/bia-theo-ten')->assertOk()->getContent();
+    expect($article)->toMatch('/<meta property="og:image" content="[^"]+-w1000\.[^"]+"/');
 });

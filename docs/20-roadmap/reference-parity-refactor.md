@@ -429,14 +429,16 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 
 Đã đóng L21 ngày 2026-11-22. Tồn an toàn mặc định áp dụng cho ô kho mới. Form Warehouse cho chọn nguồn quản lý tồn và mức ưu tiên từng dùng, có ô nhập riêng khi cần.
 
+Đã đóng L17 với Builder Engine 2.0. Trình chiếu, lưới banner, tab sản phẩm và mục cam kết dùng repeater. Builder vẫn mở được các bố cục lưu trước khi có repeater.
+
+Đã đóng L19 với `vani.cms` 1.6.0. Nhân viên có quyền sửa danh mục và quản lý CMS thêm, sửa hoặc tắt banner ngay trong form danh mục. Trang Banner danh mục của CMS dùng chung bản ghi.
+
 | # | Giới hạn | Nơi | Hướng xử lý |
 |---|---|---|---|
 | L1 | Nội dung `vani.cms` (trang, bài viết) chỉ một ngôn ngữ; bản `/en` là `noindex` | `vani.cms` | Bản dịch + slug theo ngôn ngữ như Catalog (ADR-038 mục 4) |
 | L4 | Có CDN: thay đổi (giá, slug, menu, cấu hình) thấy sau tối đa `s-maxage`; chưa purge theo event | Storefront | `CdnPurger` (plugin theo nhà cung cấp CDN) nghe event |
 | L11 🟡 0.5.57 (✅ SKU chưa nhập khối lượng dùng khối lượng mặc định của cửa hàng — Admin → Cài đặt → Kho & giao hàng; còn: plugin hãng gửi `weight`, chờ chốt hãng và mở lại kết nối ngoài) | Chưa có plugin hãng vận chuyển gửi khối lượng (Core đã có `weight()`; `vani.ghn` mô phỏng đã gỡ ở 0.5.74); dòng thiếu khối lượng tính 0 g | Plugin hãng vận chuyển, Catalog | Gửi `weight` khi đặt vận đơn; cảnh báo sản phẩm thiếu khối lượng |
-| L17 | Khối nhiều mục (trình chiếu 5 slide, lưới banner 4 ô, tab, biểu tượng) dùng số ô cố định vì `FieldDefinition` chưa có trường lặp | `vani.storefront-extras`, Extension | Kiểu trường danh sách (repeater) cho page builder |
-| L19 🟡 | Form banner tìm danh mục trên máy chủ và tải danh mục đã chọn theo ID. | `vani.cms`, Extension | Còn tích hợp banner vào form danh mục. |
-| L23 🟡 | Bìa bài viết, banner danh mục desktop, logo thương hiệu và ảnh Markdown từ Thư viện ảnh có `srcset`. | `vani.cms`, theme, Catalog | Còn kích thước theo tên và chọn điểm lấy nét khi cắt ảnh sản phẩm. |
+| L23 🟡 | Banner CMS dùng kích thước desktop và mobile có tên. Ảnh bìa trang bài viết có kích thước cấu hình riêng. Tablet và ảnh trong bài vẫn chọn nguồn theo `srcset`. | `vani.cms`, theme, Catalog | Còn chọn điểm lấy nét khi cắt ảnh sản phẩm. |
 | L24 🟡 | Page builder kiểm loại và sự tồn tại của tệp. Core đọc được kích thước khung MP4 và WebM từ metadata trong cửa sổ đọc. Tải lại đúng video cũ sẽ bổ sung kích thước còn thiếu vào bản ghi sẵn có. | Catalog, `vani.storefront-extras` | Còn poster tự động, chuyển mã và dùng video Thư viện làm nguồn gallery sản phẩm. |
 | L25 🟡 | Lọc, đếm và hiển thị hàng đợi Admin dùng cột sinh `orders.stage` với chỉ mục `(stage, placed_at, id)`. Hàng đợi sự cố và phiếu giao có mã vạch đã có. | Ordering, Fulfillment | Còn mẫu xuất theo từng hãng khi có đặc tả. Đơn tiếp tục nhận qua Pancake theo quyết định Owner. |
 | L26 🟡 | SME có đếm hết/sắp hết hàng trên mọi biến thể, sửa tồn trực tiếp khi phù hợp, đổi giá niêm yết và nhận hàng trả hàng loạt theo tình trạng. | Inventory, Returns, Pricing, Catalog | Mỗi lượt nhận hàng trả dùng một tình trạng chung. Yêu cầu có dòng bán được và dòng hỏng nhận tại trang chi tiết. Đổi giá theo bảng giá khuyến mãi hoặc nhóm khách thực hiện trong màn hình bảng giá. |
@@ -450,7 +452,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L47 🟡 | Kịch bản k6 yêu cầu origin chỉ định và tách lượt duyệt khỏi lượt ghi. Khi bật checkout, đo số đơn thực, tỷ lệ thành công và lượt checkout bị rớt. | Vận hành | Chạy đủ tải 500 đơn/phút trên staging và đối soát tồn trước go-live ([operations §9](../18-operations/operations.md)). |
 | L48 ❄️ (từ nhật ký slice Notification, 2026-10-13) | Plugin Zalo ZNS chưa chạy thử với OA Zalo thật, chưa đối chiếu mã lỗi nhà cung cấp. Plugin SMS brandname (eSMS) đã gỡ ở 0.5.74, chờ chốt nhà cung cấp | `vani.zalo-zns` | Chạy thử khi mở lại kết nối ngoài (đang đóng băng) |
 | L49 🟡 | Admin có danh mục mã lý do huỷ, ghi chú tự do và cấu hình bổ sung theo dạng mã/nhãn. Plugin có hook thêm mã. Reports đếm lý do theo ngày huỷ, gồm nhóm chưa phân loại. | Ordering, Reports | Còn mở danh mục cho luồng khách tự huỷ và các thao tác chuyển trạng thái khác của Admin. |
-| L50 🟡 | Block Builder Engine đặt vào slot chỉ render trên Blade. Storefront API chưa trả nội dung các surface ngoài trang chủ, và block trong slot không nhận args của slot (sản phẩm, giỏ) nên nội dung giống nhau trên mọi trang. | Storefront `BuilderEngine`, `BuilderZone` | Thêm `GET /pages/{surface}` khi có client headless cần. Nếu cần block theo ngữ cảnh, mở rộng `StorefrontBlock` nhận ngữ cảnh slot có kiểu và tính lại cache CDN. |
+| L50 🟡 | Builder Engine 2.0 truyền ngữ cảnh công khai có kiểu theo slot. Lưới sản phẩm theo ngữ cảnh đọc danh mục, bộ sưu tập hoặc thương hiệu đang xem. | Storefront `BuilderEngine`, `BuilderZone` | Thêm API đọc bố cục ngoài trang chủ khi có client headless cần. |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

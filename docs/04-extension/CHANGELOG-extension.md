@@ -12,6 +12,7 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 - `FieldDefinition::repeater()` khai báo các trường con của danh sách. Builder kiểm tra và ghi nhận tham chiếu media trong từng mục. `NormalizesBlockConfiguration` cho phép block đọc cấu hình cũ và biên tập theo schema mới. `vani.storefront-extras` 1.5.0 chuyển trình chiếu, lưới banner, tab sản phẩm và mục cam kết sang repeater.
 - Builder có khung xem trước block nháp ở các kích cỡ viewport, nhân bản block, xuất và nhập bố cục JSON giữa các trang tương thích.
 - `vani.bundles` 1.1.0 cung cấp `GET /api/storefront/v1/x/vani-bundles/bundles` cho danh sách combo đang chạy.
+- `vani.cms` 1.6.0 tích hợp banner vào form danh mục qua phần mở rộng Admin có quyền `cms.manage`. Thư viện ảnh có kích thước riêng cho banner desktop, banner mobile và ảnh bìa trang bài viết.
 
 ## 0.5.75 — 2026-11-23 · Extension API 1.30.0
 

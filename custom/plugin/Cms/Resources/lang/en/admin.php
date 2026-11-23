@@ -4,6 +4,7 @@
 
 return [
     'banners_form' => [
+        'category_form_visibility' => 'Show the banner at the top of the category page.',
         'active' => 'Active',
         'add_category_banner' => 'Add category banner',
         'button_link' => 'Button link',

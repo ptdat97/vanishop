@@ -199,7 +199,8 @@ final class ExtraContent
         }
         $default = StoreLocale::default();
         $markdown = $banner->text('markdown', $locale, $default);
-        $desktop = $banner->desktop_media_id === null ? null : $this->mediaUrls->image($banner->desktop_media_id, 1600);
+        $desktop = $banner->desktop_media_id === null ? null : $this->mediaUrls->image($banner->desktop_media_id, CmsImageSizes::BANNER_DESKTOP);
+        $mobileId = $banner->mobile_media_id ?? $banner->desktop_media_id;
         $buttonText = $banner->text('button_text', $locale, $default);
         $presented = [
             'title' => $banner->text('title', $locale, $default),
@@ -209,7 +210,8 @@ final class ExtraContent
             'desktop' => $desktop,
             'desktop_srcset' => $this->mediaUrls->srcset($banner->desktop_media_id),
             // Không có ảnh mobile → dùng ảnh desktop (§8-4).
-            'mobile' => ($banner->mobile_media_id === null ? null : $this->mediaUrls->image($banner->mobile_media_id, 800)) ?? ($banner->desktop_media_id === null ? null : $this->mediaUrls->image($banner->desktop_media_id, 800)),
+            'mobile' => $mobileId === null ? null : $this->mediaUrls->url($mobileId, CmsImageSizes::BANNER_MOBILE)
+                ?? $this->mediaUrls->image($banner->desktop_media_id, CmsImageSizes::BANNER_MOBILE),
         ];
 
         return $presented['title'] === null && $presented['html'] === null && $desktop === null ? null : $presented;
@@ -237,8 +239,17 @@ final class ExtraContent
         $desktop = isset($data['desktop_media_id']) && (int) $data['desktop_media_id'] > 0 ? (int) $data['desktop_media_id'] : null;
         $mobile = isset($data['mobile_media_id']) && (int) $data['mobile_media_id'] > 0 ? (int) $data['mobile_media_id'] : null;
         $ids = array_values(array_unique(array_filter([$desktop, $mobile])));
-        if ($ids !== [] && count($this->media->find($ids)) !== count($ids)) {
-            throw ValidationException::withMessages(['desktop_media_id' => __('vani-cms::texts.extra_content.some_images_no_longer_media')]);
+        $media = $ids === [] ? [] : $this->media->find($ids);
+        foreach (['desktop_media_id' => $desktop, 'mobile_media_id' => $mobile] as $field => $id) {
+            if ($id === null) {
+                continue;
+            }
+            if (! isset($media[$id])) {
+                throw ValidationException::withMessages([$field => __('vani-cms::texts.extra_content.some_images_no_longer_media')]);
+            }
+            if (! str_starts_with($media[$id]->mimeType, 'image/')) {
+                throw ValidationException::withMessages([$field => __('vani-cms::texts.extra_content.banner_image_required')]);
+            }
         }
         if ($mobile !== null && $desktop === null) {
             throw ValidationException::withMessages(['desktop_media_id' => __('vani-cms::texts.extra_content.choose_desktop_image_before_mobile')]);

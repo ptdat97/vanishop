@@ -1,6 +1,6 @@
 # Đặc tả: Nội dung bổ sung của cửa hàng (bổ sung `vani.cms` 1.2)
 
-> Trạng thái: **Implemented** (`vani.cms` 1.5.0 — số phiên bản sau 1.4.0 thay cho 1.2 dự kiến; Core ≥ 0.3.81, 2026-11-05). Khác đặc tả gốc: (1) banner danh mục nhập ở trang riêng Admin → Nội dung → Banner danh mục thay vì form danh mục, vì phần form của plugin chưa có kiểu trường chọn ảnh (backlog L6); (2) Storefront API có thêm `extensions.vani.cms.promo_box` (HTML, null khi tắt/ẩn) cho headless; (3) đối chiếu thanh thông báo với theme — xem §3.1. Đặc tả gốc — Owner đã duyệt 2026-10-14 (M0). Nguồn: plugin ExtraContent 1.2.0 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Không tạo plugin mới: phần cần chuyển gộp vào `vani.cms`.
+> Trạng thái: **Implemented** (`vani.cms` 1.5.0 — số phiên bản sau 1.4.0 thay cho 1.2 dự kiến; Core ≥ 0.3.81, 2026-11-05). Từ `vani.cms` 1.6.0, banner sửa được trong form danh mục và trên trang Admin → Nội dung → Banner danh mục. Hai màn hình dùng cùng bản ghi. Storefront API có `extensions.vani.cms.promo_box` (HTML, null khi tắt/ẩn) cho headless. Xem §3.1 về thanh thông báo của plugin và theme. Đặc tả gốc — Owner đã duyệt 2026-10-14 (M0). Nguồn: plugin ExtraContent 1.2.0 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Không tạo plugin mới: phần cần chuyển gộp vào `vani.cms`.
 
 ## 1. Mục tiêu
 

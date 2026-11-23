@@ -4,6 +4,7 @@
 
 return [
     'banners_form' => [
+        'category_form_visibility' => 'Bật để hiện banner ở đầu trang danh mục.',
         'active' => 'Đang bật',
         'add_category_banner' => 'Thêm banner danh mục',
         'button_link' => 'Link nút',

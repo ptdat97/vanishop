@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Plugin\Cms;
 
 use Database\Seeders\Demo\DemoContent;
+use Modules\Catalog\Contracts\ImageSizeProvider;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Identity\Contracts\PermissionRegistry;
@@ -17,6 +18,8 @@ use Modules\Storefront\Contracts\StorefrontEnricher;
 use Plugin\Cms\Database\CmsDemoContent;
 use Plugin\Cms\Infrastructure\ArticleCategoryLinkType;
 use Plugin\Cms\Infrastructure\ArticleLinkType;
+use Plugin\Cms\Infrastructure\CategoryBannerForm;
+use Plugin\Cms\Infrastructure\CmsImageSizes;
 use Plugin\Cms\Infrastructure\CmsSitemap;
 use Plugin\Cms\Infrastructure\ExtraContent;
 use Plugin\Cms\Infrastructure\LatestPostsBlock;
@@ -62,6 +65,7 @@ final class CmsServiceProvider extends PluginServiceProvider
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
 
         $this->contribute(StorefrontBlock::TAG, LatestPostsBlock::class);
+        $this->contribute(ImageSizeProvider::TAG, CmsImageSizes::class);
         $this->contribute(SitemapProvider::TAG, CmsSitemap::class);
         $this->contribute(LinkType::TAG, PageLinkType::class);
         $this->contribute(LinkType::TAG, ArticleLinkType::class);
@@ -111,6 +115,13 @@ final class CmsServiceProvider extends PluginServiceProvider
             load: fn (int $id): array => $content()->productForm($id),
             save: fn (int $id, array $values) => $content()->saveProduct($id, $values),
             order: 400,
+        );
+
+        $bannerForm = fn (): CategoryBannerForm => $this->app->make(CategoryBannerForm::class);
+        $this->adminFormSection('category', CategoryBannerForm::KEY, 'vani-cms::admin.banners_index.category_banners', fn (): array => $bannerForm()->fields(),
+            load: fn (int $id): array => $bannerForm()->load($id),
+            save: fn (int $id, array $values) => $bannerForm()->save($id, $values),
+            permission: 'cms.manage',
         );
     }
 
