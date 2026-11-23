@@ -6,6 +6,7 @@ use Modules\Catalog\Tests\Feature\CatalogTestHelpers as Catalog;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as Checkout;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Testing\StorefrontApiContract;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as Inventory;
 use Modules\Ordering\Persistence\Models\Order;
@@ -167,6 +168,10 @@ it('trang Combo dùng Builder để bố trí nội dung trước và sau danh s
     $this->get('/combo')->assertOk()
         ->assertSeeInOrder(['Phối đồ trong tuần', 'data-vani-bundle-form', 'Hướng dẫn chọn size'], false)
         ->assertSee('Bộ công sở')->assertDontSee('Combo đã tắt')->assertDontSee('Combo tương lai');
+    $pluginPath = dirname(__DIR__, 2);
+    StorefrontApiContract::assertRoutesDocumented($pluginPath);
+    StorefrontApiContract::assertResponse($this->getJson('/api/storefront/v1/x/vani-bundles/bundles'), $pluginPath, '/bundles', 'GET')
+        ->assertJsonCount(1, 'data')->assertJsonPath('data.0.name', 'Bộ công sở');
     $this->get(route('storefront.product', $shirt->style->slug))->assertSee(route('storefront.p.vani-bundles.index'), false);
 });
 

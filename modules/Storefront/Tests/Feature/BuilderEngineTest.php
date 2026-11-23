@@ -46,7 +46,7 @@ BuilderSurfaceContract::define('core cart', fn () => new CartSurface);
 BuilderSurfaceContract::define('core brands', fn () => new BrandsSurface);
 
 beforeEach(function () {
-    ['s' => $this->sku] = C::store();
+    ['s' => $this->sku, 'brand' => $this->brand] = C::store();
     app(Extensions::class)->tag([BuilderEngineTestSurface::class], BuilderSurface::TAG);
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'storefront.manage'])->create(), 'staff');
 });
@@ -89,4 +89,41 @@ it('surface của plugin dùng slot Core khai báo builder; vùng gắn vào slo
         ->assertSeeInOrder(['data-slot="vani.storefront.brands.after_list"', 'Mã giảm giá thương hiệu'], false)->getContent();
     expect(substr($html, 0, (int) strpos($html, '</head>')))->not->toContain('Mã giảm giá thương hiệu');
     $this->get(route('admin.storefront.builder.edit', 'khong-co'))->assertNotFound();
+});
+
+it('khối theo ngữ cảnh dùng phạm vi thương hiệu đang xem và chỉ xuất hiện trong vùng hỗ trợ', function () {
+    $title = 'Sản phẩm theo thương hiệu đang xem';
+    $block = ['type' => 'listing_product_grid', 'zone' => 'vani.storefront.plp.after_listing', 'config' => ['title' => $title]];
+    $url = route('admin.storefront.builder.edit', 'listing');
+    $this->get($url)->assertInertia(fn (Assert $page) => $page->has('allowedZones.listing_product_grid', 3));
+    $this->put($url, ['blocks' => [$block]])->assertSessionHasNoErrors();
+    $this->put(route('admin.storefront.builder.edit', 'home'), ['blocks' => [$block]])->assertSessionHasErrors('blocks.0.zone');
+
+    $this->get(route('storefront.brand', $this->brand->slug))->assertSeeInOrder([
+        'data-slot="vani.storefront.plp.after_listing"', $title, 'Đầm lụa',
+    ], false);
+    $this->get(route('storefront.search'))->assertDontSee($title);
+});
+
+it('xem trước block nháp bằng theme và nhập bố cục vào vùng phù hợp trước khi lưu', function () {
+    $block = ['type' => 'rich_text', 'config' => ['body' => '<p>Nội dung nháp độc lập</p>']];
+    $preview = route('admin.storefront.builder.draft', ['home', 'preview']);
+    $html = $this->postJson($preview, ['blocks' => [$block]])->assertOk()->assertHeader('Cache-Control', 'no-store, private')->json('html');
+    expect($html)->toContain('name="viewport"', 'Nội dung nháp độc lập');
+    $this->get(route('storefront.home'))->assertDontSee('Nội dung nháp độc lập');
+
+    $import = route('admin.storefront.builder.draft', ['product', 'import']);
+    $this->postJson($import, ['version' => 1, 'blocks' => [[...$block, 'zone' => 'main']]])
+        ->assertOk()->assertJsonPath('blocks.0.zone', 'vani.storefront.pdp.after_details');
+    $this->postJson($import, ['version' => 2, 'blocks' => [$block]])->assertUnprocessable()->assertJsonValidationErrors('version');
+    $this->postJson($import, ['version' => 1, 'blocks' => [['type' => 'listing_product_grid']]])
+        ->assertUnprocessable()->assertJsonValidationErrors('blocks.0.zone');
+    $this->get(route('admin.storefront.builder.edit', 'product'))->assertInertia(fn (Assert $page) => $page->where('configured', false));
+});
+
+it('yêu cầu quyền quản lý giao diện khi xem trước hoặc nhập bản nháp', function () {
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access'])->create(), 'staff');
+    foreach (['preview', 'import'] as $operation) {
+        $this->postJson(route('admin.storefront.builder.draft', ['home', $operation]), ['blocks' => []])->assertForbidden();
+    }
 });

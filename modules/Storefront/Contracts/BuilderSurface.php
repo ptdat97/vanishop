@@ -13,7 +13,7 @@ use Modules\Storefront\Contracts\Data\BuilderZone;
  * validate theo schema block và render. Plugin thêm nội dung theo ba cách, kết hợp được:
  * block mới (`StorefrontBlock`), surface mới trên slot có sẵn, slot mới của plugin (`builder: true` trong hooks.php).
  *
- * Block trong vùng slot không nhận args của slot: nội dung giống nhau trên mọi trang có slot đó, an toàn với cache CDN.
+ * Block theo ngữ cảnh dùng ContextualStorefrontBlock để nhận dữ liệu công khai theo URL.
  */
 #[PluginApi]
 interface BuilderSurface

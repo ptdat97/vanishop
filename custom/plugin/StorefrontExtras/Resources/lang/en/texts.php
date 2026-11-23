@@ -3,6 +3,21 @@
 // Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
 
 return [
+    'repeater' => [
+        'slides' => 'Slides',
+        'cells' => 'Banner tiles',
+        'items' => 'Features',
+        'tabs' => 'Tabs',
+        'image' => 'Image',
+        'image_url' => 'Image URL',
+        'title' => 'Title',
+        'text' => 'Description',
+        'link' => 'Link',
+        'button' => 'Button label',
+        'icon' => 'Icon',
+        'source' => 'Product source',
+        'source_value' => 'Source slug or IDs',
+    ],
     'banner_grid_block' => [
         'banner_grid' => 'Banner grid',
         'from_media_library_responsive_versions' => 'From the Media library (responsive versions included).',

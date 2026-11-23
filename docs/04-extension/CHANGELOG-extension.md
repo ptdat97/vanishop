@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.76 — 2026-11-23 · Extension API 1.31.0
+
+- Builder truyền ngữ cảnh công khai của slot qua `ContextualStorefrontBlock` và `BlockContext`. Lưới theo ngữ cảnh lấy sản phẩm từ danh mục, bộ sưu tập hoặc thương hiệu đang xem.
+- `FieldDefinition::repeater()` khai báo các trường con của danh sách. Builder kiểm tra và ghi nhận tham chiếu media trong từng mục. `NormalizesBlockConfiguration` cho phép block đọc cấu hình cũ và biên tập theo schema mới. `vani.storefront-extras` 1.5.0 chuyển trình chiếu, lưới banner, tab sản phẩm và mục cam kết sang repeater.
+- Builder có khung xem trước block nháp ở các kích cỡ viewport, nhân bản block, xuất và nhập bố cục JSON giữa các trang tương thích.
+- `vani.bundles` 1.1.0 cung cấp `GET /api/storefront/v1/x/vani-bundles/bundles` cho danh sách combo đang chạy.
+
 ## 0.5.75 — 2026-11-23 · Extension API 1.30.0
 
 - `ManagedPromotions` đồng bộ khuyến mãi do plugin quản lý. `ContextualPromotionAction` nhận ngữ cảnh đầy đủ của giỏ khi tính mức giảm. `PriceResolver` cung cấp giá hiệu lực của các SKU cho plugin.

@@ -27,8 +27,8 @@ final class BuilderSurfaceContract
 
             it('zones là BuilderZone, khoá không trùng, có ít nhất một vùng', function () use ($surface): void {
                 $zones = $surface()->zones();
-                expect($zones)->not->toBe([])->each->toBeInstanceOf(BuilderZone::class)
-                    ->and(array_unique(array_map(fn (BuilderZone $zone): string => $zone->key, $zones)))->toHaveCount(count($zones));
+                expect($zones)->not->toBe([])->each()->toBeInstanceOf(BuilderZone::class);
+                expect(array_unique(array_map(fn (BuilderZone $zone): string => $zone->key, $zones)))->toHaveCount(count($zones));
             });
 
             it('vùng slot gắn vào slot nhận block', function () use ($surface): void {

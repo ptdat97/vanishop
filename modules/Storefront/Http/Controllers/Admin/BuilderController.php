@@ -31,6 +31,7 @@ final class BuilderController
         Gate::authorize('storefront.manage');
         $definition = $this->surface($engine, $surface);
         $stored = $engine->blocks($surface);
+        $layout = $engine->layout($definition);
 
         return Inertia::render('Storefront::Design/Builder', [
             'surfaces' => array_values(array_map(fn (BuilderSurface $candidate): array => [
@@ -40,8 +41,13 @@ final class BuilderController
             ], $engine->surfaces())),
             'surface' => ['key' => $surface, 'label' => $definition->label()],
             'types' => $blocks->editorTypes(),
-            'zones' => $engine->layout($definition)->toArray(),
-            'blocks' => $stored ?? [],
+            'allowedZones' => $blocks->editorZones($layout),
+            'zones' => $layout->toArray(),
+            'blocks' => $blocks->editorBlocks($stored ?? []),
+            'draftUrls' => [
+                'preview' => route('admin.storefront.builder.draft', [$surface, 'preview']),
+                'import' => route('admin.storefront.builder.draft', [$surface, 'import']),
+            ],
             'configured' => $stored !== null,
             // Đang bảo trì: đi qua route phát cookie xem trước, không thì nhân viên chỉ thấy trang 503.
             'previewUrl' => $surface !== BuilderEngine::HOME ? null

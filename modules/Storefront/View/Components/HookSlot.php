@@ -57,7 +57,7 @@ final class HookSlot extends Component
             }
         }
         try {
-            $html .= app(BuilderEngine::class)->renderSlot($this->name)->toHtml();
+            $html .= app(BuilderEngine::class)->renderSlot($this->name, $this->args)->toHtml();
         } catch (Throwable $exception) {
             Log::error('Render block Builder Engine tại slot lỗi, bỏ qua.', ['hook' => $this->name, 'exception' => $exception]);
         }

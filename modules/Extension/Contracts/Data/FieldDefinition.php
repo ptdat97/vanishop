@@ -14,10 +14,11 @@ use Modules\Shared\Contracts\PluginApi;
 final readonly class FieldDefinition
 {
     /** `media` (0.3.87): id ảnh của Thư viện ảnh; `video` (0.3.91): id video của Thư viện ảnh — ô chọn dùng chung. */
-    public const TYPES = ['string', 'text', 'int', 'bool', 'select', 'date', 'media', 'video'];
+    public const TYPES = ['string', 'text', 'int', 'bool', 'select', 'date', 'media', 'video', 'repeater'];
 
     /**
      * @param  array<array-key, string>  $options  (select) giá trị => nhãn
+     * @param  list<self>  $fields  các trường trong mỗi dòng repeater của Builder
      */
     public function __construct(
         public string $key,
@@ -27,12 +28,17 @@ final readonly class FieldDefinition
         public array $options = [],
         public ?string $help = null,
         public int $max = 255,
+        public array $fields = [],
+        public bool $editable = true,
     ) {
         if (! in_array($type, self::TYPES, true)) {
             throw new \InvalidArgumentException("Kiểu trường [{$type}] không hỗ trợ.");
         }
         if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', $key) !== 1) {
             throw new \InvalidArgumentException("Khoá trường [{$key}] phải là snake_case.");
+        }
+        if ($type === 'repeater' && ($max < 1 || $max > 50 || $fields === [] || count(array_unique(array_column($fields, 'key'))) !== count($fields) || in_array('repeater', array_column($fields, 'type'), true))) {
+            throw new \InvalidArgumentException('Repeater cần từ 1 đến 50 dòng và các trường con có khoá riêng, một cấp.');
         }
     }
 
@@ -85,6 +91,12 @@ final readonly class FieldDefinition
         return new self($key, $label, 'video', $required, help: $help);
     }
 
+    /** @param list<self> $fields */
+    public static function repeater(string $key, string $label, array $fields, int $max = 12, bool $required = false, ?string $help = null): self
+    {
+        return new self($key, $label, 'repeater', $required, help: $help, max: $max, fields: $fields);
+    }
+
     /**
      * @return list<mixed>
      */
@@ -99,6 +111,7 @@ final readonly class FieldDefinition
             'select' => [$presence, 'string', 'in:'.implode(',', array_map('strval', array_keys($this->options)))],
             'date' => [$presence, 'date_format:Y-m-d'],
             'media', 'video' => [$presence, 'integer', 'min:1'],
+            'repeater' => [$presence, 'array', 'list', "max:{$this->max}"],
         };
     }
 
@@ -112,6 +125,9 @@ final readonly class FieldDefinition
             'key' => $this->key, 'label' => __($this->label), 'type' => $this->type, 'required' => $this->required,
             'options' => array_map(fn (string $label): string => (string) __($label), $this->options),
             'help' => $this->help === null ? null : __($this->help),
-        ];
+        ] + ($this->type === 'repeater' ? [
+            'max' => $this->max,
+            'fields' => array_values(array_map(fn (self $field): array => $field->toArray(), array_filter($this->fields, fn (self $field): bool => $field->editable))),
+        ] : []);
     }
 }

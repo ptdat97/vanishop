@@ -23,6 +23,7 @@ use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
+use Modules\Storefront\Application\Blocks\ListingProductGridBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
 use Modules\Storefront\Application\Builder\BuilderEngine;
@@ -115,7 +116,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
     public function boot(Router $router, PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
-        $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class], StorefrontBlock::TAG);
+        $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class, ListingProductGridBlock::class], StorefrontBlock::TAG);
         $this->app->make(Extensions::class)->tag([HomeSurface::class, ProductPageSurface::class, ListingSurface::class, CartSurface::class, BrandsSurface::class], BuilderSurface::TAG);
         $this->app->make(Extensions::class)->tag([CategoryLinkType::class, CollectionLinkType::class, BrandLinkType::class, ProductLinkType::class, RouteLinkType::class, UrlLinkType::class], LinkType::TAG);
         $permissions->register('storefront.manage', 'storefront::texts.storefront_service_provider.edit_storefront_design_home_page', [PermissionRegistry::PRESET_CONTENT]);

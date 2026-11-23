@@ -375,6 +375,7 @@ const STOREFRONT_API_READ_PAIRS = [
     'storefront.account.addresses.edit' => ['api.storefront.v1.me.addresses.index', 'api.storefront.v1.address.wards'],
     'storefront.account.delete' => ['api.storefront.v1.me.deletion'],
     // Plugin (route chỉ có khi plugin bật).
+    'storefront.p.vani-bundles.index' => ['api.storefront.x.vani-bundles.index'],
     'storefront.p.vani-cms.blog' => ['api.storefront.x.vani-cms.posts.index', 'api.storefront.x.vani-cms.categories.index'],
     'storefront.p.vani-cms.post' => ['api.storefront.x.vani-cms.posts.show'],
     'storefront.p.vani-cms.page' => ['api.storefront.x.vani-cms.pages.show'],

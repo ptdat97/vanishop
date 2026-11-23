@@ -161,6 +161,22 @@ it('lưới banner: ô lớn (bố cục 1 ô, ô đầu của bố cục 3 ô) 
     ])->and(app(BannerGridBlock::class)->resolve(['layout' => '1', 'cell_1_image' => '/img/a.jpg'], 'vi')['cells'][0]['wide'])->toBeTrue();
 });
 
+it('lặp slide kiểm tra ảnh từng mục, bỏ khoá lạ và theo dõi ảnh đã lưu', function () {
+    Storage::fake('public');
+    $image = T::seed(fn () => app(MediaLibrary::class)->store(UploadedFile::fake()->image('slide.jpg', 800, 600)));
+    $this->actingAs(T::staff(['admin.access', 'storefront.manage']), 'staff');
+    $url = route('admin.storefront.builder.edit', 'home');
+    $block = fn (array $slides): array => ['blocks' => [['type' => 'extras_slideshow', 'config' => ['slides' => $slides]]]];
+
+    $this->put($url, $block([['media' => $image->id], ['media' => 999999]]))->assertSessionHasErrors('blocks.0.config.slides.1.media');
+    $this->put($url, $block(array_fill(0, 6, [])))->assertSessionHasErrors('blocks.0.config.slides');
+
+    $this->put($url, $block([['media' => $image->id, 'title' => 'Mùa hè', 'unknown' => 'bỏ']]))->assertSessionHasNoErrors();
+    $this->assertDatabaseHas('mediables', ['media_id' => $image->id, 'mediable_type' => 'storefront.builder', 'role' => 'home']);
+    $this->get($url)->assertInertia(fn ($page) => $page->where('blocks.0.config.slides.0', ['media' => $image->id, 'title' => 'Mùa hè']));
+    $this->get('/')->assertSee('Mùa hè');
+});
+
 it('lưới danh mục trang chủ giữ thứ tự đã chọn trên Blade và API, bỏ danh mục ẩn hoặc bị xoá', function () {
     Storage::fake('public');
     [$coats, $dresses, $hidden, $deleted, $imageUrl] = T::seed(function (): array {

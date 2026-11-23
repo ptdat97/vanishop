@@ -16,6 +16,9 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
 use Modules\Storefront\Application\Blocks\RichTextRenderer;
+use Modules\Storefront\Contracts\ContextualStorefrontBlock;
+use Modules\Storefront\Contracts\Data\BlockContext;
+use Modules\Storefront\Contracts\NormalizesBlockConfiguration;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Throwable;
 
@@ -43,17 +46,55 @@ final class PageBlocks
     /** @return list<array{type: string, label: string, fields: list<array<string, mixed>>}> */
     public function editorTypes(): array
     {
-        return array_values(array_map(fn (StorefrontBlock $type): array => [
-            'type' => $type->type(),
-            'label' => $type->label(),
-            'fields' => array_map(fn (FieldDefinition $field): array => $field->toArray(), $type->fields()),
-        ], $this->types()));
+        $result = [];
+        foreach ($this->types() as $type) {
+            $result[] = [
+                'type' => $type->type(),
+                'label' => $type->label(),
+                'fields' => array_values(array_map(fn (FieldDefinition $field): array => $field->toArray(), array_filter($type->fields(), fn (FieldDefinition $field): bool => $field->editable))),
+            ];
+        }
+
+        return $result;
+    }
+
+    /** @return array<string, list<string>> */
+    public function editorZones(BlockLayout $layout): array
+    {
+        return array_map(fn (StorefrontBlock $type): array => $this->allowedZones($layout, $type), $this->types());
+    }
+
+    /** @return list<string> */
+    public function allowedZones(BlockLayout $layout, StorefrontBlock $type): array
+    {
+        $slots = $type instanceof ContextualStorefrontBlock ? $type->slots() : null;
+
+        return array_values(array_filter($layout->zoneKeys(), fn (string $zone): bool => $layout->accepts($zone, $type->type())
+            && ($slots === null || in_array($layout->zones[$zone]->slot, $slots, true))));
+    }
+
+    /**
+     * @param  list<array{type: string, config: array<string, mixed>, zone?: string}>  $blocks
+     * @return list<array{type: string, config: array<string, mixed>, zone?: string}>
+     */
+    public function editorBlocks(array $blocks): array
+    {
+        $types = $this->types();
+
+        return array_map(function (array $block) use ($types): array {
+            $type = $types[$block['type']] ?? null;
+            if ($type instanceof NormalizesBlockConfiguration) {
+                $block['config'] = $type->normalize($block['config']);
+            }
+
+            return $block;
+        }, $blocks);
     }
 
     /** @return array<string, list<mixed>> */
     public function inputRules(BlockLayout $layout): array
     {
-        $rules = ['blocks' => ['present', 'array'], 'blocks.*.type' => ['required', 'string', 'max:64'], 'blocks.*.config' => ['nullable', 'array']];
+        $rules = ['blocks' => ['present', 'array', 'max:'.self::MAX_BLOCKS], 'blocks.*' => ['array'], 'blocks.*.type' => ['required', 'string', 'max:64'], 'blocks.*.config' => ['nullable', 'array']];
         if ($layout->zoned()) {
             $rules['blocks.*.zone'] = ['required', Rule::in($layout->zoneKeys())];
         }
@@ -64,7 +105,7 @@ final class PageBlocks
     /**
      * Validate theo schema khối và bố cục trang; trang nhiều vùng giữ `zone` của từng khối.
      *
-     * @param  list<array{type?: mixed, config?: mixed, zone?: mixed}>  $blocks
+     * @param  array<array{type?: mixed, config?: mixed, zone?: mixed}>  $blocks
      * @return array{blocks: list<array{type: string, config: array<string, mixed>, zone?: string}>, media_ids: list<int>}
      */
     public function validate(array $blocks, BlockLayout $layout): array
@@ -73,20 +114,24 @@ final class PageBlocks
         if (count($blocks) > self::MAX_BLOCKS) {
             throw ValidationException::withMessages(['blocks' => __('storefront::texts.page_blocks.most').self::MAX_BLOCKS.__('storefront::texts.page_blocks.blocks')]);
         }
-        $this->validateZones($blocks, $layout);
-
         $types = $this->types();
         $clean = [];
         $mediaFields = [];
+        $counts = [];
         foreach ($blocks as $index => $block) {
             $type = $types[(string) ($block['type'] ?? '')] ?? throw ValidationException::withMessages(["blocks.{$index}.type" => __('storefront::texts.page_blocks.block_type_does_not_exist')]);
+            $zone = $layout->zoned() ? (string) ($block['zone'] ?? '') : ($layout->zoneKeys()[0] ?? '');
+            $counts[$zone] = ($counts[$zone] ?? 0) + 1;
+            $limit = $layout->limit($zone);
+            if (! in_array($zone, $this->allowedZones($layout, $type), true) || ($limit !== null && $counts[$zone] > $limit)) {
+                throw ValidationException::withMessages(["blocks.{$index}.zone" => __('storefront::messages.block_zone_rule')]);
+            }
             $fields = $type->fields();
             $config = (array) ($block['config'] ?? []);
-            $rules = [];
-            foreach ($fields as $field) {
-                $rules[$field->key] = $field->rules();
+            if ($type instanceof NormalizesBlockConfiguration) {
+                $config = $type->normalize($config);
             }
-            $validator = Validator::make($config, $rules);
+            $validator = Validator::make($config, $this->fieldRules($fields));
             if ($validator->fails()) {
                 throw ValidationException::withMessages(collect($validator->errors()->messages())->mapWithKeys(fn ($messages, $key): array => ["blocks.{$index}.config.{$key}" => $messages])->all());
             }
@@ -95,14 +140,8 @@ final class PageBlocks
                     "blocks.{$index}.config.body" => __('storefront::texts.page_blocks.content_must_not_exceed').RichTextBlock::MAX_TEXT_LENGTH.__('storefront::texts.page_blocks.characters'),
                 ]);
             }
-            $known = array_map(fn (FieldDefinition $field): string => $field->key, $fields);
-            $clean[] = ['type' => $type->type(), 'config' => array_intersect_key($config, array_flip($known))]
-                + ($layout->zoned() ? ['zone' => (string) $block['zone']] : []);
-            foreach ($fields as $field) {
-                if (in_array($field->type, ['media', 'video'], true) && is_numeric($config[$field->key] ?? null)) {
-                    $mediaFields["blocks.{$index}.config.{$field->key}"] = ['id' => (int) $config[$field->key], 'kind' => $field->type === 'video' ? 'video' : 'image'];
-                }
-            }
+            $clean[] = ['type' => $type->type(), 'config' => $this->cleanFields($config, $fields, "blocks.{$index}.config", $mediaFields)]
+                + ($layout->zoned() ? ['zone' => $zone] : []);
         }
 
         $mediaIds = array_values(array_unique(array_column($mediaFields, 'id')));
@@ -122,22 +161,51 @@ final class PageBlocks
     }
 
     /**
-     * @param  list<array{type?: mixed, zone?: mixed}>  $blocks
+     * @param  list<FieldDefinition>  $fields
+     * @return array<string, list<mixed>>
      */
-    private function validateZones(array $blocks, BlockLayout $layout): void
+    private function fieldRules(array $fields, string $prefix = ''): array
     {
-        if (! $layout->zoned()) {
-            return;
-        }
-        $counts = [];
-        foreach ($blocks as $index => $block) {
-            $zone = (string) ($block['zone'] ?? '');
-            $counts[$zone] = ($counts[$zone] ?? 0) + 1;
-            $limit = $layout->limit($zone);
-            if (! $layout->accepts($zone, (string) ($block['type'] ?? '')) || ($limit !== null && $counts[$zone] > $limit)) {
-                throw ValidationException::withMessages(["blocks.{$index}.zone" => __('storefront::messages.block_zone_rule')]);
+        $rules = [];
+        foreach ($fields as $field) {
+            $key = $prefix.$field->key;
+            $rules[$key] = $field->rules();
+            if ($field->type === 'repeater') {
+                $rules[$key.'.*'] = ['array'];
+                $rules += $this->fieldRules($field->fields, $key.'.*.');
             }
         }
+
+        return $rules;
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @param  list<FieldDefinition>  $fields
+     * @param  array<string, array{id: int, kind: string}>  $mediaFields
+     * @return array<string, mixed>
+     */
+    private function cleanFields(array $config, array $fields, string $path, array &$mediaFields): array
+    {
+        $clean = [];
+        foreach ($fields as $field) {
+            if (! array_key_exists($field->key, $config)) {
+                continue;
+            }
+            $value = $config[$field->key];
+            $key = "{$path}.{$field->key}";
+            if ($field->type === 'repeater' && is_array($value)) {
+                foreach ($value as $index => $row) {
+                    $value[$index] = $this->cleanFields($row, $field->fields, "{$key}.{$index}", $mediaFields);
+                }
+            }
+            if (in_array($field->type, ['media', 'video'], true) && $value !== null) {
+                $mediaFields[$key] = ['id' => (int) $value, 'kind' => $field->type === 'video' ? 'video' : 'image'];
+            }
+            $clean[$field->key] = $value;
+        }
+
+        return $clean;
     }
 
     /**
@@ -147,17 +215,26 @@ final class PageBlocks
      * @param  list<array{type: string, config: array<string, mixed>}>  $blocks
      * @return list<array{type: string, data: array<string, mixed>}>
      */
-    public function resolve(array $blocks): array
+    public function resolve(array $blocks, ?BlockContext $blockContext = null): array
     {
         $types = $this->types();
         $resolved = [];
         foreach ($blocks as $block) {
-            $type = $types[$block['type'] ?? ''] ?? null;
+            $type = $types[$block['type']] ?? null;
             if ($type === null) {
                 continue;
             }
             try {
-                $data = $this->extensions->call($type, fn (): array => $type->resolve((array) ($block['config'] ?? []), App::getLocale()), null, 'storefront.block');
+                $config = $type instanceof NormalizesBlockConfiguration ? $type->normalize($block['config']) : $block['config'];
+                $data = $this->extensions->call($type, function () use ($type, $config, $blockContext): ?array {
+                    if ($type instanceof ContextualStorefrontBlock) {
+                        return $blockContext !== null && in_array($blockContext->slot, $type->slots(), true)
+                            ? $type->resolveInContext($config, App::getLocale(), $blockContext)
+                            : null;
+                    }
+
+                    return $type->resolve($config, App::getLocale());
+                }, null, 'storefront.block');
                 if ($data !== null) {
                     $resolved[] = ['type' => $type->type(), 'data' => $data];
                 }
@@ -189,11 +266,11 @@ final class PageBlocks
      * @param  array<string, mixed>  $context
      * @return list<array{type: string, data: array<string, mixed>, html: HtmlString}>
      */
-    public function render(array $blocks, array $context = []): array
+    public function render(array $blocks, array $context = [], ?BlockContext $blockContext = null): array
     {
         $types = $this->types();
         $rendered = [];
-        foreach ($this->resolve($blocks) as $block) {
+        foreach ($this->resolve($blocks, $blockContext) as $block) {
             try {
                 $html = new HtmlString(view($types[$block['type']]->view(), $block['data'] + $context)->render());
                 $rendered[] = [...$block, 'html' => $html];

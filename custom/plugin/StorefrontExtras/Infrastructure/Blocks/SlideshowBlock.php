@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Plugin\StorefrontExtras\Infrastructure\Blocks;
 
 use Modules\Extension\Contracts\Data\FieldDefinition;
-use Modules\Storefront\Contracts\StorefrontBlock;
+use Modules\Storefront\Contracts\NormalizesBlockConfiguration;
 use Plugin\StorefrontExtras\Infrastructure\Products;
 
 /**
  * Trình chiếu ảnh + chữ (reference-parity §3.16-4): tối đa SLIDES slide; trượt ngang bằng CSS scroll-snap,
  * JS tự chuyển theo `interval`. Slide thiếu ảnh bị bỏ.
  */
-final class SlideshowBlock implements StorefrontBlock
+final class SlideshowBlock implements NormalizesBlockConfiguration
 {
     public const SLIDES = 5;
 
@@ -29,26 +29,32 @@ final class SlideshowBlock implements StorefrontBlock
     public function fields(): array
     {
         $fields = [FieldDefinition::int('interval', __('vani-storefront-extras::texts.slideshow_block.auto_advance_after_seconds'), help: __('vani-storefront-extras::texts.slideshow_block.text_0_no_auto_advance_default'))];
-        foreach (range(1, self::SLIDES) as $i) {
-            $fields[] = FieldDefinition::media("slide_{$i}_media", __('vani-storefront-extras::texts.slideshow_block.slide_i_image', ['i' => $i]), help: __('vani-storefront-extras::texts.slideshow_block.from_media_library_responsive_versions'));
-            $fields[] = FieldDefinition::string("slide_{$i}_title", __('vani-storefront-extras::texts.slideshow_block.slide_i_title', ['i' => $i]), max: 120);
-            $fields[] = FieldDefinition::string("slide_{$i}_text", __('vani-storefront-extras::texts.slideshow_block.slide_i_description', ['i' => $i]), max: 200);
-            $fields[] = FieldDefinition::string("slide_{$i}_link", __('vani-storefront-extras::texts.slideshow_block.slide_i_link', ['i' => $i]), max: 300);
-            $fields[] = FieldDefinition::string("slide_{$i}_label", __('vani-storefront-extras::texts.slideshow_block.slide_i_button_text', ['i' => $i]), max: 40);
-        }
+        $fields[] = FieldDefinition::repeater('slides', 'vani-storefront-extras::texts.repeater.slides', [
+            FieldDefinition::media('media', 'vani-storefront-extras::texts.repeater.image'),
+            new FieldDefinition('image', 'vani-storefront-extras::texts.repeater.image_url', max: 2048, editable: false),
+            FieldDefinition::string('title', 'vani-storefront-extras::texts.repeater.title', max: 120),
+            FieldDefinition::string('text', 'vani-storefront-extras::texts.repeater.text', max: 200),
+            FieldDefinition::string('link', 'vani-storefront-extras::texts.repeater.link', max: 300),
+            FieldDefinition::string('label', 'vani-storefront-extras::texts.repeater.button', max: 40),
+        ], max: self::SLIDES);
 
         return $fields;
+    }
+
+    public function normalize(array $config): array
+    {
+        return RepeaterRows::normalize($config, 'slides', 'slide', self::SLIDES, ['media', 'image', 'title', 'text', 'link', 'label']);
     }
 
     public function resolve(array $config, string $locale): array
     {
         $slides = [];
-        foreach (range(1, self::SLIDES) as $i) {
-            [$image, $srcset] = Products::image($config["slide_{$i}_media"] ?? null, $config["slide_{$i}_image"] ?? '', 1600);
+        foreach (($this->normalize($config)['slides'] ?? []) as $row) {
+            [$image, $srcset] = Products::image($row['media'] ?? null, $row['image'] ?? '', 1600);
             if ($image !== '') {
                 $slides[] = [
-                    'image' => $image, 'srcset' => $srcset, 'title' => (string) ($config["slide_{$i}_title"] ?? ''), 'text' => (string) ($config["slide_{$i}_text"] ?? ''),
-                    'link' => Products::safeUrl($config["slide_{$i}_link"] ?? ''), 'label' => (string) ($config["slide_{$i}_label"] ?? ''),
+                    'image' => $image, 'srcset' => $srcset, 'title' => (string) ($row['title'] ?? ''), 'text' => (string) ($row['text'] ?? ''),
+                    'link' => Products::safeUrl($row['link'] ?? ''), 'label' => (string) ($row['label'] ?? ''),
                 ];
             }
         }

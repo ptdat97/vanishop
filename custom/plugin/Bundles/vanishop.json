@@ -8,7 +8,7 @@
         "vi": "Bán theo bộ: chọn các sản phẩm và số lượng, giảm theo % khi khách mua đủ bộ. Khung \"Mua trọn bộ\" ở trang sản phẩm, block Combo cho Builder.",
         "en": "Sell products as a set: pick products and quantities, discount by percent when the full set is bought. \"Buy the set\" box on product pages, Bundle block for the Builder."
     },
-    "version": "1.0.0",
+    "version": "1.1.0",
     "kind": "promotion",
     "provider": "Plugin\\Bundles\\BundlesServiceProvider",
     "requires": {

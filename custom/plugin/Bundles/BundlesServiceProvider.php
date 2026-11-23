@@ -52,6 +52,7 @@ final class BundlesServiceProvider extends PluginServiceProvider
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-bundles');
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: ['vi' => 'combo', 'en' => 'bundles'], cacheable: true);
+        $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
         $this->onSlot('vani.storefront.pdp.after_details', function (array $product): ?SlotView {
             $bundles = $this->app->make(BundlePresenter::class)->forStyle((int) $product['id'], $this->app->getLocale());
 

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Storefront\Http\Controllers\Admin\BuilderController;
+use Modules\Storefront\Http\Controllers\Admin\BuilderDraftController;
 use Modules\Storefront\Http\Controllers\Admin\CollectionPageController;
 use Modules\Storefront\Http\Controllers\Admin\MaintenancePreviewController;
 use Modules\Storefront\Http\Controllers\Admin\MenuController;
@@ -10,10 +11,14 @@ use Modules\Storefront\Http\Controllers\Admin\ThemeSettingsController;
 Route::get('builder/{surface}', [BuilderController::class, 'edit'])->where('surface', '[a-z][a-z0-9_-]{0,39}')->name('builder.edit');
 Route::put('builder/{surface}', [BuilderController::class, 'update'])->where('surface', '[a-z][a-z0-9_-]{0,39}')->name('builder.update');
 Route::delete('builder/{surface}', [BuilderController::class, 'reset'])->where('surface', '[a-z][a-z0-9_-]{0,39}')->name('builder.reset');
+Route::post('builder/{surface}/{operation}', [BuilderDraftController::class, 'surface'])
+    ->where('surface', '[a-z][a-z0-9_-]{0,39}')->whereIn('operation', ['preview', 'import'])->middleware('vani.theme')->name('builder.draft');
 Route::get('maintenance-preview', MaintenancePreviewController::class)->name('maintenance.preview');
 
 Route::get('collection-pages/{collection}', [CollectionPageController::class, 'edit'])->whereNumber('collection')->name('collection-pages.edit');
 Route::put('collection-pages/{collection}', [CollectionPageController::class, 'update'])->whereNumber('collection')->name('collection-pages.update');
+Route::post('collection-pages/{collection}/{operation}', [BuilderDraftController::class, 'collection'])
+    ->whereNumber('collection')->whereIn('operation', ['preview', 'import'])->middleware('vani.theme')->name('collection-pages.draft');
 
 Route::get('menus', [MenuController::class, 'edit'])->name('menus.edit');
 Route::get('menus/links', [MenuController::class, 'links'])->name('menus.links');

@@ -1,0 +1,191 @@
+{
+    "type": "object",
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "slug",
+                    "name",
+                    "description",
+                    "image_url",
+                    "discount_percent",
+                    "items",
+                    "available",
+                    "total",
+                    "compare_at",
+                    "saving"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "image_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "discount_percent": {
+                        "type": "integer"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "product",
+                                "quantity",
+                                "variants",
+                                "available",
+                                "selected_variant_id"
+                            ],
+                            "properties": {
+                                "product": {
+                                    "$ref": "../../../../docs/api/schemas/storefront/product-card.v1.json"
+                                },
+                                "quantity": {
+                                    "type": "integer"
+                                },
+                                "variants": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "id",
+                                            "label",
+                                            "available"
+                                        ],
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer"
+                                            },
+                                            "label": {
+                                                "type": "string"
+                                            },
+                                            "available": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                },
+                                "available": {
+                                    "type": "boolean"
+                                },
+                                "selected_variant_id": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "available": {
+                        "type": "boolean"
+                    },
+                    "total": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "compare_at": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "saving": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "meta": {
+            "type": "object",
+            "required": [
+                "page",
+                "per_page",
+                "has_next_page"
+            ],
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "per_page": {
+                    "type": "integer"
+                },
+                "has_next_page": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}

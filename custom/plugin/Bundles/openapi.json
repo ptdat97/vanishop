@@ -1,0 +1,41 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "vani.bundles — Storefront API",
+        "version": "1.1.0"
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1/x/vani-bundles"
+        }
+    ],
+    "paths": {
+        "/bundles": {
+            "get": {
+                "summary": "Danh sách combo đang chạy",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Trang combo cùng giá, SKU và số lượng của từng món.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/bundles.json"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

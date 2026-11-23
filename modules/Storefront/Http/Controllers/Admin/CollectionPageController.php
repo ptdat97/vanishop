@@ -23,11 +23,17 @@ final class CollectionPageController
         Gate::authorize('storefront.manage');
         $page = $pages->editable($collection, App::getLocale());
         abort_if($page === null, 404);
+        $layout = BlockLayout::collection();
 
         return Inertia::render('Storefront::Design/Builder', [
             'types' => $blocks->editorTypes(),
-            'zones' => BlockLayout::collection()->toArray(),
-            'blocks' => $page['blocks'],
+            'allowedZones' => $blocks->editorZones($layout),
+            'zones' => $layout->toArray(),
+            'blocks' => $blocks->editorBlocks($page['blocks']),
+            'draftUrls' => [
+                'preview' => route('admin.storefront.collection-pages.draft', [$collection, 'preview']),
+                'import' => route('admin.storefront.collection-pages.draft', [$collection, 'import']),
+            ],
             'configured' => $page['blocks'] !== [],
             'previewUrl' => $page['status'] === 'active' ? route('storefront.collection', $page['slugs'][StoreLocale::default()]) : null,
             'collectionName' => $page['name'],

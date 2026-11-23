@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Plugin\StorefrontExtras\Infrastructure\Blocks;
 
 use Modules\Extension\Contracts\Data\FieldDefinition;
-use Modules\Storefront\Contracts\StorefrontBlock;
+use Modules\Storefront\Contracts\NormalizesBlockConfiguration;
 
 /**
  * Biểu tượng + chữ (reference-parity §3.16-4): tối đa ITEMS cam kết (giao hàng, đổi trả…). Biểu tượng chọn từ bộ SVG
  * của plugin (không nhận SVG/HTML do người nhập).
  */
-final class FeaturesBlock implements StorefrontBlock
+final class FeaturesBlock implements NormalizesBlockConfiguration
 {
     public const ITEMS = 4;
 
@@ -40,24 +40,29 @@ final class FeaturesBlock implements StorefrontBlock
     public function fields(): array
     {
         $fields = [];
-        foreach (range(1, self::ITEMS) as $i) {
-            $fields[] = FieldDefinition::select("item_{$i}_icon", __('vani-storefront-extras::texts.features_block.item_i_icon', ['i' => $i]), array_map(fn (string $label): string => __($label), self::ICONS));
-            $fields[] = FieldDefinition::string("item_{$i}_title", __('vani-storefront-extras::texts.features_block.item_i_title', ['i' => $i]), max: 60);
-            $fields[] = FieldDefinition::string("item_{$i}_text", __('vani-storefront-extras::texts.features_block.item_i_description', ['i' => $i]), max: 160);
-        }
+        $fields[] = FieldDefinition::repeater('items', 'vani-storefront-extras::texts.repeater.items', [
+            FieldDefinition::select('icon', 'vani-storefront-extras::texts.repeater.icon', self::ICONS),
+            FieldDefinition::string('title', 'vani-storefront-extras::texts.repeater.title', max: 60),
+            FieldDefinition::string('text', 'vani-storefront-extras::texts.repeater.text', max: 160),
+        ], max: self::ITEMS);
 
         return $fields;
+    }
+
+    public function normalize(array $config): array
+    {
+        return RepeaterRows::normalize($config, 'items', 'item', self::ITEMS, ['icon', 'title', 'text']);
     }
 
     public function resolve(array $config, string $locale): array
     {
         $items = [];
-        foreach (range(1, self::ITEMS) as $i) {
-            $title = trim((string) ($config["item_{$i}_title"] ?? ''));
+        foreach (($this->normalize($config)['items'] ?? []) as $row) {
+            $title = trim((string) ($row['title'] ?? ''));
             if ($title !== '') {
-                $icon = (string) ($config["item_{$i}_icon"] ?? '');
+                $icon = (string) ($row['icon'] ?? '');
                 $icon = isset(self::ICONS[$icon]) ? $icon : 'shield';
-                $items[] = ['icon' => $icon, 'icon_path' => self::ICON_PATHS[$icon], 'title' => $title, 'text' => (string) ($config["item_{$i}_text"] ?? '')];
+                $items[] = ['icon' => $icon, 'icon_path' => self::ICON_PATHS[$icon], 'title' => $title, 'text' => (string) ($row['text'] ?? '')];
             }
         }
 

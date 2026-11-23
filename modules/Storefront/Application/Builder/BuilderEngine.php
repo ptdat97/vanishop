@@ -13,6 +13,7 @@ use Modules\Extension\Facades\Hook;
 use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Contracts\BuilderSurface;
+use Modules\Storefront\Contracts\Data\BlockContext;
 use Modules\Storefront\Contracts\Data\BuilderZone;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -135,16 +136,43 @@ final class BuilderEngine
     /**
      * HTML các block admin đặt vào slot, gộp từ mọi surface gắn vào slot đó. Slot không có vùng nào → không đọc cấu hình.
      */
-    public function renderSlot(string $slot): HtmlString
+    /** @param list<mixed> $args */
+    public function renderSlot(string $slot, array $args = []): HtmlString
     {
+        $zones = $this->slotZones()[$slot] ?? [];
+        if ($zones === []) {
+            return new HtmlString('');
+        }
+        $context = $this->slotContext($slot, $args);
         $html = '';
-        foreach ($this->slotZones()[$slot] ?? [] as ['surface' => $surface, 'zone' => $zone]) {
-            foreach ($this->blocks->render($this->zone($surface, $zone) ?? []) as $block) {
+        foreach ($zones as ['surface' => $surface, 'zone' => $zone]) {
+            foreach ($this->blocks->render($this->zone($surface, $zone) ?? [], blockContext: $context) as $block) {
                 $html .= $block['html']->toHtml();
             }
         }
 
         return new HtmlString($html);
+    }
+
+    /** @param list<mixed> $args */
+    private function slotContext(string $slot, array $args): BlockContext
+    {
+        $public = is_array($args[0] ?? null) ? $args[0] : [];
+        if (str_starts_with($slot, 'vani.storefront.pdp.')) {
+            $id = $public['id'] ?? null;
+
+            return new BlockContext($slot, productId: is_int($id) && $id > 0 ? $id : null);
+        }
+        if (in_array($slot, ['vani.storefront.plp.before_listing', 'vani.storefront.plp.after_listing', 'vani.storefront.plp.empty'], true)) {
+            $type = $public['type'] ?? null;
+            if (in_array($type, ['brand', 'category', 'collection', 'search'], true)) {
+                $slug = $public[$type]['slug'] ?? null;
+
+                return new BlockContext($slot, listingType: $type, listingSlug: is_string($slug) ? $slug : null);
+            }
+        }
+
+        return new BlockContext($slot);
     }
 
     private function require(string $surface): BuilderSurface
