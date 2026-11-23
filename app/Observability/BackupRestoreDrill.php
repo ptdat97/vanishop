@@ -30,13 +30,14 @@ final class BackupRestoreDrill
     /**
      * @return array{status: 'ok'|'failed', backup: string, details: array<string, mixed>}
      */
-    public function run(?string $disk = null, bool $keep = false): array
+    public function run(?string $disk = null, bool $keep = false, ?string $archive = null): array
     {
         $started = microtime(true);
         $disk ??= (string) (config('backup.backup.destination.disks')[0] ?? 'local');
         $connection = (string) config('database.default');
         $base = (array) config("database.connections.{$connection}");
-        $drillDb = substr($base['database'].'_drill_'.now()->format('YmdHis'), 0, 64);
+        $suffix = '_drill_'.now()->format('YmdHis').'_'.bin2hex(random_bytes(4));
+        $drillDb = substr($base['database'], 0, 64 - strlen($suffix)).$suffix;
         $workDir = storage_path('app/backup-drill-'.bin2hex(random_bytes(4)));
         $details = ['drill_database' => $drillDb, 'tables' => [], 'anomalies' => []];
         $backup = '';
@@ -47,7 +48,7 @@ final class BackupRestoreDrill
             if (! in_array($base['driver'] ?? '', ['mysql', 'mariadb'], true)) {
                 throw new RuntimeException('Diễn tập khôi phục chỉ hỗ trợ MySQL/MariaDB.');
             }
-            [$backup, $backupAt] = $this->latestBackup($disk);
+            [$backup, $backupAt] = $this->backupToRestore($disk, $archive);
             $dump = $this->extractDump($disk, $backup, $workDir, $details);
 
             config(['database.connections.backup_drill' => [...$base, 'database' => $drillDb], 'database.connections.backup_drill_admin' => $base]);
@@ -83,9 +84,17 @@ final class BackupRestoreDrill
     /**
      * @return array{0: string, 1: Carbon}
      */
-    private function latestBackup(string $disk): array
+    private function backupToRestore(string $disk, ?string $archive): array
     {
         $storage = Storage::disk($disk);
+        if ($archive !== null) {
+            if (! $storage->exists($archive)) {
+                throw new RuntimeException("Không tìm thấy bản backup vừa tạo trên disk [{$disk}].");
+            }
+
+            return [$archive, Carbon::createFromTimestamp($storage->lastModified($archive))];
+        }
+
         $files = collect($storage->allFiles((string) config('backup.backup.name')))->filter(fn (string $file): bool => str_ends_with($file, '.zip'));
         $latest = $files->sortByDesc(fn (string $file): int => $storage->lastModified($file))->first()
             ?? throw new RuntimeException("Không có bản backup nào trên disk [{$disk}].");

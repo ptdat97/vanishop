@@ -46,9 +46,10 @@ final class HealthCheck
             'cache' => $this->check(function (): array {
                 // Chuỗi (không phải số): Redis trả số nguyên về dạng chuỗi, so sánh `=== 1` luôn sai trên production.
                 $probe = bin2hex(random_bytes(8));
-                Cache::put('vani:health:probe', $probe, 10);
+                $key = 'vani:health:probe:'.$probe;
+                Cache::put($key, $probe, 10);
 
-                return Cache::get('vani:health:probe') === $probe ? ['status' => 'ok'] : ['status' => 'fail', 'detail' => 'không đọc lại được giá trị'];
+                return Cache::get($key) === $probe ? ['status' => 'ok'] : ['status' => 'fail', 'detail' => 'không đọc lại được giá trị'];
             }),
             'required_extensions' => $this->check(function (): array {
                 $enabled = PluginRecord::query()->where('status', PluginStatus::Enabled)->pluck('id')->all();

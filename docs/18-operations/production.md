@@ -136,12 +136,14 @@ php artisan vani:install                # migrate (Core: chỉ expand/contract, 
 php artisan vani:plugin:doctor          # báo plugin cần nâng version / lỗi tương thích
 php artisan vani:plugin:upgrade <id>    # cho từng plugin doctor báo cần nâng (chạy migration của plugin)
 php artisan optimize                    # BẮT BUỘC — gồm vani:plugin:cache (xem lưu ý 1)
-php artisan vani:security:check         # mã thoát 1 = cấu hình production sai (APP_DEBUG, cookie secure, …) → dừng deploy
+php artisan vani:production:check       # mã thoát 1 → dừng deploy và xem kiểm tra bị lỗi
 
 ln -sfn releases/<mới> current          # chuyển traffic
 sudo systemctl reload php8.4-fpm        # xoá OPcache của bản cũ
 php artisan horizon:terminate           # supervisor khởi động lại Horizon với mã mới
-php artisan vani:plugin:doctor && curl -fsS -H "X-Health-Token: $TOKEN" https://ten-mien/health
+# Sau khi Horizon khởi động lại, kiểm tra từ release đang phục vụ:
+php artisan vani:production:check --runtime
+curl -fsS -H "X-Health-Token: $TOKEN" https://ten-mien/health
 ```
 
 ### Lưu ý khi deploy
@@ -243,11 +245,13 @@ Không có CDN thì giữ mặc định `VANI_PAGE_CACHE=false`: mọi trang ch�
 - `backup:run` (02:00) sao lưu **DB + `storage/app`** (mã nguồn không backup — triển khai lại từ git). Ảnh trên S3 dùng versioning của nhà cung cấp. Giữ: mọi bản 7 ngày, hằng ngày 16 ngày, hằng tuần 8 tuần, hằng tháng 4 tháng.
 - `backup:monitor` (09:00) gửi email cảnh báo nếu backup cũ/thiếu (`MAIL_*` phải đúng).
 - Khôi phục: tải file zip từ bucket backup → giải nén (mật khẩu `BACKUP_ARCHIVE_PASSWORD`) → import dump SQL vào DB mới → chép `storage/app` → `php artisan optimize` → `vani:plugin:doctor`.
-- Diễn tập khôi phục mỗi quý và sau mỗi lần đổi cấu hình backup: `php artisan vani:backup:drill --fresh` (nạp bản mới nhất vào DB tạm, đối chiếu, xoá DB tạm, ghi `backup_drills`). Tài khoản DB cần quyền `CREATE`/`DROP` database (hoặc chạy lệnh trên staging trỏ tới cùng bucket backup). Cần `mysql`/`mysqldump` cùng phiên bản server trên PATH (hoặc `DB_DUMP_BINARY_PATH`). Mục tiêu RPO/RTO ở [operations §8](operations.md).
+- Diễn tập khôi phục mỗi quý và sau mỗi lần đổi cấu hình backup bằng `php artisan vani:backup:drill --fresh`. Lệnh nạp đúng bản vừa tạo vào DB tạm, đối chiếu, xoá DB tạm và ghi `backup_drills`. Tài khoản DB cần quyền `CREATE`/`DROP` database (hoặc chạy lệnh trên staging trỏ tới cùng bucket backup). Cần `mysql`/`mysqldump` cùng phiên bản server trên PATH (hoặc `DB_DUMP_BINARY_PATH`). Mục tiêu RPO/RTO ở [operations §8](operations.md).
 - `--fresh --with-files` chạy backup đầy đủ (DB + `storage/app`) rồi diễn tập cả phần file: giải nén toàn bộ file (kiểm CRC — file hỏng/sai mật khẩu → không đạt) và đối chiếu số file với `storage/app` hiện tại. Bản chỉ có DB → cảnh báo "phần file chưa được diễn tập". Diễn tập quý nên dùng `--with-files`.
 - Lệnh không thay được diễn tập trên staging: chép `storage/app`, `optimize`, `vani:plugin:doctor` và đặt thử một đơn vẫn làm tay (checklist §10).
 
 ## 10. Kiểm tra sau deploy & khi có sự cố
+
+Chạy `vani:production:check` trên candidate trước khi chuyển traffic. Lệnh kiểm tra cấu hình bảo mật, kết nối DB/cache, migration, plugin và file trong manifest Vite. Thêm `--runtime` trên release đang phục vụ để kiểm tra scheduler, outbox và Horizon. Lỗi trả mã thoát 1. Outbox đang tồn đọng hoặc có lỗi trả cảnh báo để đối chiếu. Dùng `--json` để lưu kết quả vào hồ sơ phát hành. Kết quả này dùng cùng bằng chứng sandbox, thử tải staging và diễn tập khôi phục ở [go-live gate](../20-roadmap/roadmap.md#5-go-live-gate).
 
 | Kiểm tra | Cách |
 |---|---|

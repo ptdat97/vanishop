@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Observability\BackupRestoreDrill;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 /**
  * Diễn tập khôi phục backup (operations §8, go-live gate): nạp bản backup mới nhất vào DB tạm, đối chiếu, xoá DB tạm,
@@ -23,14 +24,19 @@ final class BackupDrillCommand extends Command
 
     public function handle(BackupRestoreDrill $drill): int
     {
-        $backupOptions = $this->option('with-files') ? ['--disable-notifications' => true] : ['--only-db' => true, '--disable-notifications' => true];
-        if ($this->option('fresh') && $this->call('backup:run', $backupOptions) !== self::SUCCESS) {
-            $this->error('backup:run lỗi — không diễn tập.');
+        $archive = null;
+        if ($this->option('fresh')) {
+            $filename = now()->format('Y-m-d-H-i-s').'-drill-'.Str::ulid().'.zip';
+            $backupOptions = ['--disable-notifications' => true, '--filename' => $filename, '--only-db' => ! $this->option('with-files')];
+            if ($this->call('backup:run', $backupOptions) !== self::SUCCESS) {
+                $this->error('backup:run lỗi — không diễn tập.');
 
-            return self::FAILURE;
+                return self::FAILURE;
+            }
+            $archive = config('backup.backup.name').'/'.config('backup.backup.destination.filename_prefix', '').$filename;
         }
 
-        $result = $drill->run($this->option('disk') ?: null, (bool) $this->option('keep'));
+        $result = $drill->run($this->option('disk') ?: null, (bool) $this->option('keep'), $archive);
         $details = $result['details'];
         $this->line("Bản backup: {$result['backup']}");
         if (($details['tables'] ?? []) !== []) {

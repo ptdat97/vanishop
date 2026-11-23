@@ -128,4 +128,6 @@
 
 ## Production readiness
 
-**Chưa sẵn sàng.** Đã có catalog, giá, tồn kho, giỏ hàng, khuyến mãi, đặt hàng (COD, chuyển khoản, VietQR, VNPay), vận đơn, đổi trả, huỷ một phần, storefront native, tài khoản khách, thông báo (email + SMS/ZNS), nền tảng tích hợp có schema công bố, CMS, báo cáo. Còn thiếu: chạy thử plugin với tài khoản sandbox thật (VNPay, SMS/ZNS, GHN), diễn tập khôi phục backup, tracing. Thứ tự hardening: [roadmap §4](../20-roadmap/roadmap.md); điều kiện go-live: [roadmap §5](../20-roadmap/roadmap.md).
+**Chưa sẵn sàng mở bán.** Đã có catalog, giá, tồn kho, giỏ hàng, khuyến mãi, đặt hàng, vận đơn, đổi trả, huỷ một phần, storefront native, tài khoản khách, thông báo, nền tảng tích hợp có schema công bố, CMS và báo cáo. Còn cần kết quả sandbox cho các plugin được chọn, thử tải staging, diễn tập khôi phục từ bucket thực, pentest và xác nhận điều kiện pháp lý, hạ tầng. [Điều kiện go-live](../20-roadmap/roadmap.md#5-go-live-gate)
+
+`vani:production:check` kiểm tra candidate trước khi chuyển traffic. Chế độ `--runtime` kiểm tra thêm scheduler, outbox và Horizon. `vani:backup:drill --fresh` khôi phục đúng bản vừa tạo để lưu bằng chứng diễn tập. Các kết quả cần được ghi nhận trên hạ tầng triển khai. [Runbook production](../18-operations/production.md#5-quy-trình-mỗi-lần-deploy)

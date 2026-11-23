@@ -32,18 +32,24 @@ it('backup mới → diễn tập đạt, có số dòng đối chiếu, DB tạ
 })->skip(fn () => DB::getDriverName() !== 'mysql', 'Cần MySQL');
 
 it('--with-files: backup đầy đủ → giải nén và đếm được phần file storage/app; bản chỉ DB → cảnh báo chưa diễn tập file', function () {
+    $this->freezeSecond();
     $fixture = storage_path('app/backup-fixture-'.Str::uuid().'.txt');
     File::ensureDirectoryExists(dirname($fixture));
     File::put($fixture, 'Nội dung kiểm thử khôi phục file');
 
     try {
         $this->artisan('vani:backup:drill', ['--fresh' => true])->expectsOutputToContain('chưa được diễn tập')->assertSuccessful();
-        $databaseOnlyBackup = DB::table('backup_drills')->sole()->backup_path;
-        Storage::disk('local')->delete($databaseOnlyBackup);
+        $databaseOnlyDrill = DB::table('backup_drills')->sole();
+        touch(Storage::disk('local')->path($databaseOnlyDrill->backup_path), time() + 300);
 
         $this->artisan('vani:backup:drill', ['--fresh' => true, '--with-files' => true])->expectsOutputToContain('Diễn tập khôi phục đạt.')->assertSuccessful();
-        $files = json_decode((string) DB::table('backup_drills')->orderByDesc('id')->value('details'), true)['files'];
-        expect($files['archived'])->toBeGreaterThan(0)
+        $drill = DB::table('backup_drills')->orderByDesc('id')->first();
+        $details = json_decode((string) $drill->details, true);
+        $previousDetails = json_decode((string) $databaseOnlyDrill->details, true);
+        $files = $details['files'];
+        expect($drill->backup_path)->not->toBe($databaseOnlyDrill->backup_path)
+            ->and($details['drill_database'])->not->toBe($previousDetails['drill_database'])
+            ->and($files['archived'])->toBeGreaterThan(0)
             ->and($files['restored'])->toBe($files['archived']);
     } finally {
         File::delete($fixture);

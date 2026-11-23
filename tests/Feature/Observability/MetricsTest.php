@@ -114,3 +114,22 @@ it('GET /health: status tổng hợp; chi tiết chỉ khi đúng token; thiếu
     $this->getJson('/health', ['X-Health-Token' => 'secret-health-token'])->assertStatus(503)
         ->assertJsonPath('status', 'fail')->assertJsonPath('checks.required_extensions.status', 'fail');
 });
+
+it('hai lần kiểm tra cache đồng thời không ghi đè kết quả của nhau', function () {
+    $cache = Cache::store('array');
+    $health = app(HealthCheck::class);
+    $nested = null;
+    $entered = false;
+    Cache::shouldReceive('get')->andReturnUsing(fn (string $key) => $cache->get($key));
+    Cache::shouldReceive('put')->twice()->andReturnUsing(function (string $key, string $value, int $ttl) use ($cache, $health, &$entered, &$nested): bool {
+        $written = $cache->put($key, $value, $ttl);
+        if (! $entered) {
+            $entered = true;
+            $nested = $health->run()['checks']['cache']['status'];
+        }
+
+        return $written;
+    });
+
+    expect($health->run()['checks']['cache']['status'])->toBe('ok')->and($nested)->toBe('ok');
+});
