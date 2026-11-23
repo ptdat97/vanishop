@@ -2,7 +2,9 @@
 import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import DateInput from '@admin/Components/DateInput.vue';
+import Dialog from '@admin/Components/Dialog.vue';
 import FileInput from '@admin/Components/FileInput.vue';
+import FormField from '@admin/Components/FormField.vue';
 import { useListQuery, type ListSortState } from '@admin/list';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
@@ -14,7 +16,7 @@ import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { customerRiskFlag, type DeliveryHistory, paymentStatusTone, type RiskSignal, riskTone, stageTone } from '../../statusTones';
 
 /**
@@ -34,6 +36,10 @@ const props = defineProps<{
     stageCounts: Record<string, number>;
     agedCount: number;
     statuses: string[];
+    bulkStatus: {
+        canOverride: boolean;
+        options: Array<{ value: string; label: string; reasons: Array<{ value: string; label: string }> }>;
+    } | null;
     paymentStatuses: string[];
     labels: {
         order_status: Record<string, string>;
@@ -99,6 +105,33 @@ function submitTool(tool: { url: string }): void {
 const form = reactive<Filters>({ ...props.filters });
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
+const bulkStatusOpen = ref(false);
+const bulkStatusForm = useForm({ ids: [] as number[], status: '', reason_code: '', reason: '' });
+const bulkStatusAction = computed(() => props.extensions.actions.find((action) => action.key === 'status'));
+const bulkStatusTarget = computed(() => props.bulkStatus?.options.find((option) => option.value === bulkStatusForm.status));
+watch(() => bulkStatusForm.status, () => {
+    bulkStatusForm.reset('reason_code');
+    bulkStatusForm.clearErrors('status', 'reason_code', 'reason');
+});
+
+function openBulkStatus(): void {
+    bulkStatusForm.resetAndClearErrors();
+    bulkStatusForm.ids = [...selected.value];
+    bulkStatusOpen.value = true;
+}
+
+function submitBulkStatus(): void {
+    if (!bulkStatusAction.value || !bulkStatusTarget.value || !bulkStatusForm.reason_code || bulkStatusForm.processing) return;
+
+    bulkStatusForm.post(bulkStatusAction.value.url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            bulkStatusOpen.value = false;
+            selected.value = [];
+        },
+    });
+}
+
 const moreFilters = ref(['status', 'payment_status', 'payment_method', 'source', 'from', 'to'].some((key) => props.filters[key as keyof Filters] !== ''));
 const options = (values: string[] | Record<string, string>, labels: Record<string, string>) =>
     (Array.isArray(values) ? values : Object.keys(values)).map((value) => ({ value, label: labels[value] ?? value }));
@@ -285,8 +318,30 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
 
     <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm" aria-live="polite">
         <span class="text-slate-500">{{ t('ordering::admin.orders_index.count_orders_current_page_selected', { count: selected.length }) }}</span>
-        <ExtensionActions :actions="extensions.actions" :ids="selected" :selection-description="t('ordering::admin.orders_index.orders_current_page')" />
+        <ExtensionActions :actions="extensions.actions" :ids="selected" :selection-description="t('ordering::admin.orders_index.orders_current_page')">
+            <template #action-status="{ action }">
+                <button v-if="bulkStatus" type="button" :class="secondaryButton" :disabled="selected.length === 0 || bulkStatusForm.processing" data-extension-action="status" @click="openBulkStatus">
+                    {{ action.label }}
+                </button>
+            </template>
+        </ExtensionActions>
     </div>
+    <Dialog v-if="bulkStatus" v-model:open="bulkStatusOpen" :title="t('ordering::admin.status_change.submit')" :subtitle="t('ordering::admin.orders_index.count_orders_current_page_selected', { count: bulkStatusForm.ids.length })">
+        <form class="space-y-3" data-bulk-status @submit.prevent="submitBulkStatus">
+            <FormField :label="t('ordering::admin.status_change.new_status')" :error="bulkStatusForm.errors.status">
+                <Select v-model="bulkStatusForm.status" :options="bulkStatus.options" :empty-label="t('ordering::admin.orders_show.choose_status')" :aria-label="t('ordering::admin.status_change.new_status')" />
+            </FormField>
+            <template v-if="bulkStatusTarget">
+                <FormField :label="t('ordering::admin.status_change.reason')" :error="bulkStatusForm.errors.reason_code">
+                    <Select v-model="bulkStatusForm.reason_code" :options="bulkStatusTarget.reasons" :empty-label="t('ordering::admin.status_change.choose_reason')" :aria-label="t('ordering::admin.status_change.reason')" />
+                </FormField>
+                <FormField for="bulk-status-note" :label="t('ordering::admin.status_change.note')" :error="bulkStatusForm.errors.reason" :hint="bulkStatus.canOverride && ['processing', 'completed'].includes(bulkStatusForm.status) ? t('ordering::admin.status_change.bulk_override_note') : undefined">
+                    <input id="bulk-status-note" v-model="bulkStatusForm.reason" :class="inputClass" maxlength="255" />
+                </FormField>
+            </template>
+            <button type="submit" :class="primaryButton" :disabled="bulkStatusForm.processing || !bulkStatusForm.reason_code">{{ t('ordering::admin.status_change.submit') }}</button>
+        </form>
+    </Dialog>
     <DataTable v-model:selected="selected" :columns="columns" :rows="orders" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :row-label="(order) => order.number" :row-click="openOrder" :empty-text="t('ordering::admin.orders_index.no_orders')">
         <template #cell-number="{ row }">
             <span class="font-mono">{{ row.number }}</span>

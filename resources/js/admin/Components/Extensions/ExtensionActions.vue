@@ -54,7 +54,11 @@ async function run(action: ExtensionAction): Promise<void> {
 </script>
 
 <template>
-    <button v-for="action in actions" :key="action.key" type="button" :class="secondaryButton" :disabled="ids.length === 0" :data-extension-action="action.key" @click="run(action)">
-        {{ action.label }}
-    </button>
+    <template v-for="action in actions" :key="action.key">
+        <slot :name="`action-${action.key}`" :action="action">
+            <button type="button" :class="secondaryButton" :disabled="ids.length === 0" :data-extension-action="action.key" @click="run(action)">
+                {{ action.label }}
+            </button>
+        </slot>
+    </template>
 </template>

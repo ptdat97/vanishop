@@ -54,7 +54,7 @@ final class OrderCommands implements OrderActions
      * @throws OrderActionRejected plugin chặn
      * @throws OrderTransitionRejected đơn không còn ở trạng thái xác nhận được
      */
-    public function confirm(int $orderId, string $reason, string $source = 'staff'): void
+    public function confirm(int $orderId, string $reason, string $source = 'staff', ?string $reasonCode = null): void
     {
         $order = $this->orders->find($orderId);
         if ($order !== null) {
@@ -63,21 +63,21 @@ final class OrderCommands implements OrderActions
                 throw OrderActionRejected::confirmBlocked($blocked);
             }
         }
-        $this->transitions->transition($orderId, OrderStatus::Confirmed, $reason, $source);
+        $this->transitions->transition($orderId, OrderStatus::Confirmed, $reason, $source, $reasonCode);
         $this->audit->record('order.confirmed', 'order', $orderId, ['reason' => $reason, 'source' => $source]);
     }
 
     /**
      * Nhân viên hoàn tất đơn (0.3.98) — xem OrderPolicy::staffCanComplete.
      */
-    public function complete(int $orderId, string $reason): void
+    public function complete(int $orderId, string $reason, ?string $reasonCode = null): void
     {
-        DB::transaction(function () use ($orderId, $reason): void {
+        DB::transaction(function () use ($orderId, $reason, $reasonCode): void {
             $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
             if (! OrderPolicy::staffCanComplete($order->order_status, (string) $order->fulfillment_status, (string) $order->return_status)) {
                 throw OrderActionRejected::cannotComplete();
             }
-            $this->transitions->transition($order->id, OrderStatus::Completed, 'staff_completed: '.$reason, 'staff');
+            $this->transitions->transition($order->id, OrderStatus::Completed, 'staff_completed: '.$reason, 'staff', $reasonCode);
         });
         $this->audit->record('order.completed', 'order', $orderId, ['reason' => $reason]);
     }

@@ -39,7 +39,7 @@ final class OrderTransitionService implements OrderTransitions
             }
 
             $order->update(['order_status' => $to, 'lock_version' => $order->lock_version + 1]);
-            $this->record($order->id, 'status_changed', $from->value, $to->value, $reason, $source, $to === OrderStatus::Cancelled ? $reasonCode : null);
+            $this->record($order->id, 'status_changed', $from->value, $to->value, $reason, $source, $reasonCode);
 
             match ($to) {
                 OrderStatus::Confirmed => event(new OrderConfirmed($order->id, $order->public_id, $reason)),
@@ -57,9 +57,9 @@ final class OrderTransitionService implements OrderTransitions
      * Ghi sự kiện `status_overridden`; phát `OrderStatusOverridden` + event của trạng thái đích: đi qua "đã xác nhận" (tới
      * đang xử lý) → `OrderConfirmed` để Fulfillment tạo vận đơn như thường; tới hoàn tất → `OrderCompleted`.
      */
-    public function force(int $orderId, OrderStatus $to, string $reason, string $source): bool
+    public function force(int $orderId, OrderStatus $to, string $reason, string $source, ?string $reasonCode = null): bool
     {
-        return DB::transaction(function () use ($orderId, $to, $reason, $source): bool {
+        return DB::transaction(function () use ($orderId, $to, $reason, $source, $reasonCode): bool {
             $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
             $from = $order->order_status;
             if ($from === $to) {
@@ -70,7 +70,7 @@ final class OrderTransitionService implements OrderTransitions
             }
 
             $order->update(['order_status' => $to, 'lock_version' => $order->lock_version + 1]);
-            $this->record($order->id, 'status_overridden', $from->value, $to->value, $reason, $source);
+            $this->record($order->id, 'status_overridden', $from->value, $to->value, $reason, $source, $reasonCode);
             event(new OrderStatusOverridden($order->id, $order->public_id, (string) $order->reservation_key, $from->value, $to->value, $reason));
             match ($to) {
                 OrderStatus::Confirmed, OrderStatus::Processing => event(new OrderConfirmed($order->id, $order->public_id, $reason)),

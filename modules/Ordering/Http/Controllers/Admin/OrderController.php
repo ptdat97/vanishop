@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
@@ -90,7 +92,7 @@ final class OrderController
         ])->deleteFileAfterSend();
     }
 
-    public function index(Request $request, OrderQueries $queries, AdminScreen $screen): Response
+    public function index(Request $request, OrderQueries $queries, AdminScreen $screen, OrderStatusChanger $changer): Response
     {
         Gate::authorize('orders.view');
         $validated = $request->validate([
@@ -115,16 +117,16 @@ final class OrderController
                 $extensionColumns['values'][$orderId][$column['key']] = $text;
             }
         }
+        $canManage = Gate::allows('orders.manage');
         $actions = [
-            ...(Gate::allows('orders.manage') ? [['key' => 'confirm', 'label' => __('ordering::texts.order_controller.confirm_order'), 'url' => route('admin.orders.orders.bulk-confirm'), 'confirm' => true]] : []),
+            ...($canManage ? [['key' => 'confirm', 'label' => __('ordering::texts.order_controller.confirm_order'), 'url' => route('admin.orders.orders.bulk-confirm'), 'confirm' => true]] : []),
             ['key' => 'print', 'label' => __('ordering::texts.order_controller.print_packing_slip'), 'url' => route('admin.orders.orders.print'), 'confirm' => false, 'method' => 'get', 'target' => '_blank'],
         ];
-        if (Gate::allows('orders.manage')) {
+        if ($canManage) {
             // Gửi yêu cầu xác nhận qua kênh của plugin (EP v3 X2): chỉ đơn đang "Cần xác nhận" được gửi, đơn khác bỏ qua.
             foreach ($this->confirmationChannels() as $channel) {
                 $actions[] = ['key' => "confirmation_{$channel->code()}", 'label' => __('ordering::texts.order_controller.send_confirmation_via_label', ['label' => $channel->label()]), 'url' => route('admin.orders.orders.bulk-confirmation', ['channel' => $channel->code()]), 'confirm' => true];
             }
-            // Đổi trạng thái hàng loạt (0.3.99): mỗi đơn đi đúng đường (theo trình tự / ngoài trình tự nếu có quyền), đơn bị chặn được bỏ qua.
             $actions[] = ['key' => 'status', 'label' => __('ordering::texts.order_controller.change_status'), 'url' => route('admin.orders.orders.bulk-status'), 'confirm' => true, 'fields' => [
                 ['key' => 'status', 'label' => __('ordering::texts.order_controller.new_status'), 'required' => true, 'options' => array_map(fn (OrderStatus $status): array => ['value' => $status->value, 'label' => (string) __("ordering::labels.order_status.{$status->value}")], OrderStatus::cases())],
                 ['key' => 'reason', 'label' => __('ordering::texts.order_controller.reason_recorded_each_order_s'), 'required' => true],
@@ -152,6 +154,18 @@ final class OrderController
             'stageCounts' => $queries->stageCounts($scoped),
             'agedCount' => $queries->agedCount(24),
             'statuses' => array_column(OrderStatus::cases(), 'value'),
+            'bulkStatus' => $canManage ? [
+                'canOverride' => Gate::allows('orders.override_status'),
+                'options' => array_values(array_map(fn (OrderStatus $status): array => [
+                    'value' => $status->value,
+                    'label' => (string) __("ordering::labels.order_status.{$status->value}"),
+                    'reasons' => $changer->reasonOptions($status),
+                ], array_filter(OrderStatus::cases(), fn (OrderStatus $status): bool => match ($status) {
+                    OrderStatus::Pending => false,
+                    OrderStatus::Cancelled => Gate::allows('orders.cancel'),
+                    default => true,
+                }))),
+            ] : null,
             'paymentStatuses' => PaymentStatus::VALUES,
             'labels' => [...__('ordering::labels'), 'payment_method' => $this->paymentMethodLabels()],
             // Chốt ① (ADR-046): đơn "Cần xác nhận" kèm lịch sử nhận hàng theo SĐT (đơn khác của SĐT) để xác nhận hàng loạt
@@ -201,13 +215,17 @@ final class OrderController
             'listUrl' => $this->ordersListUrl($request),
             'order' => [...(array) $detail, 'placedAt' => StoreClock::format($detail->placedAt),
                 'events' => array_map(fn (array $event): array => [...$event, 'at' => StoreClock::format($event['at'])], $detail->events)],
-            'labels' => __('ordering::labels'),
+            'labels' => [...__('ordering::labels'), 'cancellation_reasons' => app(CancellationReasons::class)->options()],
             'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
             // Thẻ "Trạng thái đơn" (0.3.98): 4 chiều trạng thái + thao tác của Core và của plugin (OrderStatusAction).
-            'statusCard' => [...$this->statusCard($order, $reader), 'change' => [
+            'statusCard' => [...$this->statusCard($order, $reader, $changer), 'change' => [
                 'url' => route('admin.orders.orders.status', $order->id),
                 // Ô chọn trạng thái (0.3.99): mọi trạng thái, kèm chế độ (theo trình tự / ngoài trình tự), lý do bị chặn, quyền.
-                'options' => array_map(fn (array $option): array => [...$option, 'allowed' => $option['mode'] !== null && Gate::allows((string) $option['permission'])], $changer->options($order)),
+                'options' => array_map(function (array $option) use ($changer): array {
+                    $allowed = $option['mode'] !== null && Gate::allows((string) $option['permission']);
+
+                    return [...$option, 'allowed' => $allowed, 'reasons' => $allowed ? $changer->reasonOptions(OrderStatus::from($option['value'])) : []];
+                }, $changer->options($order)),
             ]],
             // Giai đoạn vận hành (thanh tiến trình) + sự kiện vận đơn/thanh toán gộp vào lịch sử (0.3.96).
             'stage' => $this->queries->stage($order->id),
@@ -243,7 +261,7 @@ final class OrderController
      *
      * @return array{rows: list<array{key: string, label: string, code: string, text: string}>, actions: list<array<string, mixed>>}
      */
-    private function statusCard(Order $order, OrderReader $reader): array
+    private function statusCard(Order $order, OrderReader $reader, OrderStatusChanger $changer): array
     {
         $url = route('admin.orders.orders.show', $order->id);
         $actions = [];
@@ -256,7 +274,10 @@ final class OrderController
         }
         if (Gate::allows('orders.manage') && OrderPolicy::staffCanComplete($order->order_status, (string) $order->fulfillment_status, (string) $order->return_status)) {
             $actions[] = ['key' => 'complete', 'label' => __('ordering::texts.order_controller.complete_order'), 'url' => "{$url}/complete", 'tone' => 'secondary',
-                'fields' => [['key' => 'reason', 'label' => __('ordering::texts.order_controller.reason_completing_early_without_waiting'), 'required' => true]]];
+                'fields' => [
+                    ['key' => 'reason_code', 'label' => __('ordering::admin.status_change.reason'), 'required' => true, 'options' => $changer->reasonOptions(OrderStatus::Completed)],
+                    ['key' => 'reason', 'label' => __('ordering::admin.status_change.note')],
+                ]];
         }
 
         $data = $reader->find($order->id);
@@ -308,22 +329,24 @@ final class OrderController
     }
 
     /**
-     * Đổi trạng thái từ ô chọn (0.3.99) — lý do bắt buộc; theo trình tự cần quyền của lệnh thường, ngoài trình tự cần
-     * `orders.override_status`.
+     * Đổi trạng thái từ ô chọn. Ngoài trình tự cần quyền `orders.override_status` và ghi chú.
      */
     public function changeStatus(Order $order, Request $request, OrderStatusChanger $changer): RedirectResponse
     {
-        $data = $request->validate([
-            'status' => ['required', Rule::enum(OrderStatus::class)],
-            'reason' => ['required', 'string', 'max:255'],
-        ]);
+        $data = $request->validate($this->statusChangeRules());
         $to = OrderStatus::from($data['status']);
         $plan = $changer->plan($order, $to);
         if ($plan['mode'] === null) {
             throw OrderActionRejected::statusChangeBlocked((string) $plan['blocked']);
         }
         Gate::authorize((string) $plan['permission']);
-        $mode = $changer->change($order, $to, $data['reason']);
+        $note = $data['reason'] ?? null;
+        $reasonCode = $data['reason_code'] ?? null;
+        $reason = $changer->resolveReason($to, $note, $reasonCode);
+        if ($plan['mode'] === 'forced' && $note === null) {
+            throw ValidationException::withMessages(['reason' => __('ordering::messages.status_override_note_required')]);
+        }
+        $mode = $changer->change($order, $to, $reason, $reasonCode);
 
         return back()->with('success', __($mode === 'forced' ? 'ordering::messages.status_changed_forced' : 'ordering::messages.status_changed'));
     }
@@ -336,18 +359,27 @@ final class OrderController
         Gate::authorize('orders.manage');
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
-            'status' => ['required', Rule::enum(OrderStatus::class)],
-            'reason' => ['required', 'string', 'max:255'],
+            ...$this->statusChangeRules(),
         ]);
         $to = OrderStatus::from($data['status']);
-        $changed = 0;
-        foreach ($this->queries->ordersByIds($data['ids']) as $order) {
+        $note = $data['reason'] ?? null;
+        $reasonCode = $data['reason_code'] ?? null;
+        $reason = $changer->resolveReason($to, $note, $reasonCode);
+        $eligible = $this->queries->ordersByIds($data['ids'])->filter(function (Order $order) use ($changer, $to, $note): bool {
             $plan = $changer->plan($order, $to);
             if ($plan['mode'] === null || ! Gate::allows((string) $plan['permission'])) {
-                continue;
+                return false;
             }
+            if ($plan['mode'] === 'forced' && $note === null) {
+                throw ValidationException::withMessages(['reason' => __('ordering::messages.status_override_note_required')]);
+            }
+
+            return true;
+        });
+        $changed = 0;
+        foreach ($eligible as $order) {
             try {
-                $changer->change($order, $to, $data['reason']);
+                $changer->change($order, $to, $reason, $reasonCode);
                 $changed++;
             } catch (BusinessRuleViolation) {
                 // Đơn đổi trạng thái giữa chừng: bỏ qua.
@@ -357,14 +389,34 @@ final class OrderController
         return back()->with('success', __('ordering::messages.bulk_status_changed', ['count' => $changed, 'skipped' => count(array_unique($data['ids'])) - $changed]));
     }
 
+    /** @return array<string, list<Enum|string>> */
+    private function statusChangeRules(): array
+    {
+        return [
+            'status' => ['required', Rule::enum(OrderStatus::class)],
+            ...$this->statusReasonRules(),
+        ];
+    }
+
+    /** @return array<string, list<string>> */
+    private function statusReasonRules(): array
+    {
+        return [
+            'reason' => ['required_without:reason_code', 'nullable', 'string', 'max:255'],
+            'reason_code' => ['nullable', 'string', 'max:64'],
+        ];
+    }
+
     /**
      * Hoàn tất đơn sớm (đã giao hết, không có đổi/trả đang mở) — 0.3.98.
      */
-    public function complete(Order $order, Request $request, OrderCommands $commands): RedirectResponse
+    public function complete(Order $order, Request $request, OrderCommands $commands, OrderStatusChanger $changer): RedirectResponse
     {
         Gate::authorize('orders.manage');
-        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
-        $commands->complete($order->id, $data['reason']);
+        $data = $request->validate($this->statusReasonRules());
+        $reasonCode = $data['reason_code'] ?? null;
+        $reason = $changer->resolveReason(OrderStatus::Completed, $data['reason'] ?? null, $reasonCode);
+        $commands->complete($order->id, $reason, $reasonCode);
 
         return back()->with('success', __('ordering::messages.completed'));
     }

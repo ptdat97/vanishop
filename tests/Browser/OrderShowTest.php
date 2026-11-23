@@ -63,3 +63,28 @@ it('cảnh báo khi rời đơn đang sửa địa chỉ và gửi được lý 
         ->click('[role="alertdialog"] button[type="submit"]')->assertSee('Đã huỷ đơn')->assertNoJavaScriptErrors();
     expect($order->fresh()->order_status)->toBe(OrderStatus::Cancelled);
 });
+
+it('đổi trạng thái riêng lẻ và hàng loạt tải đúng lý do theo trạng thái mới', function () {
+    [$single, $bulk] = [($this->place)(), ($this->place)()];
+    $this->actingAs(T::staff(['admin.access', 'orders.view', 'orders.manage', 'orders.cancel']), 'staff');
+
+    visit("/admin/orders/orders/{$single->id}")
+        ->click('[data-status-change] [aria-label="Trạng thái mới"]')->click('[role="option"] >> text=Đã xác nhận')
+        ->click('[data-status-change] [aria-label="Lý do"]')->click('[role="option"] >> text=Khách đã xác nhận')
+        ->click('[data-status-change] [aria-label="Trạng thái mới"]')->click('[role="option"] >> text=Đã huỷ')
+        ->assertSee('Chọn lý do')
+        ->click('[data-status-change] [aria-label="Lý do"]')->click('[role="option"] >> text=Hết hàng')
+        ->fill('#order-status-note', 'Kho đang kiểm kê')
+        ->click('[data-status-change] button[type="submit"]')
+        ->assertSee('Đã đổi trạng thái đơn.')->assertSee('Hết hàng')->assertSee('Kho đang kiểm kê')->assertNoJavaScriptErrors();
+
+    visit('/admin/orders/orders')
+        ->click('input[aria-label="Chọn '.$bulk->number.'"]')->click('[data-extension-action="status"]')
+        ->click('[data-bulk-status] [aria-label="Trạng thái mới"]')->click('[role="option"] >> text=Đã huỷ')
+        ->click('[data-bulk-status] [aria-label="Lý do"]')->click('[role="option"] >> text=Hết hàng')
+        ->click('[data-bulk-status] button[type="submit"]')
+        ->assertSee('Đã đổi trạng thái 1 đơn; bỏ qua 0 đơn.')->assertNoJavaScriptErrors();
+
+    expect($single->fresh()->order_status)->toBe(OrderStatus::Cancelled)
+        ->and($bulk->fresh()->order_status)->toBe(OrderStatus::Cancelled);
+});

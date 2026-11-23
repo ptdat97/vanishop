@@ -3,6 +3,15 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'status_change' => [
+        'submit' => 'Đổi trạng thái',
+        'new_status' => 'Trạng thái mới',
+        'reason' => 'Lý do',
+        'choose_reason' => 'Chọn lý do',
+        'note' => 'Ghi chú (không bắt buộc)',
+        'note_required' => 'Ghi chú (bắt buộc)',
+        'bulk_override_note' => 'Cần ghi chú nếu có đơn chuyển ngoài trình tự.',
+    ],
     'orders_index' => [
         'all' => 'Tất cả',
         'all_order_sources' => 'Mọi nguồn đơn',

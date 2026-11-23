@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'invalid_status_reason' => 'The selected reason does not apply to the new status.',
+    'status_override_note_required' => 'Enter a note when changing an order status out of sequence.',
     'invalid_cancellation_reason' => 'The selected cancellation reason is invalid.',
     'status_same' => 'The order already has this status.',
     'status_cancel_blocked' => 'Cannot cancel: goods have left the warehouse or the order is closed — use Returns.',

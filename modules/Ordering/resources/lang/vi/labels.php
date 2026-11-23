@@ -11,6 +11,11 @@ return [
         'delivery_timing' => 'Thời gian giao hàng không phù hợp',
         'other' => 'Lý do khác',
     ],
+    'status_reasons' => [
+        'confirmed' => ['customer_confirmed' => 'Khách đã xác nhận', 'staff_verified' => 'Nhân viên đã kiểm tra đơn', 'other' => 'Khác'],
+        'processing' => ['packing_started' => 'Đã bắt đầu đóng gói', 'external_processing' => 'Đơn đang được xử lý ngoài hệ thống', 'other' => 'Khác'],
+        'completed' => ['delivery_confirmed' => 'Đã xác nhận giao đủ hàng', 'store_pickup' => 'Khách đã nhận tại cửa hàng', 'external_fulfillment' => 'Đã giao ngoài hệ thống', 'other' => 'Khác'],
+    ],
     'cancellation_reasons' => [
         'changed_mind' => 'Khách đổi ý',
         'ordered_by_mistake' => 'Khách đặt nhầm',

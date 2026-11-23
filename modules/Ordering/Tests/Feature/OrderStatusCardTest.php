@@ -88,8 +88,10 @@ it('Core: 4 chiều trạng thái; Xác nhận (bước tiếp theo) và Huỷ k
     DB::table('orders')->where('id', $order->id)->update(['return_status' => 'none']);
     $complete = ($this->action)($order, 'complete');
     $this->post($complete['url'], ['reason' => ''])->assertSessionHasErrors('reason');
-    $this->post($complete['url'], ['reason' => 'Khách xác nhận qua Zalo'])->assertRedirect()->assertSessionHas('success', 'Đã hoàn tất đơn.');
+    $this->post($complete['url'], ['reason_code' => 'delivery_confirmed', 'reason' => 'Khách xác nhận qua Zalo'])->assertRedirect()->assertSessionHas('success', 'Đã hoàn tất đơn.');
+    $event = DB::table('order_events')->where('order_id', $order->id)->where('to_status', 'completed')->sole();
     expect($order->fresh()->order_status->value)->toBe('completed')
+        ->and(json_decode($event->data, true))->toBe(['reason_code' => 'delivery_confirmed'])
         ->and(DB::table('audit_logs')->where('action', 'order.completed')->where('subject_id', (string) $order->id)->exists())->toBeTrue()
         ->and(($this->card)($order)['actions'])->toBe([]);
 });

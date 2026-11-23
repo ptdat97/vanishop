@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'invalid_status_reason' => 'Lý do đã chọn không phù hợp với trạng thái mới.',
+    'status_override_note_required' => 'Nhập ghi chú khi đổi trạng thái ngoài trình tự.',
     'invalid_cancellation_reason' => 'Lý do huỷ đã chọn không hợp lệ.',
     'status_same' => 'Đơn đang ở trạng thái này.',
     'status_cancel_blocked' => 'Không huỷ được: hàng đã rời kho hoặc đơn đã kết thúc — dùng Đổi/trả.',

@@ -117,7 +117,7 @@ const props = defineProps<{
         /** Ô chọn trạng thái (0.3.99): theo trình tự (`normal`), ngoài trình tự (`forced`) hoặc bị chặn (`blocked`). */
         change: {
             url: string;
-            options: Array<{ value: string; label: string; mode: 'normal' | 'forced' | null; permission: string | null; blocked: string | null; allowed: boolean }>;
+            options: Array<{ value: string; label: string; mode: 'normal' | 'forced' | null; permission: string | null; blocked: string | null; allowed: boolean; reasons: Array<{ value: string; label: string }> }>;
         };
     };
     /** Tín hiệu rủi ro của plugin khi đơn còn chờ xác nhận (EP v3 X2). */
@@ -133,7 +133,16 @@ const props = defineProps<{
         note: boolean;
     };
     extensions: ExtensionDetail;
-    labels: { order_status: Record<string, string>; payment_status: Record<string, string>; event_type: Record<string, string>; stage: Record<string, string>; delivery_issue: Record<string, string> };
+    labels: {
+        order_status: Record<string, string>;
+        payment_status: Record<string, string>;
+        event_type: Record<string, string>;
+        stage: Record<string, string>;
+        delivery_issue: Record<string, string>;
+        cancellation_reasons: Record<string, string>;
+        customer_cancellation_reasons: Record<string, string>;
+        status_reasons: Record<string, Record<string, string>>;
+    };
     addressDirectory: {
         provinces: Division[];
         wards: Division[];
@@ -157,9 +166,23 @@ function statusRowTone(row: { key: string; code: string }): 'neutral' | 'info' |
     return row.code === 'none' ? 'neutral' : ['returned', 'partially_returned'].includes(row.code) ? 'success' : 'warning';
 }
 /** Lịch sử gộp: sự kiện của đơn + vận đơn/thanh toán, theo thời gian. */
+function eventReasonLabel(event: typeof props.order.events[number]): string | null {
+    const code = event.data?.reason_code;
+    if (!event.to || typeof code !== 'string' || !['status_changed', 'status_overridden'].includes(event.type)) return null;
+
+    if (event.to === 'cancelled') {
+        const reasons = event.source === 'customer' ? props.labels.customer_cancellation_reasons : props.labels.cancellation_reasons;
+        return reasons[code] ?? code;
+    }
+    return props.labels.status_reasons[event.to]?.[code] ?? code;
+}
 const history = computed(() =>
     [
-        ...props.order.events.map((event, index) => ({ kind: 'order' as const, ts: event.ts ?? 0, order: index, event })),
+        ...props.order.events.map((event, index) => {
+            const reasonLabel = eventReasonLabel(event);
+            const note = reasonLabel ? event.reason?.replace(/^(staff_changed|staff_completed|override): /, '') : event.reason;
+            return { kind: 'order' as const, ts: event.ts ?? 0, order: index, event, reasonLabel, note: note === reasonLabel ? null : note };
+        }),
         ...props.timeline.map((entry, index) => ({ kind: 'module' as const, ts: entry.ts, order: index, entry })),
     ].sort((a, b) => a.ts - b.ts),
 );
@@ -182,7 +205,7 @@ async function runAction(action: PanelAction): Promise<void> {
 }
 /** Nhãn rủi ro khách theo lịch sử nhận hàng (SĐT): từng hoàn hàng / khách mới / khách quen. */
 const customerFlag = computed(() => customerRiskFlag(props.customerHistory));
-const statusForm = useForm({ status: '', reason: '' });
+const statusForm = useForm({ status: '', reason_code: '', reason: '' });
 const statusOptions = computed(() =>
     props.statusCard.change.options
         .filter((option) => option.value !== props.order.orderStatus)
@@ -190,6 +213,11 @@ const statusOptions = computed(() =>
 );
 const chosenStatus = computed(() => props.statusCard.change.options.find((option) => option.value === statusForm.status) ?? null);
 const canChangeStatus = computed(() => statusOptions.value.some((option) => !option.disabled));
+watch(() => statusForm.status, () => {
+    statusForm.reset('reason_code');
+    statusForm.clearErrors('status', 'reason_code', 'reason');
+});
+
 function changeStatus(): void {
     statusForm.post(props.statusCard.change.url, { preserveScroll: true, onSuccess: () => statusForm.reset() });
 }
@@ -417,7 +445,8 @@ function addNote(): void {
                             ·
                             <span class="font-medium">{{ labels.event_type[item.event.type] ?? item.event.type }}</span>
                             <span v-if="item.event.to"> → {{ statusLabel(item.event.to) }}</span>
-                            <span v-if="item.event.reason" class="text-slate-500"> ({{ item.event.reason }})</span>
+                            <span v-if="item.reasonLabel" class="text-slate-700"> · {{ item.reasonLabel }}</span>
+                            <span v-if="item.note" class="text-slate-500"> ({{ item.note }})</span>
                             <span v-if="item.event.actor || item.event.source" class="text-xs text-slate-400"> · {{ item.event.actor ?? item.event.source }}</span>
                             <p v-if="item.event.type === 'note' && item.event.data" class="text-slate-700">
                                 {{ item.event.data.note }}
@@ -468,10 +497,15 @@ function addNote(): void {
                         {{ t('ordering::admin.orders_show.out_sequence_skips_intermediate_steps') }}
                         <template v-if="chosenStatus.value === 'completed'">{{ t('ordering::admin.orders_show.goods_treated_delivered_outside_system') }}</template>
                     </p>
-                    <FormField :label="t('ordering::admin.orders_show.reason_required')" :error="statusForm.errors.reason">
-                        <input v-model="statusForm.reason" :class="inputClass" maxlength="255" required :placeholder="t('ordering::admin.orders_show.customer_picked_up_goods_store')" />
-                    </FormField>
-                    <button type="submit" :class="primaryButton" :disabled="statusForm.processing || !statusForm.status || !statusForm.reason.trim()">{{ t('ordering::admin.orders_show.change_status') }}</button>
+                    <template v-if="chosenStatus?.allowed">
+                        <FormField :label="t('ordering::admin.status_change.reason')" :error="statusForm.errors.reason_code">
+                            <Select v-model="statusForm.reason_code" :options="chosenStatus.reasons" :empty-label="t('ordering::admin.status_change.choose_reason')" :aria-label="t('ordering::admin.status_change.reason')" />
+                        </FormField>
+                        <FormField for="order-status-note" :label="t(chosenStatus.mode === 'forced' ? 'ordering::admin.status_change.note_required' : 'ordering::admin.status_change.note')" :error="statusForm.errors.reason">
+                            <input id="order-status-note" v-model="statusForm.reason" :class="inputClass" maxlength="255" :required="chosenStatus.mode === 'forced'" />
+                        </FormField>
+                    </template>
+                    <button type="submit" :class="primaryButton" :disabled="statusForm.processing || !chosenStatus?.allowed || !statusForm.reason_code || (chosenStatus.mode === 'forced' && !statusForm.reason.trim())">{{ t('ordering::admin.status_change.submit') }}</button>
                 </form>
                 <ul v-if="statusCard.change.options.some((option) => option.blocked && option.value !== order.orderStatus)" class="mt-2 space-y-0.5 text-xs text-slate-400">
                     <template v-for="option in statusCard.change.options" :key="`blocked-${option.value}`">

@@ -95,8 +95,10 @@ it('hàng loạt: mỗi đơn đi đúng đường; đơn bị chặn hoặc thi
     ($this->staff)(['orders.manage', 'orders.cancel']);
     $this->post("/admin/orders/orders/{$c->id}/status", ['status' => 'cancelled', 'reason' => 'Khách huỷ'])->assertRedirect();
 
-    $actions = collect($this->get('/admin/orders/orders')->viewData('page')['props']['extensions']['actions']);
-    expect(collect($actions->firstWhere('key', 'status')['fields'])->pluck('key')->all())->toBe(['status', 'reason']);
+    $props = $this->get('/admin/orders/orders')->viewData('page')['props'];
+    $action = collect($props['extensions']['actions'])->firstWhere('key', 'status');
+    expect(collect($action['fields'])->pluck('key')->all())->toBe(['status', 'reason'])
+        ->and(collect($props['bulkStatus']['options'])->pluck('value')->all())->toBe(['confirmed', 'processing', 'completed', 'cancelled']);
 
     $this->post('/admin/orders/orders/bulk-status', ['ids' => [$a->id, $b->id, $c->id], 'status' => 'confirmed'])->assertSessionHasErrors('reason');
     $this->post('/admin/orders/orders/bulk-status', ['ids' => [$a->id, $b->id, $c->id], 'status' => 'confirmed', 'reason' => 'Gọi xong'])->assertRedirect()
@@ -110,4 +112,60 @@ it('hàng loạt: mỗi đơn đi đúng đường; đơn bị chặn hoặc thi
         ->assertSessionHas('success', 'Đã đổi trạng thái 2 đơn; bỏ qua 0 đơn.');
     expect(Order::query()->whereIn('id', [$a->id, $b->id])->pluck('order_status')->map->value->unique()->all())->toBe(['completed']);
     $this->artisan('vani:inventory:verify')->assertSuccessful();
+});
+
+it('chỉ nhận mã lý do phù hợp và lưu phân loại ở cả xác nhận và huỷ đơn', function () {
+    [$confirmed, $cancelled] = [($this->place)(), ($this->place)()];
+    T::seed(fn () => app(Settings::class)->set('core', 'orders.cancellation_reasons', 'bad_address|Sai địa chỉ'));
+    ($this->staff)();
+
+    $options = ($this->statusOptions)($confirmed);
+    expect(collect($options['confirmed']['reasons'])->pluck('value')->all())->toContain('customer_confirmed')
+        ->and(collect($options['cancelled']['reasons'])->pluck('value')->all())->toContain('bad_address');
+    $this->post("/admin/orders/orders/{$confirmed->id}/status", ['status' => 'confirmed', 'reason_code' => 'bad_address'])
+        ->assertSessionHasErrors(['reason_code' => 'Lý do đã chọn không phù hợp với trạng thái mới.']);
+    expect($confirmed->fresh()->order_status->value)->toBe('pending');
+
+    $this->post("/admin/orders/orders/{$confirmed->id}/status", ['status' => 'confirmed', 'reason_code' => 'customer_confirmed'])->assertSessionHasNoErrors();
+    $this->post("/admin/orders/orders/{$cancelled->id}/status", ['status' => 'cancelled', 'reason_code' => 'bad_address', 'reason' => 'Địa chỉ ngoài vùng giao'])->assertSessionHasNoErrors();
+
+    $confirmedEvent = DB::table('order_events')->where('order_id', $confirmed->id)->where('to_status', 'confirmed')->sole();
+    $cancelledEvent = DB::table('order_events')->where('order_id', $cancelled->id)->where('to_status', 'cancelled')->sole();
+    expect($confirmedEvent->reason)->toBe('staff_changed: Khách đã xác nhận')
+        ->and(json_decode($confirmedEvent->data, true))->toBe(['reason_code' => 'customer_confirmed'])
+        ->and($cancelledEvent->reason)->toBe('Địa chỉ ngoài vùng giao')
+        ->and(json_decode($cancelledEvent->data, true))->toBe(['reason_code' => 'bad_address']);
+});
+
+it('đổi hàng loạt kiểm tra mã một lần trước khi ghi và lưu mã trên từng đơn', function () {
+    [$first, $second] = [($this->place)(), ($this->place)()];
+    ($this->staff)();
+    $bulk = ['ids' => [$first->id, $second->id], 'status' => 'cancelled'];
+    $this->post('/admin/orders/orders/bulk-status', [...$bulk, 'reason_code' => 'customer_confirmed'])->assertSessionHasErrors('reason_code');
+    expect($first->fresh()->order_status->value)->toBe('pending')->and($second->fresh()->order_status->value)->toBe('pending');
+
+    $this->post('/admin/orders/orders/bulk-status', [...$bulk, 'reason_code' => 'out_of_stock'])
+        ->assertSessionHas('success', 'Đã đổi trạng thái 2 đơn; bỏ qua 0 đơn.');
+    $events = DB::table('order_events')->whereIn('order_id', $bulk['ids'])->where('to_status', 'cancelled')->get();
+    expect($events)->toHaveCount(2);
+    foreach ($events as $event) {
+        expect($event->reason)->toBe('Hết hàng')->and(json_decode($event->data, true))->toBe(['reason_code' => 'out_of_stock']);
+    }
+});
+
+it('mã lý do ngoài trình tự vẫn cần ghi chú ở cả thao tác riêng lẻ và hàng loạt', function () {
+    [$first, $second] = [($this->place)(), ($this->place)()];
+    ($this->staff)();
+    $override = ['status' => 'completed', 'reason_code' => 'store_pickup'];
+    $error = ['reason' => 'Nhập ghi chú khi đổi trạng thái ngoài trình tự.'];
+    $this->post("/admin/orders/orders/{$first->id}/status", $override)->assertSessionHasErrors($error);
+    $bulk = [...$override, 'ids' => [$first->id, $second->id]];
+    $this->post('/admin/orders/orders/bulk-status', $bulk)->assertSessionHasErrors($error);
+    expect($first->fresh()->order_status->value)->toBe('pending')->and($second->fresh()->order_status->value)->toBe('pending');
+
+    $this->post('/admin/orders/orders/bulk-status', [...$bulk, 'reason' => 'Đã đối chiếu phiếu nhận tại quầy'])
+        ->assertSessionHas('success', 'Đã đổi trạng thái 2 đơn; bỏ qua 0 đơn.');
+    $event = DB::table('order_events')->where('order_id', $first->id)->where('type', 'status_overridden')->sole();
+    expect($event->reason)->toBe('override: Đã đối chiếu phiếu nhận tại quầy')
+        ->and(json_decode($event->data, true))->toBe(['reason_code' => 'store_pickup']);
 });

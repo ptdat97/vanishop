@@ -3,6 +3,15 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'status_change' => [
+        'submit' => 'Change status',
+        'new_status' => 'New status',
+        'reason' => 'Reason',
+        'choose_reason' => 'Choose a reason',
+        'note' => 'Note (optional)',
+        'note_required' => 'Note (required)',
+        'bulk_override_note' => 'A note is required if any order changes out of sequence.',
+    ],
     'orders_index' => [
         'all' => 'All',
         'all_order_sources' => 'All order sources',

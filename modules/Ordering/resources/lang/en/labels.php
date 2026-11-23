@@ -11,6 +11,11 @@ return [
         'delivery_timing' => 'Delivery timing does not work for me',
         'other' => 'Other reason',
     ],
+    'status_reasons' => [
+        'confirmed' => ['customer_confirmed' => 'Customer confirmed', 'staff_verified' => 'Staff verified the order', 'other' => 'Other'],
+        'processing' => ['packing_started' => 'Packing started', 'external_processing' => 'Order is being processed externally', 'other' => 'Other'],
+        'completed' => ['delivery_confirmed' => 'Full delivery confirmed', 'store_pickup' => 'Customer picked up in store', 'external_fulfillment' => 'Delivered outside the system', 'other' => 'Other'],
+    ],
     'cancellation_reasons' => [
         'changed_mind' => 'Customer changed their mind',
         'ordered_by_mistake' => 'Customer placed the order by mistake',

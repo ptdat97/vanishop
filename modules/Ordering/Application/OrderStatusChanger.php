@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Application;
 
+use Illuminate\Validation\ValidationException;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderActionRejected;
@@ -24,6 +25,7 @@ final class OrderStatusChanger
         private readonly OrderCommands $commands,
         private readonly OrderTransitionService $transitions,
         private readonly AuditLogger $audit,
+        private readonly CancellationReasons $cancellationReasons,
     ) {}
 
     /**
@@ -71,12 +73,41 @@ final class OrderStatusChanger
         ], OrderStatus::cases());
     }
 
+    /** @return list<array{value: string, label: string}> */
+    public function reasonOptions(OrderStatus $status): array
+    {
+        $reasons = $status === OrderStatus::Cancelled
+            ? $this->cancellationReasons->options()
+            : ((array) __('ordering::labels.status_reasons'))[$status->value] ?? [];
+
+        return array_map(
+            fn (string $value, string $label): array => ['value' => $value, 'label' => $label],
+            array_keys($reasons),
+            array_values($reasons),
+        );
+    }
+
+    public function resolveReason(OrderStatus $to, ?string $note, ?string $reasonCode): string
+    {
+        if ($reasonCode === null) {
+            return (string) $note;
+        }
+
+        foreach ($this->reasonOptions($to) as $option) {
+            if ($option['value'] === $reasonCode) {
+                return $note ?? $option['label'];
+            }
+        }
+
+        throw ValidationException::withMessages(['reason_code' => __('ordering::messages.invalid_status_reason')]);
+    }
+
     /**
      * Đổi trạng thái (gọi sau khi kiểm quyền theo `plan()`); trả chế độ đã dùng.
      *
      * @return 'normal'|'forced'
      */
-    public function change(Order $order, OrderStatus $to, string $reason): string
+    public function change(Order $order, OrderStatus $to, string $reason, ?string $reasonCode = null): string
     {
         $plan = $this->plan($order, $to);
         if ($plan['mode'] === null) {
@@ -84,16 +115,16 @@ final class OrderStatusChanger
         }
 
         if ($plan['mode'] === 'forced') {
-            $this->transitions->force($order->id, $to, 'override: '.$reason, 'staff');
-            $this->audit->record('order.status_overridden', 'order', $order->id, ['from' => $order->order_status->value, 'to' => $to->value, 'reason' => $reason]);
+            $this->transitions->force($order->id, $to, 'override: '.$reason, 'staff', $reasonCode);
+            $this->audit->record('order.status_overridden', 'order', $order->id, ['from' => $order->order_status->value, 'to' => $to->value, 'reason' => $reason, 'reason_code' => $reasonCode]);
 
             return 'forced';
         }
         match ($to) {
-            OrderStatus::Cancelled => $this->commands->cancel($order->id, $reason, 'staff'),
-            OrderStatus::Confirmed => $this->commands->confirm($order->id, 'staff_changed: '.$reason),
-            OrderStatus::Completed => $this->commands->complete($order->id, $reason),
-            default => $this->transitions->transition($order->id, $to, 'staff_changed: '.$reason, 'staff'),
+            OrderStatus::Cancelled => $this->commands->cancel($order->id, $reason, 'staff', $reasonCode),
+            OrderStatus::Confirmed => $this->commands->confirm($order->id, 'staff_changed: '.$reason, reasonCode: $reasonCode),
+            OrderStatus::Completed => $this->commands->complete($order->id, $reason, $reasonCode),
+            default => $this->transitions->transition($order->id, $to, 'staff_changed: '.$reason, 'staff', $reasonCode),
         };
 
         return 'normal';
