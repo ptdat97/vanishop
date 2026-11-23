@@ -14,9 +14,15 @@ final class CancellationReasons
     public function __construct(private readonly Settings $settings) {}
 
     /** @return array<string, string> */
+    public function customerOptions(): array
+    {
+        return (array) __('ordering::labels.customer_cancellation_reasons');
+    }
+
+    /** @return array<string, string> */
     public function options(): array
     {
-        $options = (array) __('ordering::labels.cancellation_reasons');
+        $options = (array) __('ordering::labels.cancellation_reasons') + $this->customerOptions();
         $configured = (string) $this->settings->get('core', self::SETTING, '');
         foreach (preg_split('/\R/u', $configured) ?: [] as $line) {
             [$code, $label] = array_map('trim', array_pad(explode('|', $line, 2), 2, ''));

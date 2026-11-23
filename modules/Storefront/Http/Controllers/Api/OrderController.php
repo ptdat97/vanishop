@@ -131,7 +131,7 @@ final class OrderController
         $data = $request->validated();
 
         return response()->json(['data' => $this->presenter->present(
-            $this->orders->cancel($order, (string) $request->headers->get(self::TOKEN_HEADER, ''), $data['reason']),
+            $this->orders->cancel($order, (string) $request->headers->get(self::TOKEN_HEADER, ''), $data['reason'] ?? '', $data['reason_code'] ?? null),
         )]);
     }
 }

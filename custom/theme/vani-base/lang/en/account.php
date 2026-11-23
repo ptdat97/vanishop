@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'choose_cancellation_reason' => 'Choose a cancellation reason',
+    'cancellation_note' => 'Additional note (optional)',
     'account_navigation' => 'Account navigation',
     'add_address' => 'Add address',
     'addresses' => 'Addresses',

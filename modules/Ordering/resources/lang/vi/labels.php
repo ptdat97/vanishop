@@ -5,7 +5,20 @@
 */
 
 return [
-    'cancellation_reasons' => ['changed_mind' => 'Khách đổi ý', 'unreachable' => 'Không liên hệ được khách', 'out_of_stock' => 'Hết hàng', 'other' => 'Khác'],
+    'customer_cancellation_reasons' => [
+        'changed_mind' => 'Tôi đổi ý',
+        'ordered_by_mistake' => 'Tôi đặt nhầm',
+        'delivery_timing' => 'Thời gian giao hàng không phù hợp',
+        'other' => 'Lý do khác',
+    ],
+    'cancellation_reasons' => [
+        'changed_mind' => 'Khách đổi ý',
+        'ordered_by_mistake' => 'Khách đặt nhầm',
+        'delivery_timing' => 'Thời gian giao hàng không phù hợp',
+        'unreachable' => 'Không liên hệ được khách',
+        'out_of_stock' => 'Hết hàng',
+        'other' => 'Khác',
+    ],
     'cancellation_unclassified' => 'Chưa phân loại',
     'order_status' => ['pending' => 'Chờ xác nhận', 'confirmed' => 'Đã xác nhận', 'processing' => 'Đang xử lý', 'completed' => 'Hoàn tất', 'cancelled' => 'Đã huỷ'],
     'payment_status' => ['unpaid' => 'Chưa thanh toán', 'authorized' => 'Đã cấp phép', 'paid' => 'Đã thanh toán', 'partially_refunded' => 'Hoàn một phần', 'refunded' => 'Đã hoàn tiền', 'cod_pending' => 'COD chờ thu', 'cod_collected' => 'COD đã thu', 'failed' => 'Thất bại', 'voided' => 'Đã huỷ thanh toán'],

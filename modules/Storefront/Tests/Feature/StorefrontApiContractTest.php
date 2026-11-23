@@ -214,7 +214,7 @@ it('khách: đăng ký (link email), hồ sơ, mật khẩu, sổ địa chỉ, 
     $call('GET', '/me/cart', '/me/cart');
     $call('GET', "/me/prices?variant_ids[]={$this->s->id}", '/me/prices');
     $call('GET', '/me/export', '/me/export');
-    $call('POST', "/me/orders/{$order}/cancel", '/me/orders/{order}/cancel', ['reason' => 'Đổi ý']);
+    $call('POST', "/me/orders/{$order}/cancel", '/me/orders/{order}/cancel', ['reason_code' => 'changed_mind']);
     $call('GET', '/me/delete', '/me/delete');
 
     $login = assertStorefrontContract($this->postJson("{$this->api}/auth/login", ['email' => 'lan@example.com', 'password' => 'mat-khau-moi-123'])->assertOk(), '/auth/login', 'POST');

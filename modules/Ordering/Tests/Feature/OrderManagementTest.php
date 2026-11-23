@@ -5,6 +5,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Ordering\Contracts\OrderStatistics;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
@@ -226,6 +227,26 @@ it('khách không huỷ được đơn đã rời kho', function () {
 
     $this->postJson("{$this->api}/orders/{$order->public_id}/cancel", ['reason' => 'x'], [...$this->headers, 'X-Vani-Order-Token' => $token])
         ->assertStatus(409)->assertJsonPath('error.code', 'order.cannot_cancel');
+});
+
+it('khách dùng token có thể huỷ theo mã lý do và báo cáo đếm mã đã chọn', function () {
+    $token = ($this->place)()->json('data.access_token');
+    $order = ($this->order)();
+    $url = "{$this->api}/orders/{$order->public_id}/cancel";
+    $headers = [...$this->headers, 'X-Vani-Order-Token' => $token];
+
+    $this->postJson($url, ['reason_code' => 'out_of_stock'], [...$headers, 'X-Vani-Order-Token' => 'bad-token'])->assertNotFound();
+    $this->postJson($url, ['reason_code' => 'out_of_stock'], $headers)->assertUnprocessable()->assertJsonPath('error.code', 'validation.failed');
+    expect(($this->reserved)())->toBe(1);
+    $this->postJson($url, ['reason_code' => 'delivery_timing', 'reason' => 'Tôi đi xa'], $headers)
+        ->assertOk()->assertJsonPath('data.status.code', 'cancelled');
+
+    $event = DB::table('order_events')->where('order_id', $order->id)->where('to_status', 'cancelled')->sole();
+    expect($event->reason)->toBe('customer:Tôi đi xa');
+    expect(json_decode($event->data, true))->toMatchArray(['reason_code' => 'delivery_timing']);
+    expect(($this->reserved)())->toBe(0);
+    expect(app(OrderStatistics::class)->cancellations(now()->subDay()->toDateTimeImmutable(), now()->addDay()->toDateTimeImmutable()))
+        ->toMatchArray([['code' => 'delivery_timing', 'label' => 'Thời gian giao hàng không phù hợp', 'count' => 1]]);
 });
 
 it('tra cứu đơn bị giới hạn tần suất', function () {

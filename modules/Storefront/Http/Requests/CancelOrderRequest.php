@@ -17,7 +17,8 @@ final class CancelOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'reason' => ['required', 'string', 'max:255'],
+            'reason' => ['required_without:reason_code', 'nullable', 'string', 'max:255'],
+            'reason_code' => ['nullable', 'string', 'max:64'],
         ];
     }
 }

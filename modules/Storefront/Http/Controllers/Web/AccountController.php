@@ -169,14 +169,18 @@ final class AccountController
         abort_if($detail === null, 404);
         $presented = $this->presenter->present($detail);
 
-        return view('theme::pages.account.order', ['order' => [...$presented, 'placed_at_label' => StoreClock::format($presented['placed_at'])], 'returnForm' => $returnForm->present($presented)]);
+        return view('theme::pages.account.order', [
+            'order' => [...$presented, 'placed_at_label' => StoreClock::format($presented['placed_at'])],
+            'returnForm' => $returnForm->present($presented),
+            'cancellationReasons' => $presented['can_cancel'] ? $this->orders->cancellationReasons() : [],
+        ]);
     }
 
     public function cancelOrder(CancelOrderRequest $request, string $order): RedirectResponse
     {
         $customer = $this->required($request);
         $data = $request->validated();
-        $this->orders->cancelForCustomer($customer->id, $order, $data['reason']);
+        $this->orders->cancelForCustomer($customer->id, $order, $data['reason'] ?? '', $data['reason_code'] ?? null);
 
         return redirect()->to(LocalizedUrls::route('storefront.account.order', $order))->with('status', __('storefront::messages.order_cancelled'));
     }

@@ -6,6 +6,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.77 — 2026-11-23 · Extension API 1.31.0
+
+- `CustomerOrders` cung cấp danh mục lý do huỷ cho khách và nhận mã lý do khi huỷ bằng tài khoản hoặc token đơn. Hai endpoint Storefront API nhận `reason_code` và tiếp tục chấp nhận lý do tự do từ client cũ.
+- Thư viện ảnh lưu điểm lấy nét cho bản cắt ảnh sản phẩm. Migration thêm hai cột toạ độ có thể để trống vào bảng `media`.
+
 ## 0.5.76 — 2026-11-23 · Extension API 1.31.0
 
 - Builder truyền ngữ cảnh công khai của slot qua `ContextualStorefrontBlock` và `BlockContext`. Lưới theo ngữ cảnh lấy sản phẩm từ danh mục, bộ sưu tập hoặc thương hiệu đang xem.

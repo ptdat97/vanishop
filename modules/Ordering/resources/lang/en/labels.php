@@ -5,7 +5,20 @@
 */
 
 return [
-    'cancellation_reasons' => ['changed_mind' => 'Customer changed their mind', 'unreachable' => 'Customer unreachable', 'out_of_stock' => 'Out of stock', 'other' => 'Other'],
+    'customer_cancellation_reasons' => [
+        'changed_mind' => 'I changed my mind',
+        'ordered_by_mistake' => 'I placed this order by mistake',
+        'delivery_timing' => 'Delivery timing does not work for me',
+        'other' => 'Other reason',
+    ],
+    'cancellation_reasons' => [
+        'changed_mind' => 'Customer changed their mind',
+        'ordered_by_mistake' => 'Customer placed the order by mistake',
+        'delivery_timing' => 'Delivery timing unsuitable',
+        'unreachable' => 'Customer unreachable',
+        'out_of_stock' => 'Out of stock',
+        'other' => 'Other',
+    ],
     'cancellation_unclassified' => 'Unclassified',
     'order_status' => ['pending' => 'Pending', 'confirmed' => 'Confirmed', 'processing' => 'Processing', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
     'payment_status' => ['unpaid' => 'Unpaid', 'authorized' => 'Authorized', 'paid' => 'Paid', 'partially_refunded' => 'Partially refunded', 'refunded' => 'Refunded', 'cod_pending' => 'COD pending', 'cod_collected' => 'COD collected', 'failed' => 'Failed', 'voided' => 'Voided'],

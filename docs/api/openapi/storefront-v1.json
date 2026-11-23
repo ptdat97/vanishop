@@ -891,6 +891,9 @@
                     "Đơn hàng"
                 ],
                 "summary": "Khách huỷ đơn",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/CustomerOrderCancellation"
+                },
                 "responses": {
                     "200": {
                         "description": "Đơn sau khi huỷ.",
@@ -1904,6 +1907,9 @@
                     "Tài khoản"
                 ],
                 "summary": "Huỷ đơn của khách",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/CustomerOrderCancellation"
+                },
                 "responses": {
                     "200": {
                         "description": "Đơn.",
@@ -2113,6 +2119,31 @@
         }
     },
     "components": {
+        "requestBodies": {
+            "CustomerOrderCancellation": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "reason_code": {
+                                    "enum": ["changed_mind", "ordered_by_mistake", "delivery_timing", "other", null]
+                                },
+                                "reason": {
+                                    "type": ["string", "null"],
+                                    "maxLength": 255
+                                }
+                            },
+                            "anyOf": [
+                                { "required": ["reason_code"], "properties": { "reason_code": { "type": "string" } } },
+                                { "required": ["reason"], "properties": { "reason": { "type": "string", "minLength": 1 } } }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "securitySchemes": {
             "customerBearer": {
                 "type": "http",

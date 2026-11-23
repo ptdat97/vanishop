@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Contracts\Data\CustomerData;
@@ -125,9 +126,15 @@ it('đặt hàng khi đã đăng nhập → đơn gắn khách, xem trong tài k
     $this->post('/gio-hang', ['variant_id' => $this->s->id]);
     $this->post('/thanh-toan', [...$this->checkoutPayload, 'idempotency_key' => 'account-order-0002']);
     $pending = Order::query()->withoutGlobalScopes()->latest('id')->first();
-    $this->get("/tai-khoan/don-hang/{$pending->public_id}")->assertOk()->assertSee('Huỷ đơn');
-    $this->post("/tai-khoan/don-hang/{$pending->public_id}/huy", ['reason' => 'đổi ý'])->assertRedirect("/tai-khoan/don-hang/{$pending->public_id}");
+    $detail = "/tai-khoan/don-hang/{$pending->public_id}";
+    $this->get($detail)->assertOk()->assertSee('Huỷ đơn')->assertSee('Tôi đặt nhầm')
+        ->assertDontSee('Không liên hệ được khách');
+    $this->from($detail)->post($detail.'/huy', ['reason_code' => 'unreachable'])->assertSessionHasErrors('reason_code');
+    $this->post($detail.'/huy', ['reason_code' => 'changed_mind'])->assertRedirect($detail)->assertSessionHasNoErrors();
     expect($pending->fresh()->order_status->value)->toBe('cancelled');
+    $event = DB::table('order_events')->where('order_id', $pending->id)->where('to_status', 'cancelled')->sole();
+    expect(json_decode($event->data, true))->toMatchArray(['reason_code' => 'changed_mind']);
+    expect($event->reason)->toBe('customer:Tôi đổi ý');
 
     $this->post('/tai-khoan/dang-xuat')->assertRedirect('/');
     $this->get('/tai-khoan')->assertRedirect('/tai-khoan/dang-nhap');

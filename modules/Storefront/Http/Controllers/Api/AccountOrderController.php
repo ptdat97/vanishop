@@ -56,7 +56,9 @@ final class AccountOrderController
     {
         $data = $request->validated();
 
-        return response()->json(['data' => $this->presenter->present($this->orders->cancelForCustomer($this->customerId(), $order, $data['reason']))]);
+        return response()->json(['data' => $this->presenter->present(
+            $this->orders->cancelForCustomer($this->customerId(), $order, $data['reason'] ?? '', $data['reason_code'] ?? null),
+        )]);
     }
 
     /**

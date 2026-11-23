@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'choose_cancellation_reason' => 'Chọn lý do huỷ đơn',
+    'cancellation_note' => 'Ghi chú thêm (không bắt buộc)',
     'account_navigation' => 'Điều hướng tài khoản',
     'add_address' => 'Thêm địa chỉ',
     'addresses' => 'Địa chỉ',

@@ -20,7 +20,10 @@ interface CustomerOrders
     /**
      * @throws OrderTransitionRejected nếu đơn không còn huỷ được (đã xử lý/giao)
      */
-    public function cancel(string $publicId, string $accessToken, string $reason): OrderDetail;
+    public function cancel(string $publicId, string $accessToken, string $reason, ?string $reasonCode = null): OrderDetail;
+
+    /** @return array<string, string> */
+    public function cancellationReasons(): array;
 
     /**
      * Đơn của khách hàng đã đăng nhập (mới nhất trước).
@@ -47,5 +50,5 @@ interface CustomerOrders
      * @throws OrderActionRejected đơn không thuộc khách
      * @throws OrderTransitionRejected nếu đơn không còn huỷ được
      */
-    public function cancelForCustomer(int $customerId, string $publicId, string $reason): OrderDetail;
+    public function cancelForCustomer(int $customerId, string $publicId, string $reason, ?string $reasonCode = null): OrderDetail;
 }
