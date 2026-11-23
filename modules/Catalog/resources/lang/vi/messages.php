@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'media_focal_point_saved' => 'Đã lưu điểm lấy nét.',
+    'media_focal_point_requires_image' => 'Điểm lấy nét cần ảnh có kích thước hợp lệ.',
     'bulk_status_changed' => 'Đã chuyển :count sản phẩm sang ":status".',
     'collection_not_found' => 'Bộ sưu tập không tồn tại.',
     'duplicated' => 'Đã tạo bản nháp :code. Kiểm tra lại ảnh, giá rồi mở bán.',

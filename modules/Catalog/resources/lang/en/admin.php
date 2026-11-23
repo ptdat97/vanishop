@@ -93,7 +93,7 @@ return [
         'media_library' => 'Media library',
         'no_plugin_declares_own_sizes' => 'No plugin declares its own sizes.',
         'plugin_specific_sizes' => 'Plugin-specific sizes',
-        'product_gallery_images_cropped_centred' => 'Product gallery images are cropped (centred) to the exact ratio so the grid lines up. Logos, banners and posts keep their original ratio.',
+        'product_gallery_images_cropped_centred' => 'Product images are cropped to this ratio. Each image can have a focal point set in the Media Library.',
         'product_image_ratio' => 'Product image ratio',
         'product_images' => 'Product images:',
         'quality_30_100' => 'Quality (30–100)',

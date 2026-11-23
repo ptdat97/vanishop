@@ -89,6 +89,12 @@ return [
         'you_need_permission_view_media' => 'You need permission to view the Media library to choose :label.',
     ],
     'media_media_manager' => [
+        'focal_point' => 'Focal point',
+        'focal_point_help' => 'Choose on the image or use the sliders. Product crops keep the area around this point in view.',
+        'focal_horizontal' => 'Horizontal position',
+        'focal_vertical' => 'Vertical position',
+        'focal_reset' => 'Reset to center',
+        'focal_save' => 'Save focal point',
         'all_root_folder' => 'All (root folder)',
         'cancel' => 'Cancel',
         'choose_selected_noun' => 'Choose :selected :noun',

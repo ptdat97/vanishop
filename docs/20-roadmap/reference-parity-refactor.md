@@ -433,12 +433,13 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 
 Đã đóng L19 với `vani.cms` 1.6.0. Nhân viên có quyền sửa danh mục và quản lý CMS thêm, sửa hoặc tắt banner ngay trong form danh mục. Trang Banner danh mục của CMS dùng chung bản ghi.
 
+Đã đóng L23. Banner CMS và ảnh bìa bài viết có kích thước theo tên. Thư viện ảnh cho chọn điểm lấy nét theo từng ảnh. Các bản cắt sản phẩm dùng điểm này và có URL riêng cho từng vị trí.
+
 | # | Giới hạn | Nơi | Hướng xử lý |
 |---|---|---|---|
 | L1 | Nội dung `vani.cms` (trang, bài viết) chỉ một ngôn ngữ; bản `/en` là `noindex` | `vani.cms` | Bản dịch + slug theo ngôn ngữ như Catalog (ADR-038 mục 4) |
 | L4 | Có CDN: thay đổi (giá, slug, menu, cấu hình) thấy sau tối đa `s-maxage`; chưa purge theo event | Storefront | `CdnPurger` (plugin theo nhà cung cấp CDN) nghe event |
 | L11 🟡 0.5.57 (✅ SKU chưa nhập khối lượng dùng khối lượng mặc định của cửa hàng — Admin → Cài đặt → Kho & giao hàng; còn: plugin hãng gửi `weight`, chờ chốt hãng và mở lại kết nối ngoài) | Chưa có plugin hãng vận chuyển gửi khối lượng (Core đã có `weight()`; `vani.ghn` mô phỏng đã gỡ ở 0.5.74); dòng thiếu khối lượng tính 0 g | Plugin hãng vận chuyển, Catalog | Gửi `weight` khi đặt vận đơn; cảnh báo sản phẩm thiếu khối lượng |
-| L23 🟡 | Banner CMS dùng kích thước desktop và mobile có tên. Ảnh bìa trang bài viết có kích thước cấu hình riêng. Tablet và ảnh trong bài vẫn chọn nguồn theo `srcset`. | `vani.cms`, theme, Catalog | Còn chọn điểm lấy nét khi cắt ảnh sản phẩm. |
 | L24 🟡 | Page builder kiểm loại và sự tồn tại của tệp. Core đọc được kích thước khung MP4 và WebM từ metadata trong cửa sổ đọc. Tải lại đúng video cũ sẽ bổ sung kích thước còn thiếu vào bản ghi sẵn có. | Catalog, `vani.storefront-extras` | Còn poster tự động, chuyển mã và dùng video Thư viện làm nguồn gallery sản phẩm. |
 | L25 🟡 | Lọc, đếm và hiển thị hàng đợi Admin dùng cột sinh `orders.stage` với chỉ mục `(stage, placed_at, id)`. Hàng đợi sự cố và phiếu giao có mã vạch đã có. | Ordering, Fulfillment | Còn mẫu xuất theo từng hãng khi có đặc tả. Đơn tiếp tục nhận qua Pancake theo quyết định Owner. |
 | L26 🟡 | SME có đếm hết/sắp hết hàng trên mọi biến thể, sửa tồn trực tiếp khi phù hợp, đổi giá niêm yết và nhận hàng trả hàng loạt theo tình trạng. | Inventory, Returns, Pricing, Catalog | Mỗi lượt nhận hàng trả dùng một tình trạng chung. Yêu cầu có dòng bán được và dòng hỏng nhận tại trang chi tiết. Đổi giá theo bảng giá khuyến mãi hoặc nhóm khách thực hiện trong màn hình bảng giá. |

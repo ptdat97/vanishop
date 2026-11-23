@@ -79,3 +79,22 @@ it('chọn ảnh banner trong form danh mục và lưu cùng nội dung banner',
 
     expect(CategoryBanner::query()->sole())->desktop_media_id->toBe($media->id)->active->toBeTrue();
 });
+
+it('đặt điểm lấy nét bằng bàn phím trong Thư viện ảnh và mở lại giá trị đã lưu', function () {
+    Storage::fake('public');
+    $media = T::seed(fn () => app(MediaLibrary::class)->store(UploadedFile::fake()->image('anh-lay-net.png', 800, 500)));
+
+    visit('/admin/media')
+        ->click('button[title="anh-lay-net.png"]')
+        ->click('[data-edit-focal-point]')
+        ->keys('[data-focal-x]', 'End')
+        ->keys('[data-focal-y]', 'Home')
+        ->click('[data-save-focal-point]')
+        ->assertSee('Đã lưu điểm lấy nét.')
+        ->click('[data-edit-focal-point]')
+        ->assertValue('[data-focal-x]', '100')
+        ->assertValue('[data-focal-y]', '0')
+        ->assertNoJavaScriptErrors();
+
+    expect($media->refresh()->focalPoint())->toBe(['x' => 100, 'y' => 0]);
+});

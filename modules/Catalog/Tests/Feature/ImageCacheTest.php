@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Storage;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Application\Media\MediaLibrary;
+use Modules\Catalog\Persistence\Models\Media;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -125,4 +126,52 @@ it('Admin → Kích thước ảnh: đổi bề rộng/tỉ lệ đổi URL; kí
 
     $this->post('/admin/media/sizes/flush')->assertRedirect();
     expect(File::exists($this->cacheDir.'/media'))->toBeFalse();
+});
+
+it('cắt ảnh sản phẩm quanh điểm lấy nét và tái tạo đúng ảnh từ URL cũ sau khi đổi điểm', function () {
+    $fixture = UploadedFile::fake()->image('ba-dai-mau.png', 1200, 600);
+    $image = imagecreatetruecolor(1200, 600);
+    imagefilledrectangle($image, 0, 0, 399, 599, 0xFF0000);
+    imagefilledrectangle($image, 400, 0, 799, 599, 0x00FF00);
+    imagefilledrectangle($image, 800, 0, 1199, 599, 0x0000FF);
+    imagepng($image, $fixture->getRealPath());
+    $media = $this->library->store($fixture);
+    $center = $media->url(400, 'product');
+    $uncropped = $media->url(400);
+    $endpoint = "/admin/media/items/{$media->id}/focal-point";
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'media.view', 'media.manage'])->create(), 'staff');
+    $this->postJson($endpoint, ['x' => 100, 'y' => 50])->assertOk()->assertJsonPath('item.focal_point', ['x' => 100, 'y' => 50]);
+    $right = $media->refresh()->url(400, 'product');
+    $this->postJson($endpoint, ['x' => 0, 'y' => 50])->assertOk();
+    $left = $media->refresh()->url(400, 'product');
+
+    expect($left)->not->toBe($right)->and($right)->not->toBe($center);
+    expect($media->url(400))->toBe($uncropped)->and($media->srcset('product'))->toContain($left.' 400w');
+    foreach ([[$left, 0xFF0000], [$center, 0x00FF00], [$right, 0x0000FF]] as [$url, $color]) {
+        $response = $this->get(parse_url($url, PHP_URL_PATH))->assertOk();
+        $file = $response->baseResponse->getFile()->getPathname();
+        $crop = imagecreatefrompng($file);
+        expect([imagesx($crop), imagesy($crop)])->toBe([400, 600])
+            ->and(imagecolorat($crop, 200, 300))->toBe($color);
+    }
+    $forged = str_replace('-f0-50-', '-f1-50-', parse_url($left, PHP_URL_PATH));
+    $this->get($forged)->assertNotFound();
+
+    $this->postJson($endpoint, ['x' => 50, 'y' => 50])->assertOk()->assertJsonPath('item.focal_point', null);
+    expect($media->refresh()->url(400, 'product'))->toBe($center);
+});
+
+it('điểm lấy nét yêu cầu quyền quản lý ảnh, tọa độ hợp lệ và tệp ảnh', function () {
+    $media = $this->library->store(UploadedFile::fake()->image('anh.png', 800, 800));
+    $video = Media::query()->create([
+        'disk' => 'public', 'path' => 'video.mp4', 'original_name' => 'video.mp4', 'mime_type' => 'video/mp4',
+        'size_bytes' => 100, 'width' => 800, 'height' => 800, 'checksum' => str_repeat('1', 64),
+    ]);
+    $url = "/admin/media/items/{$media->id}/focal-point";
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'media.view'])->create(), 'staff');
+    $this->postJson($url, ['x' => 70, 'y' => 30])->assertForbidden();
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'media.manage'])->create(), 'staff');
+    $this->postJson($url, ['x' => 101, 'y' => 30])->assertUnprocessable()->assertJsonValidationErrors('x');
+    $this->postJson("/admin/media/items/{$video->id}/focal-point", ['x' => 70, 'y' => 30])->assertUnprocessable()->assertJsonValidationErrors('image');
+    expect($media->refresh()->focalPoint())->toBeNull();
 });

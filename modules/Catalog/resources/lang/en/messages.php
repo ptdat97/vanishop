@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'media_focal_point_saved' => 'Focal point saved.',
+    'media_focal_point_requires_image' => 'A focal point requires an image with valid dimensions.',
     'bulk_status_changed' => 'Moved :count products to ":status".',
     'collection_not_found' => 'The collection does not exist.',
     'duplicated' => 'Created draft :code. Review images and prices, then publish.',

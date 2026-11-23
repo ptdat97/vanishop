@@ -38,7 +38,7 @@ final class ImageCache
     public const EXTENSIONS = ['jpg', 'png', 'webp', 'avif'];
 
     /** Mẫu khoá kích thước trong tên file (khớp route). */
-    public const KEY_PATTERN = 'w[0-9]{1,4}(?:h[0-9]{1,4}c?)?';
+    public const KEY_PATTERN = 'w[0-9]{1,4}(?:h[0-9]{1,4}(?:c(?:-f[0-9]{1,3}-[0-9]{1,3}-[0-9a-f]{20})?)?)?';
 
     public function __construct(
         private readonly ImageManagerInterface $images,
@@ -59,7 +59,7 @@ final class ImageCache
             default => $this->variantFor($media, $size, $group),
         };
 
-        return $variant === null ? $this->original($media) : $this->cachedUrl($media, $variant);
+        return $variant === null ? $this->original($media) : $this->cachedUrl($media, $variant, is_int($size) && $group === ImageSizes::PRODUCT);
     }
 
     /**
@@ -72,7 +72,7 @@ final class ImageCache
         if ($variants === []) {
             return '';
         }
-        $sources = array_map(fn (ImageSize $size): string => $this->cachedUrl($media, $size)." {$size->width}w", $variants);
+        $sources = array_map(fn (ImageSize $size): string => $this->cachedUrl($media, $size, $group === ImageSizes::PRODUCT)." {$size->width}w", $variants);
         if ($media->width !== null && ($group !== ImageSizes::PRODUCT || $this->sizes->productRatio() === null)) {
             $sources[] = $this->original($media)." {$media->width}w";
         }
@@ -134,7 +134,17 @@ final class ImageCache
      */
     public function render(Media $media, string $key, string $extension): ?string
     {
-        $size = $this->sizes->find($key);
+        $focal = null;
+        $sizeKey = $key;
+        if (str_contains($key, '-')) {
+            if (preg_match('/\A(w[0-9]{1,4}h[0-9]{1,4}c)-f([0-9]{1,3})-([0-9]{1,3})-([0-9a-f]{20})\z/', $key, $parts) !== 1
+                || ! hash_equals($this->focalSignature($media, "{$parts[1]}-f{$parts[2]}-{$parts[3]}"), $parts[4])) {
+                return null;
+            }
+            $sizeKey = $parts[1];
+            $focal = ['x' => (int) $parts[2], 'y' => (int) $parts[3]];
+        }
+        $size = $this->sizes->find($sizeKey);
         if ($size === null || ! $this->allows($media, $size) || $extension !== $this->extensionFor($media)) {
             return null;
         }
@@ -145,13 +155,13 @@ final class ImageCache
         }
 
         File::ensureDirectoryExists(dirname($target));
-        $this->withLock($target, function () use ($media, $size, $target): void {
+        $this->withLock($target, function () use ($media, $size, $focal, $target): void {
             clearstatcache(true, $target);
             if (is_file($target)) {
                 return;
             }
 
-            $encoded = $this->resize($this->decode($media), $size)->encode($this->encoder($media));
+            $encoded = $this->resize($this->decode($media), $size, $focal)->encode($this->encoder($media));
             $temporary = $target.'.'.bin2hex(random_bytes(4)).'.tmp';
             File::put($temporary, (string) $encoded);
             File::move($temporary, $target);
@@ -169,10 +179,19 @@ final class ImageCache
     public function warm(Media $media, bool $product = false): array
     {
         $extension = $this->extensionFor($media);
-        $sizes = [...$this->sizes->responsive(), ...($product ? $this->sizes->responsive(ImageSizes::PRODUCT) : []), ...$this->sizes->namedSizes()];
-        $keys = array_values(array_unique(array_map(fn (ImageSize $size): string => $size->key(), array_filter($sizes, fn (ImageSize $size): bool => $this->allows($media, $size)))));
+        $keys = [];
+        foreach ([...$this->sizes->responsive(), ...$this->sizes->namedSizes()] as $size) {
+            if ($this->allows($media, $size)) {
+                $keys[] = $size->key();
+            }
+        }
+        if ($product) {
+            foreach ($this->variantsFor($media, ImageSizes::PRODUCT) as $size) {
+                $keys[] = $this->derivativeKey($media, $size, true);
+            }
+        }
 
-        return array_values(array_filter($keys, fn (string $key): bool => $this->render($media, $key, $extension) !== null));
+        return array_values(array_filter(array_unique($keys), fn (string $key): bool => $this->render($media, $key, $extension) !== null));
     }
 
     /**
@@ -202,9 +221,28 @@ final class ImageCache
         return 'media/'.substr($checksum, 0, 2)."/{$checksum}-{$key}.{$extension}";
     }
 
-    private function cachedUrl(Media $media, ImageSize $size): string
+    private function cachedUrl(Media $media, ImageSize $size, bool $product): string
     {
-        return asset('cache/'.self::relativePath($media->checksum, $size->key(), $this->extensionFor($media)));
+        return asset('cache/'.self::relativePath($media->checksum, $this->derivativeKey($media, $size, $product), $this->extensionFor($media)));
+    }
+
+    private function derivativeKey(Media $media, ImageSize $size, bool $product): string
+    {
+        $key = $size->key();
+        $point = $product && $size->crop ? $media->focalPoint() : null;
+        if ($point === null) {
+            return $key;
+        }
+
+        $key .= "-f{$point['x']}-{$point['y']}";
+
+        return $key.'-'.$this->focalSignature($media, $key);
+    }
+
+    private function focalSignature(Media $media, string $key): string
+    {
+        // Chỉ tạo các bản Core đã phát hành, kể cả khi HTML cache còn trỏ tới điểm cũ.
+        return substr(hash_hmac('sha256', "media-focal:{$media->checksum}:{$key}", (string) config('app.key')), 0, 20);
     }
 
     private function original(Media $media): string
@@ -225,10 +263,19 @@ final class ImageCache
         return $this->images->decodeBinary((string) Storage::disk($media->disk)->get($media->path));
     }
 
-    private function resize(ImageInterface $image, ImageSize $size): ImageInterface
+    /** @param array{x: int, y: int}|null $focal */
+    private function resize(ImageInterface $image, ImageSize $size, ?array $focal): ImageInterface
     {
         if ($size->crop && $size->height !== null) {
-            return $image->coverDown($size->width, $size->height);
+            if ($focal === null || $image->width() < $size->width || $image->height() < $size->height) {
+                return $image->coverDown($size->width, $size->height);
+            }
+            $width = min($image->width(), (int) floor($image->height() * $size->width / $size->height));
+            $height = min($image->height(), (int) floor($image->width() * $size->height / $size->width));
+            $left = max(0, min($image->width() - $width, (int) round($image->width() * $focal['x'] / 100 - $width / 2)));
+            $top = max(0, min($image->height() - $height, (int) round($image->height() * $focal['y'] / 100 - $height / 2)));
+
+            return $image->crop($width, $height, $left, $top)->resize($size->width, $size->height);
         }
 
         return $image->scaleDown(width: $size->width, height: $size->height);

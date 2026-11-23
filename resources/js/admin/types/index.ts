@@ -156,6 +156,8 @@ export interface MediaItem {
     url: string;
     width: number | null;
     height: number | null;
+    focal_point?: { x: number; y: number } | null;
+    supports_focal_point?: boolean;
     size_bytes: number;
     mime_type: string;
     folder: string;

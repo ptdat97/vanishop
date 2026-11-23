@@ -145,6 +145,16 @@ final class MediaManager
         $this->audit->record('catalog.media.renamed', 'media', $media->id, ['name' => $media->original_name]);
     }
 
+    public function setFocalPoint(Media $media, int $x, int $y): void
+    {
+        $center = $x === 50 && $y === 50;
+        $media->forceFill(['focal_x' => $center ? null : $x, 'focal_y' => $center ? null : $y]);
+        if ($media->isDirty(['focal_x', 'focal_y'])) {
+            $media->save();
+            $this->audit->record('catalog.media.focal_point_changed', 'media', $media->id, ['focal_point' => $media->focalPoint()]);
+        }
+    }
+
     /**
      * @param  list<int>  $ids
      */

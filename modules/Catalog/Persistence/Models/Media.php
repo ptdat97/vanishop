@@ -22,6 +22,8 @@ use Modules\Catalog\Application\Media\ImageCache;
  * @property int $size_bytes
  * @property int|null $width
  * @property int|null $height
+ * @property int|null $focal_x
+ * @property int|null $focal_y
  * @property string $checksum
  * @property Carbon $created_at
  * @property-read bool|null $in_product_gallery chỉ có khi query `withExists(['usages as in_product_gallery' => …])`
@@ -29,6 +31,17 @@ use Modules\Catalog\Application\Media\ImageCache;
 final class Media extends Model
 {
     protected $fillable = ['disk', 'path', 'folder', 'original_name', 'mime_type', 'size_bytes', 'width', 'height', 'checksum'];
+
+    /** @return array{x: int, y: int}|null */
+    public function focalPoint(): ?array
+    {
+        return $this->focal_x === null || $this->focal_y === null ? null : ['x' => $this->focal_x, 'y' => $this->focal_y];
+    }
+
+    public function supportsFocalPoint(): bool
+    {
+        return isset(ImageCache::SOURCES[$this->mime_type]) && $this->width > 0 && $this->height > 0;
+    }
 
     /**
      * URL ảnh; `$size` số → bản thu nhỏ rộng ≥ số đó trong public/cache (ImageCache), chuỗi → kích thước có tên (plugin);

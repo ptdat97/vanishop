@@ -39,6 +39,14 @@ it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã
         ->and($html)->toContain('sizes="(min-width: 1152px) 288px, (min-width: 768px) 25vw, 50vw"');
 
     $this->getJson('/api/storefront/v1/products')->assertOk()->assertJsonPath('data.0.image_srcset', $srcset);
+
+    $this->actingAs(CatalogTestHelpers::staff(['admin.access', 'media.manage']), 'staff')
+        ->postJson("/admin/media/items/{$media->id}/focal-point", ['x' => 90, 'y' => 20])->assertOk();
+    $focused = $media->refresh()->srcset('product');
+    expect($focused)->toContain('-f90-20-')->not->toBe($srcset);
+    $this->get('/thuong-hieu/'.$brand->slug)->assertSee('srcset="'.e($focused).'"', false);
+    $this->get('/san-pham/'.$product->slug)->assertSee('srcset="'.e($focused).'"', false);
+    $this->getJson('/api/storefront/v1/products')->assertOk()->assertJsonPath('data.0.image_srcset', $focused);
 });
 
 it('ảnh nhỏ hơn mọi bề rộng cấu hình: không có srcset', function () {

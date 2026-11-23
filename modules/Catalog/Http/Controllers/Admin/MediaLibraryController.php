@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Application\AdminQueries;
@@ -138,6 +139,25 @@ final class MediaLibraryController
         return response()->json(['item' => $this->present($media->loadCount('usages'))]);
     }
 
+    public function focalPoint(Media $media, Request $request, MediaManager $manager): JsonResponse
+    {
+        Gate::authorize('media.manage');
+        $point = $request->validate([
+            'x' => ['required', 'integer', 'between:0,100'],
+            'y' => ['required', 'integer', 'between:0,100'],
+        ]);
+        if (! $media->supportsFocalPoint()) {
+            throw ValidationException::withMessages(['image' => __('catalog::messages.media_focal_point_requires_image')]);
+        }
+
+        $manager->setFocalPoint($media, (int) $point['x'], (int) $point['y']);
+
+        return response()->json([
+            'item' => $this->present($media->loadCount('usages')),
+            'message' => __('catalog::messages.media_focal_point_saved'),
+        ]);
+    }
+
     public function move(Request $request, MediaManager $manager): JsonResponse
     {
         Gate::authorize('media.manage');
@@ -175,6 +195,8 @@ final class MediaLibraryController
             'url' => $item->url(),
             'width' => $item->width,
             'height' => $item->height,
+            'focal_point' => $item->focalPoint(),
+            'supports_focal_point' => $item->supportsFocalPoint(),
             'size_bytes' => $item->size_bytes,
             'mime_type' => $item->mime_type,
             'folder' => $item->folder,

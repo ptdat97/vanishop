@@ -93,7 +93,7 @@ return [
         'media_library' => 'Thư viện ảnh',
         'no_plugin_declares_own_sizes' => 'Chưa có plugin nào khai báo kích thước riêng.',
         'plugin_specific_sizes' => 'Kích thước riêng của plugin',
-        'product_gallery_images_cropped_centred' => 'Ảnh trong gallery sản phẩm được cắt (giữa ảnh) về đúng tỉ lệ để lưới đều nhau. Logo, banner, bài viết giữ tỉ lệ gốc.',
+        'product_gallery_images_cropped_centred' => 'Ảnh sản phẩm cắt theo tỉ lệ đã chọn. Chỉnh điểm lấy nét của từng ảnh trong Thư viện ảnh.',
         'product_image_ratio' => 'Tỉ lệ ảnh sản phẩm',
         'product_images' => 'Ảnh sản phẩm:',
         'quality_30_100' => 'Chất lượng (30–100)',

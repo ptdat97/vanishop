@@ -69,6 +69,40 @@ const uploading = computed(() => queue.value.some((item) => item.status !== 'err
 const dragging = ref(false);
 const moveTarget = ref('');
 const previewing = ref<MediaItem | null>(null);
+const focalImage = ref<MediaItem | null>(null);
+const focalPoint = ref({ x: 50, y: 50 });
+const savingFocalPoint = ref(false);
+const focalDirty = computed(() => focalPoint.value.x !== (focalImage.value?.focal_point?.x ?? 50)
+    || focalPoint.value.y !== (focalImage.value?.focal_point?.y ?? 50));
+
+function editFocalPoint(item: MediaItem): void {
+    focalPoint.value = { ...(item.focal_point ?? { x: 50, y: 50 }) };
+    focalImage.value = item;
+}
+
+function chooseFocalPoint(event: MouseEvent): void {
+    const image = event.currentTarget as HTMLImageElement;
+    if (!image.complete || !image.naturalWidth || savingFocalPoint.value) return;
+    const bounds = image.getBoundingClientRect();
+    const percentage = (value: number, start: number, length: number): number => Math.round(Math.max(0, Math.min(100, (value - start) / length * 100)));
+    focalPoint.value = { x: percentage(event.clientX, bounds.left, bounds.width), y: percentage(event.clientY, bounds.top, bounds.height) };
+}
+
+async function saveFocalPoint(): Promise<void> {
+    if (focalImage.value === null || savingFocalPoint.value || !focalDirty.value) return;
+    savingFocalPoint.value = true;
+    try {
+        const { item, message } = await postJson<{ item: MediaItem; message: string }>(url(`items/${focalImage.value.id}/focal-point`), focalPoint.value);
+        items.value = items.value.map((row) => row.id === item.id ? item : row);
+        if (selected.value.has(item.id)) selected.value.set(item.id, item);
+        focalImage.value = null;
+        toast(message);
+    } catch (error) {
+        fail(error);
+    } finally {
+        savingFocalPoint.value = false;
+    }
+}
 
 const searching = computed(() => keyword.value.trim() !== '');
 const selectedItems = computed(() => Array.from(selected.value.values()));
@@ -440,6 +474,7 @@ onMounted(load);
                 <template v-if="canManage && selected.size">
                     <span class="ml-2 text-slate-500">{{ t('shared::admin.media_media_manager.selected_selected', { selected: selected.size }) }}</span>
                     <button v-if="selected.size === 1" type="button" :class="secondaryButton" @click="renameItem">{{ t('shared::admin.media_media_manager.rename') }}</button>
+                    <button v-if="selected.size === 1 && selectedItems[0].supports_focal_point" type="button" :class="secondaryButton" data-edit-focal-point @click="editFocalPoint(selectedItems[0])">{{ t('shared::admin.media_media_manager.focal_point') }}</button>
                     <div class="w-44">
                         <Select v-model="moveTarget" :options="['', ...folders].map((path) => ({ value: path, label: `→ ${path || t('shared::admin.media_media_manager.root_folder')}` }))" :aria-label="t('shared::admin.media_media_manager.go_folder')" />
                     </div>
@@ -459,6 +494,31 @@ onMounted(load);
                 <video v-if="previewing.kind === 'video'" :src="previewing.url" controls class="max-h-full max-w-full" />
                 <img v-else :src="previewing.url" :alt="previewing.name" class="max-h-full max-w-full object-contain" />
             </div>
+        </Dialog>
+        <Dialog :open="focalImage !== null" :title="t('shared::admin.media_media_manager.focal_point')" :subtitle="focalImage?.name" :dirty="focalDirty && !savingFocalPoint" size="large" @update:open="(value) => { if (!value && !savingFocalPoint) focalImage = null; }">
+            <div v-if="focalImage" class="space-y-4">
+                <p class="text-sm text-slate-600">{{ t('shared::admin.media_media_manager.focal_point_help') }}</p>
+                <div class="flex justify-center rounded bg-slate-100">
+                    <div class="relative max-w-full">
+                        <img :src="focalImage.url" :alt="focalImage.name" class="block max-h-[50vh] max-w-full cursor-crosshair" data-focal-image @click="chooseFocalPoint" />
+                        <span aria-hidden="true" class="pointer-events-none absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-indigo-600/75 ring-1 ring-indigo-800" :style="{ left: `${focalPoint.x}%`, top: `${focalPoint.y}%` }"></span>
+                    </div>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <label class="grid gap-1 text-sm">
+                        <span>{{ t('shared::admin.media_media_manager.focal_horizontal') }} · {{ focalPoint.x }}%</span>
+                        <input v-model.number="focalPoint.x" type="range" min="0" max="100" :disabled="savingFocalPoint" data-focal-x />
+                    </label>
+                    <label class="grid gap-1 text-sm">
+                        <span>{{ t('shared::admin.media_media_manager.focal_vertical') }} · {{ focalPoint.y }}%</span>
+                        <input v-model.number="focalPoint.y" type="range" min="0" max="100" :disabled="savingFocalPoint" data-focal-y />
+                    </label>
+                </div>
+            </div>
+            <template #footer>
+                <button type="button" :class="secondaryButton" :disabled="savingFocalPoint" @click="focalPoint = { x: 50, y: 50 }">{{ t('shared::admin.media_media_manager.focal_reset') }}</button>
+                <button type="button" :class="primaryButton" :disabled="savingFocalPoint || !focalDirty" data-save-focal-point @click="saveFocalPoint">{{ t('shared::admin.media_media_manager.focal_save') }}</button>
+            </template>
         </Dialog>
     </div>
 </template>

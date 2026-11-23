@@ -89,6 +89,12 @@ return [
         'you_need_permission_view_media' => 'Cần quyền xem Thư viện ảnh để chọn :label.',
     ],
     'media_media_manager' => [
+        'focal_point' => 'Điểm lấy nét',
+        'focal_point_help' => 'Chọn trên ảnh hoặc dùng thanh trượt. Khi cắt theo tỉ lệ sản phẩm, hệ thống giữ vùng quanh điểm này.',
+        'focal_horizontal' => 'Vị trí ngang',
+        'focal_vertical' => 'Vị trí dọc',
+        'focal_reset' => 'Về giữa ảnh',
+        'focal_save' => 'Lưu điểm lấy nét',
         'all_root_folder' => 'Tất cả (thư mục gốc)',
         'cancel' => 'Huỷ',
         'choose_selected_noun' => 'Chọn :selected :noun',
