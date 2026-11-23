@@ -52,7 +52,7 @@ final class PromotionClawback
             ))->values()->all(),
             [],
             $order->placed_at->getTimestamp(),
-        ), $promotionIds);
+        ), $promotionIds, $order->id);
 
         $byLine = [];
         $byPromotion = [];

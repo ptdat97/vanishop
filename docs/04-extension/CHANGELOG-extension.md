@@ -6,6 +6,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.75 — 2026-11-23 · Extension API 1.30.0
+
+- `ManagedPromotions` đồng bộ khuyến mãi do plugin quản lý. `ContextualPromotionAction` nhận ngữ cảnh đầy đủ của giỏ khi tính mức giảm. `PriceResolver` cung cấp giá hiệu lực của các SKU cho plugin.
+- `VariantData`, dữ liệu SKU do `VariantDirectory` trả về, thuộc API cho plugin.
+- Core có `Carts::addLines()` để thêm nhiều dòng trong một giao dịch. Storefront hỗ trợ form `items[]` và `window.vani.cart.addItems()`.
+- Thêm nhiều SKU trả đủ chi tiết qua `changes` và phát `vani:cart-updated` cho từng SKU. Phản hồi vẫn có `change` cho SKU đầu tiên.
+- `vani.bundles` dùng các contract trên để bán combo theo số lượng từng sản phẩm và giảm giá khi mua đủ bộ.
+- Core lưu cấu hình action theo ngữ cảnh khi ghi nhận lượt dùng. Huỷ một phần đơn sẽ dùng điều kiện combo tại thời điểm đặt.
+
 ## 0.5.74 — 2026-11-22 · Extension API 1.29.0
 
 - Gỡ plugin `vani.ghn` (bản mô phỏng GHN) và `vani.sms-brandname` (SMS qua eSMS) vì chưa chốt nhà cung cấp. Extension point `ShippingCarrier`, `ShippingRateProvider`, `NotificationChannel`, `OtpSender` giữ nguyên; contract test vẫn chạy với implementation của Core và plugin khác.

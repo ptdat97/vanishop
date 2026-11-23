@@ -80,11 +80,17 @@ it('plugin đồng bộ, cập nhật và gỡ khuyến mãi theo khoá; Admin c
     $this->get(route('admin.promotion.promotions.index'))->assertInertia(fn (Assert $page) => $page->where('promotions.0.managed', true));
     $this->get(route('admin.promotion.promotions.edit', $id))->assertInertia(fn (Assert $page) => $page->where('promotion.managed.owner', 'vani.test'));
     $this->delete(route('admin.promotion.promotions.destroy', $id))->assertSessionHasErrors('promotion');
+    $this->post(route('admin.promotion.promotions.vouchers.store', $id), ['code' => 'COMBO'])->assertSessionHasErrors('promotion');
+    $this->assertDatabaseMissing('vouchers', ['promotion_id' => $id]);
     expect(Promotion::query()->whereKey($id)->exists())->toBeTrue();
 
     DB::table('promotion_usages')->insert(['promotion_id' => $id, 'order_id' => 1, 'discount_amount' => 1, 'currency_code' => 'VND', 'status' => 'applied', 'created_at' => now(), 'updated_at' => now()]);
     $this->managed->remove('vani.test', 'k1');
     expect(Promotion::query()->findOrFail($id)->status)->toBe('inactive');
+    expect($this->managed->ids('vani.test'))->toBe([]);
+    $replacement = $this->managed->sync('vani.test', 'k1', new ManagedPromotion('Combo mới', true, 'percent_off', ['basis_points' => 700]));
+    expect($replacement)->not->toBe($id);
+    $this->assertDatabaseHas('promotion_usages', ['promotion_id' => $id, 'order_id' => 1]);
     $other = $this->managed->sync('vani.test', 'k3', new ManagedPromotion('Combo B', true, 'percent_off', ['basis_points' => 500]));
     $this->managed->remove('vani.test', 'k3');
     expect(Promotion::query()->whereKey($other)->exists())->toBeFalse();

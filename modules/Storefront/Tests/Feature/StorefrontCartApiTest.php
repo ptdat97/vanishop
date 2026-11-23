@@ -62,6 +62,15 @@ it('lỗi nghiệp vụ có mã ổn định, không lộ số tồn', function 
         ->assertStatus(422)->assertJsonPath('error.code', 'validation.failed');
 });
 
+it('API thêm một dòng yêu cầu variant_id khi nhận payload thêm cả bộ của web', function () {
+    [$id, $headers] = newCart($this);
+
+    $this->postJson("/api/storefront/v1/carts/{$id}/lines", ['items' => [['variant_id' => $this->s->id]]], $headers)
+        ->assertUnprocessable()
+        ->assertJsonPath('error.code', 'validation.failed');
+    $this->getJson("/api/storefront/v1/carts/{$id}", $headers)->assertJsonPath('data.item_count', 0);
+});
+
 it('thiếu hoặc sai token thì như giỏ không tồn tại', function () {
     [$id] = newCart($this);
 

@@ -6,10 +6,12 @@ namespace Modules\Pricing\Contracts;
 
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract: giá hiệu lực của variant theo kênh (Storefront, Cart, Checkout dùng).
  */
+#[PluginApi]
 interface PriceResolver
 {
     /**

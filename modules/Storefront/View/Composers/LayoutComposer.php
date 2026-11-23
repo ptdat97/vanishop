@@ -105,6 +105,7 @@ final class LayoutComposer
             'payment_methods' => array_values(array_filter(array_map('trim', preg_split('/\R/', (string) ($footer['payment_methods'] ?? '')) ?: []))),
             // Thay đổi giỏ của lần gửi trước → sự kiện `vani:cart-updated` (app.js). Trang có cache lấy qua /_vani/phien.
             'cart_change' => is_array($flash) ? $flash : null,
+            'cart_changes' => $pageCache ? [] : $this->session->get(CartController::CHANGES_FLASH, []),
             // URL cho window.vani (app.js) theo ngôn ngữ trang; `987654321` = chỗ app.js thay bằng id dòng giỏ.
             'urls' => [
                 'cart' => LocalizedUrls::route('storefront.cart'),

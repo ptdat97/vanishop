@@ -12,17 +12,18 @@ export function updateCartCount(count) {
  * Sự kiện trình duyệt khi giỏ đổi (0.3.43) — plugin (đo quảng cáo…) nghe `document.addEventListener('vani:cart-updated', …)`.
  * detail: { action: 'add' | 'remove', variant_id, sku, name, quantity, unit_amount, currency }.
  */
-export function dispatchCartChange(change) {
-    if (change) {
-        document.dispatchEvent(new CustomEvent('vani:cart-updated', { detail: change }));
+export function dispatchCartChange(change, changes = []) {
+    for (const detail of changes.length ? changes : change ? [change] : []) {
+        document.dispatchEvent(new CustomEvent('vani:cart-updated', { detail }));
     }
 }
 
 export function dispatchInlineCartChange() {
-    const inlineCartChange = document.querySelector('script[data-vani-cart-change]');
-    if (inlineCartChange) {
+    const batch = document.querySelector('script[data-vani-cart-changes]');
+    const single = document.querySelector('script[data-vani-cart-change]');
+    if (batch || single) {
         try {
-            dispatchCartChange(JSON.parse(inlineCartChange.textContent || 'null'));
+            dispatchCartChange(JSON.parse(single?.textContent || 'null'), JSON.parse(batch?.textContent || '[]'));
         } catch {
             // dữ liệu hỏng: bỏ qua
         }
@@ -33,9 +34,11 @@ export function createCart({ urls, request, cartPage, firstError }) {
     const offcanvas = document.querySelector('[data-vani-offcanvas-cart]');
     const offcanvasBody = offcanvas?.querySelector('[data-vani-mini-cart-body]');
     let cartOpener = null;
+    let appliedState = null;
 
     /** Áp trạng thái giỏ từ server: nhãn số món, nội dung giỏ mini, sự kiện cho plugin. */
     function applyCart(state) {
+        appliedState = state;
         updateCartCount(state.count ?? 0);
         if (offcanvasBody && typeof state.html === 'string') {
             offcanvasBody.innerHTML = state.html; // HTML do Blade render (đã escape) — không chứa dữ liệu thô từ client.
@@ -49,7 +52,7 @@ export function createCart({ urls, request, cartPage, firstError }) {
             if (focusedId) document.getElementById(focusedId)?.focus();
             document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: cartPage } }));
         }
-        dispatchCartChange(state.change);
+        dispatchCartChange(state.change, state.changes);
         document.dispatchEvent(new CustomEvent('vani:cart', { detail: state }));
         return state;
     }
@@ -82,7 +85,7 @@ export function createCart({ urls, request, cartPage, firstError }) {
                 offcanvas.showModal();
             }
             showCartMessage(state?.message ?? '');
-            if (state) return Promise.resolve(applyCart(state));
+            if (state) return Promise.resolve(state === appliedState ? state : applyCart(state));
             offcanvasBody?.setAttribute('aria-busy', 'true');
             return cart.get().catch(() => {
                 window.location.href = urls.cart;

@@ -32,10 +32,10 @@ final class BundleConfig
         }
         $requirement = [];
         foreach ($items as $styleId => $quantity) {
-            if (! is_numeric($styleId) || (int) $styleId < 1 || ! is_int($quantity) || $quantity < 1 || $quantity > self::MAX_QUANTITY) {
+            if (! is_int($styleId) || $styleId < 1 || ! is_int($quantity) || $quantity < 1 || $quantity > self::MAX_QUANTITY) {
                 return null;
             }
-            $requirement[(int) $styleId] = $quantity;
+            $requirement[$styleId] = $quantity;
         }
 
         return $requirement;

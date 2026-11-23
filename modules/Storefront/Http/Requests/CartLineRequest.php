@@ -22,10 +22,12 @@ final class CartLineRequest extends FormRequest
      */
     public function rules(): array
     {
+        $api = $this->is('api/*');
+
         return [
-            'variant_id' => ['nullable', 'required_without:items', 'integer', 'min:1'],
+            'variant_id' => ['nullable', $api ? 'required' : 'required_without:items', 'integer', 'min:1'],
             // Thêm nhiều món một lần (vd. cả bộ combo của plugin): thêm tất cả hoặc không món nào (Carts::addLines).
-            'items' => ['nullable', 'array', 'min:1', 'max:'.self::MAX_ITEMS],
+            'items' => [$api ? 'prohibited' : 'nullable', 'array', 'min:1', 'max:'.self::MAX_ITEMS],
             'items.*.variant_id' => ['required', 'integer', 'min:1'],
             'items.*.quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
@@ -66,7 +68,7 @@ final class CartLineRequest extends FormRequest
         // Đã chọn giá trị trục đầu ở bộ chọn của trang sản phẩm → chỉ còn thiếu các trục còn lại.
         $chooseVariant = __(array_filter((array) $this->input('axis', [])) !== [] ? 'storefront::messages.choose_remaining' : 'storefront::messages.choose_variant');
 
-        return ['variant_id.required_without' => $chooseVariant, 'items.*.variant_id.required' => __('storefront::messages.choose_variant')];
+        return ['variant_id.required' => $chooseVariant, 'variant_id.required_without' => $chooseVariant, 'items.*.variant_id.required' => __('storefront::messages.choose_variant')];
     }
 
     /**

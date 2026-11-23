@@ -40,7 +40,7 @@ final class Bundles
         $locale = StoreLocale::default();
 
         return DB::transaction(function () use ($data, $bundle, $locale): Bundle {
-            $bundle ??= new Bundle;
+            $bundle = $bundle === null ? new Bundle : Bundle::query()->lockForUpdate()->findOrFail($bundle->id);
             $translations = (array) ($bundle->translations ?? []);
             $translations[$locale] = ['name' => $data['name'], 'description' => (string) ($data['description'] ?? '')];
             $bundle->fill([
@@ -49,12 +49,12 @@ final class Bundles
                 'starts_at' => $data['starts_at'], 'ends_at' => $data['ends_at'], 'position' => $data['position'],
             ])->save();
             $bundle->items()->delete();
-            foreach (array_values($data['items']) as $position => $item) {
+            foreach ($data['items'] as $position => $item) {
                 $bundle->items()->create(['style_id' => $item['style_id'], 'quantity' => $item['quantity'], 'position' => $position]);
             }
             $bundle->load('items');
             $this->sync($bundle);
-            $this->media->syncUsages(self::MEDIA_OWNER, $bundle->id, 'image', array_filter([$bundle->image_media_id]));
+            $this->media->syncUsages(self::MEDIA_OWNER, $bundle->id, 'image', $bundle->image_media_id === null ? [] : [$bundle->image_media_id]);
 
             return $bundle;
         });
@@ -63,6 +63,7 @@ final class Bundles
     public function delete(Bundle $bundle): void
     {
         DB::transaction(function () use ($bundle): void {
+            $bundle = Bundle::query()->lockForUpdate()->findOrFail($bundle->id);
             $this->promotions->remove(BundlesServiceProvider::ID, (string) $bundle->id);
             $this->media->releaseUsages(self::MEDIA_OWNER, $bundle->id);
             $bundle->delete();
@@ -72,8 +73,7 @@ final class Bundles
     /** Khuyến mãi của combo: lịch và trạng thái theo combo; rule + action mang sẵn danh sách món để giỏ không đọc bảng plugin. */
     public function sync(Bundle $bundle): int
     {
-        $items = array_map(fn (int $quantity): int => $quantity, $bundle->requirement());
-        $config = ['items' => array_combine(array_map('strval', array_keys($items)), array_values($items))];
+        $config = ['items' => $bundle->requirement()];
 
         return $this->promotions->sync(BundlesServiceProvider::ID, (string) $bundle->id, new ManagedPromotion(
             name: __('vani-bundles::texts.promotion_name', ['name' => $bundle->text('name', StoreLocale::default())]),

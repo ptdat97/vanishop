@@ -174,7 +174,7 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
         <FormField :label="t('promotion::admin.promotions_form.discount_type')" :error="form.errors.action_type">
             <Select v-model="form.action_type" :options="actionOptions" />
         </FormField>
-        <FormField v-if="form.action_type === 'percent_off'" :label="t('promotion::admin.promotions_form.discount_percentage')" :error="form.errors.action_config">
+        <FormField v-if="form.action_type === 'percent_off' || (promotion?.managed && promotion.action_config.basis_points !== undefined)" :label="t('promotion::admin.promotions_form.discount_percentage')" :error="form.errors.action_config">
             <input v-model.number="percent" :class="inputClass" type="number" step="0.01" min="0.01" max="100" />
         </FormField>
         <FormField v-else-if="form.action_type === 'amount_off'" :label="t('promotion::admin.promotions_form.discount_amount_symbol', { symbol })" :error="form.errors.action_config">
@@ -216,7 +216,7 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
         </fieldset>
     </form>
 
-    <section v-if="promotion && promotion.requires_voucher" class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-white p-5">
+    <section v-if="promotion && !promotion.managed && promotion.requires_voucher" class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-white p-5">
         <h2 class="mb-3 font-semibold">Voucher ({{ vouchersTotal }})</h2>
         <form class="mb-4 grid gap-3 sm:grid-cols-5" @submit.prevent="createVouchers">
             <input v-model="voucherForm.code" :class="inputClass" :placeholder="t('promotion::admin.promotions_form.specific_code_sale10')" />

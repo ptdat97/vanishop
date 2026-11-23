@@ -45,20 +45,23 @@ final class ManagedPromotionService implements ManagedPromotions
 
     public function remove(string $owner, string $key): void
     {
-        $promotion = Promotion::query()->where('managed_by', $owner)->where('managed_key', $key)->first();
-        if ($promotion === null) {
-            return;
-        }
-        if (DB::table('promotion_usages')->where('promotion_id', $promotion->id)->exists()) {
-            $promotion->update(['status' => 'inactive', 'managed_route' => null]);
+        DB::transaction(function () use ($owner, $key): void {
+            $promotion = Promotion::query()->where('managed_by', $owner)->where('managed_key', $key)->lockForUpdate()->first();
+            if ($promotion === null) {
+                return;
+            }
+            if (DB::table('promotion_usages')->where('promotion_id', $promotion->id)->exists()) {
+                $promotion->update(['status' => 'inactive', 'managed_key' => null, 'managed_route' => null]);
 
-            return;
-        }
-        $this->promotions->delete($promotion);
+                return;
+            }
+            $this->promotions->delete($promotion);
+        });
     }
 
     public function ids(string $owner): array
     {
-        return Promotion::query()->where('managed_by', $owner)->pluck('id', 'managed_key')->map(fn ($id): int => (int) $id)->all();
+        return Promotion::query()->where('managed_by', $owner)->whereNotNull('managed_key')
+            ->pluck('id', 'managed_key')->map(fn ($id): int => (int) $id)->all();
     }
 }

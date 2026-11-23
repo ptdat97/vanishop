@@ -80,7 +80,7 @@ final class CartService implements Carts
             'variant_id' => (int) $item['variant_id'],
             'quantity' => (int) $item['quantity'],
             'options' => $this->normalizeOptions((int) $item['variant_id'], (array) ($item['options'] ?? [])),
-        ], array_values($items));
+        ], $items);
 
         // Một transaction (mutate): món sau ném CartRejected → các món trước rollback cùng.
         return $this->mutate($key, function (Cart $cart) use ($normalized): void {

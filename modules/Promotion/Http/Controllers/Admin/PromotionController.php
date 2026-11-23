@@ -15,6 +15,8 @@ use Modules\Extension\Contracts\AdminScreen;
 use Modules\Promotion\Application\AdminQueries;
 use Modules\Promotion\Application\PromotionRegistry;
 use Modules\Promotion\Application\PromotionService;
+use Modules\Promotion\Contracts\ContextualPromotionAction;
+use Modules\Promotion\Contracts\PromotionAction;
 use Modules\Promotion\Domain\Stacking;
 use Modules\Promotion\Http\Requests\PromotionRequest;
 use Modules\Promotion\Http\Requests\VoucherRequest;
@@ -86,7 +88,9 @@ final class PromotionController
 
     public function edit(Promotion $promotion, PromotionRegistry $registry, Request $request): Response
     {
-        Gate::authorize('promotion.manage');
+        if (! $promotion->isManaged() || Gate::denies('promotion.view')) {
+            Gate::authorize('promotion.manage');
+        }
 
         return $this->form($promotion, $registry, $request);
     }
@@ -110,6 +114,7 @@ final class PromotionController
 
     public function storeVouchers(Promotion $promotion, VoucherRequest $request, PromotionService $service): RedirectResponse
     {
+        $this->assertNotManaged($promotion);
         $count = $service->createVouchers(
             $promotion,
             $request->validated('code'),
@@ -126,6 +131,7 @@ final class PromotionController
     {
         Gate::authorize('promotion.manage');
         abort_unless($voucher->promotion_id === $promotion->id, 404);
+        $this->assertNotManaged($promotion);
         $data = $request->validate(['status' => ['required', Rule::in(['active', 'inactive'])]]);
         $service->setVoucherStatus($voucher, $data['status']);
 
@@ -144,6 +150,8 @@ final class PromotionController
 
     private function form(?Promotion $promotion, PromotionRegistry $registry, ?Request $request): Response
     {
+        $actions = array_filter($registry->actions(), fn (PromotionAction $action): bool => ! $action instanceof ContextualPromotionAction
+            || $action->type() === $promotion?->action_type);
         $voucherQuery = trim((string) $request?->query('voucher_q', ''));
         $vouchers = $promotion?->vouchers()
             ->when($voucherQuery !== '', fn ($query) => $query->where('code', 'like', '%'.addcslashes(Voucher::normalize($voucherQuery), '%_\\').'%'))
@@ -178,7 +186,7 @@ final class PromotionController
                 'page' => $vouchers->currentPage(), 'last_page' => $vouchers->lastPage(), 'from' => $vouchers->firstItem(),
                 'to' => $vouchers->lastItem(), 'total' => $vouchers->total(), 'per_page' => $vouchers->perPage(),
             ],
-            'actions' => array_map(fn ($action): array => ['type' => $action->type(), 'label' => $action->label()], array_values($registry->actions())),
+            'actions' => array_map(fn (PromotionAction $action): array => ['type' => $action->type(), 'label' => $action->label()], array_values($actions)),
             'ruleTypes' => array_map(fn ($rule): array => ['type' => $rule->type(), 'label' => $rule->label()], array_values($registry->rules())),
             'stackings' => array_column(Stacking::cases(), 'value'),
         ]);

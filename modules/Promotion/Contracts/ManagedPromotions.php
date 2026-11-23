@@ -22,7 +22,7 @@ interface ManagedPromotions
     public function remove(string $owner, string $key): void;
 
     /**
-     * @return array<string, int> khoá của plugin => id khuyến mãi
+     * @return array<int|string, int> khoá của plugin => id khuyến mãi (khoá số thành int theo quy tắc khoá mảng của PHP)
      */
     public function ids(string $owner): array;
 }

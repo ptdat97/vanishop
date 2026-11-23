@@ -63,7 +63,7 @@ export function createSession({ urls, cartPage, t }) {
         if (session.csrf_token) csrfToken = session.csrf_token;
         sessionLoaded(session);
         document.dispatchEvent(new CustomEvent('vani:session', { detail: session }));
-        dispatchCartChange(session.cart_change);
+        dispatchCartChange(session.cart_change, session.cart_changes);
         document.querySelectorAll('[data-vani-account]').forEach((account) => {
             account.setAttribute('aria-label', session.account.label);
             account.setAttribute('title', session.account.label);

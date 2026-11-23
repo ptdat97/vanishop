@@ -51,9 +51,9 @@
         @include('theme::partials.cart-voucher', ['voucher' => $voucher])
         <dl class="space-y-1">
             <div class="flex justify-between"><dt>{{ __('theme::cart.subtotal_selected', ['count' => $cart['selected_count']]) }}</dt><dd>{{ $cart['selected_subtotal']['formatted'] }}</dd></div>
-            @if ($voucher && $voucher['rejection'] === null && $voucher['discount']['amount'] > 0)
-                <div class="flex justify-between text-emerald-700"><dt>{{ __('theme::common.discount') }}</dt><dd>−{{ $voucher['discount']['formatted'] }}</dd></div>
-                <div class="flex justify-between font-semibold"><dt>{{ __('theme::cart.estimated_total') }}</dt><dd>{{ $voucher['total']['formatted'] }}</dd></div>
+            @if (($discountSummary['discount']['amount'] ?? 0) > 0)
+                <div class="flex justify-between text-emerald-700"><dt>{{ __('theme::common.discount') }}</dt><dd>−{{ $discountSummary['discount']['formatted'] }}</dd></div>
+                <div class="flex justify-between font-semibold"><dt>{{ __('theme::cart.estimated_total') }}</dt><dd>{{ $discountSummary['total']['formatted'] }}</dd></div>
             @endif
         </dl>
         <p class="text-xs text-slate-500">{{ __('theme::cart.shipping_calculated_at_checkout') }}</p>

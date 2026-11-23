@@ -24,6 +24,15 @@ final class DemoCatalog
     }
 
     /**
+     * @param  list<string>  $codes
+     * @return array<string, int>
+     */
+    public static function activeStyleIdsByCode(array $codes): array
+    {
+        return Style::query()->whereIn('style_code', $codes)->where('status', 'active')->pluck('id', 'style_code')->all();
+    }
+
+    /**
      * Mã sản phẩm → id ảnh theo thứ tự, chỉ sản phẩm "Vani Studio" đang bán.
      *
      * @return array<string, list<int>>

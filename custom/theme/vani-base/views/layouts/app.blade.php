@@ -194,6 +194,9 @@
     @if ($shell['cart_change'] !== null)
         <script type="application/json" data-vani-cart-change>@json($shell['cart_change'])</script>
     @endif
+    @if ($shell['cart_changes'] !== [])
+        <script type="application/json" data-vani-cart-changes>@json($shell['cart_changes'])</script>
+    @endif
     {{-- Chuỗi giao diện cho app.js theo ngôn ngữ trang. --}}
     @php($jsStrings = ['wards_loading' => __('theme::js.wards_loading'), 'province_first' => __('theme::common.select_province_first'), 'choose_ward' => __('theme::common.select_ward'), 'wards_failed' => __('theme::js.wards_failed'), 'wards_no_match' => __('theme::js.wards_no_match'), 'member_price_from' => __('theme::js.member_price_from'), 'member_price' => __('theme::js.member_price'), 'member' => __('theme::js.member'), 'suggest_products' => __('theme::common.products'), 'suggest_categories' => __('theme::common.categories'), 'suggest_brands' => __('theme::common.brands'), 'suggest_all' => __('theme::js.suggest_all'), 'carousel_prev' => __('theme::js.carousel_prev'), 'carousel_next' => __('theme::js.carousel_next'), 'lightbox_prev' => __('theme::common.previous_image'), 'lightbox_next' => __('theme::common.next_image'), 'lightbox_close' => __('theme::common.close'), 'lightbox_zoom' => __('theme::js.lightbox_zoom'), 'lightbox_error' => __('theme::js.lightbox_error'), 'close' => __('theme::common.close'), 'request_failed' => __('theme::js.request_failed')])
     <script type="application/json" data-vani-i18n>@json($jsStrings)</script>

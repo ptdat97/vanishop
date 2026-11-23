@@ -19,10 +19,25 @@ beforeEach(function () {
 
 it('thêm nhiều món một lần bằng items[]: thêm tất cả hoặc không món nào', function () {
     $this->postJson('/gio-hang', ['items' => [['variant_id' => $this->s->id], ['variant_id' => $this->m->id, 'quantity' => 2]]])->assertOk()
-        ->assertJsonPath('count', 3)->assertJsonPath('message', 'Đã thêm 2 sản phẩm vào giỏ.');
+        ->assertJsonPath('count', 3)->assertJsonPath('message', 'Đã thêm 2 sản phẩm vào giỏ.')
+        ->assertJsonPath('change.variant_id', $this->s->id)
+        ->assertJsonCount(2, 'changes')
+        ->assertJsonPath('changes.0.variant_id', $this->s->id)->assertJsonPath('changes.0.quantity', 1)
+        ->assertJsonPath('changes.1.variant_id', $this->m->id)->assertJsonPath('changes.1.quantity', 2);
     $this->postJson('/gio-hang', ['items' => [['variant_id' => $this->s->id], ['variant_id' => 999_999]]])->assertUnprocessable();
     $this->getJson('/gio-hang')->assertJsonPath('count', 3);
     $this->postJson('/gio-hang', ['items' => [['quantity' => 1]]])->assertUnprocessable()->assertJsonValidationErrors('items.0.variant_id');
+});
+
+it('gửi form thêm nhiều món chuyển tiếp cả thay đổi giỏ qua phiên', function () {
+    $this->post('/gio-hang', ['items' => [
+        ['variant_id' => $this->s->id], ['variant_id' => $this->m->id], ['variant_id' => $this->s->id, 'quantity' => 2],
+    ]])->assertRedirect('/gio-hang');
+
+    $this->getJson('/_vani/phien')->assertJsonCount(2, 'cart_changes')
+        ->assertJsonPath('cart_change.variant_id', $this->s->id)
+        ->assertJsonPath('cart_changes.0.variant_id', $this->s->id)->assertJsonPath('cart_changes.0.quantity', 3)
+        ->assertJsonPath('cart_changes.1.variant_id', $this->m->id)->assertJsonPath('cart_changes.1.quantity', 1);
 });
 
 it('thêm / sửa số lượng / xoá dòng bằng JSON: trả số món, HTML giỏ mini và thay đổi cho sự kiện vani:cart-updated', function () {

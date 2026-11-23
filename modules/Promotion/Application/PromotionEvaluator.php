@@ -20,11 +20,14 @@ use Modules\Promotion\Contracts\PromotionUnavailable;
 use Modules\Promotion\Domain\DiscountMath;
 use Modules\Promotion\Domain\Stacking;
 use Modules\Promotion\Persistence\Models\Promotion;
+use Modules\Promotion\Persistence\Models\PromotionRuleRecord;
 use Modules\Promotion\Persistence\Models\Voucher;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Flow: docs/03-domains/promotion.md §4. Đánh giá chỉ đọc; ghi nhận dùng UPDATE có điều kiện (§5).
+ *
+ * @phpstan-import-type RecheckConfig from AppliedPromotion
  */
 final class PromotionEvaluator implements PromotionEngine
 {
@@ -71,8 +74,9 @@ final class PromotionEvaluator implements PromotionEngine
                 continue;
             }
 
-            $eligibility = $this->eligibility($promotion, $context);
-            $action = $this->registry->action($promotion->action_type);
+            $config = $this->configuration($promotion);
+            $eligibility = $this->eligibility($promotion->id, $config['rules'], $context);
+            $action = $this->registry->action($config['action_type']);
             if ($eligibility === null || $eligibility->isEmpty() || $action === null) {
                 continue;
             }
@@ -82,7 +86,7 @@ final class PromotionEvaluator implements PromotionEngine
                 $remaining[$key] = $subtotals[$key]->subtract($discounted[$key]);
             }
 
-            $proposed = $this->propose($action, $context, $remaining, $promotion->action_config);
+            $proposed = $this->propose($action, $context, $remaining, $config['action_config']);
             $lineDiscounts = array_filter(
                 DiscountMath::capToFloor(array_intersect_key($proposed, $remaining), $subtotals, $discounted, $this->maxDiscountBasisPoints),
                 fn (Money $discount): bool => $discount->isPositive(),
@@ -98,7 +102,10 @@ final class PromotionEvaluator implements PromotionEngine
             }
 
             $voucher = $voucherByPromotion[$promotion->id] ?? null;
-            $applied[] = new AppliedPromotion($promotion->id, $voucher?->id, $voucher?->code, $promotion->name, $lineDiscounts, $total);
+            $applied[] = new AppliedPromotion(
+                $promotion->id, $voucher?->id, $voucher?->code, $promotion->name, $lineDiscounts, $total,
+                $action instanceof ContextualPromotionAction ? $config : null,
+            );
 
             if ($promotion->stacking === Stacking::Exclusive) {
                 break;
@@ -142,6 +149,7 @@ final class PromotionEvaluator implements PromotionEngine
             DB::table('promotion_usages')->insert([
                 'promotion_id' => $applied->promotionId, 'voucher_id' => $applied->voucherId, 'order_id' => $orderId, 'customer_id' => $customerId,
                 'discount_amount' => $applied->total->amount, 'currency_code' => $currencyCode, 'status' => 'applied', 'created_at' => now(), 'updated_at' => now(),
+                'recheck_config' => $applied->recheckConfig === null ? null : json_encode($applied->recheckConfig, JSON_THROW_ON_ERROR),
             ]);
         }
     }
@@ -164,9 +172,17 @@ final class PromotionEvaluator implements PromotionEngine
         });
     }
 
-    public function recheck(PromotionContext $context, array $promotionIds): array
+    public function recheck(PromotionContext $context, array $promotionIds, ?int $orderId = null): array
     {
-        $promotions = Promotion::query()->with('rules')->whereKey($promotionIds)->get()->keyBy('id');
+        $configs = $orderId === null ? [] : DB::table('promotion_usages')->where('order_id', $orderId)
+            ->whereIn('promotion_id', $promotionIds)->whereNotNull('recheck_config')->pluck('recheck_config', 'promotion_id')
+            ->map(fn (string $config): array => json_decode($config, true, flags: JSON_THROW_ON_ERROR))->all();
+        $missing = array_diff($promotionIds, array_keys($configs));
+        if ($missing !== []) {
+            foreach (Promotion::query()->with('rules')->whereKey($missing)->get() as $promotion) {
+                $configs[$promotion->id] = $this->configuration($promotion);
+            }
+        }
         $subtotals = [];
         $discounted = [];
         foreach ($context->lines as $line) {
@@ -176,10 +192,10 @@ final class PromotionEvaluator implements PromotionEngine
 
         $result = [];
         foreach ($promotionIds as $promotionId) {
-            $promotion = $promotions->get($promotionId);
-            $action = $promotion === null ? null : $this->registry->action($promotion->action_type);
-            $eligibility = $promotion === null ? null : $this->eligibility($promotion, $context, cartContentOnly: true);
-            if ($promotion === null || $action === null || $eligibility === null) {
+            $config = $configs[$promotionId] ?? null;
+            $action = $config === null ? null : $this->registry->action($config['action_type']);
+            $eligibility = $config === null ? null : $this->eligibility($promotionId, $config['rules'], $context, cartContentOnly: true);
+            if ($config === null || $action === null || $eligibility === null) {
                 continue; // không kiểm tra lại được → nơi gọi giữ nguyên
             }
             if ($eligibility->isEmpty() || $context->lines === []) {
@@ -192,7 +208,7 @@ final class PromotionEvaluator implements PromotionEngine
             foreach ($eligibility->keys as $key) {
                 $remaining[$key] = $subtotals[$key]->subtract($discounted[$key]);
             }
-            $proposed = $this->propose($action, $context, $remaining, $promotion->action_config);
+            $proposed = $this->propose($action, $context, $remaining, $config['action_config']);
             $lineDiscounts = array_filter(
                 DiscountMath::capToFloor(array_intersect_key($proposed, $remaining), $subtotals, $discounted, $this->maxDiscountBasisPoints),
                 fn (Money $discount): bool => $discount->isPositive(),
@@ -266,10 +282,6 @@ final class PromotionEvaluator implements PromotionEngine
     }
 
     /**
-     * Mọi dòng của giỏ, lọc qua mọi rule (hoặc chỉ `CartContentRule` khi kiểm tra lại). null = có rule thuộc plugin không
-     * còn bật (bỏ qua khuyến mãi).
-     */
-    /**
      * @param  array<int, Money>  $remaining
      * @param  array<string, mixed>  $config
      * @return array<int, Money>
@@ -281,21 +293,36 @@ final class PromotionEvaluator implements PromotionEngine
             : $action->apply($remaining, $config, $context->currencyCode);
     }
 
-    private function eligibility(Promotion $promotion, PromotionContext $context, bool $cartContentOnly = false): ?Eligibility
+    /** @return RecheckConfig */
+    private function configuration(Promotion $promotion): array
+    {
+        return [
+            'action_type' => $promotion->action_type,
+            'action_config' => $promotion->action_config,
+            'rules' => $promotion->rules->map(fn (PromotionRuleRecord $rule): array => ['type' => $rule->rule_type, 'config' => $rule->config])->values()->all(),
+        ];
+    }
+
+    /**
+     * Mọi dòng của giỏ, lọc qua mọi rule (hoặc chỉ `CartContentRule` khi kiểm tra lại).
+     *
+     * @param  list<array{type: string, config: array<string, mixed>}>  $rules
+     */
+    private function eligibility(int $promotionId, array $rules, PromotionContext $context, bool $cartContentOnly = false): ?Eligibility
     {
         $eligibility = new Eligibility(array_values(array_map(fn ($line): int => $line->key, $context->lines)));
 
-        foreach ($promotion->rules as $record) {
-            $rule = $this->registry->rule($record->rule_type);
+        foreach ($rules as $record) {
+            $rule = $this->registry->rule($record['type']);
             if ($cartContentOnly && $rule !== null && ! $rule instanceof CartContentRule) {
                 continue;
             }
             if ($rule === null) {
-                Log::warning('Khuyến mãi dùng rule chưa đăng ký (plugin tắt?) — bỏ qua.', ['promotion_id' => $promotion->id, 'rule_type' => $record->rule_type]);
+                Log::warning('Khuyến mãi dùng rule chưa đăng ký (plugin tắt?) — bỏ qua.', ['promotion_id' => $promotionId, 'rule_type' => $record['type']]);
 
                 return null;
             }
-            $eligibility = $eligibility->intersect($rule->evaluate($context, $record->config, $eligibility));
+            $eligibility = $eligibility->intersect($rule->evaluate($context, $record['config'], $eligibility));
             if ($eligibility->isEmpty()) {
                 return $eligibility;
             }

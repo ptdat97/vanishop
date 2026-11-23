@@ -29,6 +29,8 @@ final class CartController
     /** Flash một lần: thay đổi giỏ gần nhất (đọc ở layout hoặc /_vani/phien). */
     public const CHANGE_FLASH = 'vani.cart_change';
 
+    public const CHANGES_FLASH = 'vani.cart_changes';
+
     /** Header JS gửi để nhận thêm HTML thân trang giỏ (`page_html`). */
     public const VIEW_HEADER = 'X-Vani-Cart-View';
 
@@ -46,10 +48,12 @@ final class CartController
         }
         $view = $this->cart->current();
         $key = $view === null ? null : $this->cart->key();
+        $summary = $key === null || $view->lines === [] ? null : $this->voucher->preview($key, includeAutomatic: true);
 
         return view('theme::pages.cart', [
             'cart' => $view === null ? null : $this->presenter->present($view),
-            'voucher' => $key === null ? null : $this->voucher->preview($key),
+            'voucher' => isset($summary['code']) ? $summary : null,
+            'discountSummary' => $summary,
         ]);
     }
 
@@ -86,14 +90,27 @@ final class CartController
     private function addMany(array $items, bool $json): RedirectResponse|JsonResponse
     {
         $view = $this->carts->addLines($this->cart->keyOrCreate(), $items);
-        $line = collect($view->lines)->firstWhere('variantId', $items[0]['variant_id']);
-        $change = $line === null ? null : $this->presenter->change('add', $line, $items[0]['quantity']);
+        $quantities = [];
+        foreach ($items as $item) {
+            $id = $item['variant_id'];
+            $quantities[$id] = ($quantities[$id] ?? 0) + $item['quantity'];
+        }
+        $lines = collect($view->lines)->keyBy('variantId');
+        $changes = [];
+        foreach ($quantities as $variantId => $quantity) {
+            $line = $lines->get($variantId);
+            if ($line !== null) {
+                $changes[] = $this->presenter->change('add', $line, $quantity);
+            }
+        }
+        $change = $changes[0] ?? null;
         if ($json) {
-            return $this->payload($change, __('storefront::messages.added_items_to_cart', ['count' => count($items)]));
+            return $this->payload($change, __('storefront::messages.added_items_to_cart', ['count' => count($items)]), changes: $changes);
         }
 
         return redirect()->to(LocalizedUrls::route('storefront.cart'))
-            ->with('status', __('storefront::messages.added_items_to_cart', ['count' => count($items)]))->with(self::CHANGE_FLASH, $change);
+            ->with('status', __('storefront::messages.added_items_to_cart', ['count' => count($items)]))
+            ->with(self::CHANGE_FLASH, $change)->with(self::CHANGES_FLASH, $changes);
     }
 
     /**
@@ -179,22 +196,27 @@ final class CartController
      * Trạng thái giỏ cho JS: `cart` (như Storefront API), `count` (số món, cho nhãn ở header), `voucher` (mã đang giữ + mức
      * giảm), `html` (giỏ mini render bằng partial `theme::partials.mini-cart` — theme con override được), `change` (cho sự
      * kiện `vani:cart-updated`), `message`, `redirect` (Mua ngay → checkout). Trang giỏ gửi `X-Vani-Cart-View: page` (0.3.94)
-     * → thêm `page_html` (partial `theme::partials.cart-page`).
+     * → thêm `page_html` (partial `theme::partials.cart-page`). Thêm nhiều SKU trả đủ từng dòng trong `changes`.
+     *
+     * @param  list<array<string, mixed>>  $changes
      */
-    private function payload(?array $change = null, ?string $message = null, ?string $redirect = null): JsonResponse
+    private function payload(?array $change = null, ?string $message = null, ?string $redirect = null, array $changes = []): JsonResponse
     {
         $view = $this->cart->current();
         $key = $view === null ? null : $this->cart->key();
         $cart = $view === null ? null : $this->presenter->present($view);
-        $voucher = $key === null || $view->lines === [] ? null : $this->voucher->preview($key);
+        $summary = $key === null || $view->lines === [] ? null : $this->voucher->preview($key, includeAutomatic: true);
+        $voucher = isset($summary['code']) ? $summary : null;
+        $data = ['cart' => $cart, 'voucher' => $voucher, 'discountSummary' => $summary];
 
         return response()->json([
             'cart' => $cart,
             'count' => $view->itemCount ?? 0,
             'voucher' => $voucher,
-            'html' => view('theme::partials.mini-cart', ['cart' => $cart, 'voucher' => $voucher])->render(),
-            'page_html' => request()->header(self::VIEW_HEADER) === 'page' ? view('theme::partials.cart-page', ['cart' => $cart, 'voucher' => $voucher])->render() : null,
+            'html' => view('theme::partials.mini-cart', $data)->render(),
+            'page_html' => request()->header(self::VIEW_HEADER) === 'page' ? view('theme::partials.cart-page', $data)->render() : null,
             'change' => $change,
+            'changes' => $changes,
             'message' => $message,
             'redirect' => $redirect,
         ])->header('Cache-Control', 'private, no-store');

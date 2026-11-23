@@ -14,6 +14,9 @@ use Modules\Promotion\Domain\Stacking;
  * @property int $id
  * @property string $name
  * @property int|null $campaign_id campaign sở hữu lịch chạy (0.3.36)
+ * @property string|null $managed_by
+ * @property string|null $managed_key
+ * @property string|null $managed_route
  * @property string $status
  * @property Carbon|null $starts_at
  * @property Carbon|null $ends_at
@@ -67,7 +70,9 @@ final class Promotion extends Model
     /** Liên kết sang màn hình sửa của plugin; route không còn (plugin tắt) → null. */
     public function managedUrl(): ?string
     {
-        return $this->managed_route !== null && Route::has($this->managed_route) ? route($this->managed_route, [$this->managed_key]) : null;
+        return $this->managed_route !== null && $this->managed_key !== null && Route::has($this->managed_route)
+            ? route($this->managed_route, [$this->managed_key])
+            : null;
     }
 
     public function isRunningAt(int $now): bool

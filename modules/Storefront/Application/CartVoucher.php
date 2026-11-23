@@ -67,28 +67,28 @@ final class CartVoucher
     }
 
     /**
-     * Mã đầu tiên đang gắn với giỏ và mức giảm hiện tại; null khi chưa có mã. Mã không còn dùng được (giỏ đổi dưới mức tối
-     * thiểu, mã hết hạn/hết lượt…) thì tự bỏ khỏi giỏ, không báo lỗi.
+     * Mã đầu tiên đang gắn với giỏ và mức giảm hiện tại. Mã không còn dùng được thì tự bỏ khỏi giỏ.
+     * Khi trang giỏ yêu cầu, trả thêm mức giảm tự động với `code` là null.
      *
-     * @return array{code: string, discount: array<string, mixed>, total: array<string, mixed>, rejection: null}|null
+     * @return array{code: ?string, discount: array<string, mixed>, total: array<string, mixed>, rejection: null}|null
      */
-    public function preview(CartKey $cart): ?array
+    public function preview(CartKey $cart, bool $includeAutomatic = false): ?array
     {
         $codes = $this->carts->view($cart)->voucherCodes;
-        if ($codes === []) {
+        if ($codes === [] && ! $includeAutomatic) {
             return null;
         }
         $totals = $this->totals($cart, null);
         if ($totals->rejectedVouchers !== []) {
             $codes = array_values(array_filter($codes, fn (string $code): bool => self::find($totals->rejectedVouchers, $code) === null));
             $this->carts->setVoucherCodes($cart, $codes);
-            if ($codes === []) {
-                return null;
-            }
+        }
+        if ($codes === [] && (! $includeAutomatic || $totals->discount->isZero())) {
+            return null;
         }
 
         return [
-            'code' => $codes[0],
+            'code' => $codes[0] ?? null,
             'discount' => $this->money->toArray($totals->discount),
             // Tạm tính sau giảm, chưa gồm phí giao.
             'total' => $this->money->toArray($totals->subtotal->subtract($totals->discount)),

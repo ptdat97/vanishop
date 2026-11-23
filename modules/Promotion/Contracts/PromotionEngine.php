@@ -33,9 +33,10 @@ interface PromotionEngine
      * action thuộc plugin đang tắt) không có trong kết quả → nơi gọi giữ nguyên giảm giá của nó.
      *
      * @param  list<int>  $promotionIds  theo thứ tự đã áp lúc đặt hàng
+     * @param  int|null  $orderId  dùng cấu hình đã lưu lúc đặt đơn nếu có
      * @return array<int, array<int, Money>> promotion id => (khoá dòng => giảm giá mới; dòng không còn được giảm thì vắng)
      */
-    public function recheck(PromotionContext $context, array $promotionIds): array;
+    public function recheck(PromotionContext $context, array $promotionIds, ?int $orderId = null): array;
 
     /**
      * Cập nhật giảm giá thực còn của từng khuyến mãi trên đơn sau huỷ một phần (0.3.31): `discount_amount` của lượt dùng

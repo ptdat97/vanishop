@@ -59,8 +59,8 @@
     <div class="mt-6 ml-auto flex max-w-md flex-col gap-4 border-t border-border bg-subtle p-5">
         <div class="w-full">@include('theme::partials.cart-voucher', ['voucher' => $voucher ?? null])</div>
         <p>{{ __('theme::cart.subtotal_selected_colon', ['count' => $cart['selected_count']]) }} <strong data-vani-value="cart.selected_subtotal" data-vani-amount="{{ $cart['selected_subtotal']['amount'] }}">{{ $cart['selected_subtotal']['formatted'] }}</strong></p>
-        @if (($voucher ?? null) && $voucher['rejection'] === null && $voucher['discount']['amount'] > 0)
-            <p class="text-emerald-700">{{ __('theme::common.discount') }}: −{{ $voucher['discount']['formatted'] }} · {{ __('theme::cart.estimated_total') }}: <strong>{{ $voucher['total']['formatted'] }}</strong></p>
+        @if (($discountSummary['discount']['amount'] ?? 0) > 0)
+            <p class="text-emerald-700">{{ __('theme::common.discount') }}: −{{ $discountSummary['discount']['formatted'] }} · {{ __('theme::cart.estimated_total') }}: <strong>{{ $discountSummary['total']['formatted'] }}</strong></p>
         @endif
         @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'vani-button-primary'])
         {{-- Chưa sẵn sàng: nút trên chọn lại mọi sản phẩm còn mua được; câu dưới giải thích cho khách. --}}

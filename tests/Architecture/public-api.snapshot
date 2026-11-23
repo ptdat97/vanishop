@@ -1,4 +1,4 @@
-VaniShop 0.5.74
+VaniShop 0.5.75
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -22,6 +22,7 @@ interface Modules\Cart\Contracts\Carts
   view(Modules\Cart\Contracts\Data\CartKey $key): Modules\Cart\Contracts\Data\CartView
   addLine(Modules\Cart\Contracts\Data\CartKey $key, int $variantId, int $quantity, array $options = array (
 )): Modules\Cart\Contracts\Data\CartView
+  addLines(Modules\Cart\Contracts\Data\CartKey $key, array $items): Modules\Cart\Contracts\Data\CartView
   updateLine(Modules\Cart\Contracts\Data\CartKey $key, int $lineId, int $quantity): Modules\Cart\Contracts\Data\CartView
   removeLine(Modules\Cart\Contracts\Data\CartKey $key, int $lineId): Modules\Cart\Contracts\Data\CartView
   buyNow(Modules\Cart\Contracts\Data\CartKey $key, int $variantId, int $quantity, array $options = array (
@@ -1377,8 +1378,10 @@ class Modules\Pricing\Events\PriceChanged
 interface Modules\Promotion\Contracts\Campaigns
   usage(int $campaignId): ?Modules\Promotion\Contracts\Data\CampaignUsage
 interface Modules\Promotion\Contracts\CartContentRule
+interface Modules\Promotion\Contracts\ContextualPromotionAction
+  applyInContext(Modules\Promotion\Contracts\Data\PromotionContext $context, array $remaining, array $config): array
 class Modules\Promotion\Contracts\Data\AppliedPromotion
-  __construct(int $promotionId, ?int $voucherId, ?string $voucherCode, string $name, array $lineDiscounts, Modules\Shared\Domain\Money\Money $total)
+  __construct(int $promotionId, ?int $voucherId, ?string $voucherCode, string $name, array $lineDiscounts, Modules\Shared\Domain\Money\Money $total, ?array $recheckConfig = NULL)
 class Modules\Promotion\Contracts\Data\CampaignUsage
   __construct(int $campaignId, array $promotionOrderIds, int $promotionDiscount, int $usages, array $priceListCodes)
 class Modules\Promotion\Contracts\Data\Eligibility
@@ -1386,6 +1389,9 @@ class Modules\Promotion\Contracts\Data\Eligibility
   static none(): self
   isEmpty(): bool
   intersect(self $other): self
+class Modules\Promotion\Contracts\Data\ManagedPromotion
+  __construct(string $name, bool $active, string $actionType, array $actionConfig, array $rules = array (
+), ?int $startsAt = NULL, ?int $endsAt = NULL, int $priority = 100, bool $exclusive = false, ?int $usageLimit = NULL, ?int $budgetAmount = NULL, ?string $editRoute = NULL)
 class Modules\Promotion\Contracts\Data\PromotionContext
   __construct(?int $customerId, string $currencyCode, array $lines, array $voucherCodes, int $now, array $attributes = array (
 ))
@@ -1399,6 +1405,10 @@ class Modules\Promotion\Contracts\Data\PromotionResult
   total(string $currencyCode): Modules\Shared\Domain\Money\Money
 class Modules\Promotion\Contracts\Data\VoucherRejection
   __construct(string $code, string $reason)
+interface Modules\Promotion\Contracts\ManagedPromotions
+  sync(string $owner, string $key, Modules\Promotion\Contracts\Data\ManagedPromotion $promotion): int
+  remove(string $owner, string $key): void
+  ids(string $owner): array
 interface Modules\Promotion\Contracts\PromotionAction
   const TAG = 'vani.promotion.actions'
   type(): string
@@ -1409,7 +1419,7 @@ interface Modules\Promotion\Contracts\PromotionEngine
   evaluate(Modules\Promotion\Contracts\Data\PromotionContext $context): Modules\Promotion\Contracts\Data\PromotionResult
   recordUsage(int $orderId, ?int $customerId, string $currencyCode, Modules\Promotion\Contracts\Data\PromotionResult $result): void
   revertUsage(int $orderId): void
-  recheck(Modules\Promotion\Contracts\Data\PromotionContext $context, array $promotionIds): array
+  recheck(Modules\Promotion\Contracts\Data\PromotionContext $context, array $promotionIds, ?int $orderId = NULL): array
   adjustUsage(int $orderId, array $currentDiscounts): void
 interface Modules\Promotion\Contracts\PromotionRule
   const TAG = 'vani.promotion.rules'

@@ -1,4 +1,4 @@
-Extension API 1.29.0
+Extension API 1.30.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -65,6 +65,9 @@ class Modules\Catalog\Contracts\Data\ProductSearchQuery
 ))
   offset(): int
   limit(): int
+class Modules\Catalog\Contracts\Data\VariantData
+  __construct(int $id, ?int $brandId, int $styleId, string $styleCode, string $styleName, string $sku, string $status, array $options = array (
+), bool $tracksInventory = true)
 class Modules\Catalog\Contracts\Data\VideoThumbnail
   __construct(string $url, ?int $width = NULL, ?int $height = NULL)
 interface Modules\Catalog\Contracts\ImageFormat
@@ -781,6 +784,8 @@ class Modules\Pricing\Contracts\Data\PricingContext
   __construct(int $now, ?int $customerGroupId = NULL, ?int $customerId = NULL)
 class Modules\Pricing\Contracts\Data\ResolvedPrice
   __construct(int $variantId, Modules\Shared\Domain\Money\Money $amount, ?Modules\Shared\Domain\Money\Money $compareAt, ?int $discountPercent, string $priceListCode)
+interface Modules\Pricing\Contracts\PriceResolver
+  forVariants(array $variantIds, Modules\Pricing\Contracts\Data\PricingContext $context): array
 interface Modules\Pricing\Contracts\PriceRounding [experimental]
   const TAG = 'vani.pricing.roundings'
   code(): string
@@ -799,6 +804,8 @@ class Modules\Pricing\Events\PriceChanged
 interface Modules\Promotion\Contracts\Campaigns [experimental]
   usage(int $campaignId): ?Modules\Promotion\Contracts\Data\CampaignUsage
 interface Modules\Promotion\Contracts\CartContentRule
+interface Modules\Promotion\Contracts\ContextualPromotionAction
+  applyInContext(Modules\Promotion\Contracts\Data\PromotionContext $context, array $remaining, array $config): array
 class Modules\Promotion\Contracts\Data\CampaignUsage [experimental]
   __construct(int $campaignId, array $promotionOrderIds, int $promotionDiscount, int $usages, array $priceListCodes)
 class Modules\Promotion\Contracts\Data\Eligibility
@@ -806,6 +813,9 @@ class Modules\Promotion\Contracts\Data\Eligibility
   static none(): self
   isEmpty(): bool
   intersect(self $other): self
+class Modules\Promotion\Contracts\Data\ManagedPromotion
+  __construct(string $name, bool $active, string $actionType, array $actionConfig, array $rules = array (
+), ?int $startsAt = NULL, ?int $endsAt = NULL, int $priority = 100, bool $exclusive = false, ?int $usageLimit = NULL, ?int $budgetAmount = NULL, ?string $editRoute = NULL)
 class Modules\Promotion\Contracts\Data\PromotionContext
   __construct(?int $customerId, string $currencyCode, array $lines, array $voucherCodes, int $now, array $attributes = array (
 ))
@@ -817,6 +827,10 @@ class Modules\Promotion\Contracts\Data\PromotionResult
   __construct(array $applied, array $rejectedVouchers)
   discountByLine(): array
   total(string $currencyCode): Modules\Shared\Domain\Money\Money
+interface Modules\Promotion\Contracts\ManagedPromotions
+  sync(string $owner, string $key, Modules\Promotion\Contracts\Data\ManagedPromotion $promotion): int
+  remove(string $owner, string $key): void
+  ids(string $owner): array
 interface Modules\Promotion\Contracts\PromotionAction
   const TAG = 'vani.promotion.actions'
   type(): string
