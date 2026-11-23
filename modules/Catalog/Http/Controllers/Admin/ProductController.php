@@ -26,6 +26,7 @@ use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Application\Products\VariantMatrix;
 use Modules\Catalog\Application\Products\VariantOptions;
 use Modules\Catalog\Application\Products\VideoDrivers;
+use Modules\Catalog\Contracts\Data\DefaultWeight;
 use Modules\Catalog\Contracts\ProductViewStatistics;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Http\Requests\Admin\ProductRequest;
@@ -517,6 +518,7 @@ final class ProductController
         return Inertia::render('Catalog::Products/Form', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
+            'defaultWeightGram' => DefaultWeight::grams(app(Settings::class)),
             // Ma trận biến thể (variant-matrix §3, ADR-045): trục của sản phẩm (1–3 loại tuỳ chọn + giá trị theo thứ tự), danh mục
             // loại tuỳ chọn để chọn trục, cột do module/plugin góp + giá trị theo SKU.
             'variantMatrix' => [

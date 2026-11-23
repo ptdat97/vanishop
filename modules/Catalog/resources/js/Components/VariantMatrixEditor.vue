@@ -18,6 +18,7 @@ import { toast } from '@admin/toast';
 import type { MediaItem } from '@admin/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, nextTick, reactive, ref, watch } from 'vue';
+import VariantWeightInput from './VariantWeightInput.vue';
 
 /**
  * Ma trận biến thể theo trục tuỳ chọn (ADR-045, docs/03-domains/variant-matrix.md §3): sản phẩm chọn 1–3 loại tuỳ chọn
@@ -57,6 +58,7 @@ const props = defineProps<{
     columns: Column[];
     values: Record<number, Record<string, Record<string, FieldValue>>>;
     statusLabels: Record<string, string>;
+    defaultWeightGram: number;
     /** Chuyển sản phẩm đơn sang có biến thể: SKU không tuỳ chọn này trở thành một ô (giữ id, giá, tồn, ảnh). */
     adoptVariant?: Variant | null;
 }>();
@@ -729,7 +731,7 @@ const enabledCount = computed(() => rows.value.length);
                         </template>
                         <template #cell-sku="{ row }"><input v-model="row.draft.sku" :class="[inputClass, 'w-44 font-mono text-xs']" :aria-label="`SKU ${row.label}`" /></template>
                         <template #cell-barcode="{ row }"><input v-model="row.draft.barcode" :class="[inputClass, 'w-32 font-mono text-xs']" aria-label="Barcode" /></template>
-                        <template #cell-weight_gram="{ row }"><input v-model.number="row.draft.weight_gram" type="number" min="0" :class="[inputClass, 'w-24']" :aria-label="t('catalog::admin.variant_matrix_editor.weight')" /></template>
+                        <template #cell-weight_gram="{ row }"><VariantWeightInput v-model="row.draft.weight_gram" :default-grams="defaultWeightGram" /></template>
                         <template #cell-status="{ row }"><div class="w-32"><Select v-model="row.draft.status" :options="labelOptions(statusLabels)" :aria-label="t('catalog::admin.variant_matrix_editor.status')" /></div></template>
                         <template v-for="{ key: columnKey, column, field } in fieldColumns" :key="columnKey" #[`cell-${columnKey}`]="{ row }">
                             <input

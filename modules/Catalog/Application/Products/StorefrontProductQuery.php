@@ -170,7 +170,7 @@ final class StorefrontProductQuery
                 imageUrl: $variant->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
                 brandName: $variant->style->brand?->name,
                 // SKU chưa nhập khối lượng → khối lượng mặc định của cửa hàng (tính phí giao, file gửi hãng).
-                weightGram: $variant->weight_gram ?? $defaultWeight,
+                weightGram: $variant->weight_gram > 0 ? $variant->weight_gram : $defaultWeight,
                 options: VariantOptions::present($variant, $locale),
             )])
             ->all();

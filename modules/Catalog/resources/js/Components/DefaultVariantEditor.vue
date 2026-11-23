@@ -10,6 +10,7 @@ import { inputClass } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
+import VariantWeightInput from './VariantWeightInput.vue';
 
 /**
  * Sản phẩm đơn: một SKU không màu, size… (ma trận 0 trục, một ô `values: []` — VariantMatrix). Ảnh, SKU, barcode, khối lượng,
@@ -32,6 +33,7 @@ const props = defineProps<{
     values: Record<string, Record<string, FieldValue>>;
     columns: Column[];
     statusLabels: Record<string, string>;
+    defaultWeightGram: number;
 }>();
 const mediaIds = defineModel<number[]>('mediaIds', { default: () => [] });
 
@@ -126,7 +128,7 @@ function removeImage(imageId: number): void {
             </template>
             <template #cell-sku><input v-model="sku" :class="[inputClass, 'w-44 font-mono text-xs']" aria-label="SKU" /></template>
             <template #cell-barcode><input v-model="draft.barcode" :class="[inputClass, 'w-32 font-mono text-xs']" aria-label="Barcode" /></template>
-            <template #cell-weight_gram><input v-model.number="draft.weight_gram" type="number" min="0" :class="[inputClass, 'w-24']" :aria-label="t('catalog::admin.default_variant_editor.weight')" /></template>
+            <template #cell-weight_gram><VariantWeightInput v-model="draft.weight_gram" :default-grams="defaultWeightGram" /></template>
             <template #cell-status><div class="w-32"><Select v-model="draft.status" :options="labelOptions(statusLabels)" :aria-label="t('catalog::admin.default_variant_editor.status')" /></div></template>
             <template v-for="{ key: columnKey, column, field } in fieldColumns" :key="columnKey" #[`cell-${columnKey}`]>
                 <input

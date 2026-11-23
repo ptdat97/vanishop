@@ -197,7 +197,7 @@ final class AdminQueries
             'image' => $query->whereNotExists(DB::table('mediables')->join('variants', 'variants.id', '=', 'mediables.mediable_id')
                 ->where('mediables.mediable_type', 'catalog.variant')->where('mediables.role', 'gallery')->whereColumn('variants.style_id', 'styles.id')),
             'category' => $query->whereNotExists(DB::table('category_style')->whereColumn('category_style.style_id', 'styles.id')),
-            'weight' => $query->whereExists($variants()->where('variants.status', 'active')->where(fn ($weight) => $weight->whereNull('variants.weight_gram')->orWhere('variants.weight_gram', 0))),
+            'weight' => $query->whereExists($variants()->where('variants.status', 'active')->where(fn ($weight) => $weight->whereNull('variants.weight_gram')->orWhere('variants.weight_gram', '<=', 0))),
             'description' => $query->whereNotExists(DB::table('style_translations')->whereColumn('style_translations.style_id', 'styles.id')
                 ->where('style_translations.locale', StoreLocale::default())->whereNotNull('description')->where('description', '!=', '')),
             default => $query,

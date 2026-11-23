@@ -7,6 +7,7 @@ use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Support\SimpleXlsx;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -53,6 +54,25 @@ it('xuất file cho hãng: .xlsx, một dòng mỗi vận đơn chưa rời kho,
         ->and($rows[2][8])->toBe('900')
         ->and($rows[2][9])->toBe('600000')
         ->and((int) $rows[2][10])->toBe((int) $a->total_amount);
+});
+
+it('SKU 0 gram dùng cùng khối lượng mặc định khi tính phí checkout và xuất file giao hãng', function () {
+    T::seed(function () {
+        $this->s->update(['weight_gram' => 0]);
+        $settings = app(Settings::class);
+        $settings->set('core', 'catalog.default_weight_gram', 800);
+        $settings->set('vani.shipping-flat-rate', 'fee', 30_000);
+        $settings->set('vani.shipping-flat-rate', 'free_over', 9_999_999);
+        $settings->set('vani.shipping-flat-rate', 'included_grams', 500);
+        $settings->set('vani.shipping-flat-rate', 'fee_per_extra_kg', 5_000);
+    });
+
+    $order = ($this->place)(2);
+    $response = $this->get('/admin/fulfillment/shipments/export?ids[]='.$order->id)->assertOk();
+    $rows = SimpleXlsx::read($response->getFile()->getPathname());
+
+    expect($order->total_amount)->toBe(640_000)
+        ->and($rows[1][8])->toBe('1600');
 });
 
 it('nhập mã vận đơn từ file Excel hãng xuất (mã đơn của shop ở cột bất kỳ, chuỗi dùng chung) — ghi mã + hãng; nhập lại không trùng; dòng lỗi được báo', function () {

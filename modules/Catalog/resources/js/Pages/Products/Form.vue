@@ -31,6 +31,7 @@ const props = defineProps<{
     nav: NavItem[];
     stockUrl?: string | null;
     labels: CatalogLabels;
+    defaultWeightGram: number;
     /** Dữ liệu còn thiếu của sản phẩm (nhãn đã dịch) — rỗng khi đủ hoặc khi thêm mới. */
     missing: string[];
     /** Thêm mới: mã sản phẩm gợi ý (để trống ô mã thì dùng mã này). */
@@ -396,6 +397,7 @@ async function destroy(): Promise<void> {
                     :values="singleValues"
                     :columns="variantMatrix.columns"
                     :status-labels="labels.variant_status"
+                    :default-weight-gram="defaultWeightGram"
                 />
             </section>
 
@@ -470,6 +472,7 @@ async function destroy(): Promise<void> {
                     :columns="variantMatrix.columns"
                     :values="variantMatrix.values"
                     :status-labels="labels.variant_status"
+                    :default-weight-gram="defaultWeightGram"
                     :adopt-variant="converting ? singleVariant : null"
                 />
                 <template #footer>

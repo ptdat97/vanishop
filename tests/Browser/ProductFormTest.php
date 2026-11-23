@@ -6,6 +6,7 @@ use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Tenancy\Contracts\Settings;
 
 /*
 | Form sản phẩm trên trình duyệt thật. Hồi quy 2026-11-13: trang "Thêm sản phẩm" treo — template truyền
@@ -44,6 +45,19 @@ it('mặc định là sản phẩm đơn: dòng SKU không màu / size, nút Th�
         ->assertNoJavaScriptErrors();
 });
 
+it('ô khối lượng sản phẩm đơn báo số gram mặc định khi để trống hoặc nhập 0', function () {
+    T::seed(fn () => app(Settings::class)->set('core', 'catalog.default_weight_gram', 800));
+    $weightInput = '[data-single-variant] input[aria-label="Khối lượng (g)"]';
+
+    visit('/admin/catalog/products/create')
+        ->assertSee('Dùng mặc định 800 g')
+        ->fill($weightInput, '450')
+        ->assertMissing('[data-single-variant] [data-default-weight]')
+        ->fill($weightInput, '0')
+        ->assertSee('Dùng mặc định 800 g')
+        ->assertNoJavaScriptErrors();
+});
+
 it('sản phẩm đơn: nhập giá → Lưu tạo sản phẩm kèm một SKU theo mã sản phẩm; trang sửa vẫn là sản phẩm đơn', function () {
     $page = visit('/admin/catalog/products/create');
     $page->type('form input >> nth=0', 'Áo thun trơn')
@@ -68,6 +82,7 @@ it('Thiết lập biến thể khi thêm mới: chọn màu → có ô Ảnh the
 
     $page->assertSee('Ảnh theo màu')
         ->assertPresent('[data-value-images] [data-media-field]')
+        ->assertVisible('[role="dialog"] [data-default-weight]')
         ->assertNoJavaScriptErrors();
 });
 

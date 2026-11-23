@@ -3,6 +3,10 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'variant_weight_input' => [
+        'label' => 'Weight (g)',
+        'default_grams' => 'Uses default :grams g',
+    ],
     'categories_form' => [
         'add_category' => 'Add category',
         'back' => 'Back',
