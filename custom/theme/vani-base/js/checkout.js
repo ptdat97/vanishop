@@ -5,6 +5,7 @@ export function mountCheckout() {
     document.querySelector('[data-checkout-errors]')?.focus();
     const status = form.querySelector('[data-checkout-quote-status]');
     const selectors = ['[data-checkout-summary]', '[data-checkout-shipping]', '[data-checkout-payment]', '[data-checkout-bar]'];
+    const ward = form.querySelector('[data-ward-select]');
     let pending = null;
     let placing = false;
 
@@ -13,7 +14,7 @@ export function mountCheckout() {
         if (pending) summary?.setAttribute('aria-busy', 'true');
         else summary?.removeAttribute('aria-busy');
         form.querySelectorAll('[data-checkout-submit]').forEach((button) => {
-            if (pending || placing) button.setAttribute('aria-disabled', 'true');
+            if (pending || placing || ward?.getAttribute('aria-busy') === 'true') button.setAttribute('aria-disabled', 'true');
             else button.removeAttribute('aria-disabled');
         });
     }
@@ -33,7 +34,15 @@ export function mountCheckout() {
             if (request.signal.aborted) return;
             const data = new FormData(form);
             data.set('action', 'quote');
-            const response = await fetch(form.getAttribute('action'), { method: 'POST', body: data, credentials: 'same-origin', headers: { Accept: 'text/html' }, signal: request.signal });
+            data.delete('voucher_code');
+            const response = await fetch(form.getAttribute('action'), {
+                method: 'POST',
+                body: data,
+                credentials: 'same-origin',
+                redirect: 'error',
+                headers: { Accept: 'text/html', 'X-Vani-Checkout-View': 'quote' },
+                signal: request.signal,
+            });
             if (!response.ok) throw new Error(String(response.status));
             const page = new DOMParser().parseFromString(await response.text(), 'text/html');
             if (request.signal.aborted) return;
@@ -43,14 +52,21 @@ export function mountCheckout() {
             if (!currentTotal || !quotedTotal || replacements.some(([current, fresh]) => current && !fresh)) throw new Error('Missing checkout quote');
 
             const focused = document.activeElement;
+            const voucher = form.querySelector('[name="voucher_code"]');
             for (const [current, fresh] of replacements) {
                 if (!current) continue;
                 const replacement = document.importNode(fresh, true);
                 const restoreFocus = current.contains(focused);
+                const nextVoucher = replacement.querySelector('[name="voucher_code"]');
+                if (voucher && nextVoucher) nextVoucher.value = voucher.value;
                 current.replaceWith(replacement);
                 if (restoreFocus && focused.matches('input[type="radio"]')) {
                     const choice = [...replacement.querySelectorAll('input[type="radio"]')].find((input) => input.value === focused.value);
                     (choice ?? replacement).focus({ preventScroll: true });
+                } else if (restoreFocus && focused.id) {
+                    document.getElementById(focused.id)?.focus({ preventScroll: true });
+                } else if (restoreFocus) {
+                    replacement.querySelector('[data-checkout-submit], a[href="#checkout-summary"]')?.focus({ preventScroll: true });
                 }
             }
             currentTotal.value = quotedTotal.value;
@@ -71,7 +87,7 @@ export function mountCheckout() {
 
     form.addEventListener('submit', (event) => {
         if (event.defaultPrevented || !event.submitter?.matches('[data-checkout-submit]')) return;
-        if (pending || placing) {
+        if (event.submitter.getAttribute('aria-disabled') === 'true') {
             event.preventDefault();
             return;
         }
@@ -82,6 +98,7 @@ export function mountCheckout() {
         placing = false;
         syncBusyState();
     });
+    ward?.addEventListener('vani:wards-state', syncBusyState);
     form.addEventListener('change', (event) => {
         if (event.target.matches('[data-ward-select], input[name="shipping_method"], input[name="payment_method"]')) {
             void requote();

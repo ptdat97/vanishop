@@ -203,11 +203,11 @@ if (carousels.length) {
  * Ảnh phóng to chung: vùng `[data-vani-lightbox]` chứa các `<a href=ảnh-lớn data-pswp-width data-pswp-height>`.
  * Trước khi thư viện tải xong: liên kết mở ảnh lớn.
  */
-function mountLightbox(PhotoSwipeLightbox, gallery, onChange) {
+function mountLightbox(PhotoSwipeLightbox, gallery, onChange, PhotoSwipe = null) {
     const lightbox = new PhotoSwipeLightbox({
         gallery,
         children: 'a[data-pswp-width]',
-        pswpModule: () => import('photoswipe'),
+        pswpModule: PhotoSwipe ?? (() => import('photoswipe')),
         bgOpacity: 0.95,
         showHideAnimationType: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'none' : 'zoom',
         closeTitle: t('lightbox_close'),
@@ -228,7 +228,7 @@ if (lightboxes.length) {
         .catch(() => {});
 }
 
-mountProduct({ loadVendor, mountCarousel, mountLightbox });
+mountProduct({ loadVendor, mountLightbox });
 
 mountCartPage();
 
@@ -248,11 +248,13 @@ function mountWardFilter(filter, ward) {
         const query = foldVietnamese(filter.value);
         const selected = ward.value;
         const matches = all.filter((item) => item.key.includes(query));
+        const current = all.find((item) => item.value === selected);
+        const options = current && !matches.includes(current) && matches.length !== 1 ? [current, ...matches] : matches;
         ward.replaceChildren(
             new Option(matches.length ? t('choose_ward') : t('wards_no_match'), ''),
-            ...matches.map((item) => new Option(item.label, item.value, false, item.value === selected)),
+            ...options.map((item) => new Option(item.label, item.value, false, item.value === selected)),
         );
-        if (matches.length === 1) {
+        if (matches.length === 1 && matches[0].value !== selected) {
             ward.value = matches[0].value;
             ward.dispatchEvent(new Event('change', { bubbles: true }));
         }
@@ -275,34 +277,57 @@ document.querySelectorAll('[data-province-select]').forEach((province) => {
         return;
     }
     const filter = province.form.querySelector('[data-ward-filter]');
+    const retry = province.form.querySelector('[data-ward-retry]');
     const rememberWards = filter ? mountWardFilter(filter, ward) : () => {};
     let wardRequest;
 
+    const setLoading = (loading) => {
+        ward.disabled = loading;
+        if (loading) ward.setAttribute('aria-busy', 'true');
+        else ward.removeAttribute('aria-busy');
+        if (retry) retry.disabled = loading;
+        ward.dispatchEvent(new Event('vani:wards-state'));
+    };
     province.vaniLoadWards = async (selected = '') => {
         wardRequest?.abort();
         const request = new AbortController();
         wardRequest = request;
-        ward.replaceChildren(new Option(t('wards_loading'), ''));
         if (!province.value) {
+            if (retry) retry.hidden = true;
             ward.replaceChildren(new Option(t('province_first'), ''));
             rememberWards();
+            setLoading(false);
             return;
         }
+        ward.replaceChildren(new Option(t('wards_loading'), ''));
+        if (filter) filter.hidden = true;
+        setLoading(true);
         try {
             const response = await fetch(`${province.dataset.wardsUrl}/${encodeURIComponent(province.value)}/wards`, {
                 headers: { Accept: 'application/json' },
                 signal: request.signal,
             });
+            if (!response.ok) throw new Error(String(response.status));
             const { data } = await response.json();
             if (request.signal.aborted) return;
             ward.replaceChildren(new Option(t('choose_ward'), ''), ...data.map((item) => new Option(item.name, item.code, false, item.code === selected)));
+            if (retry) retry.hidden = true;
         } catch {
             if (request.signal.aborted) return;
             ward.replaceChildren(new Option(t('wards_failed'), ''));
+            if (retry) retry.hidden = false;
+        } finally {
+            if (!request.signal.aborted) {
+                rememberWards();
+                setLoading(false);
+            }
         }
-        rememberWards();
     };
     province.addEventListener('change', () => province.vaniLoadWards());
+    retry?.addEventListener('click', async () => {
+        await province.vaniLoadWards();
+        if (retry.hidden && !ward.disabled) ward.focus();
+    });
 });
 
 mountCheckout();
@@ -370,6 +395,8 @@ if (recent) {
                         const image = document.createElement('img');
                         image.src = product.image_url;
                         image.alt = '';
+                        image.width = 300;
+                        image.height = 400;
                         image.loading = 'lazy';
                         image.className = 'mb-2 aspect-[3/4] w-full rounded-[var(--radius-theme)] object-cover';
                         link.append(image);

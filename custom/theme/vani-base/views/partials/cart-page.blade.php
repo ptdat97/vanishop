@@ -16,20 +16,20 @@
     {{-- Chọn dòng để thanh toán (§3.8): ô chọn thuộc form này qua thuộc tính form=, JS tự gửi khi đổi. --}}
     <form id="cart-selection" action="{{ vani_route('storefront.cart.select') }}" method="post" class="mb-3 flex items-center gap-4 text-sm">
         @csrf
-        <label class="flex items-center gap-2">
-            <input type="checkbox" data-select-all @checked(collect($cart['lines'])->every(fn ($line) => $line['selected'] || in_array('unavailable', $line['issues'], true)))>
+        <label class="flex min-h-11 items-center gap-2">
+            <input id="cart-select-all" type="checkbox" class="size-5 accent-primary" data-select-all @checked(collect($cart['lines'])->every(fn ($line) => $line['selected'] || in_array('unavailable', $line['issues'], true)))>
             {{ __('theme::cart.select_all') }}
         </label>
     </form>
     <ul class="divide-y divide-slate-200 border-y border-slate-200">
         @foreach ($cart['lines'] as $line)
-            <li class="flex flex-wrap items-center gap-4 py-4">
+            <li class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:gap-4">
                 @php($unavailable = in_array('unavailable', $line['issues'], true))
-                <label class="flex items-center">
-                    <span class="sr-only">{{ __('theme::cart.select_checkout') }}</span>
-                    <input type="checkbox" name="lines[]" value="{{ $line['id'] }}" form="cart-selection" data-select-line data-line="{{ $line['id'] }}" @checked($line['selected']) @disabled($unavailable)>
+                <label class="col-start-1 row-start-1 flex min-h-11 min-w-11 items-center justify-center self-start">
+                    <span class="sr-only">{{ __('theme::cart.select_checkout') }} · {{ $line['product']['name'] ?? $line['sku'] }}</span>
+                    <input id="cart-select-{{ $line['id'] }}" type="checkbox" name="lines[]" value="{{ $line['id'] }}" form="cart-selection" data-select-line class="size-5 accent-primary" @checked($line['selected']) @disabled($unavailable)>
                 </label>
-                <div class="min-w-48 flex-1 break-words">
+                <div class="col-span-2 min-w-0 wrap-anywhere sm:col-span-1">
                     @if ($line['product'])
                         <a href="{{ vani_route('storefront.product', $line['product']['slug']) }}" class="font-medium">{{ $line['product']['name'] }}</a>
                         <p class="text-sm text-slate-500">{{ $line['product']['variant_label'] !== '' ? $line['product']['variant_label'].' · ' : '' }}{{ $line['sku'] }}</p>
@@ -41,34 +41,50 @@
                         <p class="text-sm text-red-600">{{ __('storefront::messages.issue_'.$issue) }}</p>
                     @endforeach
                 </div>
-                <form action="{{ vani_route('storefront.cart.update', $line['id']) }}" method="post" class="flex items-center gap-2" data-cart-update-form data-line="{{ $line['id'] }}">
+                <form action="{{ vani_route('storefront.cart.update', $line['id']) }}" method="post" class="col-span-2 col-start-1 row-start-2 flex items-center gap-1 sm:col-span-1 sm:col-start-3 sm:row-start-1" data-cart-update-form data-line="{{ $line['id'] }}">
                     @csrf
-                    <label for="qty-{{ $line['id'] }}" class="sr-only">{{ __('theme::common.quantity') }}</label>
-                    <input id="qty-{{ $line['id'] }}" name="quantity" type="number" min="0" max="20" value="{{ $line['quantity'] }}" data-autosubmit data-line="{{ $line['id'] }}" class="w-16 rounded border border-slate-300 px-2 py-1">
+                    <button id="qty-less-{{ $line['id'] }}" type="button" data-js-only data-cart-step="-1" aria-controls="qty-{{ $line['id'] }}" @if ($line['quantity'] <= 1) aria-disabled="true" @endif
+                        aria-label="{{ __('theme::cart.decrease_quantity') }}" class="size-11 shrink-0 rounded border border-border aria-disabled:opacity-50">−</button>
+                    <label for="qty-{{ $line['id'] }}" class="sr-only">{{ __('theme::common.quantity') }} · {{ $line['product']['name'] ?? $line['sku'] }}</label>
+                    <input id="qty-{{ $line['id'] }}" name="quantity" type="number" min="0" max="20" value="{{ $line['quantity'] }}" inputmode="numeric" data-autosubmit data-line="{{ $line['id'] }}" class="min-h-11 w-11 rounded border border-border text-center text-base [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none">
+                    <button id="qty-more-{{ $line['id'] }}" type="button" data-js-only data-cart-step="1" aria-controls="qty-{{ $line['id'] }}" @if ($line['quantity'] >= 20) aria-disabled="true" @endif
+                        aria-label="{{ __('theme::cart.increase_quantity') }}" class="size-11 shrink-0 rounded border border-border aria-disabled:opacity-50">+</button>
+                    <noscript><button type="submit" class="vani-text-link">{{ __('theme::common.apply') }}</button></noscript>
                 </form>
-                <p class="w-28 text-right font-medium" data-vani-value="line.total" data-vani-line="{{ $line['id'] }}" data-vani-amount="{{ $line['line_total']['amount'] ?? '' }}">{{ $line['line_total']['formatted'] ?? '—' }}</p>
-                <form action="{{ vani_route('storefront.cart.remove', $line['id']) }}" method="post" data-cart-remove-form data-line="{{ $line['id'] }}">
+                <p class="col-start-3 row-start-2 text-right font-medium sm:col-start-4 sm:row-start-1" data-vani-value="line.total" data-vani-line="{{ $line['id'] }}" data-vani-amount="{{ $line['line_total']['amount'] ?? '' }}">{{ $line['line_total']['formatted'] ?? '—' }}</p>
+                <form action="{{ vani_route('storefront.cart.remove', $line['id']) }}" method="post" class="col-span-2 col-start-2 row-start-3 justify-self-end sm:col-span-1 sm:col-start-5 sm:row-start-1" data-cart-remove-form data-line="{{ $line['id'] }}">
                     @csrf
-                    <button type="submit" class="text-sm text-slate-500 underline">{{ __('theme::common.remove') }}</button>
+                    <button type="submit" class="vani-text-link text-accent">{{ __('theme::common.remove') }}</button>
                 </form>
             </li>
         @endforeach
     </ul>
     <x-vani::hook-slot name="vani.storefront.cart.after_lines" :args="[$cart]" />
 
-    <div class="mt-6 ml-auto flex max-w-md flex-col gap-4 border-t border-border bg-subtle p-5">
+    <div class="mt-6 ml-auto flex max-w-md flex-col gap-4 bg-subtle p-4">
         <div class="w-full">@include('theme::partials.cart-voucher', ['voucher' => $voucher ?? null])</div>
         <p>{{ __('theme::cart.subtotal_selected_colon', ['count' => $cart['selected_count']]) }} <strong data-vani-value="cart.selected_subtotal" data-vani-amount="{{ $cart['selected_subtotal']['amount'] }}">{{ $cart['selected_subtotal']['formatted'] }}</strong></p>
         @if (($discountSummary['discount']['amount'] ?? 0) > 0)
             <p class="text-emerald-700">{{ __('theme::common.discount') }}: −{{ $discountSummary['discount']['formatted'] }} · {{ __('theme::cart.estimated_total') }}: <strong>{{ $discountSummary['total']['formatted'] }}</strong></p>
         @endif
-        @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'vani-button-primary'])
         {{-- Chưa sẵn sàng: nút trên chọn lại mọi sản phẩm còn mua được; câu dưới giải thích cho khách. --}}
         @if (! $cart['checkout_ready'] && ($cart['payable_line_ids'] ?? []) !== [])
             <p class="text-sm text-slate-600">{{ __('theme::cart.checkout_all_hint') }}</p>
         @elseif (! $cart['checkout_ready'])
             <p class="text-sm text-red-600">{{ __('theme::cart.fix_lines_before_checkout') }}</p>
         @endif
+    </div>
+    <div class="sticky bottom-0 z-20 mt-4 -mx-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-border bg-surface px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:static md:mx-0 md:ml-auto md:max-w-md md:px-0" data-cart-bottom>
+        <div class="min-w-0 text-sm">
+            @if (($discountSummary['discount']['amount'] ?? 0) > 0)
+                <span class="block text-accent">{{ __('theme::cart.estimated_total') }}</span>
+                <strong>{{ $discountSummary['total']['formatted'] }}</strong>
+            @else
+                <span class="block text-accent">{{ __('theme::checkout.subtotal') }}</span>
+                <strong>{{ $cart['selected_subtotal']['formatted'] }}</strong>
+            @endif
+        </div>
+        @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'vani-button-primary px-3 sm:px-6'])
     </div>
     <x-vani::hook-slot name="vani.storefront.cart.after_summary" :args="[$cart]" />
 @endif

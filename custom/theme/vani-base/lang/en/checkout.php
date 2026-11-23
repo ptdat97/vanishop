@@ -5,6 +5,7 @@ return [
     'quote_updating' => 'Updating your total.',
     'quote_updated' => 'Order total updated.',
     'quote_failed' => 'The total could not be refreshed. Check your details or select Apply to reload the quote.',
+    'retry_wards' => 'Reload ward list',
     'checkout' => 'Checkout',
     'choose_saved_address' => '— Choose a saved address —',
     'delivery' => 'Delivery',

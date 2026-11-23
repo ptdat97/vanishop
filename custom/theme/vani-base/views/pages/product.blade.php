@@ -21,18 +21,14 @@
 
     <div class="grid items-start gap-3 md:grid-cols-[minmax(0,4fr)_minmax(0,3fr)] md:gap-6 lg:gap-12">
         @php($gallery = $page['gallery'])
-        {{--
-            Gallery: Swiper (vuốt, mũi tên) + PhotoSwipe (phóng to) — cài qua npm, tải theo nhu cầu (app.js). HTML render
-            sẵn: dải ảnh cuộn ngang (scroll-snap), bấm ảnh mở bản lớn nhất. Khung theo tỉ lệ ảnh sản phẩm (Admin → Kích thước ảnh).
-        --}}
         <div class="min-w-0">
             <x-vani::hook-slot name="vani.storefront.pdp.before_gallery" :args="[$product]" />
             <div data-product-gallery>
-                <div class="vani-carousel vani-pdp-gallery swiper rounded-[var(--radius-theme)] bg-subtle" style="aspect-ratio: {{ $gallery['aspect'] }}" data-gallery-slider
-                     aria-roledescription="carousel" aria-label="{{ $gallery['label'] }}">
-                    <div class="swiper-wrapper">
+                <div class="vani-pdp-gallery relative overflow-hidden rounded-[var(--radius-theme)] bg-subtle" style="aspect-ratio: {{ $gallery['aspect'] }}" data-gallery-slider
+                     role="region" aria-roledescription="carousel" aria-label="{{ $gallery['label'] }}">
+                    <div class="flex h-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none]" data-gallery-track>
                         @foreach ($gallery['slides'] as $slide)
-                            <div class="swiper-slide w-full" data-gallery-slide>
+                            <div class="h-full w-full shrink-0 snap-start" data-gallery-slide>
                                 <a href="{{ $slide['zoom']['url'] }}" data-pswp-width="{{ $slide['zoom']['width'] }}" data-pswp-height="{{ $slide['zoom']['height'] }}" target="_blank" rel="noopener" class="block h-full cursor-zoom-in"
                                    aria-label="{{ $slide['zoom_label'] }}">
                                     <img {{ $slide['main'] ? 'data-gallery-main' : 'data-gallery-image' }} src="{{ $slide['url'] }}" alt="{{ $slide['alt'] }}" width="{{ $slide['width'] }}" height="{{ $slide['height'] }}"
@@ -43,8 +39,11 @@
                         @endforeach
                     </div>
                     @if ($gallery['navigation'])
-                        <button type="button" class="vani-carousel-nav left-2" data-carousel-prev data-js-only aria-label="{{ __('theme::common.previous_image') }}">‹</button>
-                        <button type="button" class="vani-carousel-nav right-2" data-carousel-next data-js-only aria-label="{{ __('theme::common.next_image') }}">›</button>
+                        <button type="button" class="vani-carousel-nav left-2 min-h-11 min-w-11" data-gallery-previous data-js-only aria-label="{{ __('theme::common.previous_image') }}">‹</button>
+                        <button type="button" class="vani-carousel-nav right-2 min-h-11 min-w-11" data-gallery-next data-js-only aria-label="{{ __('theme::common.next_image') }}">›</button>
+                        <span class="pointer-events-none absolute right-2 bottom-2 rounded bg-surface/95 px-2 py-1 text-xs tabular-nums" data-js-only>
+                            <span data-gallery-position>1</span> / {{ count($gallery['slides']) }}
+                        </span>
                     @endif
                 </div>
                 @if ($gallery['thumbs'] !== [])
@@ -92,7 +91,7 @@
                             @endforeach
                         </legend>
                         @if ($primary['display_type'] === 'dropdown')
-                            <select name="{{ $primary['input_name'] }}" class="rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm" aria-label="{{ $primary['name'] }}">
+                            <select name="{{ $primary['input_name'] }}" class="min-h-11 max-w-full rounded-[var(--radius-theme)] border border-border px-3 text-base" aria-label="{{ $primary['name'] }}">
                                 @foreach ($primary['values'] as $value)
                                     <option value="{{ $value['input_value'] }}" data-primary data-option-value="{{ $value['code'] }}" data-images='@json($value['images'])'
                                         @if ($value['price_html']) data-price-html="{{ $value['price_html'] }}" @endif
@@ -150,7 +149,7 @@
                     @endforeach
                 @endif
                 {{-- Không CDN: lỗi của lần gửi trước render sẵn; trang cache CDN: JS điền từ /_vani/phien. --}}
-                <p role="alert" class="text-sm text-red-600" data-vani-error-for="variant_id" @unless ($errors->has('variant_id')) hidden @endunless>{{ $errors->first('variant_id') }}</p>
+                <p id="vani-variant-error" role="alert" class="text-sm text-red-600" data-vani-error-for="variant_id" @unless ($errors->has('variant_id')) hidden @endunless>{{ $errors->first('variant_id') }}</p>
 
                 <div class="flex items-center gap-3">
                     <label for="quantity" class="text-sm">{{ __('theme::common.quantity') }}</label>
@@ -163,7 +162,7 @@
                     </button>
                     {{-- Mua ngay (§3.8): thêm rồi chỉ thanh toán riêng món này; món khác vẫn ở lại giỏ. --}}
                     @if ($product['in_stock'])
-                        <button type="submit" name="buy_now" value="1" class="vani-text-link mx-auto font-medium text-primary disabled:opacity-50" @disabled(! $page['can_buy'])>{{ __('theme::product.buy_now') }}</button>
+                        <button type="submit" name="buy_now" value="1" class="min-h-11 w-full rounded-[var(--radius-theme)] border border-primary px-3 text-sm font-medium text-primary hover:bg-subtle disabled:opacity-50" @disabled(! $page['can_buy'])>{{ __('theme::product.buy_now') }}</button>
                     @endif
                 </div>
             </form>

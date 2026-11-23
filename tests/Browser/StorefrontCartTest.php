@@ -88,3 +88,20 @@ it('mất phản hồi sau khi máy chủ thêm hàng: mở giỏ với số lư
         ->assertValue('input[data-autosubmit]', '1')
         ->assertNoJavaScriptErrors();
 });
+
+it('giỏ ở 320px giữ nút thanh toán trong tầm tay và giữ focus khi tăng số lượng', function () {
+    ['s' => $variant] = C::store();
+    $page = visit("/san-pham/{$variant->style->slug}?sku={$variant->sku}")->on()->mobile()
+        ->click('[data-pdp-purchase]')
+        ->assertVisible('[data-vani-offcanvas-cart][open]')
+        ->navigate('/gio-hang')
+        ->resize(320, 550);
+
+    $page->assertScript('document.documentElement.scrollWidth <= window.innerWidth', true)
+        ->assertScript("document.querySelector('[data-cart-bottom]').getBoundingClientRect().bottom <= innerHeight", true)
+        ->click('[data-cart-step="1"]')
+        ->assertValue('input[data-autosubmit]', '2')
+        ->assertScript("document.activeElement?.dataset.cartStep === '1'", true)
+        ->assertSeeIn('[data-cart-bottom]', '600.000')
+        ->assertNoJavaScriptErrors();
+});

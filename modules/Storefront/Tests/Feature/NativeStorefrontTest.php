@@ -199,6 +199,24 @@ it('lỗi checkout hiện theo trường; tổng thay đổi → quay lại đ�
     expect(Order::query()->withoutGlobalScopes()->count())->toBe(0);
 });
 
+it('báo giá trong trang trả HTML rút gọn và giữ mã giảm giá đã áp dụng', function () {
+    $this->post('/gio-hang', ['variant_id' => $this->s->id]);
+    C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => null]);
+    $this->post('/thanh-toan', [...($this->checkout)(), 'voucher_code' => 'GIAM10', 'action' => 'quote'])
+        ->assertRedirect('/thanh-toan');
+
+    $this->post('/thanh-toan', [...($this->checkout)(), 'voucher_code' => 'CHUA-AP-DUNG', 'action' => 'quote'], ['X-Vani-Checkout-View' => 'quote'])
+        ->assertOk()
+        ->assertHeaderContains('Cache-Control', 'no-store')
+        ->assertSee('name="expected_total" value="300000"', false)
+        ->assertSee('value="GIAM10"', false)
+        ->assertSee('data-checkout-payment', false)
+        ->assertDontSee('data-checkout-form', false);
+
+    $this->get('/thanh-toan')->assertSee('300.000 ₫')->assertSee('value="GIAM10"', false);
+    expect(Order::query()->withoutGlobalScopes()->count())->toBe(0);
+});
+
 it('chuyển khoản: trang cảm ơn có hướng dẫn chuyển khoản; xem đơn cần token trong phiên', function () {
     config(['vani.bank-transfer.account' => ['bank' => 'Vietcombank', 'account_number' => '0123456789', 'account_name' => 'CONG TY VANI']]);
     $this->post('/gio-hang', ['variant_id' => $this->s->id]);
@@ -409,7 +427,7 @@ it('robots.txt chặn trang riêng tư, không lộ đường dẫn Admin; sitem
         ->and(simplexml_load_string($xml))->not->toBeFalse();
 });
 
-it('PDP có ảnh: gallery (Swiper/PhotoSwipe) — ảnh chính + ảnh sau tải lười, liên kết phóng to, thumbnail, data-images cho JS đổi theo màu (hồi quy htmlspecialchars array)', function () {
+it('PDP có ảnh đầu ưu tiên và ảnh sau tải lười, liên kết phóng to và dữ liệu ảnh theo biến thể', function () {
     Storage::fake('public');
     $styleColor = $this->s; // ảnh theo SKU (ADR-045)
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($this->product, $styleColor, [

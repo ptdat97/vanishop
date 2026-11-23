@@ -18,7 +18,7 @@
         </div>
     @endif
 
-    <form action="{{ vani_route('storefront.checkout.store') }}" method="post" class="grid items-start gap-8 pb-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14 lg:pb-0" data-checkout-form>
+    <form action="{{ vani_route('storefront.checkout.store') }}" method="post" class="grid items-start gap-8 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14 lg:pb-0" data-checkout-form>
         @csrf
         <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', $idempotencyKey) }}">
         <input type="hidden" name="expected_total" value="{{ $quote['total']['amount'] }}">
@@ -72,6 +72,7 @@
                                 <option value="{{ $ward['code'] }}" @selected(($values['shipping_address.ward_code'] ?? '') === $ward['code'])>{{ $ward['name'] }}</option>
                             @endforeach
                         </select>
+                        <button type="button" hidden data-ward-retry class="vani-text-link">{{ __('theme::checkout.retry_wards') }}</button>
                         @error('shipping_address.ward_code')<p id="ward_code-error" class="text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
@@ -91,32 +92,10 @@
             </fieldset>
             <x-vani::hook-slot name="vani.storefront.checkout.address_after" :args="[$quote]" />
 
-            <fieldset id="checkout-shipping" tabindex="-1" class="vani-checkout-group space-y-2" data-checkout-shipping>
-                <legend class="mb-3 text-lg font-medium">{{ __('theme::checkout.delivery') }}</legend>
-                @forelse ($quote['shipping_options'] as $option)
-                    <label class="vani-checkout-choice">
-                        <input type="radio" name="shipping_method" value="{{ $option['code'] }}" @checked(($values['shipping_method'] ?? $quote['shipping']['code'] ?? null) === $option['code'])>
-                        <span class="min-w-0 flex-1 break-words">{{ $option['label'] }}</span><span class="shrink-0 font-medium">{{ $option['fee']['formatted'] }}</span>
-                    </label>
-                @empty
-                    <p class="text-sm text-red-600">{{ __('theme::checkout.no_delivery_method') }}</p>
-                @endforelse
-                @error('shipping_method')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
-            </fieldset>
+            @include('theme::partials.checkout-shipping')
             <x-vani::hook-slot name="vani.storefront.checkout.after_shipping" :args="[$quote]" />
 
-            <fieldset id="checkout-payment" tabindex="-1" class="vani-checkout-group space-y-2" data-checkout-payment>
-                <legend class="mb-3 text-lg font-medium">{{ __('theme::checkout.checkout') }}</legend>
-                @forelse ($quote['payment_methods'] as $method)
-                    <label class="vani-checkout-choice">
-                        <input type="radio" name="payment_method" value="{{ $method['code'] }}" @checked(($values['payment_method'] ?? $quote['payment_methods'][0]['code'] ?? null) === $method['code'])>
-                        {{ $method['label'] }}
-                    </label>
-                @empty
-                    <p class="text-sm text-red-600">{{ __('theme::checkout.no_payment_method') }}</p>
-                @endforelse
-                @error('payment_method')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
-            </fieldset>
+            @include('theme::partials.checkout-payment')
             <x-vani::hook-slot name="vani.storefront.checkout.payment_after" :args="[$quote]" />
 
             <div>
@@ -135,12 +114,6 @@
 
         {{-- Điện thoại: tổng + nút đặt hàng luôn thấy ở đáy màn hình (nút trong khung tóm tắt chỉ hiện từ lg). Đặt cuối form để
              Enter trong ô nhập vẫn bấm nút đầu tiên ("Áp dụng" — tính lại), không đặt hàng ngoài ý muốn. --}}
-        <div class="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-slate-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden" data-checkout-bar>
-            <div class="min-w-0 flex-1 text-sm">
-                <span class="block text-slate-500">{{ __('theme::checkout.total') }}</span>
-                <span class="text-base font-semibold" data-total>{{ $quote['total']['formatted'] }}</span>
-            </div>
-            <button type="submit" class="vani-button-primary min-w-36 px-4" data-checkout-submit>{{ __('theme::checkout.place_order') }}</button>
-        </div>
+        @include('theme::partials.checkout-bar')
     </form>
 @endsection

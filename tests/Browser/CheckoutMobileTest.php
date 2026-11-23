@@ -93,6 +93,35 @@ it('chỉ áp dụng báo giá mới nhất và giữ nút đặt hàng chờ b�
         ->assertNoJavaScriptErrors();
 });
 
+it('cho phép tải lại phường khi mạng lỗi và giữ mã đang nhập khi cập nhật báo giá', function () {
+    $page = ($this->buyNow)();
+    $page->script(<<<'JS'
+        () => {
+            const fetch = window.fetch.bind(window);
+            let first = true;
+            window.fetch = (url, options) => {
+                if (first && String(url).endsWith('/29/wards')) {
+                    first = false;
+                    return Promise.resolve(new Response('', { status: 503 }));
+                }
+                return fetch(url, options);
+            };
+        }
+    JS);
+
+    $page->select('#province_code', '29')
+        ->assertVisible('[data-ward-retry]')
+        ->click('[data-ward-retry]')
+        ->assertVisible('[data-ward-filter]')
+        ->click('[data-checkout-bar] a')
+        ->assertScript("document.activeElement?.id === 'checkout-summary'", true)
+        ->fill('#voucher_code', 'MA-DANG-NHAP')
+        ->select('#ward_code', '70101065')
+        ->assertSeeIn('[data-checkout-quote-status]', 'Đã cập nhật')
+        ->assertValue('#voucher_code', 'MA-DANG-NHAP')
+        ->assertNoJavaScriptErrors();
+});
+
 it('khách đăng nhập chọn địa chỉ đã lưu: điền người nhận, tỉnh, phường', function () {
     $customer = H::account('0912345678');
     foreach ([['Nhà', '01', 'Thành phố Hà Nội', '10101003', 'Phường Ba Đình', true], ['Công ty', '29', 'Thành phố Hồ Chí Minh', '70101065', 'Phường Bến Thành', false]] as [$label, $province, $provinceName, $ward, $wardName, $default]) {

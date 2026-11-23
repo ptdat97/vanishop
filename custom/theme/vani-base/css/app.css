@@ -980,8 +980,18 @@ html:not(.js) .vani-site-header i[data-lucide] {
         opacity: 0.5;
     }
 
-    [data-checkout-form] :is(input:not([type]), input[type="text"], input[type="email"], input[type="tel"], select) {
+    [data-checkout-form] :is(input:not([type]), input[type="text"], input[type="email"], input[type="tel"], input[type="search"], select, textarea) {
         min-height: 2.75rem;
+    }
+
+    @media (width < 1024px) {
+        [data-checkout-form] :is(input:not([type]), input[type="text"], input[type="email"], input[type="tel"], input[type="search"], select, textarea) {
+            font-size: 1rem;
+        }
+
+        [data-checkout-form] :is(input, select, textarea, button):focus {
+            scroll-margin-bottom: calc(6rem + env(safe-area-inset-bottom));
+        }
     }
 
     [data-checkout-form] [aria-invalid="true"] {

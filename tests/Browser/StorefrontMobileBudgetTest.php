@@ -37,7 +37,7 @@ beforeEach(function () {
     $this->product->categories()->sync([$this->category->id]);
     T::seed(fn () => app(VariantImages::class)->addFiles($this->product, $this->s, [
         UploadedFile::fake()->image('truoc.jpg', 600, 900),
-        UploadedFile::fake()->image('sau.jpg', 600, 900),
+        UploadedFile::fake()->image('sau.jpg', 610, 900),
     ]));
 });
 
@@ -55,7 +55,10 @@ function mobilePageMetrics(mixed $page): array
             const kb = (suffix) => Math.round(resources.filter((r) => new URL(r.name).pathname.endsWith(suffix)).reduce((sum, r) => sum + r.decodedBodySize, 0) / 1024);
             const inFirstScreen = (el) => {
                 const rect = el.getBoundingClientRect();
-                return rect.width > 0 && rect.top < window.innerHeight && rect.bottom > 0;
+                const clip = el.closest('[data-gallery-track]')?.getBoundingClientRect();
+                const left = Math.max(0, rect.left, clip?.left ?? 0);
+                const right = Math.min(window.innerWidth, rect.right, clip?.right ?? window.innerWidth);
+                return right > left && rect.top < window.innerHeight && rect.bottom > 0;
             };
             const images = [...document.images];
             return {
@@ -63,7 +66,7 @@ function mobilePageMetrics(mixed $page): array
                 js_kb: kb('.js'),
                 css_kb: kb('.css'),
                 unsized: images.filter((img) => !(img.getAttribute('width') && img.getAttribute('height'))).map((img) => img.src),
-                lazy_first_screen: images.filter((img) => img.loading === 'lazy' && inFirstScreen(img)).map((img) => img.src),
+                lazy_first_screen: images.filter((img) => img.loading === 'lazy' && !img.closest('[data-gallery-thumbs]') && inFirstScreen(img)).map((img) => img.src),
                 hidden_first_screen: [...document.querySelectorAll('[data-vani-motion-pending]')].filter(inFirstScreen).length,
             };
         }
@@ -108,6 +111,31 @@ it('bố cục theo chiều rộng giữ trang vừa màn hình và bộ lọc �
             }
         }
     }
+});
+
+it('sắp xếp mobile giữ bộ lọc và focus khi cập nhật kết quả tại chỗ', function () {
+    $page = visit('/tim-kiem?q=lua&brand=lumiere')->on()->mobile();
+    $page->script('() => { window.originalListing = true; }');
+
+    $page->select('#vani-listing-sort', 'price_desc')
+        ->assertQueryStringHas('sort', 'price_desc')
+        ->assertQueryStringHas('q', 'lua')
+        ->assertQueryStringHas('brand', 'lumiere')
+        ->assertScript('window.originalListing', true)
+        ->assertScript("document.activeElement?.id === 'vani-listing-sort'", true)
+        ->assertSeeIn('[data-vani-listing-status]', '1 sản phẩm')
+        ->assertNoJavaScriptErrors();
+});
+
+it('gallery mobile đổi ảnh ngay và chỉ tải PhotoSwipe khi khách phóng to', function () {
+    $page = visit("/san-pham/{$this->product->slug}?sku={$this->s->sku}")->on()->mobile();
+    $page->assertScript("performance.getEntriesByType('resource').some(({ name }) => /photoswipe|swiper-bundle/.test(name))", false)
+        ->click('[data-gallery-next]')
+        ->assertSeeIn('[data-gallery-position]', '2')
+        ->assertVisible('[data-gallery-thumb][data-index="1"][aria-current="true"]')
+        ->click('[data-gallery-slide]:nth-child(2) a')
+        ->assertVisible('.pswp')
+        ->assertNoJavaScriptErrors();
 });
 
 it('mở bộ lọc bằng bàn phím và trả focus về nút lọc sau khi chọn thương hiệu', function (int $width) {

@@ -5,21 +5,21 @@
             {{-- Khoảng giá niêm yết: form GET, giữ các bộ lọc đang chọn. --}}
             <section data-filter="{{ $filter['key'] }}">
                 <h2 class="mb-2 font-semibold">{{ $filter['label'] }}</h2>
-                <form method="get" action="{{ $listingView['action'] }}" class="space-y-2">
+                <form method="get" action="{{ $listingView['action'] }}" class="space-y-2" data-vani-listing-range>
                     @foreach ($filter['range']['hidden_fields'] as $name => $value)
                         <input type="hidden" name="{{ $name }}" value="{{ $value }}">
                     @endforeach
                     <div class="flex items-center gap-2">
                         <input type="number" name="price_min" min="0" step="1000" inputmode="numeric" value="{{ $filter['range']['min_value'] }}" placeholder="{{ $filter['range']['min_placeholder'] }}"
-                            aria-label="{{ __('theme::catalog.price_from') }}" class="w-full min-w-0 rounded-[var(--radius-theme)] border border-slate-300 px-2 py-1.5">
+                            aria-label="{{ __('theme::catalog.price_from') }}" class="min-h-11 w-full min-w-0 rounded-[var(--radius-theme)] border border-border px-2 text-base">
                         <span aria-hidden="true">–</span>
                         <input type="number" name="price_max" min="0" step="1000" inputmode="numeric" value="{{ $filter['range']['max_value'] }}" placeholder="{{ $filter['range']['max_placeholder'] }}"
-                            aria-label="{{ __('theme::catalog.price_to') }}" class="w-full min-w-0 rounded-[var(--radius-theme)] border border-slate-300 px-2 py-1.5">
+                            aria-label="{{ __('theme::catalog.price_to') }}" class="min-h-11 w-full min-w-0 rounded-[var(--radius-theme)] border border-border px-2 text-base">
                     </div>
                     <div class="flex items-center gap-3">
-                        <button type="submit" class="rounded-[var(--radius-theme)] border border-slate-900 px-3 py-1.5 font-medium">{{ __('theme::common.apply') }}</button>
+                        <button type="submit" class="min-h-11 rounded-[var(--radius-theme)] border border-border px-3 font-medium">{{ __('theme::common.apply') }}</button>
                         @if ($filter['range']['clear_url'])
-                            <a href="{{ $filter['range']['clear_url'] }}" class="text-slate-500 underline">{{ __('theme::catalog.clear_price_filter') }}</a>
+                            <a href="{{ $filter['range']['clear_url'] }}" class="vani-text-link text-accent">{{ __('theme::catalog.clear_price_filter') }}</a>
                         @endif
                     </div>
                 </form>
@@ -32,7 +32,7 @@
                 @foreach ($filter['options'] as $option)
                     <li>
                         <a href="{{ $option['url'] }}" @if ($option['active']) aria-current="true" @endif
-                           @class(['font-semibold text-primary' => $option['active'] && $filter['display'] !== 'swatch'])
+                           @class(['flex min-h-11 items-center gap-1', 'min-w-11 justify-center' => $filter['display'] === 'swatch', 'font-semibold text-primary' => $option['active'] && $filter['display'] !== 'swatch'])
                            @if ($filter['display'] === 'swatch') title="{{ $option['label'] }} ({{ $option['count'] }})" @endif>
                             @if ($filter['display'] === 'swatch')
                                 <span @class(['block h-7 w-7 rounded-full border', 'ring-2 ring-primary ring-offset-1' => $option['active'], 'border-slate-300' => ! $option['active']]) style="background: {{ $option['swatch'] ?? '#e5e7eb' }}"></span>

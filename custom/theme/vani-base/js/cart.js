@@ -49,7 +49,7 @@ export function createCart({ urls, request, cartPage, firstError }) {
             // Giữ chỗ focus (ô số lượng, ô chọn…) sau khi thay HTML.
             const focusedId = document.activeElement && cartPage.contains(document.activeElement) ? document.activeElement.id : '';
             cartPage.innerHTML = state.page_html; // HTML do Blade render (đã escape).
-            if (focusedId) document.getElementById(focusedId)?.focus();
+            if (focusedId) document.getElementById(focusedId)?.focus({ preventScroll: true });
             document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: cartPage } }));
         }
         dispatchCartChange(state.change, state.changes);
@@ -101,7 +101,10 @@ export function createCart({ urls, request, cartPage, firstError }) {
         // Trang giỏ đầy đủ (0.3.94): sửa số lượng, xoá dòng, chọn dòng, mã giảm giá qua window.vani.cart — server trả `page_html`,
         // thay vùng [data-vani-cart-page] (không tải lại trang). Gắn sự kiện ở vùng bao ngoài vì nội dung bên trong được thay.
         if (cartPage) {
+            let pending = false;
             const run = async (action) => {
+                if (pending) return;
+                pending = true;
                 const error = cartPage.querySelector('[data-vani-cart-error]');
                 if (error) error.hidden = true;
                 cartPage.setAttribute('aria-busy', 'true');
@@ -122,16 +125,35 @@ export function createCart({ urls, request, cartPage, firstError }) {
                         target.hidden = false;
                     }
                 } finally {
+                    pending = false;
                     cartPage.setAttribute('aria-busy', 'false');
                 }
             };
             const selectedLines = () => [...cartPage.querySelectorAll('[data-select-line]')].filter((input) => input.checked && !input.disabled).map((input) => Number(input.dataset.line));
+            const updateQuantity = (input, quantity) => {
+                if (quantity === Number(input.defaultValue)) return;
+                const line = Number(input.dataset.line);
+                run(() => (quantity === 0 ? cart.remove(line) : cart.update(line, quantity)));
+            };
 
+            cartPage.addEventListener('click', (event) => {
+                if (pending && event.target.closest('button, a, label, input')) {
+                    event.preventDefault();
+                    return;
+                }
+                const step = event.target.closest('[data-cart-step]');
+                if (!step || step.getAttribute('aria-disabled') === 'true') return;
+                const input = step.form.querySelector('[data-autosubmit]');
+                updateQuantity(input, Number(input.defaultValue) + Number(step.dataset.cartStep));
+            });
             cartPage.addEventListener('change', (event) => {
                 const target = event.target;
                 if (target.matches('[data-autosubmit][data-line]')) {
-                    const quantity = Math.max(0, Number.parseInt(target.value, 10) || 0);
-                    run(() => (quantity === 0 ? cart.remove(Number(target.dataset.line)) : cart.update(Number(target.dataset.line), quantity)));
+                    if (target.value === '' || !target.validity.valid || pending) {
+                        target.value = target.defaultValue;
+                        return;
+                    }
+                    updateQuantity(target, target.valueAsNumber);
                 } else if (target.matches('[data-select-all]')) {
                     cartPage.querySelectorAll('[data-select-line]').forEach((input) => {
                         if (!input.disabled) input.checked = target.checked;
@@ -143,13 +165,17 @@ export function createCart({ urls, request, cartPage, firstError }) {
             });
             cartPage.addEventListener('submit', (event) => {
                 const form = event.target;
+                if (pending) {
+                    event.preventDefault();
+                    return;
+                }
                 if (form.matches('[data-cart-remove-form]')) {
                     event.preventDefault();
                     run(() => cart.remove(Number(form.dataset.line)));
                 } else if (form.matches('[data-cart-update-form]')) {
                     event.preventDefault();
-                    const quantity = Math.max(0, Number.parseInt(String(new FormData(form).get('quantity') ?? ''), 10) || 0);
-                    run(() => (quantity === 0 ? cart.remove(Number(form.dataset.line)) : cart.update(Number(form.dataset.line), quantity)));
+                    const input = form.querySelector('[data-autosubmit]');
+                    if (input.value !== '' && input.validity.valid) updateQuantity(input, input.valueAsNumber);
                 } else if (form.matches('[data-cart-voucher-form]')) {
                     event.preventDefault();
                     const code = String(new FormData(form).get('code') ?? '').trim();

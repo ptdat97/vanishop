@@ -8,6 +8,7 @@ use Illuminate\Contracts\Session\Session;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Support\ViewErrorBag;
@@ -76,13 +77,25 @@ final class CheckoutController
         ]);
     }
 
-    public function store(CheckoutRequestForm $request, Session $session, PaymentPresenter $payments): RedirectResponse
+    public function store(CheckoutRequestForm $request, Session $session, PaymentPresenter $payments): RedirectResponse|Response
     {
         // Cùng hợp đồng đầu vào với Storefront API (ADR-044): luật validate và cách dựng CheckoutRequest ở CheckoutRequestForm.
         $data = $request->validated();
 
         if ($this->cart->current() === null) {
             return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput();
+        }
+
+        if ($request->input('action') === 'quote' && $request->header('X-Vani-Checkout-View') === 'quote') {
+            $key = $this->cart->key();
+            $quote = $this->presenter->quote($this->checkout->quote($request->toCheckoutRequest($key)));
+            $quote['rejected_vouchers'] = [];
+
+            return response()->view('theme::partials.checkout-quote', [
+                'quote' => $quote,
+                'values' => Arr::dot($data),
+                'voucherCode' => $this->voucher->code($key) ?? '',
+            ])->header('Cache-Control', 'private, no-store');
         }
 
         // Ô mã giảm giá ghi vào giỏ như ô mã ở trang giỏ (một mô hình, ADR-044). Mã không dùng được không lưu: "Áp dụng" →

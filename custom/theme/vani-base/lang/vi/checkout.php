@@ -5,6 +5,7 @@ return [
     'quote_updating' => 'Đang cập nhật tổng tiền.',
     'quote_updated' => 'Đã cập nhật tổng tiền.',
     'quote_failed' => 'Chưa cập nhật được tổng tiền. Hãy kiểm tra lại thông tin hoặc bấm Áp dụng để tải báo giá.',
+    'retry_wards' => 'Tải lại danh sách phường/xã',
     'checkout' => 'Thanh toán',
     'choose_saved_address' => '— Chọn địa chỉ đã lưu —',
     'delivery' => 'Giao hàng',

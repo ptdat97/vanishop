@@ -1,36 +1,57 @@
-export function mountProduct({ loadVendor, mountCarousel, mountLightbox }) {
-    // PDP: gallery Swiper + phóng to PhotoSwipe; bấm ảnh nhỏ / chọn giá trị hoặc SKU → tới ảnh đầu của lựa chọn (data-images:
-    // ảnh của SKU đầu tiên mang giá trị trục đầu, hoặc ảnh của chính SKU — ADR-045 ảnh theo SKU).
+export function mountProduct({ loadVendor, mountLightbox }) {
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
         const slider = gallery.querySelector('[data-gallery-slider]');
+        const track = slider?.querySelector('[data-gallery-track]');
+        if (!track) return;
+
         const form = document.querySelector('[data-variant-form]');
         const thumbs = [...gallery.querySelectorAll('[data-gallery-thumb]')];
-        if (!slider) {
-            return;
-        }
-        let swiper = null;
+        const slides = [...track.querySelectorAll('[data-gallery-slide]')];
+        const previous = slider.querySelector('[data-gallery-previous]');
+        const next = slider.querySelector('[data-gallery-next]');
+        const count = slider.querySelector('[data-gallery-position]');
+        let current = 0;
+        let frame;
+        let lightbox;
+        let loadingZoom = false;
 
-        const highlight = (index) => {
+        const highlight = (index, keepThumbVisible = true) => {
+            current = index;
+            if (previous) previous.disabled = index === 0;
+            if (next) next.disabled = index === slides.length - 1;
+            if (count) count.textContent = String(index + 1);
             thumbs.forEach((thumb) => {
                 const active = Number(thumb.dataset.index) === index;
                 thumb.classList.toggle('border-primary', active);
                 thumb.classList.toggle('border-slate-200', !active);
                 thumb.setAttribute('aria-current', active ? 'true' : 'false');
-                if (active) thumb.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                if (!active || !keepThumbVisible) return;
+                const rail = thumb.parentElement;
+                const bounds = rail.getBoundingClientRect();
+                const image = thumb.getBoundingClientRect();
+                if (image.left < bounds.left) rail.scrollBy({ left: image.left - bounds.left });
+                if (image.right > bounds.right) rail.scrollBy({ left: image.right - bounds.right });
             });
         };
-        // Chưa có Swiper (đang tải/lỗi): cuộn dải ảnh scroll-snap tới ảnh.
-        const go = (index) => {
-            if (index < 0) return;
-            if (swiper) {
-                swiper.slideTo(index);
-            } else {
-                const slide = slider.querySelectorAll('[data-gallery-slide]')[index];
-                slide?.parentElement.scrollTo({ left: slide.offsetLeft, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-                highlight(index);
-            }
+        const go = (index, animate = true) => {
+            if (!slides[index]) return;
+            const left = track.scrollLeft + slides[index].getBoundingClientRect().left - track.getBoundingClientRect().left;
+            track.scrollTo({ left, behavior: animate && !motion.matches ? 'smooth' : 'instant' });
+            if (!animate || motion.matches) highlight(index);
         };
 
+        track.addEventListener('scroll', () => {
+            if (frame) return;
+            frame = requestAnimationFrame(() => {
+                frame = undefined;
+                const index = Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / track.clientWidth)));
+                if (index !== current) highlight(index);
+            });
+        }, { passive: true });
+        previous?.addEventListener('click', () => go(current - 1, false));
+        next?.addEventListener('click', () => go(current + 1, false));
+        highlight(0, false);
         thumbs.forEach((thumb) => thumb.addEventListener('click', () => go(Number(thumb.dataset.index))));
         form?.addEventListener('change', (event) => {
             const choice = event.target.tagName === 'SELECT' ? event.target.selectedOptions[0] : event.target;
@@ -40,16 +61,22 @@ export function mountProduct({ loadVendor, mountCarousel, mountLightbox }) {
             if (first) go(thumbs.findIndex((thumb) => thumb.dataset.src === first));
         });
 
-        if (slider.querySelectorAll('[data-gallery-slide]').length > 1) {
-            loadVendor('swiper')
-                .then((Swiper) => {
-                    swiper = mountCarousel(Swiper, slider, { on: { slideChange: (instance) => highlight(instance.activeIndex) } });
-                })
-                .catch(() => {});
-        }
-        loadVendor('photoswipe')
-            .then((PhotoSwipeLightbox) => mountLightbox(PhotoSwipeLightbox, slider, (index) => go(index)))
-            .catch(() => {});
+        slider.addEventListener('click', async (event) => {
+            const link = event.target.closest('a[data-pswp-width]');
+            if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || lightbox) return;
+            event.preventDefault();
+            if (loadingZoom) return;
+            loadingZoom = true;
+            try {
+                const [PhotoSwipeLightbox, { default: PhotoSwipe }] = await Promise.all([loadVendor('photoswipe'), import('photoswipe')]);
+                lightbox = mountLightbox(PhotoSwipeLightbox, slider, (index) => go(index, false), PhotoSwipe);
+                lightbox.loadAndOpen(slides.indexOf(link.closest('[data-gallery-slide]')), { gallery: slider });
+            } catch {
+                window.location.assign(link.href);
+            } finally {
+                loadingZoom = false;
+            }
+        });
     });
 
     // PDP bộ chọn 1–3 trục (ADR-045): đổi giá trị trục đầu thì bỏ chọn SKU của nhóm khác (nhóm đó đang ẩn) và trả giá về khoảng giá
@@ -64,18 +91,20 @@ export function mountProduct({ loadVendor, mountCarousel, mountLightbox }) {
             event.stopImmediatePropagation();
             const group = [...form.querySelectorAll('[data-option-group]')].find((fieldset) => fieldset.offsetParent !== null) ?? form.querySelector('[data-primary-option]');
             group?.setAttribute('aria-invalid', 'true');
+            group?.setAttribute('aria-describedby', 'vani-variant-error');
             group?.classList.add('rounded', 'ring-2', 'ring-red-500', 'ring-offset-4');
             const error = form.querySelector('[data-vani-error-for="variant_id"]');
             if (error) {
                 error.textContent = form.dataset.chooseMessage || error.textContent;
                 error.hidden = false;
             }
-            group?.querySelector('[name="variant_id"]:not(:disabled)')?.focus();
+            group?.querySelector('[name="variant_id"]:not(:disabled), input[data-primary]:not(:disabled), select')?.focus();
         });
         form.addEventListener('change', (event) => {
-            if (event.target.name !== 'variant_id') return;
-            form.querySelectorAll('[aria-invalid]').forEach((fieldset) => {
+            if (event.target.name !== 'variant_id' && !chosen(event.target)?.hasAttribute('data-primary')) return;
+            form.querySelectorAll('fieldset[aria-describedby="vani-variant-error"]').forEach((fieldset) => {
                 fieldset.removeAttribute('aria-invalid');
+                fieldset.removeAttribute('aria-describedby');
                 fieldset.classList.remove('rounded', 'ring-2', 'ring-red-500', 'ring-offset-4');
             });
             const error = form.querySelector('[data-vani-error-for="variant_id"]');

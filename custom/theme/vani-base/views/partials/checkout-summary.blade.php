@@ -1,4 +1,4 @@
-<aside class="h-fit min-w-0 space-y-4 border border-border bg-subtle p-5 text-sm lg:p-7" data-checkout-summary>
+<aside id="checkout-summary" tabindex="-1" class="h-fit min-w-0 scroll-mt-24 space-y-4 border border-border bg-subtle p-5 text-sm lg:p-7" data-checkout-summary>
     <h2 class="text-xl font-medium tracking-tight">{{ __('theme::checkout.order_summary') }}</h2>
     <ul class="divide-y divide-border">
         @foreach ($quote['lines'] as $line)
