@@ -17,21 +17,27 @@ async function run(action: ExtensionAction): Promise<void> {
     if (props.ids.length === 0) {
         return;
     }
+    const ids = [...props.ids];
     let values: Record<string, string> = {};
     if (action.fields?.length) {
-        const result = await promptFields({ title: action.label, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: props.ids.length, selection_description: selection() }), confirmLabel: action.label, fields: action.fields });
+        const result = await promptFields({ title: action.label, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: ids.length, selection_description: selection() }), confirmLabel: action.preview_url && !action.confirm ? t('shared::admin.extensions_extension_actions.preview') : action.label, fields: action.fields });
         if (result === false) return;
         values = result;
-    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: props.ids.length, selection_description: selection() }) })) === false) {
+    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: ids.length, selection_description: selection() }) })) === false) {
         return;
     }
+    const payload = { ...(action.data ?? {}), ...values, ids };
     if (action.preview_url) {
         // Xem trước (A5): server tính trên đúng dữ liệu sẽ gửi, chưa ghi gì; người dùng xác nhận lần nữa.
-        let preview: { message: string; details?: string[]; warning?: boolean };
+        let preview: { message: string; details?: string[]; warning?: boolean; can_apply?: boolean };
         try {
-            preview = await postJson(action.preview_url, { ...(action.data ?? {}), ...values, ids: props.ids });
+            preview = await postJson(action.preview_url, payload);
         } catch (error) {
             await confirmAction({ title: action.label, message: error instanceof HttpError ? error.message : t('shared::admin.extensions_extension_actions.could_not_preview_try_again'), confirmLabel: t('shared::admin.extensions_extension_actions.close') });
+            return;
+        }
+        if (preview.can_apply === false) {
+            await confirmAction({ title: action.label, message: preview.message, details: preview.details, confirmLabel: t('shared::admin.extensions_extension_actions.close') });
             return;
         }
         if ((await confirmAction({ title: `${action.label}?`, message: preview.message, details: preview.details, confirmLabel: action.label, tone: preview.warning ? 'danger' : 'primary' })) === false) {
@@ -40,7 +46,7 @@ async function run(action: ExtensionAction): Promise<void> {
     }
     if (action.method === 'get') {
         // In phiếu / xuất file: trình duyệt mở hoặc tải trực tiếp (không qua Inertia).
-        const query = new URLSearchParams(props.ids.map((id) => ['ids[]', String(id)]));
+        const query = new URLSearchParams(ids.map((id) => ['ids[]', String(id)]));
         const url = `${action.url}${action.url.includes('?') ? '&' : '?'}${query}`;
         if (action.target === '_blank') {
             window.open(url, '_blank', 'noopener');
@@ -49,7 +55,7 @@ async function run(action: ExtensionAction): Promise<void> {
         }
         return;
     }
-    router.post(action.url, { ...(action.data ?? {}), ...values, ids: props.ids }, { preserveScroll: true });
+    router.post(action.url, payload, { preserveScroll: true });
 }
 </script>
 

@@ -200,9 +200,47 @@ final class PriceListController
 
     public function previewBulk(PriceList $priceList, BulkPricesRequest $request, PriceListWorkspace $workspace): JsonResponse
     {
-        $this->ensureEditable($priceList);
+        return response()->json(['data' => $this->bulkPreview($priceList, $request, $workspace)]);
+    }
 
-        return response()->json(['data' => $workspace->preview($priceList, $request->variantIds($priceList, $workspace), $request->rule(), $request->pluginMode(), $request->pluginRounding(), $request->value())]);
+    public function previewBulkFromProducts(BulkPricesRequest $request, PriceListWorkspace $workspace, MoneyFormatter $money): JsonResponse
+    {
+        $list = $this->queries->priceList((int) $request->validated('price_list_id'));
+        $preview = $this->bulkPreview($list, $request, $workspace);
+        $summary = $preview['summary'];
+        $warnings = (array) __('pricing::labels.bulk.warnings');
+        $details = [];
+        foreach ($summary['warnings'] as $code => $count) {
+            $details[] = __('pricing::messages.bulk_preview_warning', ['label' => $warnings[$code] ?? $code, 'count' => $count]);
+        }
+
+        $format = fn (?int $amount): string => $amount === null ? '—' : $money->formatAmount($amount, (string) $list->currency_code);
+        $changedRows = array_filter($preview['rows'], fn (array $row): bool => $row['new_amount'] !== null && $row['current_amount'] !== $row['new_amount']);
+        foreach (array_slice($changedRows, 0, 8) as $row) {
+            $details[] = "{$row['sku']}: {$format($row['current_amount'])} → {$format($row['new_amount'])}";
+        }
+
+        return response()->json([
+            'message' => __('pricing::messages.product_list_bulk_preview', ['list' => $list->name, 'total' => $summary['total'], 'changed' => $summary['changed'], 'skipped' => $summary['skipped']]),
+            'details' => $details,
+            'warning' => $summary['warnings'] !== [],
+            'can_apply' => $summary['changed'] > 0,
+        ]);
+    }
+
+    /**
+     * @return array{rows: list<array<string, mixed>>, summary: array{total: int, changed: int, skipped: int, warnings: array<string, int>}}
+     */
+    private function bulkPreview(PriceList $list, BulkPricesRequest $request, PriceListWorkspace $workspace): array
+    {
+        $this->ensureEditable($list);
+
+        return $workspace->preview($list, $request->variantIds($list, $workspace), $request->rule(), $request->pluginMode(), $request->pluginRounding(), $request->value());
+    }
+
+    public function applyBulkFromProducts(BulkPricesRequest $request, PriceListWorkspace $workspace): RedirectResponse
+    {
+        return $this->applyBulk($this->queries->priceList((int) $request->validated('price_list_id')), $request, $workspace);
     }
 
     public function applyBulk(PriceList $priceList, BulkPricesRequest $request, PriceListWorkspace $workspace): RedirectResponse

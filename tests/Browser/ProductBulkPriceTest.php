@@ -30,3 +30,25 @@ it('chọn sản phẩm → Đổi giá (giảm 10%) → xem trước số SKU v
     $page->assertNoJavaScriptErrors();
     expect(Price::query()->where('price_list_id', $this->base->id)->orderBy('amount')->pluck('amount')->all())->toEqual([180_000, 270_000]);
 });
+
+it('chọn bảng giá và xem trước rồi áp dụng ngay tại danh sách sản phẩm', function () {
+    $sale = P::priceList(['code' => 'flash-sale', 'type' => 'sale'], []);
+    T::seed(fn () => $sale->update(['name' => 'Sale cuối tuần']));
+    $page = visit('/admin/catalog/products?q=DAM01');
+
+    $page->click('input[aria-label="Chọn DAM01"]')
+        ->click('[data-extension-action="add_to_price_list"]')
+        ->assertVisible('[role="alertdialog"] button[type="submit"]:disabled')
+        ->click('[role="alertdialog"] [aria-label="Bảng giá"]')->click('[role="option"] >> text=Sale cuối tuần')
+        ->fill('[role="alertdialog"] input[required]', '10')
+        ->click('[role="alertdialog"] button[type="submit"]')
+        ->assertSee('Bảng Sale cuối tuần · 2/2 SKU đổi giá, bỏ qua 0 SKU.');
+    expect($sale->prices()->count())->toBe(0);
+
+    $page->click('[role="alertdialog"] button[type="submit"]')
+        ->assertSee('Đã cập nhật giá 2 SKU.')
+        ->assertPathIs('/admin/catalog/products')
+        ->assertNoJavaScriptErrors();
+    expect($sale->prices()->orderBy('amount')->pluck('amount')->all())->toBe([180_000, 270_000])
+        ->and($this->base->prices()->orderBy('amount')->pluck('amount')->all())->toBe([200_000, 300_000]);
+});

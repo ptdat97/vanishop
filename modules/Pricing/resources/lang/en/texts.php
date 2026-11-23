@@ -24,6 +24,10 @@ return [
         'view_price_lists' => 'View price lists',
     ],
     'product_list_prices' => [
+        'apply_price_list' => 'Apply price list…',
+        'list_rule_value' => 'Value (percentage or amount)',
+        'no_rounding' => 'Do not round',
+        'plugin_rounding' => 'Plugin rounding (overrides standard rounding)',
         'add_price_list' => 'Add to price list…',
         'change_price' => 'Change price',
         'compare' => '

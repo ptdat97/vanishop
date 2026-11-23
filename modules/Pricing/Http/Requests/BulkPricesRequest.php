@@ -13,6 +13,7 @@ use Modules\Pricing\Application\PriceListWorkspace;
 use Modules\Pricing\Contracts\BulkPriceMode;
 use Modules\Pricing\Contracts\PriceRounding;
 use Modules\Pricing\Domain\BulkPriceRule;
+use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\PriceList;
 
 /**
@@ -27,6 +28,17 @@ final class BulkPricesRequest extends FormRequest
         return Gate::allows('pricing.manage');
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->fromProducts()) {
+            $this->merge([
+                'scope' => 'styles',
+                'style_ids' => $this->input('ids'),
+                'round_to' => $this->input('mode') === 'fixed' ? 0 : $this->input('round_to'),
+            ]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -36,7 +48,7 @@ final class BulkPricesRequest extends FormRequest
             'scope' => ['required', Rule::in(['variants', 'styles', 'all'])],
             'variant_ids' => ['required_if:scope,variants', 'array', 'max:'.PriceListWorkspace::MAX_BULK],
             'variant_ids.*' => ['integer', 'min:1'],
-            'style_ids' => ['required_if:scope,styles', 'array', 'max:200'],
+            'style_ids' => ['required_if:scope,styles', 'array', $this->fromProducts() ? 'max:2000' : 'max:200'],
             'style_ids.*' => ['integer', 'min:1'],
             'q' => ['nullable', 'string', 'max:100'],
             // Cách tính của Core + của plugin (BulkPriceMode, EP v3 X4); làm tròn của plugin (PriceRounding) thay "tới 1.000đ".
@@ -44,7 +56,15 @@ final class BulkPricesRequest extends FormRequest
             'value' => ['required', 'numeric', 'min:0', Rule::when($this->input('mode') === 'percent', ['max:100'], ['max:'.PriceListService::MAX_AMOUNT])],
             'round_to' => ['required', 'integer', Rule::in(BulkPriceRule::ROUNDINGS)],
             'rounding' => ['nullable', 'string', Rule::in(array_keys($this->workspace()->roundings()))],
+            ...($this->fromProducts() ? [
+                'price_list_id' => ['required', 'integer', Rule::exists('price_lists', 'id')->whereNot('type', PriceListType::Base->value)],
+            ] : []),
         ];
+    }
+
+    private function fromProducts(): bool
+    {
+        return $this->routeIs('admin.pricing.price-lists.bulk-from-products', 'admin.pricing.price-lists.bulk-from-products.preview');
     }
 
     /**

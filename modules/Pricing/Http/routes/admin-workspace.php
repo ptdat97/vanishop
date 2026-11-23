@@ -7,6 +7,8 @@ use Modules\Pricing\Http\Controllers\Admin\PriceListController;
 // Prefix: /{admin}/pricing — tên route: admin.pricing.*
 Route::resource('price-lists', PriceListController::class)->except('show')->parameters(['price-lists' => 'priceList']);
 Route::post('price-lists/add-products', [PriceListController::class, 'addProducts'])->name('price-lists.add-products');
+Route::post('price-lists/bulk-from-products/preview', [PriceListController::class, 'previewBulkFromProducts'])->name('price-lists.bulk-from-products.preview');
+Route::post('price-lists/bulk-from-products', [PriceListController::class, 'applyBulkFromProducts'])->name('price-lists.bulk-from-products');
 Route::get('price-lists/{priceList}/prices', [PriceListController::class, 'prices'])->name('price-lists.prices');
 Route::put('price-lists/{priceList}/prices', [PriceListController::class, 'updatePrices'])->name('price-lists.prices.update');
 Route::get('price-lists/{priceList}/candidates', [PriceListController::class, 'candidates'])->name('price-lists.candidates');

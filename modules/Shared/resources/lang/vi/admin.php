@@ -43,6 +43,7 @@ return [
         'unsaved_changes_lost' => 'Các thay đổi chưa lưu sẽ mất.',
     ],
     'extensions_extension_actions' => [
+        'preview' => 'Xem trước',
         'applies_count_selection_description' => 'Áp dụng cho :count :selection_description.',
         'close' => 'Đóng',
         'could_not_preview_try_again' => 'Không xem trước được. Vui lòng thử lại.',

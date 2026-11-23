@@ -14,6 +14,11 @@ use Modules\Pricing\Persistence\Models\PriceList;
  */
 final class AdminQueries
 {
+    public function priceList(int $id): PriceList
+    {
+        return PriceList::query()->findOrFail($id);
+    }
+
     /**
      * @return Collection<int, PriceList>
      */

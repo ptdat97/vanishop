@@ -43,6 +43,7 @@ return [
         'unsaved_changes_lost' => 'Unsaved changes will be lost.',
     ],
     'extensions_extension_actions' => [
+        'preview' => 'Preview',
         'applies_count_selection_description' => 'Applies to :count :selection_description.',
         'close' => 'Close',
         'could_not_preview_try_again' => 'Could not preview. Please try again.',

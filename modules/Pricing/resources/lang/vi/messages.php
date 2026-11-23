@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'product_list_bulk_preview' => 'Bảng :list · :changed/:total SKU đổi giá, bỏ qua :skipped SKU.',
     'bulk_preview' => ':products sản phẩm, :variants SKU: giá niêm yết :old → :new.',
     'bulk_preview_skipped' => 'Bỏ qua :count SKU chưa có giá niêm yết.',
     'bulk_preview_warning' => 'Cảnh báo ":label": :count SKU',

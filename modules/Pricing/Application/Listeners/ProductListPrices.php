@@ -21,6 +21,7 @@ final class ProductListPrices
     public function __construct(
         private readonly VariantDirectory $variants,
         private readonly MoneyFormatter $money,
+        private readonly PriceListWorkspace $workspace,
     ) {}
 
     /**
@@ -84,13 +85,8 @@ final class ProductListPrices
             return [];
         }
 
-        // "Đưa vào bảng giá…" (thao tác gọn đợt 2): chọn bảng giá sale/thành viên → trang làm việc mở sẵn cách tính + xem trước.
         $lists = PriceList::query()->where('type', '!=', PriceListType::Base)->orderByDesc('id')->get();
-        $addToList = $lists->isEmpty() ? [] : [[
-            'key' => 'add_to_price_list', 'label' => __('pricing::texts.product_list_prices.add_price_list'), 'url' => route('admin.pricing.price-lists.add-products'),
-            'fields' => [['key' => 'price_list_id', 'label' => __('pricing::texts.product_list_prices.price_lists'), 'required' => true, 'value' => (string) $lists->first()->id,
-                'options' => $lists->map(fn (PriceList $list): array => ['value' => (string) $list->id, 'label' => $list->name.' · '.__('pricing::labels.price_list_state.'.PriceListWorkspace::state($list))])->all()]],
-        ]];
+        $addToList = $lists->isEmpty() ? [] : [$this->applyListAction($lists->all())];
 
         return [...$addToList, [
             'key' => 'price', 'label' => __('pricing::texts.product_list_prices.change_price'), 'url' => route('admin.pricing.base-prices.bulk'), 'confirm' => true,
@@ -110,5 +106,39 @@ final class ProductListPrices
                 ]],
             ],
         ]];
+    }
+
+    /**
+     * @param  list<PriceList>  $lists
+     * @return array<string, mixed>
+     */
+    private function applyListAction(array $lists): array
+    {
+        $options = $this->workspace->pluginOptions();
+        $modes = (array) __('pricing::labels.bulk.modes');
+
+        return [
+            'key' => 'add_to_price_list', 'label' => __('pricing::texts.product_list_prices.apply_price_list'),
+            'url' => route('admin.pricing.price-lists.bulk-from-products'),
+            'confirm' => false,
+            'preview_url' => route('admin.pricing.price-lists.bulk-from-products.preview'),
+            'fields' => [
+                ['key' => 'price_list_id', 'label' => __('pricing::texts.product_list_prices.price_lists'), 'required' => true,
+                    'options' => array_map(fn (PriceList $list): array => ['value' => (string) $list->id, 'label' => $list->name.' · '.__('pricing::labels.price_list_state.'.PriceListWorkspace::state($list))], $lists)],
+                ['key' => 'mode', 'label' => __('pricing::texts.product_list_prices.how_change'), 'required' => true, 'value' => 'percent',
+                    'options' => [
+                        ...array_map(fn (string $code, string $label): array => ['value' => $code, 'label' => $label], array_keys($modes), array_values($modes)),
+                        ...array_map(fn (array $mode): array => ['value' => $mode['code'], 'label' => $mode['label']], $options['modes']),
+                    ]],
+                ['key' => 'value', 'label' => __('pricing::texts.product_list_prices.list_rule_value'), 'required' => true],
+                ['key' => 'round_to', 'label' => __('pricing::admin.price_lists_prices.rounding'), 'required' => true, 'value' => '1000',
+                    'options' => [
+                        ['value' => '1000', 'label' => __('pricing::admin.price_lists_prices.round_1_000')],
+                        ['value' => '0', 'label' => __('pricing::texts.product_list_prices.no_rounding')],
+                    ]],
+                ...($options['roundings'] === [] ? [] : [['key' => 'rounding', 'label' => __('pricing::texts.product_list_prices.plugin_rounding'),
+                    'options' => array_map(fn (array $rounding): array => ['value' => $rounding['code'], 'label' => $rounding['label']], $options['roundings'])]]),
+            ],
+        ];
     }
 }

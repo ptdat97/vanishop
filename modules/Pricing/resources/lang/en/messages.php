@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'product_list_bulk_preview' => 'Price list :list · :changed of :total SKUs will change, :skipped skipped.',
     'bulk_preview' => ':products products, :variants SKUs: list price :old → :new.',
     'bulk_preview_skipped' => 'Skipping :count SKUs without a list price.',
     'bulk_preview_warning' => 'Warning ":label": :count SKUs',

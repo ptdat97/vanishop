@@ -24,6 +24,10 @@ return [
         'view_price_lists' => 'Xem bảng giá',
     ],
     'product_list_prices' => [
+        'apply_price_list' => 'Áp giá theo bảng giá…',
+        'list_rule_value' => 'Giá trị (% hoặc số tiền)',
+        'no_rounding' => 'Không làm tròn',
+        'plugin_rounding' => 'Làm tròn theo tiện ích (ưu tiên)',
         'add_price_list' => 'Đưa vào bảng giá…',
         'change_price' => 'Đổi giá',
         'compare' => '
