@@ -3,6 +3,15 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'bulk_receive' => [
+        'title' => 'Receive by line',
+        'loading' => 'Loading return lines…',
+        'load_failed' => 'Unable to load the return lines. Please try again.',
+        'skipped' => 'Skipping :count returns that cannot be received yet.',
+        'no_eligible' => 'No selected returns can be received.',
+        'line' => 'Line #:id',
+        'choose_condition' => 'Choose a condition',
+    ],
     'reasons_index' => [
         'add_reason' => 'Add reason',
         'cancel' => 'Cancel',

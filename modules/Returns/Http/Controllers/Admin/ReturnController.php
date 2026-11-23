@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Returns\Http\Controllers\Admin;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -21,7 +22,9 @@ use Modules\Returns\Application\AdminQueries;
 use Modules\Returns\Application\ReturnReasons;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Contracts\ReturnRejected;
+use Modules\Returns\Domain\ReturnCondition;
 use Modules\Returns\Domain\ReturnStatus;
+use Modules\Returns\Persistence\Models\ReturnLine;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Http\ListSort;
@@ -67,6 +70,7 @@ final class ReturnController
                 ['key' => 'approve', 'label' => __('returns::texts.return_controller.approve'), 'url' => route('admin.returns.returns.bulk-approve'), 'confirm' => true],
                 ['key' => 'receive', 'label' => __('returns::texts.return_controller.received_still_sellable'), 'url' => route('admin.returns.returns.bulk-receive'), 'confirm' => true],
                 ['key' => 'receive_damaged', 'label' => __('returns::texts.return_controller.received_damaged_not_restocked'), 'url' => route('admin.returns.returns.bulk-receive', ['condition' => 'damaged']), 'confirm' => true],
+                ['key' => 'receive_mixed', 'label' => __('returns::admin.bulk_receive.title'), 'url' => route('admin.returns.returns.bulk-receive', ['condition' => 'mixed']), 'preview_url' => route('admin.returns.returns.bulk-receive.preview')],
             ] : [],
             // Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1); thao tác hàng loạt của plugin nối sau của Core.
             'extensions' => $screen->listProps('return', collect($page->items())->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),
@@ -212,30 +216,73 @@ final class ReturnController
         return back()->with('success', __('returns::messages.bulk_approved', ['count' => $done, 'skipped' => count($ids) - $done]));
     }
 
-    /**
-     * Nhận hàng hàng loạt (0.3.102): mọi dòng còn bán được → nhập lại kho; `?condition=damaged` → mọi dòng là hàng hỏng,
-     * không nhập kho. Yêu cầu vừa có dòng bán được vừa có dòng hỏng: nhận ở trang chi tiết.
-     */
+    public function previewBulkReceive(Request $request, VariantDirectory $variants): JsonResponse
+    {
+        Gate::authorize('returns.manage');
+        $ids = $this->bulkIds($request);
+        $eligible = $this->queries->returnsByIds($ids, withLines: true)
+            ->filter(fn (ReturnRequest $return): bool => $return->status->canMoveTo(ReturnStatus::Received));
+        $skus = $variants->find($eligible->flatMap(fn (ReturnRequest $return) => $return->lines->pluck('variant_id'))->unique()->values()->all());
+
+        return response()->json([
+            'returns' => $eligible->map(fn (ReturnRequest $return): array => [
+                'id' => $return->id,
+                'number' => $return->number,
+                'url' => route('admin.returns.returns.show', $return),
+                'lines' => $return->lines->map(fn (ReturnLine $line): array => [
+                    'id' => $line->id,
+                    'sku' => $skus[$line->variant_id]->sku ?? null,
+                    'name' => $skus[$line->variant_id]->styleName ?? null,
+                    'quantity' => $line->quantity,
+                ])->all(),
+            ])->values()->all(),
+            'skipped' => count($ids) - $eligible->count(),
+        ]);
+    }
+
     public function bulkReceive(Request $request, ReturnService $returns): RedirectResponse
     {
         Gate::authorize('returns.manage');
-        $damaged = $request->validate(['condition' => ['nullable', Rule::in(['sellable', 'damaged'])]])['condition'] ?? 'sellable';
-        $damaged = $damaged === 'damaged';
-        $done = 0;
+        $data = $request->validate([
+            'condition' => ['nullable', Rule::in(['sellable', 'damaged', 'mixed'])],
+            'conditions' => ['exclude_unless:condition,mixed', 'required', 'array'],
+            'conditions.*' => ['required', Rule::enum(ReturnCondition::class)],
+        ]);
+        $mode = $data['condition'] ?? 'sellable';
+        $conditions = $data['conditions'] ?? [];
         $ids = $this->bulkIds($request);
-        foreach ($this->queries->returnsByIds($ids, withLines: true) as $return) {
-            if (! $return->status->canMoveTo(ReturnStatus::Received)) {
-                continue;
+        $selected = $this->queries->returnsByIds($ids, withLines: $mode !== 'sellable');
+        $eligible = $selected->filter(fn (ReturnRequest $return): bool => $return->status->canMoveTo(ReturnStatus::Received));
+        if ($mode === 'mixed') {
+            $selectedLines = $selected->flatMap(fn (ReturnRequest $return) => $return->lines->modelKeys())->all();
+            $eligibleLines = $eligible->flatMap(fn (ReturnRequest $return) => $return->lines->modelKeys())->all();
+            if (array_diff(array_keys($conditions), $selectedLines) !== [] || array_diff($eligibleLines, array_keys($conditions)) !== []) {
+                throw ValidationException::withMessages(['conditions' => __('returns::messages.bulk_receive_invalid_lines')]);
             }
+        }
+
+        $done = 0;
+        foreach ($eligible as $return) {
+            $lineConditions = match ($mode) {
+                'mixed' => array_intersect_key($conditions, array_flip($return->lines->modelKeys())),
+                'damaged' => array_fill_keys($return->lines->modelKeys(), ReturnCondition::Damaged->value),
+                default => [],
+            };
             try {
-                $returns->receive($return->id, $damaged ? array_fill_keys($return->lines->pluck('id')->all(), 'damaged') : [], null);
+                $returns->receive($return->id, $lineConditions, null, requireAllConditions: $mode === 'mixed');
                 $done++;
             } catch (BusinessRuleViolation) {
                 // bỏ qua
             }
         }
 
-        return back()->with('success', __($damaged ? 'returns::messages.bulk_received_damaged' : 'returns::messages.bulk_received', ['count' => $done, 'skipped' => count($ids) - $done]));
+        $message = match ($mode) {
+            'mixed' => 'returns::messages.bulk_received_mixed',
+            'damaged' => 'returns::messages.bulk_received_damaged',
+            default => 'returns::messages.bulk_received',
+        };
+
+        return back()->with('success', __($message, ['count' => $done, 'skipped' => count($ids) - $done]));
     }
 
     /**

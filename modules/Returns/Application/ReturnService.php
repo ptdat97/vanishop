@@ -257,9 +257,9 @@ final class ReturnService implements Returns
      *
      * @param  array<int, string>  $conditions  return_line_id => sellable|damaged
      */
-    public function receive(int $returnId, array $conditions, ?string $note): void
+    public function receive(int $returnId, array $conditions, ?string $note, bool $requireAllConditions = false): void
     {
-        DB::transaction(function () use ($returnId, $conditions, $note): void {
+        DB::transaction(function () use ($returnId, $conditions, $note, $requireAllConditions): void {
             $return = ReturnRequest::query()->with('lines')->whereKey($returnId)->lockForUpdate()->firstOrFail();
             if (! $return->status->canMoveTo(ReturnStatus::Received)) {
                 throw ReturnRejected::invalidTransition($return->status->value, ReturnStatus::Received->value);
@@ -269,6 +269,9 @@ final class ReturnService implements Returns
             $unknown = array_diff(array_keys($conditions), $return->lines->pluck('id')->all());
             if ($unknown !== []) {
                 throw ReturnRejected::unknownLines(array_values($unknown));
+            }
+            if ($requireAllConditions && count($conditions) !== $return->lines->count()) {
+                throw ReturnRejected::stale();
             }
 
             $locations = $this->records->shipmentLocations($return->order_id);

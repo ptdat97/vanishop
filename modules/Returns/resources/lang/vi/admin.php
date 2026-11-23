@@ -3,6 +3,15 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'bulk_receive' => [
+        'title' => 'Nhận hàng theo từng dòng',
+        'loading' => 'Đang tải các dòng hàng…',
+        'load_failed' => 'Không tải được danh sách hàng trả. Vui lòng thử lại.',
+        'skipped' => 'Bỏ qua :count yêu cầu chưa thể nhận hàng.',
+        'no_eligible' => 'Không có yêu cầu nào có thể nhận hàng.',
+        'line' => 'Dòng #:id',
+        'choose_condition' => 'Chọn tình trạng hàng',
+    ],
     'reasons_index' => [
         'add_reason' => 'Thêm lý do',
         'cancel' => 'Huỷ',

@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'bulk_received_mixed' => 'Received :count returns using each line’s condition; skipped :skipped returns.',
+    'bulk_receive_invalid_lines' => 'The return lines have changed or some conditions are missing. Reopen the dialog to review the lines.',
     'bulk_approved' => 'Approved :count requests; skipped :skipped no longer awaiting approval.',
     'bulk_received_damaged' => 'Received :count returns (damaged, not restocked); skipped :skipped not approved or already received.',
     'bulk_received' => 'Received :count returns (restocked); skipped :skipped not approved or already received.',

@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'bulk_received_mixed' => 'Đã nhận hàng :count yêu cầu theo tình trạng từng dòng; bỏ qua :skipped yêu cầu.',
+    'bulk_receive_invalid_lines' => 'Danh sách dòng hàng đã thay đổi hoặc chưa đủ tình trạng. Mở lại hộp thoại để kiểm tra.',
     'bulk_approved' => 'Đã duyệt :count yêu cầu; bỏ qua :skipped yêu cầu không còn chờ duyệt.',
     'bulk_received_damaged' => 'Đã nhận hàng :count yêu cầu (hàng hỏng, không nhập kho); bỏ qua :skipped yêu cầu chưa duyệt hoặc đã nhận.',
     'bulk_received' => 'Đã nhận hàng :count yêu cầu (nhập lại kho); bỏ qua :skipped yêu cầu chưa duyệt hoặc đã nhận.',

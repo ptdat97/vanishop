@@ -14,6 +14,7 @@ Route::get('returns/create/{order}', [ReturnController::class, 'create'])->where
 Route::post('returns', [ReturnController::class, 'store'])->name('returns.store');
 Route::post('returns/bulk-approve', [ReturnController::class, 'bulkApprove'])->name('returns.bulk-approve');
 Route::post('returns/bulk-receive', [ReturnController::class, 'bulkReceive'])->name('returns.bulk-receive');
+Route::post('returns/bulk-receive/preview', [ReturnController::class, 'previewBulkReceive'])->name('returns.bulk-receive.preview');
 Route::get('returns/{return}', [ReturnController::class, 'show'])->name('returns.show');
 Route::post('returns/{return}/transition', [ReturnController::class, 'transition'])->name('returns.transition');
 Route::post('returns/{return}/pickup', [ReturnController::class, 'pickup'])->name('returns.pickup');

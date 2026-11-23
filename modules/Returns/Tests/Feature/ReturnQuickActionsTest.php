@@ -20,12 +20,15 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
     C::autoConfirmCod();
-    ['s' => $this->s] = C::store(stock: 10);
-    $this->deliveredOrder = function (): Order {
+    ['s' => $this->s, 'm' => $this->m] = C::store(stock: 10);
+    $this->deliveredOrder = function (bool $mixed = false): Order {
         $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();
         $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
         $this->postJson("/api/storefront/v1/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 2], $headers)->assertOk();
-        $this->postJson("/api/storefront/v1/checkout/{$created->json('data.id')}/orders", C::orderPayload(['expected_total' => 600_000]), [...$headers, 'Idempotency-Key' => 'k-'.$created->json('data.id')])->assertCreated();
+        if ($mixed) {
+            $this->postJson("/api/storefront/v1/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->m->id, 'quantity' => 1], $headers)->assertOk();
+        }
+        $this->postJson("/api/storefront/v1/checkout/{$created->json('data.id')}/orders", C::orderPayload(['expected_total' => $mixed ? 800_000 : 600_000]), [...$headers, 'Idempotency-Key' => 'k-'.$created->json('data.id')])->assertCreated();
         $order = Order::query()->withoutGlobalScopes()->latest('id')->first();
         app(CurrentContext::class)->runAs(ContextScope::system('test'), function () use ($order) {
             $shipment = Shipment::query()->where('order_id', $order->id)->sole();
@@ -38,7 +41,8 @@ beforeEach(function () {
         return $order->fresh();
     };
     $this->requestReturn = function (Order $order): ReturnRequest {
-        $this->post('/admin/returns/returns', ['order_id' => $order->id, 'lines' => [$order->lines()->value('id') => 1], 'reason_code' => 'wrong_size'])->assertRedirect();
+        $lines = array_fill_keys($order->lines()->pluck('id')->all(), 1);
+        $this->post('/admin/returns/returns', ['order_id' => $order->id, 'lines' => $lines, 'reason_code' => 'wrong_size'])->assertRedirect();
 
         return ReturnRequest::query()->where('order_id', $order->id)->latest('id')->first();
     };
@@ -90,7 +94,7 @@ it('hàng loạt ở danh sách: Duyệt rồi Đã nhận hàng; yêu cầu kh�
     $stock = ($this->onHand)();
 
     $actions = collect($this->get('/admin/returns/returns')->viewData('page')['props']['actions'])->pluck('key')->all();
-    expect($actions)->toBe(['approve', 'receive', 'receive_damaged']);
+    expect($actions)->toBe(['approve', 'receive', 'receive_damaged', 'receive_mixed']);
 
     $this->post('/admin/returns/returns/bulk-receive', ['ids' => [$a->id, $b->id]])->assertSessionHas('success', 'Đã nhận hàng 0 yêu cầu (nhập lại kho); bỏ qua 2 yêu cầu chưa duyệt hoặc đã nhận.');
     $this->post('/admin/returns/returns/bulk-approve', ['ids' => [$a->id, $b->id]])->assertSessionHas('success', 'Đã duyệt 2 yêu cầu; bỏ qua 0 yêu cầu không còn chờ duyệt.');
@@ -130,4 +134,61 @@ it('danh sách: hiện số đơn (mở trang đơn), tìm theo số đơn hoặ
     $byOrder->assertInertia(fn ($page) => $page->has('returns', 1)->where('returns.0.id', $a->id)->where('returns.0.order_number', $orderA->number)->where('returns.0.order_url', route('admin.orders.orders.show', ['order' => $orderA->id])));
     $byNumber->assertInertia(fn ($page) => $page->has('returns', 1)->where('returns.0.id', $b->id));
     $this->get('/admin/returns/returns?q=KHONG-CO')->assertInertia(fn ($page) => $page->has('returns', 0));
+});
+
+it('nhận hàng theo từng dòng: chỉ nhập kho hàng còn bán được và bỏ qua yêu cầu chưa duyệt hoặc đã nhận', function () {
+    $mixed = ($this->requestReturn)(($this->deliveredOrder)(true));
+    $other = ($this->requestReturn)(($this->deliveredOrder)());
+    $pending = ($this->requestReturn)(($this->deliveredOrder)());
+    $this->post('/admin/returns/returns/bulk-approve', ['ids' => [$mixed->id, $other->id]])->assertSessionHasNoErrors();
+    $stock = ($this->onHand)();
+    $stockM = fn (): int => (int) DB::table('stock_levels')->where('variant_id', $this->m->id)->value('on_hand');
+    $beforeM = $stockM();
+    $sellable = $mixed->lines()->where('variant_id', $this->s->id)->sole();
+    $damaged = $mixed->lines()->where('variant_id', $this->m->id)->sole();
+    $otherLine = $other->lines()->sole();
+    $ids = [$mixed->id, $other->id, $pending->id];
+    $base = '/admin/returns/returns/bulk-receive';
+
+    $this->postJson("{$base}/preview", ['ids' => $ids])->assertOk()
+        ->assertJsonCount(2, 'returns')->assertJsonPath('skipped', 1)
+        ->assertJsonFragment(['id' => $damaged->id, 'sku' => $this->m->sku, 'quantity' => 1]);
+    $payload = ['ids' => $ids, 'conditions' => [$sellable->id => 'sellable', $damaged->id => 'damaged', $otherLine->id => 'damaged']];
+    $this->post("{$base}?condition=mixed", $payload)->assertSessionHas('success', 'Đã nhận hàng 2 yêu cầu theo tình trạng từng dòng; bỏ qua 1 yêu cầu.');
+    expect($sellable->fresh()->condition)->toBe('sellable')
+        ->and($sellable->fresh()->restock_location_id)->not->toBeNull()
+        ->and($damaged->fresh()->condition)->toBe('damaged')
+        ->and($damaged->fresh()->restock_location_id)->toBeNull()
+        ->and($otherLine->fresh()->condition)->toBe('damaged')
+        ->and($pending->fresh()->status->value)->toBe('requested')
+        ->and(($this->onHand)())->toBe($stock + 1)
+        ->and($stockM())->toBe($beforeM);
+
+    $this->post("{$base}?condition=mixed", $payload)->assertSessionHas('success', 'Đã nhận hàng 0 yêu cầu theo tình trạng từng dòng; bỏ qua 3 yêu cầu.');
+    expect(($this->onHand)())->toBe($stock + 1);
+});
+
+it('nhận theo từng dòng xác thực cả lô trước khi nhập kho', function () {
+    [$first, $second, $outside] = [
+        ($this->requestReturn)(($this->deliveredOrder)()),
+        ($this->requestReturn)(($this->deliveredOrder)()),
+        ($this->requestReturn)(($this->deliveredOrder)()),
+    ];
+    $ids = [$first->id, $second->id];
+    $this->post('/admin/returns/returns/bulk-approve', ['ids' => $ids])->assertSessionHasNoErrors();
+    $stock = ($this->onHand)();
+    $firstLine = $first->lines()->sole()->id;
+    $secondLine = $second->lines()->sole()->id;
+    $base = '/admin/returns/returns/bulk-receive';
+    $this->post("{$base}?condition=mixed", ['ids' => $ids, 'conditions' => [$firstLine => 'sellable']])->assertSessionHasErrors('conditions');
+    $complete = [$firstLine => 'sellable', $secondLine => 'damaged'];
+    $foreign = $complete + [$outside->lines()->sole()->id => 'damaged'];
+    $this->post("{$base}?condition=mixed", ['ids' => $ids, 'conditions' => $foreign])->assertSessionHasErrors('conditions');
+    $this->post("{$base}?condition=mixed", ['ids' => $ids, 'conditions' => array_replace($complete, [$secondLine => 'unknown'])])->assertSessionHasErrors("conditions.{$secondLine}");
+    expect($first->fresh()->status->value)->toBe('approved')->and($second->fresh()->status->value)->toBe('approved')
+        ->and(($this->onHand)())->toBe($stock);
+
+    $this->actingAs(T::staff(['admin.access', 'returns.view']), 'staff');
+    $this->postJson("{$base}/preview", ['ids' => $ids])->assertForbidden();
+    $this->post("{$base}?condition=mixed", ['ids' => $ids, 'conditions' => $complete])->assertForbidden();
 });
