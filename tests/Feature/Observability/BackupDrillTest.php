@@ -2,7 +2,9 @@
 
 use App\Observability\AlertRules;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /*
 | Go-live gate: diễn tập khôi phục backup — nạp bản mới nhất vào DB tạm, đối chiếu, xoá DB tạm, ghi bằng chứng; cảnh báo
@@ -30,12 +32,22 @@ it('backup mới → diễn tập đạt, có số dòng đối chiếu, DB tạ
 })->skip(fn () => DB::getDriverName() !== 'mysql', 'Cần MySQL');
 
 it('--with-files: backup đầy đủ → giải nén và đếm được phần file storage/app; bản chỉ DB → cảnh báo chưa diễn tập file', function () {
-    $this->artisan('vani:backup:drill', ['--fresh' => true])->expectsOutputToContain('chưa được diễn tập')->assertSuccessful();
+    $fixture = storage_path('app/backup-fixture-'.Str::uuid().'.txt');
+    File::ensureDirectoryExists(dirname($fixture));
+    File::put($fixture, 'Nội dung kiểm thử khôi phục file');
 
-    $this->artisan('vani:backup:drill', ['--fresh' => true, '--with-files' => true])->expectsOutputToContain('Diễn tập khôi phục đạt.')->assertSuccessful();
-    $files = json_decode((string) DB::table('backup_drills')->orderByDesc('id')->value('details'), true)['files'];
-    expect($files['archived'])->toBeGreaterThan(0)
-        ->and($files['restored'])->toBe($files['archived']);
+    try {
+        $this->artisan('vani:backup:drill', ['--fresh' => true])->expectsOutputToContain('chưa được diễn tập')->assertSuccessful();
+        $databaseOnlyBackup = DB::table('backup_drills')->sole()->backup_path;
+        Storage::disk('local')->delete($databaseOnlyBackup);
+
+        $this->artisan('vani:backup:drill', ['--fresh' => true, '--with-files' => true])->expectsOutputToContain('Diễn tập khôi phục đạt.')->assertSuccessful();
+        $files = json_decode((string) DB::table('backup_drills')->orderByDesc('id')->value('details'), true)['files'];
+        expect($files['archived'])->toBeGreaterThan(0)
+            ->and($files['restored'])->toBe($files['archived']);
+    } finally {
+        File::delete($fixture);
+    }
 })->skip(fn () => DB::getDriverName() !== 'mysql', 'Cần MySQL');
 
 it('backup hỏng hoặc không có backup → không đạt, mã thoát 1, vẫn ghi kết quả', function () {

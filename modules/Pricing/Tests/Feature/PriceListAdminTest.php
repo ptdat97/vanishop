@@ -373,6 +373,22 @@ it('áp giá từ sản phẩm xác thực quyền, bảng đích và giá trị
     expect($sale->prices()->count())->toBe(0);
 });
 
+it('gửi lại áp giá từ danh sách sản phẩm giữ giá gạch và không ghi lịch sử trùng', function () {
+    $sale = P::priceList(['type' => 'sale'], [$this->s->id => [280_000, 320_000]]);
+    $url = "{$this->base}/bulk-from-products";
+    $payload = ['ids' => [$this->style->id], 'price_list_id' => $sale->id, 'mode' => 'fixed', 'value' => 250_000, 'round_to' => 0];
+    $history = fn () => PriceHistory::query()->where('price_list_id', $sale->id);
+
+    $this->post($url, $payload)->assertSessionHas('success', 'Đã cập nhật giá 2 SKU.');
+    $this->postJson("{$url}/preview", $payload)->assertOk()->assertJsonPath('can_apply', false);
+    $this->post($url, $payload)->assertSessionHas('success', 'Đã cập nhật giá 0 SKU.');
+
+    $price = $sale->prices()->where('variant_id', $this->s->id)->sole();
+    expect($price->amount)->toBe(250_000)->and($price->compare_at_amount)->toBe(320_000)
+        ->and($history()->count())->toBe(2)
+        ->and($history()->where('variant_id', $this->s->id)->sole()->old_amount)->toBe(280_000);
+});
+
 it('xuất file bảng giá: SKU, sản phẩm, tuỳ chọn, giá niêm yết, giá, giá gạch — dùng làm mẫu nhập lại', function () {
     P::priceList(['code' => 'base'], [$this->s->id => [300_000], $this->m->id => [300_000]]);
     $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale'], [$this->s->id => [199_000, 250_000]]);

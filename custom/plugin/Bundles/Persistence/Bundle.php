@@ -6,6 +6,7 @@ namespace Plugin\Bundles\Persistence;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Shared\Support\StoreLocale;
 
 /**
@@ -15,8 +16,8 @@ use Modules\Shared\Support\StoreLocale;
  * @property int|null $image_media_id
  * @property int $discount_basis_points
  * @property bool $active
- * @property \Illuminate\Support\Carbon|null $starts_at
- * @property \Illuminate\Support\Carbon|null $ends_at
+ * @property Carbon|null $starts_at
+ * @property Carbon|null $ends_at
  * @property int $position
  */
 final class Bundle extends Model

@@ -165,6 +165,30 @@ it('API giỏ phân biệt bố cục chưa lưu với cấu hình lưu rỗng',
     $this->getJson($api)->assertOk()->assertJsonPath('meta.configured', true)->assertJsonPath('data.0.blocks', []);
 });
 
+it('API và Blade giữ cùng thứ tự block Core và plugin khi dùng chung slot', function () {
+    $slot = 'vani.storefront.brands.after_list';
+    $coreEditor = route('admin.storefront.builder.edit', 'brands');
+    $pluginEditor = route('admin.storefront.builder.edit', 'plugin-promo');
+    $this->put($coreEditor, ['blocks' => [
+        ['type' => 'rich_text', 'zone' => $slot, 'config' => ['body' => 'Nội dung Core thứ nhất']],
+        ['type' => 'rich_text', 'zone' => $slot, 'config' => ['body' => 'Nội dung Core thứ hai']],
+    ]])->assertSessionHasNoErrors();
+    $this->put($pluginEditor, ['blocks' => [
+        ['type' => 'rich_text', 'config' => ['body' => 'Nội dung plugin']],
+    ]])->assertSessionHasNoErrors();
+
+    $api = '/api/storefront/v1/pages/layouts/brands';
+    $storefront = route('storefront.brands');
+    $blocks = $this->getJson($api)->assertOk()->assertJsonPath('data.0.blocks', [])->json('data.1.blocks');
+    $ordered = ['Nội dung Core thứ nhất', 'Nội dung Core thứ hai', 'Nội dung plugin'];
+    expect(array_column(array_column($blocks, 'data'), 'bodyHtml'))->toBe($ordered);
+    $this->get($storefront)->assertOk()->assertSeeInOrder($ordered);
+
+    $this->delete($pluginEditor)->assertSessionHasNoErrors();
+    $this->getJson($api)->assertOk()->assertJsonPath('meta.configured', true)->assertJsonCount(2, 'data.1.blocks');
+    $this->get($storefront)->assertOk()->assertDontSee('Nội dung plugin');
+});
+
 it('xem trước block nháp bằng theme và nhập bố cục vào vùng phù hợp trước khi lưu', function () {
     $block = ['type' => 'rich_text', 'config' => ['body' => '<p>Nội dung nháp độc lập</p>']];
     $preview = route('admin.storefront.builder.draft', ['home', 'preview']);

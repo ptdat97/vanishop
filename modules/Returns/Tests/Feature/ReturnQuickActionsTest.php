@@ -192,3 +192,28 @@ it('nhận theo từng dòng xác thực cả lô trước khi nhập kho', func
     $this->postJson("{$base}/preview", ['ids' => $ids])->assertForbidden();
     $this->post("{$base}?condition=mixed", ['ids' => $ids, 'conditions' => $complete])->assertForbidden();
 });
+
+it('xem trước đã cũ bỏ qua yêu cầu người khác vừa nhận và vẫn nhận yêu cầu còn hợp lệ', function () {
+    $alreadyReceived = ($this->requestReturn)(($this->deliveredOrder)());
+    $mixed = ($this->requestReturn)(($this->deliveredOrder)(true));
+    $ids = [$alreadyReceived->id, $mixed->id];
+    $base = '/admin/returns/returns/bulk-receive';
+    $this->post('/admin/returns/returns/bulk-approve', ['ids' => $ids])->assertSessionHasNoErrors();
+    $this->postJson("{$base}/preview", ['ids' => $ids])->assertOk()->assertJsonCount(2, 'returns');
+    $stock = ($this->onHand)();
+    $receivedLine = $alreadyReceived->lines()->sole();
+    $sellable = $mixed->lines()->where('variant_id', $this->s->id)->sole();
+    $damaged = $mixed->lines()->where('variant_id', $this->m->id)->sole();
+
+    $this->post("/admin/returns/returns/{$alreadyReceived->id}/receive", ['conditions' => [$receivedLine->id => 'damaged']])->assertSessionHasNoErrors();
+    $this->post("{$base}?condition=mixed", [
+        'ids' => $ids,
+        'conditions' => [$receivedLine->id => 'sellable', $sellable->id => 'sellable', $damaged->id => 'damaged'],
+    ])->assertSessionHas('success', 'Đã nhận hàng 1 yêu cầu theo tình trạng từng dòng; bỏ qua 1 yêu cầu.');
+
+    expect($receivedLine->fresh()->condition)->toBe('damaged')
+        ->and($receivedLine->fresh()->restock_location_id)->toBeNull()
+        ->and($sellable->fresh()->condition)->toBe('sellable')
+        ->and($damaged->fresh()->condition)->toBe('damaged')
+        ->and(($this->onHand)())->toBe($stock + 1);
+});

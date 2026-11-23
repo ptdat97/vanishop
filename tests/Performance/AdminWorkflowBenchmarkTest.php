@@ -12,6 +12,7 @@ use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
+use Modules\Ordering\Contracts\Data\OrderPermissions;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Pricing\Application\BulkBasePrice;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
@@ -135,7 +136,7 @@ it('một ngày thao tác Admin: 1.000 sản phẩm, 3.000 SKU, 120 đơn', func
     // nhân viên chờ — test mặc định dùng `sync` sẽ cộng chúng vào request.
     config(['queue.default' => 'database']);
     $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'orders.view', 'orders.manage', 'fulfillment.view', 'fulfillment.manage',
-        'inventory.view', 'inventory.adjust', 'pricing.view', 'pricing.manage', 'payments.view', 'customers.view', 'returns.view']), 'staff');
+        'inventory.view', 'inventory.adjust', 'pricing.view', 'pricing.manage', 'payments.view', 'customers.view', 'returns.view', OrderPermissions::CUSTOMER_CONTACTS]), 'staff');
     $admin = '/admin';
     $orderIds = Order::query()->withoutGlobalScopes()->orderBy('id')->pluck('id')->map(fn ($id): int => (int) $id)->all();
     $middle = $styles[BENCH_PRODUCTS / 2];

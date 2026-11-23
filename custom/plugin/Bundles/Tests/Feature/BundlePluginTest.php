@@ -13,6 +13,7 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as Pricing;
 use Modules\Promotion\Contracts\ManagedPromotions;
 use Modules\Promotion\Persistence\Models\Promotion;
+use Modules\Shared\Support\StoreClock;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\Bundles\Application\Bundles;
 use Plugin\Bundles\BundlesServiceProvider;
@@ -261,6 +262,33 @@ it('chỉ giảm giá cho phần mua đủ bộ từ nhiều SKU và ghi nhận 
     $order = Order::query()->withoutGlobalScopes()->sole();
     expect($order->discount_amount)->toBe(65_000);
     $this->assertDatabaseHas('promotion_usages', ['order_id' => $order->id, 'discount_amount' => 65_000]);
+});
+
+it('danh sách combo và ưu đãi trên giỏ cùng bắt đầu và kết thúc đúng giờ đã lưu', function () {
+    $this->freezeSecond();
+    [$shirt, , $skirt] = bundleProducts();
+    manageBundles($this);
+    $startsAt = now()->addMinutes(2)->startOfMinute();
+    $endsAt = $startsAt->copy()->addMinutes(10);
+    $this->post(route('admin.plugins.vani-bundles.store'), [
+        ...bundlePayload($shirt->style_id, $skirt->style_id),
+        'starts_at' => StoreClock::toInput($startsAt), 'ends_at' => StoreClock::toInput($endsAt),
+    ])->assertSessionHasNoErrors();
+    $this->postJson(route('storefront.cart.add'), ['items' => [
+        ['variant_id' => $shirt->id, 'quantity' => 2], ['variant_id' => $skirt->id, 'quantity' => 1],
+    ]])->assertOk();
+
+    $api = '/api/storefront/v1/x/vani-bundles/bundles';
+    $this->getJson($api)->assertOk()->assertJsonCount(0, 'data');
+    $this->get(route('storefront.checkout'))->assertViewHas('quote', fn (array $quote): bool => $quote['discount']['amount'] === 0);
+
+    $this->travelTo($startsAt);
+    $this->getJson($api)->assertOk()->assertJsonPath('data.0.slug', 'bo-cong-so');
+    $this->get(route('storefront.checkout'))->assertViewHas('quote', fn (array $quote): bool => $quote['discount']['amount'] === 75_000);
+
+    $this->travelTo($endsAt);
+    $this->getJson($api)->assertOk()->assertJsonCount(0, 'data');
+    $this->get(route('storefront.checkout'))->assertViewHas('quote', fn (array $quote): bool => $quote['discount']['amount'] === 0);
 });
 
 it('khi khách bớt món, tính lại ưu đãi theo số lượng của combo lúc đặt đơn', function () {
