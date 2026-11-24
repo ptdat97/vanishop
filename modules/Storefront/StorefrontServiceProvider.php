@@ -180,8 +180,8 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
         $settings->define(new SettingDefinition(
             'core', 'storefront.per_page', 'storefront::texts.storefront_service_provider.products_per_page', 'int', 24,
-            help: 'storefront::texts.storefront_service_provider.category_brand_search_pages_storefront',
-            rules: ['min:12', 'max:60'],
+            help: 'storefront::texts.storefront_service_provider.products_per_page_help',
+            rules: ['integer', 'min:12', 'max:60'],
             group: SettingGroup::Store,
         ));
         $settings->define(new SettingDefinition(

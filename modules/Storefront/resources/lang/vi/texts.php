@@ -88,7 +88,6 @@ return [
         'track_order' => 'Tra cứu đơn hàng',
     ],
     'storefront_service_provider' => [
-        'category_brand_search_pages_storefront' => 'Trang danh mục, thương hiệu, tìm kiếm và Storefront API khi không truyền per_page (12–60).',
         'content_design' => 'Nội dung & giao diện',
         'design_tokens_json' => 'Token giao diện (JSON)',
         'edit_storefront_design_home_page' => 'Sửa giao diện cửa hàng (trang chủ, menu, đầu & chân trang)',
@@ -101,6 +100,7 @@ return [
         'one_keyword_per_line_most' => 'Mỗi dòng một từ khoá (tối đa 10): gợi ý ở ô tìm kiếm và trang tìm kiếm khi chưa gõ.',
         'override_theme_s_tokens_color' => 'Ghi đè token của theme, vd. {"color-primary": "#0f766e", "radius": "0.75rem"} → CSS variables --vani-*.',
         'products_per_page' => 'Số sản phẩm mỗi trang',
+        'products_per_page_help' => 'Nhập từ 12 đến 60. Để trống dùng mặc định 24. Áp dụng cho danh mục, thương hiệu, bộ sưu tập, kết quả tìm kiếm và Storefront API khi không chỉ định per_page.',
         'show_prices' => 'Hiện giá',
         'shown_under_store_name_google' => 'Hiện dưới tên cửa hàng trên Google và khi chia sẻ link trang chủ lên Facebook/Zalo; trang không có mô tả riêng cũng dùng câu này. Nên 1–2 câu, dưới 160 ký tự.',
         'signed_customers_only' => 'Chỉ khách đã đăng nhập',

@@ -88,7 +88,6 @@ return [
         'track_order' => 'Track order',
     ],
     'storefront_service_provider' => [
-        'category_brand_search_pages_storefront' => 'Category, brand and search pages and the Storefront API when per_page is not given (12–60).',
         'content_design' => 'Content & design',
         'design_tokens_json' => 'Design tokens (JSON)',
         'edit_storefront_design_home_page' => 'Edit the storefront design (home page, menus, header & footer)',
@@ -101,6 +100,7 @@ return [
         'one_keyword_per_line_most' => 'One keyword per line (at most 10): suggested in the search box and on the search page before typing.',
         'override_theme_s_tokens_color' => 'Override the theme\'s tokens, e.g. {"color-primary": "#0f766e", "radius": "0.75rem"} → CSS variables --vani-*.',
         'products_per_page' => 'Products per page',
+        'products_per_page_help' => 'Enter 12 to 60. Leave blank to use the default of 24. Applies to category, brand, collection and search pages, and to the Storefront API when per_page is omitted.',
         'show_prices' => 'Show prices',
         'shown_under_store_name_google' => 'Shown under the store name on Google and when sharing the home page link on Facebook/Zalo; pages without their own description use it too. Ideally 1–2 sentences, under 160 characters.',
         'signed_customers_only' => 'Signed-in customers only',

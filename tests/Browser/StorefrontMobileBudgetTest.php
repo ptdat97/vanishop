@@ -132,9 +132,29 @@ it('gallery mobile đổi ảnh ngay và chỉ tải PhotoSwipe khi khách phón
     $page->assertScript("performance.getEntriesByType('resource').some(({ name }) => /photoswipe|swiper-bundle/.test(name))", false)
         ->click('[data-gallery-next]')
         ->assertSeeIn('[data-gallery-position]', '2')
-        ->assertVisible('[data-gallery-thumb][data-index="1"][aria-current="true"]')
-        ->click('[data-gallery-slide]:nth-child(2) a')
+        ->assertVisible('[data-gallery-thumb][data-index="1"][aria-current="true"]');
+    $page->script(<<<'JS'
+        () => {
+            document.querySelector('[data-gallery-slide]:nth-child(2) a').focus({ preventScroll: true });
+            window.zoomScroll = window.scrollY;
+        }
+    JS);
+    $page->keys('[data-gallery-slide]:nth-child(2) a', 'Enter')
         ->assertVisible('.pswp')
+        ->assertScript('location.hash', '')
+        ->assertScript('document.activeElement === document.querySelector(".pswp")', true)
+        ->keys('.pswp', 'ArrowLeft')
+        ->assertSeeIn('[data-gallery-position]', '1')
+        ->keys('.pswp', 'Escape')
+        ->assertMissing('.pswp')
+        ->assertScript("document.activeElement === document.querySelector('[data-gallery-slide]:nth-child(1) a')", true)
+        ->assertScript('Math.abs(window.scrollY - window.zoomScroll) <= 1', true)
+        ->click('[data-gallery-slide]:nth-child(1) a')
+        ->assertVisible('.pswp .pswp__item:first-child')
+        ->click('.pswp__button--close')
+        ->assertMissing('.pswp')
+        ->assertScript('location.hash', '')
+        ->assertScript('Math.abs(window.scrollY - window.zoomScroll) <= 1', true)
         ->assertNoJavaScriptErrors();
 });
 
@@ -153,6 +173,54 @@ it('mở bộ lọc bằng bàn phím và trả focus về nút lọc sau khi ch
         ->assertVisible('#vani-listing-filters [data-filter="brand"] a[aria-current="true"]')
         ->assertNoJavaScriptErrors();
 })->with([375, 1280]);
+
+it('lọc tại chỗ giữ vị trí cuộn trên mobile', function () {
+    $trigger = '[data-vani-drawer-open="vani-listing-filters"]';
+    $page = visit('/tim-kiem')->resize(390, 844);
+    $page->script(<<<'JS'
+        () => {
+            const main = document.getElementById('main-content');
+            main.style.minHeight = '200vh';
+            main.style.paddingTop = '240px';
+            window.scrollTo({ top: 80, behavior: 'instant' });
+        }
+    JS);
+    $page->click($trigger)->assertVisible('#vani-listing-filters[open]');
+    $page->script(<<<'JS'
+        () => {
+            document.querySelector('#vani-listing-filters [data-filter="brand"] a').focus({ preventScroll: true });
+            window.filterScroll = window.scrollY;
+        }
+    JS);
+    $page->keys('#vani-listing-filters [data-filter="brand"] a', 'Enter')
+        ->assertSee('Bỏ tất cả bộ lọc')
+        ->assertScript('Math.abs(window.scrollY - window.filterScroll) <= 1', true)
+        ->assertNoJavaScriptErrors();
+});
+
+it('Back và Forward qua liên kết đến nội dung chính giữ nguyên danh sách', function () {
+    $page = visit('/tim-kiem')->resize(1280, 844);
+    $page->script(<<<'JS'
+        () => {
+            window.initialListing = document.querySelector('[data-vani-listing]');
+            window.listingRefreshes = 0;
+            const fetch = window.fetch;
+            window.fetch = (url, options) => {
+                if (new URL(url, location.href).pathname === location.pathname) window.listingRefreshes++;
+                return fetch(url, options);
+            };
+        }
+    JS);
+
+    $page->keys('a[href="#main-content"]', 'Enter')
+        ->assertScript('location.hash', '#main-content')
+        ->assertScript('document.activeElement.id', 'main-content')
+        ->back()->assertScript('location.hash', '')
+        ->forward()->assertScript('location.hash', '#main-content')
+        ->assertScript('window.initialListing === document.querySelector("[data-vani-listing]")', true)
+        ->assertScript('window.listingRefreshes', 0)
+        ->assertNoJavaScriptErrors();
+});
 
 it('thẻ sản phẩm mở ảnh, lưu yêu thích và mở đăng nhập xem giá bằng các điểm bấm riêng', function () {
     T::seed(function (): void {

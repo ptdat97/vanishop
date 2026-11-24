@@ -71,8 +71,7 @@ final class ProductListRequest extends FormRequest
             attributes: $attributes,
             sort: (string) $this->input('sort', ProductSearchQuery::SORT_NEWEST),
             page: (int) $this->input('page', 1),
-            // Không truyền per_page → cấu hình cửa hàng `storefront.per_page` (12–60).
-            perPage: (int) $this->input('per_page', $this->container->make(Settings::class)->get('core', 'storefront.per_page', 24)),
+            perPage: (int) ($this->validated('per_page') ?? $this->container->make(Settings::class)->get('core', 'storefront.per_page', 24)),
             brandSlugs: $split((string) $this->input('brand', '')),
             priceMin: $this->filled('price_min') ? (int) $this->input('price_min') : null,
             priceMax: $this->filled('price_max') ? (int) $this->input('price_max') : null,

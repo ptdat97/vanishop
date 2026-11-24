@@ -1,7 +1,13 @@
 let pendingListing;
+let renderedListingUrl;
+
+function listingLocation(url) {
+    const { pathname, search } = new URL(url, window.location.href);
+    return pathname + search;
+}
 
 /** Trang danh sách (tìm kiếm, danh mục, thương hiệu, lọc, phân trang) không tải lại: lấy HTML (trang cache được), thay vùng [data-vani-listing]. */
-export async function listing(url, { push = true, focus = null } = {}) {
+export async function listing(url, { push = true, focus = null, scrollToResults = false } = {}) {
     pendingListing?.abort();
     const current = document.querySelector('[data-vani-listing]');
     if (!current) {
@@ -20,9 +26,11 @@ export async function listing(url, { push = true, focus = null } = {}) {
         const next = page.querySelector('[data-vani-listing]');
         if (!next) throw new Error('no listing');
         if (request.signal.aborted) return;
-        const filtersWereOpen = current.querySelector('#vani-listing-filters')?.open;
+        const scrollY = window.scrollY;
+        const filters = current.querySelector('#vani-listing-filters[open]');
+        filters?.close();
         current.replaceWith(next);
-        if (filtersWereOpen) {
+        if (filters) {
             next.querySelector('[data-vani-drawer-open="vani-listing-filters"]')?.focus({ preventScroll: true });
         } else if (focus === 'sort') {
             next.querySelector('#vani-listing-sort')?.focus({ preventScroll: true });
@@ -32,14 +40,19 @@ export async function listing(url, { push = true, focus = null } = {}) {
         const heading = page.querySelector('h1');
         if (heading && document.querySelector('h1')) document.querySelector('h1').textContent = heading.textContent;
         document.title = page.title || document.title;
-        if (push) history.pushState({ vaniListing: true }, '', url);
-        if (focus !== 'sort') next.scrollIntoView({ block: 'start' });
+        if (push) history.pushState(null, '', url);
+        renderedListingUrl = listingLocation(url);
+        if (scrollToResults) next.scrollIntoView({ block: 'start' });
+        else if (push) window.scrollTo({ top: scrollY, behavior: 'instant' });
         if (status) status.textContent = next.querySelector('[data-vani-listing-count]')?.textContent.trim() ?? '';
         document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: next } }));
     } catch {
         if (!request.signal.aborted) window.location.href = url;
     } finally {
-        if (pendingListing === request) pendingListing = undefined;
+        if (pendingListing === request) {
+            pendingListing = undefined;
+            current.removeAttribute('aria-busy');
+        }
     }
 }
 
@@ -49,9 +62,9 @@ export function mountListingNavigation() {
         const link = event.target.closest('[data-vani-listing] a[href]');
         if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target) return;
         const url = new URL(link.href, window.location.href);
-        if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) return;
+        if (url.origin !== window.location.origin || url.pathname !== window.location.pathname || url.hash) return;
         event.preventDefault();
-        listing(url.href, { focus: 'results' });
+        listing(url.href, { focus: 'results', scrollToResults: Boolean(link.closest('[data-vani-pagination]')) });
     });
     const submit = (form) => {
         const url = new URL(form.action);
@@ -66,12 +79,14 @@ export function mountListingNavigation() {
         event.preventDefault();
         submit(event.target);
     });
-    window.addEventListener('popstate', (event) => {
-        if (event.state?.vaniListing || document.querySelector('[data-vani-listing]')) {
-            listing(window.location.href, { push: false });
-        }
-    });
     if (document.querySelector('[data-vani-listing]')) {
-        history.replaceState({ vaniListing: true }, '', window.location.href);
+        renderedListingUrl = listingLocation(window.location.href);
+        window.addEventListener('popstate', () => {
+            if (listingLocation(window.location.href) === renderedListingUrl) {
+                pendingListing?.abort();
+                return;
+            }
+            listing(window.location.href, { push: false });
+        });
     }
 }
