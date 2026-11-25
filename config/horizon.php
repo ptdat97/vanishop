@@ -200,8 +200,8 @@ return [
     'defaults' => [
         'supervisor-1' => [
             'connection' => 'redis',
-            // Thứ tự ưu tiên: thông báo giao dịch, vận đơn, mặc định (outbox tích hợp…), chỉ mục tìm kiếm.
-            'queue' => ['notifications', 'fulfillment', 'default', 'search'],
+            // Thứ tự ưu tiên: thông báo giao dịch, vận đơn, mặc định (outbox tích hợp…), đồng bộ giá niêm yết sang Catalog.
+            'queue' => ['notifications', 'fulfillment', 'default', 'catalog-sync'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 1,

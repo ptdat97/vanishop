@@ -10,7 +10,7 @@ use Modules\Shared\Domain\BusinessRuleViolation;
 final class CheckoutRejected extends BusinessRuleViolation
 {
     /**
-     * @param  array<string, mixed>  $details
+     * @param  array<string, mixed>  $details_
      */
     private function __construct(private readonly string $code_, private readonly int $status_, string $message, private readonly array $details_ = [])
     {

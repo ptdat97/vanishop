@@ -25,18 +25,6 @@ parameters:
 			path: custom/plugin/ZaloZns/Infrastructure/ZnsClient.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Cart\\Persistence\\Models\\CartLine\:\:\$meta\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Cart/Application/CartService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Cart\\Persistence\\Models\\CartLine\:\:\$options_hash\.$#'
-			identifier: property.notFound
-			count: 3
-			path: modules/Cart/Application/CartService.php
-
-		-
 			message: '#^Result of \|\| is always true\.$#'
 			identifier: booleanOr.alwaysTrue
 			count: 1
@@ -47,19 +35,6 @@ parameters:
 			identifier: identical.alwaysTrue
 			count: 1
 			path: modules/Cart/Application/CartService.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
-			identifier: parameter.notFound
-			count: 1
-			path: modules/Cart/Contracts/CartRejected.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\ProductCollection\:\:\$style_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Catalog/Application/Collections/EloquentCollectionDirectory.php
-
 
 		-
 			message: '#^Parameter \#1 \$array \(list\<array\{code\: string, translations\: array\<string, array\{label\: string\}\>\}\>\) of array_values is already a list, call has no effect\.$#'
@@ -80,12 +55,6 @@ parameters:
 			path: modules/Checkout/Application/TotalsPipeline.php
 
 		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
-			identifier: parameter.notFound
-			count: 1
-			path: modules/Checkout/Contracts/CheckoutRejected.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>fee" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -96,42 +65,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: modules/Checkout/Testing/CheckoutValidatorContract.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\CustomerIdentity\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Customer/Application/AccountLifecycle.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$orders_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Customer/Application/AuthService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$first_order_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Customer/Application/CustomerStats.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$last_order_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Customer/Application/CustomerStats.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$orders_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Customer/Application/CustomerStats.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$total_spent\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Customer/Application/CustomerStats.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>last_error" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -146,18 +79,6 @@ parameters:
 			path: modules/Extension/Contracts/Data/FieldDefinition.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\Shipment\:\:\$shipped_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: modules/Fulfillment/Application/FulfillmentService.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
-			identifier: parameter.notFound
-			count: 1
-			path: modules/Fulfillment/Contracts/FulfillmentRejected.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between array\{\} and array\{\} will always evaluate to false\.$#'
 			identifier: notIdentical.alwaysFalse
 			count: 1
@@ -170,70 +91,10 @@ parameters:
 			path: modules/Integration/Application/HealthQueries.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$actor_id\.$#'
-			identifier: property.notFound
+			message: '#^Instanceof between Modules\\Inventory\\Contracts\\Data\\BackorderAllowance and Modules\\Inventory\\Contracts\\Data\\BackorderAllowance will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
 			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$actor_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$location_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$on_hand_after\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$on_hand_delta\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$reason\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$reference\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$reserved_after\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$reserved_delta\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Inventory\\Persistence\\Models\\StockMovement\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: modules/Inventory/Application/StockQueries.php
+			path: modules/Inventory/Application/BackorderService.php
 
 		-
 			message: '#^Match expression does not handle remaining value\: string$#'
@@ -248,22 +109,16 @@ parameters:
 			path: modules/Inventory/Testing/InventoryStrategyContract.php
 
 		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
-			identifier: parameter.notFound
+			message: '#^Call to function is_array\(\) with list\<Modules\\Ordering\\Contracts\\Data\\RiskSignal\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
 			count: 1
-			path: modules/Payment/Contracts/PaymentRejected.php
+			path: modules/Ordering/Application/OrderRiskService.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Payment\:\:\$created_at\.$#'
-			identifier: property.notFound
+			message: '#^Instanceof between Modules\\Ordering\\Contracts\\Data\\RiskSignal and Modules\\Ordering\\Contracts\\Data\\RiskSignal will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
 			count: 1
-			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
-
-		-
-			message: '#^Parameter \#1 \$array \(list\<int\>\) of array_values is already a list, call has no effect\.$#'
-			identifier: arrayValues.list
-			count: 1
-			path: modules/Promotion/Application/PromotionEvaluator.php
+			path: modules/Ordering/Application/OrderRiskService.php
 
 		-
 			message: '#^Access to an undefined property Pest\\Mixins\\Expectation\<mixed\>\:\:\$each\.$#'
@@ -278,12 +133,6 @@ parameters:
 			path: modules/Promotion/Testing/PromotionRuleContract.php
 
 		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
-			identifier: parameter.notFound
-			count: 1
-			path: modules/Returns/Contracts/ReturnRejected.php
-
-		-
 			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
@@ -294,21 +143,3 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: modules/Tenancy/Application/DatabaseSettings.php
-
-		-
-			message: '#^Instanceof between Modules\\Inventory\\Contracts\\Data\\BackorderAllowance and Modules\\Inventory\\Contracts\\Data\\BackorderAllowance will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: modules/Inventory/Application/BackorderService.php
-
-		-
-			message: '#^Call to function is_array\(\) with list\<Modules\\Ordering\\Contracts\\Data\\RiskSignal\> will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: modules/Ordering/Application/OrderRiskService.php
-
-		-
-			message: '#^Instanceof between Modules\\Ordering\\Contracts\\Data\\RiskSignal and Modules\\Ordering\\Contracts\\Data\\RiskSignal will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: modules/Ordering/Application/OrderRiskService.php

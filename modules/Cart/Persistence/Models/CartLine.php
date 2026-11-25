@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $quantity
  * @property bool $selected
  * @property int|null $unit_price_snapshot
+ * @property string $options_hash băm tuỳ chọn dòng (CartLineOption); cùng variant + cùng băm = cùng dòng
+ * @property array<string, mixed>|null $meta
  */
 final class CartLine extends Model
 {

@@ -29,6 +29,10 @@ use Modules\Customer\Domain\CustomerStatus;
  * @property int|null $customer_group_id nhóm khách (0.3.35)
  * @property array<string, mixed>|null $meta
  * @property Carbon|null $last_login_at
+ * @property int $orders_count thống kê đơn, tính lại bởi CustomerStats
+ * @property int $total_spent
+ * @property Carbon|null $first_order_at
+ * @property Carbon|null $last_order_at
  * @property Carbon|null $created_at
  */
 final class Customer extends Model

@@ -26,6 +26,7 @@ use Modules\Fulfillment\Domain\ShipmentStatus;
  * @property CarbonImmutable|null $booking_started_at lease: lần đặt đang gọi hãng (L31)
  * @property string|null $booking_lease mã lease của lần đặt đang chạy
  * @property int $lock_version
+ * @property CarbonImmutable|null $shipped_at
  * @property CarbonImmutable|null $delivered_at
  * @property CarbonImmutable|null $delivery_failed_at
  */

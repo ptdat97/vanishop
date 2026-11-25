@@ -6,6 +6,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.84 — 2026-11-25 · Extension API 1.33.0
+
+Các việc P2 từ đợt rà soát kiến trúc 2026-11-25. Không đổi API cho plugin.
+
+- Hàng đợi `search` đổi tên thành `catalog-sync` (job duy nhất: đồng bộ giá niêm yết sang Catalog). **Vận hành:** chờ hàng đợi `search` chạy hết trước khi triển khai, vì Horizon không còn nghe hàng đợi cũ.
+- PHPStan baseline từ 52 xuống 24 mục: khai báo `@property` còn thiếu trên model (cột thật và cột thống kê), sửa docblock `$details_` của các exception `*Rejected`, bỏ `array_values` thừa. Mục còn lại là kiểm tra phòng vệ trước dữ liệu từ plugin, mixin của Pest và tham số tuỳ chọn của contract test.
+- `OrderStatusController` tách khỏi `OrderController` (đổi trạng thái, đổi hàng loạt, hoàn tất sớm), giữ nguyên URL và tên route.
+
 ## 0.5.83 — 2026-11-25 · Extension API 1.33.0
 
 Các việc P1 từ đợt rà soát kiến trúc 2026-11-25. Các hook tự động `vani.service.*` giữ nguyên theo quyết định Owner.

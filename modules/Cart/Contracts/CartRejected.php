@@ -12,7 +12,7 @@ use Modules\Shared\Domain\BusinessRuleViolation;
 final class CartRejected extends BusinessRuleViolation
 {
     /**
-     * @param  array<string, mixed>  $details
+     * @param  array<string, mixed>  $details_
      */
     private function __construct(
         private readonly string $code_,

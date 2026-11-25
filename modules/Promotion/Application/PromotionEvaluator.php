@@ -312,7 +312,7 @@ final class PromotionEvaluator implements PromotionEngine
      */
     private function eligibility(int $promotionId, array $rules, PromotionContext $context, bool $cartContentOnly = false): ?Eligibility
     {
-        $eligibility = new Eligibility(array_values(array_map(fn ($line): int => $line->key, $context->lines)));
+        $eligibility = new Eligibility(array_map(fn ($line): int => $line->key, $context->lines));
 
         foreach ($rules as $record) {
             $rule = $this->registry->rule($record['type']);

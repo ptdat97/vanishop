@@ -100,6 +100,6 @@ Core đăng ký lịch trong provider của module (`withoutOverlapping()->onOne
 | `vani:idempotency:prune` | mỗi giờ | Shared |
 | `vani:cart:prune` | 03:30 hằng ngày | Cart |
 
-Hàng đợi: `search` (đồng bộ index), `fulfillment` (đặt vận đơn), `notifications` (gửi tin); còn lại `default`. Driver hiện là `database`; Redis + Horizon: Designed ([operations](../18-operations/operations.md)). Mọi job/listener phải idempotent (R18).
+Hàng đợi: `notifications` (gửi tin), `fulfillment` (đặt vận đơn), `catalog-sync` (đồng bộ giá niêm yết thấp nhất sang Catalog để lọc/sắp xếp theo giá); còn lại `default`. Driver hiện là `database`; Redis + Horizon: Designed ([operations](../18-operations/operations.md)). Mọi job/listener phải idempotent (R18).
 
 > Tồn kho **không phụ thuộc** tác vụ nền để đúng: reservation hết hạn chỉ làm ATS thấp hơn thực tế cho tới khi `release-expired` chạy, không bao giờ gây oversell. Đây là điểm VaniShop giữ khác hệ tham chiếu ([reference-comparison §3](reference-comparison.md)).

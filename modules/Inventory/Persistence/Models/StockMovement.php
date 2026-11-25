@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Persistence\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
 use Modules\Inventory\Domain\MovementType;
@@ -11,7 +12,20 @@ use Modules\Inventory\Domain\MovementType;
 /**
  * Sổ biến động tồn — append-only.
  *
+ * @property int $id
+ * @property int $location_id
+ * @property int $variant_id
  * @property MovementType $type
+ * @property int $on_hand_delta
+ * @property int $reserved_delta
+ * @property int $on_hand_after
+ * @property int $reserved_after
+ * @property string|null $reason
+ * @property string|null $reference
+ * @property string|null $actor_type
+ * @property int|null $actor_id
+ * @property string|null $correlation_id
+ * @property CarbonImmutable $created_at
  */
 final class StockMovement extends Model
 {

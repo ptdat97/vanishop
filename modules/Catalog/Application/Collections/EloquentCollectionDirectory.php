@@ -24,7 +24,7 @@ final class EloquentCollectionDirectory implements CollectionDirectory
 
         $collections = [];
         foreach ($rows as $row) {
-            $collections[(int) $row->style_id][] = (string) $row->slug;
+            $collections[(int) $row->getAttribute('style_id')][] = (string) $row->slug;
         }
 
         ksort($collections);

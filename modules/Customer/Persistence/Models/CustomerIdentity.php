@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Modules\Customer\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $customer_id
  * @property string $provider
  * @property string $subject
+ * @property Carbon|null $created_at
  */
 final class CustomerIdentity extends Model
 {

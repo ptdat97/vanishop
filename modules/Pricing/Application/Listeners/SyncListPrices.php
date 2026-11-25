@@ -16,7 +16,7 @@ use Modules\Shared\Context\CurrentContext;
  */
 final class SyncListPrices implements ShouldQueue
 {
-    public string $queue = 'search';
+    public string $queue = 'catalog-sync';
 
     public int $tries = 5;
 

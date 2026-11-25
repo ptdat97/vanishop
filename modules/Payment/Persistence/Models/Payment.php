@@ -6,6 +6,7 @@ namespace Modules\Payment\Persistence\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Modules\Payment\Domain\PaymentStatus;
 
 /**
@@ -21,6 +22,7 @@ use Modules\Payment\Domain\PaymentStatus;
  * @property CarbonImmutable|null $expires_at
  * @property CarbonImmutable|null $paid_at
  * @property int $lock_version
+ * @property Carbon|null $created_at
  */
 final class Payment extends Model
 {
