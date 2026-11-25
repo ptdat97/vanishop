@@ -93,6 +93,12 @@ flowchart LR
 - `OrderCancelled` → usage `reverted`, trả lượt voucher (idempotent theo `order_id`).
 - **Huỷ một phần (0.3.31)**: `adjustUsage` đưa `promotion_usages.discount_amount` + ngân sách về giảm giá còn trên đơn. Khách bớt hàng → `recheck` (chỉ rule đánh dấu `CartContentRule`, áp lại action theo thứ tự đã áp, không xét trạng thái/lượt/ngân sách hiện tại) để Ordering thu hồi phần không còn đủ điều kiện ([order §2.1](../09-order/order.md)). Rule plugin chỉ phụ thuộc dòng hàng nên `implements CartContentRule`; rule phụ thuộc lịch sử khách/thời điểm/nguồn thì không.
 
+## 5.0 Action theo ngữ cảnh và khuyến mãi do plugin quản lý (Implemented)
+
+- `ContextualPromotionAction` (mở rộng `PromotionAction`): `applyInContext(PromotionContext, $remaining, $config)` nhận số lượng, đơn giá và sản phẩm của từng dòng. Evaluator và `recheck()` gọi hàm này thay cho `apply()`; kết quả vẫn bị kẹp theo số tiền còn lại và giá sàn.
+- `ManagedPromotions`: plugin tạo/cập nhật khuyến mãi qua `sync(owner, key, ManagedPromotion)`, cùng validate rule/action, audit, lock version như Admin. Cột `promotions.managed_by`, `managed_key`, `managed_route`. Admin → Khuyến mãi hiện nhãn "Plugin", form chỉ xem, không xoá được; `remove()` xoá khi chưa có lượt dùng, đã dùng thì chuyển sang tắt để giữ lịch sử đơn.
+- Tham chiếu: `vani.bundles` — mỗi combo là một khuyến mãi cộng dồn với rule `bundle_complete` (`CartContentRule`) và action `bundle_percent` (giảm cho số bộ đủ món, SKU rẻ nhất trước).
+
 ## 5.1 Campaign (Implemented, 0.3.36)
 
 Campaign gói **khuyến mãi + bảng giá sale/thành viên** chạy chung một lịch (vd. "Sale 11.11"). Admin → Khuyến mãi → Campaign.

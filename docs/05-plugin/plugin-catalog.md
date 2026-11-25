@@ -65,7 +65,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | Plugin | Contract / điểm mở rộng | Đợt |
 |---|---|---|
 | `vani.promotion-rules` ✅ | `PromotionRule`, `PromotionAction` | P1 |
-| `vani.promotion-advanced` (BxGy, combo, quà tặng, flash sale, mua kèm khác brand) | `PromotionRule`, `PromotionAction` | P3 |
+| `vani.promotion-advanced` (BxGy, quà tặng, flash sale, mua kèm khác brand) | `PromotionRule`, `PromotionAction` | P3 |
 | `vani.cod-risk-guard` ✅ (danh sách đen SĐT, ngưỡng hoàn về → tín hiệu rủi ro; chặn xác nhận SĐT danh sách đen; đơn hoàn về → nhãn `bom-hang` + ghi chú CSKH) | `OrderRiskSignal`, hook `vani.order.before_confirm`, `CustomerSegments`, `CustomerNotes` | **Implemented** 2026-11-15 (1.0.0, EP v3 X2); 1.1.0 2026-11-16 (X6) |
 | `vani.abandoned-cart` | Event `CartAbandoned`, `NotificationChannel` | P2 |
 | `vani.wishlist` ✅ (nút tim thẻ/PDP, `/tai-khoan/yeu-thich`, vãng lai lưu trình duyệt + gộp khi đăng nhập, báo có hàng lại/giảm giá — [đặc tả](specs/wishlist.md)) | `storefrontPages`, `accountRoutes` (0.3.76), `storefrontRoutes`, slot thẻ/PDP/header/body_end, `ProductCards`, `Notifier`, events `AvailabilityChanged`, `PriceChanged`, `CustomerMerged`, `CustomerAnonymized`, `assets` | **Implemented** 2026-11-05 (1.0.0) |
@@ -73,7 +73,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.social-login` | Auth provider registry | P2 |
 | `vani.loyalty` ([spec](specs/loyalty.md)) | `TotalsCalculator`, events đơn | P3 |
 | `vani.size-chart` ✅ (bảng size + gợi ý size; thay `vani.size-advisor`) | `StorefrontEnricher`, slot PDP, `adminFormSection` sản phẩm/danh mục/thương hiệu | **Implemented** 2026-10-14 |
-| `vani.product-bundle` | `TotalsCalculator`, `InventoryReservation` | P3 |
+| `vani.bundles` ✅ (combo theo sản phẩm + số lượng, giảm % cho số bộ đủ món, khung "Mua trọn bộ" ở PDP, block Combo, trang `/combo`, Storefront API) | `PromotionRule` + `ContextualPromotionAction`, `ManagedPromotions`, `Carts::addLines`, `StorefrontBlock`, `BuilderSurface` | P2 |
 
 ### Omnichannel & tồn kho
 | Plugin | Contract | Đợt |

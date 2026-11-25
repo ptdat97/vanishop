@@ -34,7 +34,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `AddressDirectory` | `vani.address.directories` | Shared (từ 0.5.0; trước là Checkout) | — (plugin hệ thống `vani.provinces-vn`). **Implemented** (0.3.11): kiểm tra + chuẩn hoá địa chỉ giao hàng, API danh mục, chọn tỉnh/phường ở checkout native | [cart-checkout](../03-domains/cart-checkout.md) |
 | `ShippingRateProvider` | `vani.checkout.shipping_providers` | Checkout | Không có trong Core; phí cố định là plugin hệ thống `vani.shipping-flat-rate`, GHN là plugin (**Implemented**). Bắt buộc ≥ 1 | [cart-checkout](../03-domains/cart-checkout.md) |
 | `PromotionRule` | `vani.promotion.rules` | Promotion | — (rule do plugin cung cấp). **Implemented** (rule chưa đăng ký → khuyến mãi bị bỏ qua + log). Rule chỉ phụ thuộc dòng hàng nên `implements CartContentRule` (0.3.31) để được kiểm tra lại khi khách bớt hàng | [promotion](../03-domains/promotion.md) |
-| `PromotionAction` | `vani.promotion.actions` | Promotion | `percent_off`, `amount_off` (primitive). **Implemented** | [promotion](../03-domains/promotion.md) |
+| `PromotionAction` | `vani.promotion.actions` | Promotion | `percent_off`, `amount_off` (primitive). **Implemented**. Action cần số lượng/đơn giá của dòng (combo, BxGy, theo bậc) implement `ContextualPromotionAction` — Core gọi `applyInContext()` khi đánh giá giỏ và khi kiểm tra lại sau huỷ một phần; tham chiếu `vani.bundles` | [promotion](../03-domains/promotion.md) |
 | `ReturnPolicy` | `vani.returns.policies` | Returns | `days_window` (**Implemented**, chọn bằng `VANI_RETURN_POLICY`) | [order §7](../09-order/order.md) |
 | `ImageSizeProvider` | `vani.catalog.image_sizes` | Catalog | Không có mặc định; `vani.lookbook` khai báo `lookbook.cover` (0.3.87). Nhân viên ghi đè ở Admin → Thư viện ảnh → Kích thước ảnh | [storefront](../14-storefront/storefront.md) |
 | `ImageFormat` | `catalog.image-format` | Catalog | Không có mặc định (giữ định dạng gốc); `webp` là plugin `vani.media-webp` (0.3.28) | [storefront](../14-storefront/storefront.md) |
@@ -73,8 +73,9 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `StockImporter` | Đặt tồn tuyệt đối theo SKU tại kho do VaniShop quản lý (movement `sync` + audit; kho authority ngoài dùng `InventorySync`). **Implemented** (0.3.27) | Inventory |
 | `InventoryAdjuster` | Điều chỉnh on-hand có lý do (movement) — hiện là service nội bộ `StockAdjustmentService`, chưa công bố contract (chờ Integration) | Inventory |
 | `AvailabilityReader` | Đọc ATS theo variant; không nhận channel hoặc location (**Implemented**) | Inventory |
-| `Carts` | Giỏ: tạo, xem, thêm/sửa/xoá dòng, gộp, khoá cho checkout. **Implemented** | Cart |
+| `Carts` | Giỏ: tạo, xem, thêm/sửa/xoá dòng, gộp, khoá cho checkout; `addLines()` thêm nhiều món trong một lần khoá giỏ (một món lỗi → không món nào được thêm; storefront `POST /gio-hang` với `items[]`, `window.vani.cart.addItems()`). **Implemented** | Cart |
 | `PromotionEngine` | Đánh giá khuyến mãi, ghi nhận/hoàn lượt. **Implemented** | Promotion |
+| `ManagedPromotions` | Plugin đồng bộ nội dung của mình thành khuyến mãi của Core (`sync`/`remove`/`ids` theo plugin + khoá): dùng chung lịch, ngân sách, lượt dùng, báo cáo; Admin Khuyến mãi chỉ xem, có liên kết sang màn hình plugin. **Implemented** (tham chiếu `vani.bundles`) | Promotion |
 | `Checkout` | `quote`, `placeOrder` (idempotent). **Implemented** | Checkout |
 | `ShippingAddresses` | Địa chỉ giao hàng theo danh mục địa giới đang dùng (`directory()`, `normalize()`): cùng quy tắc cho checkout, sổ địa chỉ khách, Admin sửa địa chỉ đơn. **Implemented** (0.3.13) | Checkout |
 | `OrderWriter` | Tạo đơn từ bản nháp đã tính (trong transaction PlaceOrder). **Implemented** | Ordering |
