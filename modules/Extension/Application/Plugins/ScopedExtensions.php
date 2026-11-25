@@ -96,7 +96,7 @@ final class ScopedExtensions implements Extensions
         $result = [];
         foreach ($this->tagged($tag) as $implementation) {
             if ($implementation instanceof $interface) {
-                $result[(string) ($key === null ? $implementation->code() : $key($implementation))] ??= $implementation;
+                $this->keep($result, (string) ($key === null ? $implementation->code() : $key($implementation)), $implementation, $tag);
             }
         }
 
@@ -130,7 +130,7 @@ final class ScopedExtensions implements Extensions
         $byCode = [];
         foreach ($this->tagged($tag) as $implementation) {
             if (method_exists($implementation, 'code')) {
-                $byCode[(string) $implementation->code()] ??= $implementation;
+                $this->keep($byCode, (string) $implementation->code(), $implementation, $tag);
             }
         }
 
@@ -144,6 +144,28 @@ final class ScopedExtensions implements Extensions
         }
 
         return null;
+    }
+
+    /**
+     * Trùng mã trong một extension point: implementation của Core luôn thắng (plugin không thay được Core, R35), giữa các
+     * plugin thì bản đăng ký trước thắng. Mọi trùng mã đều ghi cảnh báo để phát hiện khi cài plugin.
+     *
+     * @param  array<string, object>  $byCode
+     */
+    private function keep(array &$byCode, string $code, object $implementation, string $tag): void
+    {
+        $existing = $byCode[$code] ?? null;
+        if ($existing === null) {
+            $byCode[$code] = $implementation;
+
+            return;
+        }
+        $kept = $this->ownerOf($existing) !== null && $this->ownerOf($implementation) === null ? $implementation : $existing;
+        $dropped = $kept === $existing ? $implementation : $existing;
+        $byCode[$code] = $kept;
+        Log::warning('Trùng mã implementation trong extension point, bỏ bản sau.', [
+            'tag' => $tag, 'code' => $code, 'kept' => $this->ownerOf($kept) ?? 'core', 'dropped' => $this->ownerOf($dropped) ?? 'core',
+        ]);
     }
 
     public function ownerOf(object $implementation): ?string

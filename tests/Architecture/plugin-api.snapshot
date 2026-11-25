@@ -1,4 +1,4 @@
-Extension API 1.31.0
+Extension API 1.32.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -1084,7 +1084,6 @@ hook vani.service.notification.request filter(request: Modules\Notification\Cont
 hook vani.service.ordering.order_detail filter(detail: Modules\Ordering\Contracts\Data\OrderDetail, order: Modules\Ordering\Persistence\Models\Order, masked: bool)
 hook vani.service.payment.view filter(view: Modules\Payment\Contracts\Data\PaymentView, payment: Modules\Payment\Persistence\Models\Payment)
 hook vani.service.pricing.prices filter(prices: array<int, Modules\Pricing\Contracts\Data\ResolvedPrice>, context: Modules\Pricing\Contracts\Data\PricingContext)
-hook vani.service.promotion.result filter(result: Modules\Promotion\Contracts\Data\PromotionResult, context: Modules\Promotion\Contracts\Data\PromotionContext)
 hook vani.service.returns.view filter(view: Modules\Returns\Contracts\Data\ReturnView, return: Modules\Returns\Persistence\Models\ReturnRequest)
 hook vani.storefront.account.addresses slot(addresses: list<array<string, mixed>>)
 hook vani.storefront.account.dashboard slot(customer: Modules\Customer\Contracts\Data\CustomerData)

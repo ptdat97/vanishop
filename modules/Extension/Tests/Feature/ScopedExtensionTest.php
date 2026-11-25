@@ -2,17 +2,28 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Tests\Fixtures\ContributingPluginProvider;
 use Modules\Extension\Tests\Fixtures\FixtureCoreExtension;
+use Modules\Extension\Tests\Fixtures\FixtureExtension;
 use Modules\Extension\Tests\Fixtures\FixturePluginExtension;
 use Modules\Extension\Tests\Fixtures\FixturePlugins;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 
 require_once __DIR__.'/../Fixtures/FixturePlugins.php';
+
+/** Plugin khai báo trùng mã với implementation của Core (`fixture.core`). */
+final class DuplicateCodePluginExtension implements FixtureExtension
+{
+    public function code(): string
+    {
+        return 'fixture.core';
+    }
+}
 
 beforeEach(function () {
     $this->root = FixturePlugins::install(['Extensions' => ['id' => 'fixture.extensions']]);
@@ -47,6 +58,21 @@ it('chỉ trả implementation của plugin đang bật', function () {
 
     $this->plugins->disable('fixture.extensions');
     expect(extensionCodes())->toBe(['fixture.core']);
+});
+
+it('trùng mã: Core thắng dù plugin đăng ký trước, có cảnh báo', function () {
+    Log::spy();
+    $this->plugins->install('fixture.extensions');
+    $this->plugins->enable('fixture.extensions');
+    $extensions = app(Extensions::class);
+    $extensions->contribute('test.duplicate', DuplicateCodePluginExtension::class, 'fixture.extensions');
+    $extensions->tag([FixtureCoreExtension::class], 'test.duplicate');
+    app(PluginActivation::class)->flush();
+
+    expect($extensions->tagged('test.duplicate'))->toHaveCount(2)
+        ->and($extensions->implementations('test.duplicate', FixtureExtension::class)['fixture.core'])->toBeInstanceOf(FixtureCoreExtension::class)
+        ->and($extensions->select('test.duplicate', 'fixture.core'))->toBeInstanceOf(FixtureCoreExtension::class);
+    Log::shouldHaveReceived('warning')->withArgs(fn (string $message, array $context): bool => $context['kept'] === 'core' && $context['dropped'] === 'fixture.extensions')->atLeast()->once();
 });
 
 it('ownerOf phân biệt implementation của Core và của plugin', function () {

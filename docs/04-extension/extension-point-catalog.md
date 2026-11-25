@@ -218,7 +218,6 @@ Core gọi `vani_filter('vani.service.<module>.<kết quả>', $value, ...$args)
 | `vani.service.checkout.totals` | `TotalsContext` | — | fail (đặt hàng thất bại) | Sửa tổng sau mọi calculator, **trước** guard: giảm giá dòng, `Adjustment`, phí giao. Quote và đặt hàng cùng kết quả |
 | `vani.service.checkout.quote` | `CheckoutQuote` | `CheckoutRequest` | skip | Chỉ hiển thị (không đổi tiền ở đây) |
 | `vani.service.pricing.prices` | `array<int, ResolvedPrice>` | `PricingContext` | fail | Đổi giá hiệu lực theo variant (storefront, giỏ, checkout); không thêm/xoá khoá |
-| `vani.service.promotion.result` | `PromotionResult` | `PromotionContext` | fail | Sửa khuyến mãi đã áp / voucher bị từ chối |
 | `vani.service.catalog.search` | `array` (items, total, facets…) | `ProductFilters`, locale | skip | Bổ sung item/facet danh sách sản phẩm |
 | `vani.service.catalog.product_detail` | `array` | slug, locale | skip | Bổ sung chi tiết sản phẩm (khi tìm thấy) |
 | `vani.service.catalog.category_tree` | `list<array>` | locale | skip | Cây danh mục storefront |

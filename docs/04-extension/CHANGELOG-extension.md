@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.82 — 2026-11-25 · Extension API 1.32.0
+
+Hai việc P0 từ đợt rà soát kiến trúc 2026-11-25.
+
+- **Gỡ hook `vani.service.promotion.result`** (Plugin cần cập nhật nếu có dùng — trong repo không plugin nào dùng). Filter chạy sau bước Core kẹp mức giảm tối đa và ngân sách nên plugin có thể vượt bất biến giảm giá. Khuyến mãi mở rộng qua `PromotionRule`, `PromotionAction`, `ContextualPromotionAction`; tổng tiền vẫn mở qua `vani.service.checkout.totals` (có guard sau filter).
+- **Trùng mã implementation: Core luôn thắng.** `Extensions::implementations()` và `select()` trước đây giữ bản đăng ký trước, mà plugin đăng ký trước Core, nên plugin khai báo trùng mã (vd. block `hero`) âm thầm thay implementation của Core (R35). Giờ bản của Core được giữ, giữa các plugin thì bản đăng ký trước thắng, mọi trùng mã đều ghi log cảnh báo. Rà 30 extension point hiện có: không có trùng mã.
+
 ## 0.5.81 — 2026-11-25 · Extension API 1.31.0
 
 - Builder Engine: thành phần hệ thống luôn đứng trước thành phần do plugin khai báo, bất kể thứ tự nạp provider (`SystemFirst`, dựa trên `Extensions::ownerOf`). Áp cho danh sách loại block trong trình biên tập, tab surface, thứ tự surface khi render slot. Trình biên tập gắn nhãn "Plugin" cho loại block và surface của plugin; `PageBlocks::editorTypes()` trả thêm `plugin`.

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Application;
 
-use Modules\Checkout\Application\Calculators\PromotionCalculator;
 use Modules\Checkout\Application\Calculators\ShippingCalculator;
 use Modules\Checkout\Contracts\CheckoutValidator;
 use Modules\Checkout\Contracts\TotalsCalculator;
@@ -92,7 +91,6 @@ final class CheckoutFlows
             $steps[] = FlowStep::implementation('TotalsCalculator '.$step->code(), $this->extensions->ownerOf($step), $transaction, $step->priority());
             // Hook gọi bên trong calculator của Core.
             $nested = match (true) {
-                $step instanceof PromotionCalculator => 'vani.service.promotion.result',
                 $step instanceof ShippingCalculator => 'vani.checkout.shipping_options',
                 default => null,
             };

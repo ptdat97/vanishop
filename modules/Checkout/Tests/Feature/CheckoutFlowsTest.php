@@ -132,7 +132,7 @@ it('calculator của plugin hiện đúng chỗ trong luồng; ngoài dải 300�
         return (int) array_search($name, $names, true);
     };
 
-    expect($position('TotalsCalculator flow_test'))->toBe($position('vani.service.promotion.result') + 1)
+    expect($position('TotalsCalculator flow_test'))->toBe($position('TotalsCalculator promotion') + 1)
         ->and(app(TotalsPipeline::class)->misplacedPluginCalculators())->toBe([]);
 
     FlowTestCalculator::$priority = 950;

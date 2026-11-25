@@ -41,7 +41,9 @@ final class PromotionEvaluator implements PromotionEngine
 
     public function evaluate(PromotionContext $context): PromotionResult
     {
-        return vani_filter('vani.service.promotion.result', $this->evaluateRules($context), $context);
+        // Không có filter trên kết quả: khuyến mãi mở rộng qua PromotionRule/PromotionAction (gồm ContextualPromotionAction)
+        // để mức giảm luôn đi qua trần giá sàn và ngân sách của Core.
+        return $this->evaluateRules($context);
     }
 
     private function evaluateRules(PromotionContext $context): PromotionResult
