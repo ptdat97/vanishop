@@ -1,0 +1,21 @@
+{
+    "id": "vani.abandoned-cart",
+    "name": {
+        "vi": "Nhắc giỏ bỏ quên",
+        "en": "Abandoned cart reminder"
+    },
+    "description": {
+        "vi": "Gửi email nhắc khách có tài khoản quay lại hoàn tất đơn khi giỏ hàng bị bỏ quên. Chỉ gửi cho khách đã đồng ý nhận ưu đãi qua email; email có link huỷ nhận tin.",
+        "en": "Emails signed-in customers a reminder to finish their order when their cart is abandoned. Only sent to customers who opted in to promotional email; includes an unsubscribe link."
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\AbandonedCart\\AbandonedCartServiceProvider",
+    "requires": {
+        "extension_api": "^1.34",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

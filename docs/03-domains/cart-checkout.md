@@ -24,7 +24,7 @@
 | Đồng thời | Mọi thay đổi khoá dòng `carts` (`FOR UPDATE`) → nhiều tab cùng sửa không mất cập nhật (concurrency test) |
 | Không giữ hàng | Giỏ **không** reserve tồn (tránh khoá hàng ảo); reserve chỉ xảy ra trong `PlaceOrder` |
 | Hết hạn | 30 ngày không hoạt động; job dọn dẹp |
-| Giỏ bỏ quên | Event `CartAbandoned` (1h/24h), plugin `vani.abandoned-cart` xử lý |
+| Giỏ bỏ quên | Event `CartAbandoned` (ngưỡng ở Admin → Cài đặt → Bán hàng, mặc định 60 phút; một lần mỗi đợt không hoạt động), plugin `vani.abandoned-cart` gửi email nhắc |
 
 Invariant: `quantity > 0` (DB `CHECK`), unique `(cart_id, variant_id)` (DB), variant phải đang bán (App).
 

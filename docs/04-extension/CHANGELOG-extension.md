@@ -13,6 +13,7 @@ Sửa Core cho plugin nhắc giỏ bỏ quên (`vani.abandoned-cart`), duyệt t
 - `Cart\Events\CartAbandoned` có `#[PluginApi]`: plugin nghe được bằng `onEvent()`.
 - Khách tự đồng ý nhận ưu đãi qua email ở storefront: ô ở form đăng ký (ghi khi xác minh) và checkout (`CheckoutRequest::$marketingEmail`, ghi sau khi đặt hàng thành công, lỗi không làm hỏng đơn), bật/tắt ở Tài khoản → Hồ sơ. Blade và `PUT /me/consents` dùng chung `ConsentRequest` và `CustomerAccounts` (thêm `marketingConsents()`, `marketingConsent()`, `setMarketingConsent()`, `unsubscribeUrl()`, `unsubscribe()`).
 - Mọi tin `marketing` qua email có link huỷ nhận tin có chữ ký (`{{ unsubscribe_url }}`; mẫu không đặt thì Core tự thêm dòng cuối email). Trang `/tai-khoan/huy-nhan-tin/{mã khách}/{kênh}` hỏi lại trước khi huỷ.
+- Plugin mới `vani.abandoned-cart` 1.0.0: nghe `CartAbandoned`, gửi email `cart_abandoned` nhóm marketing (biến `customer_name`, `item_count`, `subtotal`, `cart_url`, `unsubscribe_url`), chống gửi trùng theo mã giỏ + thời điểm hoạt động cuối.
 
 ## 0.5.84 — 2026-11-25 · Extension API 1.33.0
 
