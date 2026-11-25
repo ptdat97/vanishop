@@ -59,7 +59,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.cost-price` ✅ (giá vốn theo SKU, "Giá vốn + %", giá đẹp đuôi 9.000, cảnh báo dưới giá vốn, giá vốn cho báo cáo lợi nhuận gộp) | `BulkPriceMode`, `PriceRounding`, `vani.pricing.bulk.warnings`, `vani.pricing.unit_costs`, `adminColumn`/`adminTool` | **Implemented** 2026-11-16 (1.1.0, EP v3 X4; A10 0.5.19) |
 | `vani.bank-statement` ✅ (nhập sao kê, tự xác nhận chuyển khoản khớp số đơn + số tiền, dòng lệch vào đối soát chung) | `Payments`, `Reconciliations`, `adminTool` | **Implemented** 2026-11-16 (1.0.0, EP v3 X5) |
 | `vani.preorder` ✅ (nhập hàng đang về từ file, đặt trước tới % số đang về, "Đặt trước — dự kiến có hàng" ở trang sản phẩm, chặn đẩy hãng đơn còn chờ hàng) | `BackorderPolicy`, `IncomingStock`, `Backorders`, hook `vani.fulfillment.before_push`, `adminColumn`/`adminTool` | **Implemented** 2026-11-16 (1.0.0, EP v3 X7, ADR-047) |
-| `vani.cod-reconciliation` | Events fulfillment, `PaymentRecorder`, Admin pages | P2 |
+| ~~`vani.cod-reconciliation`~~ — đã có trong Core: Fulfillment nhập bảng kê COD của hãng (`CodStatement`), khớp vào sổ `Reconciliations` của Payment, ghi phí hãng theo kiện (L42) | — | Core ✅ |
 
 ### Bán hàng, khuyến mãi, khách hàng
 | Plugin | Contract / điểm mở rộng | Đợt |
