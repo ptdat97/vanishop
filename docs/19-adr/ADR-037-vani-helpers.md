@@ -20,7 +20,7 @@ Cần cú pháp ngắn cho plugin và view, mà không tạo một đường th�
    | `vani_locale` | `(): string` | `CurrentContext::locale()`, rơi về `StoreLocale` |
    | `vani_customer` | `(): ?CustomerData` | Actor khách trong `CurrentContext` → `Customers` (DTO, không trả model) |
    | `vani_staff` | `(): ?Actor` | Actor nhân viên trong `CurrentContext` |
-   | `vani_admin_url` | `(string $routeName, array $params = []): string` | `route()` với tiền tố route Admin (`VANI_ADMIN_PATH`) |
+   | `vani_admin_url` | `(string $routeName, array $params = []): string` | `route()` với tiền tố route Admin (đường dẫn Admin, lưu trong DB) |
    | `vani_image` | `(?int $mediaId, int $width): string` | **Contract mới** `Catalog\Contracts\MediaUrls` (§3); `null` → ảnh placeholder |
    | `vani_link` | `(LinkTarget\|array $target): ?string` | `Storefront\Contracts\LinkResolver` (Implemented 0.3.59); null khi đối tượng đã ẩn/xoá |
    | `vani_route` | `(string $name, mixed $parameters = [], ?string $locale = null, bool $absolute = true): string` | `Shared\Support\LocalizedUrls::route` — URL storefront theo ngôn ngữ ([ADR-038](ADR-038-localized-storefront-urls.md), thêm 2026-11-04, Implemented 0.3.59) |

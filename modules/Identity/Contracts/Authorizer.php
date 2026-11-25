@@ -11,4 +11,10 @@ namespace Modules\Identity\Contracts;
 interface Authorizer
 {
     public function allows(int $staffUserId, string $permission): bool;
+
+    /**
+     * Super admin: nhân viên có vai trò toàn quyền (`*`, vai trò hệ thống `owner_admin`; giao diện không cấp được `*`).
+     * Dùng cho thao tác chỉ chủ cửa hàng được làm, vd. đổi đường dẫn Admin. Gate: `identity.super_admin`.
+     */
+    public function isSuperAdmin(int $staffUserId): bool;
 }

@@ -257,7 +257,7 @@ Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân b�
 | `accountRoutes(file, segment)` | Trang plugin dưới `/tai-khoan/{segment}` (`/en/account/…`), bắt buộc đăng nhập — Implemented (0.3.76, tham chiếu `vani.wishlist`). Gắn menu bằng `accountPage()` |
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
 | `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |
-| `adminRoutes()` | `/{VANI_ADMIN_PATH}/plugins/{slug}/…` (Inertia): Implemented |
+| `adminRoutes()` | `/{đường dẫn Admin}/plugins/{slug}/…` (Inertia): Implemented |
 | `schedule(fn (Schedule $s) => …)` | Tác vụ định kỳ, chỉ chạy khi plugin bật ở ít nhất một phạm vi — Implemented (0.3) |
 | `NotificationCatalog::define()` (contract Notification) | Loại tin + biến + mẫu mặc định theo kênh; mẫu trong DB thắng — Implemented (0.3) |
 | `adminFormSection(resource, key, label, fields, load, save)` | Phần form của plugin trên form tạo/sửa của Core (`product`); `save` trong transaction lưu của Core; input `extensions.<id-plugin-dạng-slug>.<key>.<field>` — Implemented (0.3.2) |

@@ -3,6 +3,11 @@
 // Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
 
 return [
+    'admin_path' => [
+        'format' => 'Đường dẫn chỉ gồm chữ thường không dấu, số và gạch ngang (tối đa 64 ký tự), không có dấu /.',
+        'reserved' => 'Đường dẫn này đang được cửa hàng dùng (trang, API hoặc ngôn ngữ). Chọn đường dẫn khác.',
+        'nav' => 'Đường dẫn Admin',
+    ],
     'identity_service_provider' => [
         'access_admin_area' => 'Truy cập trang quản trị',
         'manage_staff_roles' => 'Quản lý nhân viên và vai trò',

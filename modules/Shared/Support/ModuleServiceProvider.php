@@ -54,7 +54,7 @@ abstract class ModuleServiceProvider extends ServiceProvider
     }
 
     /**
-     * Route Admin dưới đường dẫn cấu hình được (VANI_ADMIN_PATH). Middleware do module Identity định nghĩa.
+     * Route Admin dưới đường dẫn cấu hình được (lưu trong DB, super admin đổi ở Admin). Middleware do module Identity định nghĩa.
      */
     protected function loadAdminRoutes(string $file): void
     {

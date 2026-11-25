@@ -7,10 +7,12 @@ namespace Modules\Identity;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
+use Modules\Identity\Application\AdminPathSetting;
 use Modules\Identity\Application\DatabaseAuditLogger;
 use Modules\Identity\Application\EloquentStaffNames;
 use Modules\Identity\Application\InMemoryPermissionRegistry;
 use Modules\Identity\Application\RbacAuthorizer;
+use Modules\Identity\Console\AdminPathCommand;
 use Modules\Identity\Console\CreateStaffCommand;
 use Modules\Identity\Console\ResetStaffPasswordCommand;
 use Modules\Identity\Contracts\AdminNavigation;
@@ -25,6 +27,9 @@ use Modules\Shared\Support\ModuleServiceProvider;
 
 final class IdentityServiceProvider extends ModuleServiceProvider
 {
+    /** Gate chỉ super admin qua được (`Authorizer::isSuperAdmin`). */
+    public const SUPER_ADMIN = 'identity.super_admin';
+
     protected function moduleName(): string
     {
         return 'Identity';
@@ -38,6 +43,22 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         $this->app->bind(StaffNames::class, EloquentStaffNames::class);
         // Chụp khi config đã nạp và trước mọi request; dùng để trả phiên về mặc định cho request storefront.
         $this->app->singleton(ConfigureAdminSession::DEFAULTS_BINDING, fn (): array => ConfigureAdminSession::snapshotDefaults());
+        // Sau khi mọi provider đã đăng ký (cache, DB sẵn sàng), trước khi provider nào boot (route, Horizon, Pulse).
+        $this->app->booting(fn () => $this->applyAdminPath());
+    }
+
+    /**
+     * Đường dẫn Admin lưu trong DB (super admin đổi ở Admin) → `vanishop.admin.path`, trước khi route Admin và dashboard
+     * Horizon/Pulse (dưới `/{admin}/system/…`) được dựng. Đặt `HORIZON_PATH`/`PULSE_PATH` thì giữ giá trị đó.
+     */
+    private function applyAdminPath(): void
+    {
+        $path = $this->app->make(AdminPathSetting::class)->current();
+        config([
+            'vanishop.admin.path' => $path,
+            'horizon.path' => config('horizon.path') ?? "{$path}/system/horizon",
+            'pulse.path' => config('pulse.path') ?? "{$path}/system/pulse",
+        ]);
     }
 
     public function boot(Router $router, PermissionRegistry $permissions, AdminNavigation $navigation): void
@@ -53,6 +74,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         $permissions->register('admin.access', 'identity::texts.identity_service_provider.access_admin_area');
         $permissions->register('staff.manage', 'identity::texts.identity_service_provider.manage_staff_roles');
         $navigation->add('staff', 'identity::texts.identity_service_provider.staff', 'admin.staff.index', 'staff.manage', 810, group: 'system');
+        $navigation->add('admin-path', 'identity::texts.admin_path.nav', 'admin.security.admin-path.edit', self::SUPER_ADMIN, 830, group: 'system');
 
         // Permission đã khai báo trong registry được quyết định bởi RBAC của Identity.
         Gate::before(function (mixed $user, string $ability) use ($permissions): ?bool {
@@ -62,14 +84,17 @@ final class IdentityServiceProvider extends ModuleServiceProvider
 
             return $this->app->make(Authorizer::class)->allows($user->id, $ability);
         });
+        // Chỉ super admin (vai trò toàn quyền `*`): không phải permission đăng ký nên không cấp được qua vai trò.
+        Gate::define(self::SUPER_ADMIN, fn (mixed $user): bool => $user instanceof StaffUser && $this->app->make(Authorizer::class)->isSuperAdmin($user->id));
 
         $this->loadWebRoutes($this->modulePath('Http/routes/admin-auth.php'));
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-profile.php'));
+        $this->loadAdminRoutes($this->modulePath('Http/routes/admin-security.php'));
         $this->loadAdminSectionRoutes('staff', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([CreateStaffCommand::class, ResetStaffPasswordCommand::class]);
+            $this->commands([CreateStaffCommand::class, ResetStaffPasswordCommand::class, AdminPathCommand::class]);
         }
     }
 }

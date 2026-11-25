@@ -257,7 +257,7 @@ abstract class PluginServiceProvider extends ServiceProvider
     }
 
     /**
-     * Route Admin của plugin: /{VANI_ADMIN_PATH}/plugins/{slug}/…, tên route admin.plugins.{slug}.…
+     * Route Admin của plugin: /{đường dẫn Admin}/plugins/{slug}/…, tên route admin.plugins.{slug}.…
      */
     protected function adminRoutes(string $file): void
     {

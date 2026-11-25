@@ -37,7 +37,7 @@ it('vani:security:check: cấu hình production chuẩn → qua; mỗi lỗi ngh
     'debug' => [['app.debug' => true], 'APP_DEBUG'],
     'http' => [['app.url' => 'http://shop.vn'], 'APP_URL'],
     'cookie' => [['session.secure' => null], 'SESSION_SECURE_COOKIE'],
-    'admin path' => [['vanishop.admin.path' => 'admin'], 'VANI_ADMIN_PATH'],
+    'admin path' => [['vanishop.admin.path' => 'admin'], 'vani:admin-path'],
     'mail log' => [['mail.mailers.vani.fallback' => 'log'], 'Email không gửi thật'],
     'safe mode' => [['vanishop.plugins.safe_mode' => true], 'SAFE_MODE'],
     'load test ips' => [['vanishop.load_test.bypass_ips' => ['10.0.0.9']], 'VANI_LOAD_TEST_IPS'],

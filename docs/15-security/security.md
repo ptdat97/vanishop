@@ -12,11 +12,11 @@
 
 ### Admin trên domain chung
 
-Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hình được** `VANI_ADMIN_PATH` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)):
+Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hình được** (Admin → Đường dẫn Admin, chỉ super admin; [ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)):
 
 | Kiểm soát | Trạng thái |
 |---|---|
-| Đường dẫn Admin đọc từ `VANI_ADMIN_PATH` (từ chối giá trị sai định dạng hoặc trùng đường dẫn dành riêng); production dùng giá trị khó đoán; không link từ storefront; không khai trong `robots.txt`; header `X-Robots-Tag: noindex, nofollow` | Implemented |
+| Đường dẫn Admin lưu trong DB, chỉ super admin đổi (từ chối giá trị sai định dạng, trùng đường dẫn dành riêng hoặc trùng route storefront/API đang có; giá trị lưu hỏng → dùng `admin`); cứu hộ bằng `php artisan vani:admin-path`; production dùng giá trị khó đoán; không link từ storefront; không khai trong `robots.txt`; header `X-Robots-Tag: noindex, nofollow` | Implemented |
 | Rate limit đăng nhập (5 lần/phút theo email + IP) | Implemented |
 | Chỉ nhân viên `active` đăng nhập được; bị khoá thì bị đăng xuất ở request kế tiếp | Implemented |
 | Audit đăng nhập/đăng xuất | Implemented |

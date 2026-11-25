@@ -213,7 +213,7 @@ API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). M
 | `onEvent($event, $handler)` | Implemented | Nghe domain event; chỉ chạy khi plugin đang bật. Lỗi được log, không làm hỏng flow. **Không** dùng `Event::listen()` trực tiếp |
 | `adminMenu($key, $label, $route, $permission, $order, $group)` | Implemented | Menu Admin, ẩn khi thiếu quyền hoặc plugin không active. `$group` (0.3.38): nhóm accordion trên sidebar — `sales`, `catalog`, `marketing`, `content`, `system`, mặc định `extensions` ("Mở rộng"); `$order` mặc định 900 để mục plugin không chỉ định thứ tự nằm cuối menu |
 | `permissions([...])` | Implemented | Khai báo permission vào `PermissionRegistry` |
-| `adminRoutes($file)` | Implemented | `/{VANI_ADMIN_PATH}/plugins/{slug}/…`, route name `admin.plugins.{slug}.…`, middleware Admin + `vani.plugin-active` (404 khi plugin không active) |
+| `adminRoutes($file)` | Implemented | `/{đường dẫn Admin}/plugins/{slug}/…`, route name `admin.plugins.{slug}.…`, middleware Admin + `vani.plugin-active` (404 khi plugin không active) |
 | `webhookRoutes($file)` | Implemented | `/api/integrations/{slug}/…` |
 | `adminPages($namespace, $path)` | Implemented | `Inertia::render('<Namespace>::<Trang>')`; giao diện dùng `@admin/Components`, không import `reka-ui` trực tiếp ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)) |
 | `migrations($path)`, `translations($path, $namespace)` | Implemented | |

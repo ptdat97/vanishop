@@ -41,8 +41,9 @@ return [
     |
     */
 
-    // Dưới đường dẫn Admin bí mật (ADR-020), cần đăng nhập nhân viên + quyền system.monitor.
-    'path' => env('HORIZON_PATH', trim(env('VANI_ADMIN_PATH', 'admin'), '/').'/system/horizon'),
+    // Trống = dưới đường dẫn Admin (lưu trong DB, ADR-020): /{admin}/system/horizon — IdentityServiceProvider điền lúc khởi động.
+    // Cần đăng nhập nhân viên + quyền system.monitor.
+    'path' => env('HORIZON_PATH'),
 
     /*
     |--------------------------------------------------------------------------

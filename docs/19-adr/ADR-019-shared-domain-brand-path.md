@@ -12,7 +12,7 @@ Chọn cách tổ chức URL cho nhiều brand.
 - Một domain chung (cấu hình bằng `APP_URL`, ví dụ `vani.vn`). Mỗi brand là một **channel web** có `path_prefix = /{brand-slug}`:
   `vani.vn/lumiere/…`, `vani.vn/urbanx/…`.
 - Mỗi storefront brand vẫn tách riêng: theme tokens, catalog, bảng giá, khuyến mãi, giỏ hàng, checkout, SEO.
-- Phần dùng chung đặt ở gốc domain: trang tập đoàn `/`, tài khoản khách `/tai-khoan`, API `/api`, Admin (`VANI_ADMIN_PATH`, [ADR-020](ADR-020-admin-path-no-2fa.md)).
+- Phần dùng chung đặt ở gốc domain: trang tập đoàn `/`, tài khoản khách `/tai-khoan`, API `/api`, Admin (đường dẫn Admin, [ADR-020](ADR-020-admin-path-no-2fa.md)).
 - Slug brand không được trùng các đường dẫn dành riêng.
 - Schema `channel_domains(host, path_prefix)` giữ nguyên, nên sau này vẫn có thể gắn domain riêng cho một brand mà không phải sửa code.
 

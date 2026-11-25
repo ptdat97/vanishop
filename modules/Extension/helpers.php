@@ -136,8 +136,8 @@ if (! function_exists('vani_staff')) {
 
 if (! function_exists('vani_admin_url')) {
     /**
-     * URL Admin theo tên route, tiền tố `admin.` tự thêm: `vani_admin_url('orders.show', $id)` — đường dẫn Admin theo
-     * `VANI_ADMIN_PATH`.
+     * URL Admin theo tên route, tiền tố `admin.` tự thêm: `vani_admin_url('orders.show', $id)` — theo đường dẫn
+     * Admin đang dùng (lưu trong DB, super admin đổi ở Admin).
      */
     function vani_admin_url(string $routeName, mixed $parameters = []): string
     {

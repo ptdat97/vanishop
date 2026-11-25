@@ -6,6 +6,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.88 — 2026-11-25 · Extension API 1.36.0
+
+Đường dẫn Admin cấu hình trong Admin thay cho `.env` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)).
+
+- **Gỡ biến môi trường `VANI_ADMIN_PATH`.** Đường dẫn Admin lưu trong DB (`core.security.admin_path`), chưa cấu hình thì dùng `admin`. Chỉ **super admin** (nhân viên có vai trò toàn quyền `*`, vai trò hệ thống `owner_admin`) đổi được ở Admin → Hệ thống → **Đường dẫn Admin**; đổi xong mọi phiên Admin hết hiệu lực, trình duyệt chuyển tới trang đăng nhập mới. Từ chối giá trị sai định dạng, trùng đường dẫn dành riêng, mã ngôn ngữ hoặc route storefront/API đang có (gồm trang của plugin). Có audit `identity.admin_path.changed`.
+- Lệnh cứu hộ `php artisan vani:admin-path` (xem), `vani:admin-path <đường-dẫn>` (đổi), `--reset` (về `admin`).
+- Giá trị nạp vào `vanishop.admin.path` khi app bắt đầu boot (callback `booting` của Identity, đọc qua cache), trước khi route Admin và Horizon/Pulse được dựng. `HORIZON_PATH`/`PULSE_PATH` trống thì theo đường dẫn Admin (`/{admin}/system/horizon|pulse`). Route đã cache được dựng lại khi đổi. Giá trị lưu hỏng hoặc DB chưa sẵn sàng → `admin`.
+- `Authorizer::isSuperAdmin()` và gate `identity.super_admin` (không phải permission, không cấp được qua vai trò). Không đổi API cho plugin.
+- `vani:security:check` báo lỗi khi đường dẫn Admin còn là `admin` và chỉ cách đổi mới.
+
 ## 0.5.87 — 2026-11-25 · Extension API 1.36.0
 
 Tối giản Builder: chỉ dùng để xây trang chủ (`admin/storefront/builder/home`). Trang khác thêm nội dung bằng code tại slot, không kéo thả. Phá vỡ API cho plugin (giai đoạn dev, tăng minor).

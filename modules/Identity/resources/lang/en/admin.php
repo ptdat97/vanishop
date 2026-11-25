@@ -3,6 +3,18 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'admin_path' => [
+        'title' => 'Admin path',
+        'subtitle' => 'The address of the admin area. Only a super admin (full-access role) can change it.',
+        'current' => 'In use:',
+        'new_path' => 'New path',
+        'hint' => 'Lowercase letters without accents, digits and hyphens, e.g. admin-7f3k. Use a hard-to-guess value on a live store.',
+        'warning' => 'After the change every signed-in staff member must sign in again at the new path; the old path stops working. Tell your staff first. Forgot the path: run php artisan vani:admin-path on the server.',
+        'save' => 'Change path',
+        'use_default' => 'Use default (:path)',
+        'confirm_title' => 'Change the admin path?',
+        'confirm_message' => 'You will be taken to the new sign-in page: :url',
+    ],
     'auth_forgot_password' => [
         'back_sign' => 'Back to sign in',
         'enter_admin_sign_email_we' => 'Enter your admin sign-in email. We will send a password reset link (valid for 60 minutes).',

@@ -40,7 +40,7 @@ Bắt đầu từ `.env.example`, đổi/thêm các giá trị sau. **Sau khi `c
 | `CACHE_STORE` / `SESSION_DRIVER` / `QUEUE_CONNECTION` | `redis` / `redis` / `redis` | Nhiều web node dùng chung; Horizon cần queue Redis |
 | `SESSION_SECURE_COOKIE` | `true` | Cookie chỉ gửi qua HTTPS |
 | `VANI_TRUSTED_PROXIES` | IP/CIDR của load balancer/CDN, hoặc `*` nếu app chỉ nhận traffic qua LB | Thiếu → IP khách là IP của LB (allowlist Admin, giới hạn OTP sai) và app không biết request là HTTPS |
-| `VANI_ADMIN_PATH` | Chuỗi khó đoán, vd. `quan-tri-8f3k` | [ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md) |
+| Đường dẫn Admin (không còn ở `.env`) | Chuỗi khó đoán, vd. `quan-tri-8f3k`: super admin đổi ở Admin → Đường dẫn Admin hoặc `php artisan vani:admin-path quan-tri-8f3k` | [ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md) |
 | `VANI_ADMIN_IP_ALLOWLIST` | IP văn phòng/VPN, phân tách dấu phẩy | Trống = mọi IP vào được trang đăng nhập Admin |
 | `VANI_HEALTH_TOKEN` | Chuỗi ngẫu nhiên | `GET /health` chỉ trả chi tiết khi header `X-Health-Token` khớp |
 | `VANI_MEDIA_DISK` + `AWS_*`, `AWS_ENDPOINT` | `s3` + endpoint nhà cung cấp VN | Web node stateless |
@@ -158,7 +158,7 @@ curl -fsS -H "X-Health-Token: $TOKEN" https://ten-mien/health
 6. **Scheduler chỉ chạy trên một server** (`onOneServer`, cần `CACHE_STORE=redis` dùng chung). Cron có thể đặt trên mọi node nhưng cache phải chung, không thì lệnh chạy trùng.
 7. **Nginx phải chuyển request `/cache/` chưa có file về Laravel** (§7). Cấu hình kiểu `location ~* \.(jpg|png|webp)$ { try_files $uri =404; }` áp lên `/cache/` làm ảnh thu nhỏ không bao giờ được tạo (storefront mất ảnh). Sau khi bật/tắt `vani.media-webp` hoặc đổi chất lượng: `php artisan vani:media:cache --clear`.
 8. **Callback/webhook phải vào được từ Internet**, không bị allowlist Admin hay WAF chặn: `/api/payments/{gateway}/callback` (IPN cổng thanh toán, GET+POST), `/api/shipping/{carrier}/webhook`, `/api/integration/v1/*` (ERP/POS, xác thực HMAC). URL đăng ký với VNPay/GHN phải là `https://` theo `APP_URL`.
-9. **Đổi `VANI_ADMIN_PATH`** làm mất đường dẫn cũ (kể cả Horizon/Pulse dưới `/{admin}/system/...`); báo nhân viên trước.
+9. **Đổi đường dẫn Admin** làm mất đường dẫn cũ (kể cả Horizon/Pulse dưới `/{admin}/system/...`) và đăng xuất mọi nhân viên; báo nhân viên trước. Route đã cache (`route:cache`) được dựng lại tự động; nhiều máy chủ dùng chung cache thì máy khác nhận giá trị mới ở request kế tiếp nhưng route cache của từng máy phải dựng lại (`php artisan route:cache`). Quên đường dẫn: `php artisan vani:admin-path`.
 10. **Không đổi `APP_KEY`** trên hệ thống đang chạy: secret plugin lưu mã hoá trong Cấu hình sẽ không đọc được.
 11. **Upload ảnh tối đa 10 MB/ảnh**: đặt `client_max_body_size` (Nginx) và `upload_max_filesize`/`post_max_size` (PHP) ≥ 12M nếu upload nhiều ảnh một lần thì lớn hơn. **Video** (Thư viện ảnh, 0.3.91) giới hạn riêng `VANI_MEDIA_MAX_VIDEO_KB` (mặc định 100 MB): Nginx/PHP phải ≥ giới hạn này, nếu không request bị chặn trước khi tới ứng dụng.
 12. **Đóng băng deploy** 48 giờ trước và trong các đợt sale lớn ([operations §9](operations.md)).
@@ -177,7 +177,7 @@ stopwaitsecs=120
 stdout_logfile=/var/www/vanishop/shared/storage/logs/horizon.log
 ```
 
-Queue đang dùng: `notifications`, `fulfillment`, `default`, `search` (`config/horizon.php`, production tối đa 10 process). Dashboard: `/{VANI_ADMIN_PATH}/system/horizon` (quyền `system.monitor`).
+Queue đang dùng: `notifications`, `fulfillment`, `default`, `search` (`config/horizon.php`, production tối đa 10 process). Dashboard: `/{đường dẫn Admin}/system/horizon` (quyền `system.monitor`).
 
 **Scheduler** (crontab của user chạy PHP):
 

@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.87',
+    'version' => '0.5.88',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
@@ -40,8 +40,9 @@ return [
     | Admin trên domain chung (ADR-020): đường dẫn cấu hình được, không dùng 2FA nên cần kiểm soát bù trừ.
     */
     'admin' => [
+        // Nạp từ DB lúc khởi động (super admin đổi ở Admin → Đường dẫn Admin, hoặc `php artisan vani:admin-path`).
         // Production: đặt giá trị khó đoán, ví dụ "quan-tri-7f3k".
-        'path' => env('VANI_ADMIN_PATH', 'admin'),
+        'path' => 'admin',
         // IP/CIDR được phép vào Admin, phân tách bằng dấu phẩy. Rỗng = không giới hạn.
         'ip_allowlist' => array_values(array_filter(array_map('trim', explode(',', (string) env('VANI_ADMIN_IP_ALLOWLIST', ''))))),
         // Cookie phiên riêng của Admin (tách khỏi phiên khách hàng trên storefront).
@@ -55,7 +56,7 @@ return [
     ],
 
     /*
-    | Đường dẫn gốc dành riêng của storefront — VANI_ADMIN_PATH không được trùng.
+    | Đường dẫn gốc dành riêng của storefront — đường dẫn Admin không được trùng.
     */
     'reserved_paths' => [
         'api', 'tai-khoan', 'up', 'build', 'storage', 'sitemap.xml', 'robots.txt', 'favicon.ico',

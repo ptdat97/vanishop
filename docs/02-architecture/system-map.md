@@ -12,7 +12,7 @@ Mọi bề mặt gọi **cùng Application layer / Contracts** của module. Kh�
 |---|---|---|---|---|---|
 | **Storefront native** (Blade SSR) | Khách trên web | `/…` (một website, [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) | Phiên web (khách) | `StorefrontServiceProvider`, `storefront-web.php`, theme `custom/theme/vani-base` | Partially Implemented ([storefront](../14-storefront/storefront.md)) |
 | **Storefront API** (JSON) | Headless, mobile, Zalo Mini App | `/api/storefront/v1` | Khách vãng lai: token giỏ/đơn ([ADR-022](../19-adr/ADR-022-guest-cart-token.md)); đã đăng nhập: Bearer ([ADR-024](../19-adr/ADR-024-customer-api-token.md)) | `loadStorefrontApiRoutes()` (Storefront, Customer) | Implemented |
-| **Admin** (Inertia + Vue) | Nhân viên | `/{VANI_ADMIN_PATH}` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)) | Guard `staff`, phiên Admin riêng | Module providers đăng ký `loadAdminRoutes()` / `loadAdminSectionRoutes()` | Implemented |
+| **Admin** (Inertia + Vue) | Nhân viên | `/{đường dẫn Admin}` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)) | Guard `staff`, phiên Admin riêng | Module providers đăng ký `loadAdminRoutes()` / `loadAdminSectionRoutes()` | Implemented |
 | **Admin API** (JSON) | App quản trị, công cụ nội bộ | `/api/admin/v1` | Designed | — | Designed |
 | **Integration API** (JSON) | ERP, POS, đối tác | `/api/integration/v1` | Client key + chữ ký HMAC, scope và allowlist IP | `IntegrationServiceProvider` | Partially Implemented; ERP connector đang đóng băng |
 

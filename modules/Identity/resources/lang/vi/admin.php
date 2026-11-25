@@ -3,6 +3,18 @@
 // Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
 
 return [
+    'admin_path' => [
+        'title' => 'Đường dẫn Admin',
+        'subtitle' => 'Địa chỉ vào trang quản trị. Chỉ super admin (vai trò toàn quyền) đổi được.',
+        'current' => 'Đang dùng:',
+        'new_path' => 'Đường dẫn mới',
+        'hint' => 'Chữ thường không dấu, số và gạch ngang, vd. quan-tri-7f3k. Nên dùng chuỗi khó đoán ở cửa hàng thật.',
+        'warning' => 'Sau khi đổi, mọi nhân viên đang đăng nhập sẽ phải đăng nhập lại ở đường dẫn mới; đường dẫn cũ không còn dùng được. Báo nhân viên trước. Quên đường dẫn: chạy php artisan vani:admin-path trên máy chủ.',
+        'save' => 'Đổi đường dẫn',
+        'use_default' => 'Dùng mặc định (:path)',
+        'confirm_title' => 'Đổi đường dẫn Admin?',
+        'confirm_message' => 'Bạn sẽ được chuyển tới trang đăng nhập mới: :url',
+    ],
     'auth_forgot_password' => [
         'back_sign' => 'Quay lại đăng nhập',
         'enter_admin_sign_email_we' => 'Nhập email đăng nhập quản trị. Chúng tôi gửi link đặt lại mật khẩu (hiệu lực 60 phút).',

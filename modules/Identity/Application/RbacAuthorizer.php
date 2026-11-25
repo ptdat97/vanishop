@@ -21,10 +21,21 @@ final class RbacAuthorizer implements Authorizer
 
     public function allows(int $staffUserId, string $permission): bool
     {
-        $granted = $this->permissions[$staffUserId] ??= RolePermission::query()
-            ->whereIn('role_id', StaffRoleAssignment::query()->select('role_id')->where('staff_user_id', $staffUserId))
-            ->pluck('permission');
+        $granted = $this->granted($staffUserId);
 
         return $granted->contains(PermissionRegistry::WILDCARD) || $granted->contains($permission);
+    }
+
+    public function isSuperAdmin(int $staffUserId): bool
+    {
+        return $this->granted($staffUserId)->contains(PermissionRegistry::WILDCARD);
+    }
+
+    /** @return Collection<int, string> */
+    private function granted(int $staffUserId): Collection
+    {
+        return $this->permissions[$staffUserId] ??= RolePermission::query()
+            ->whereIn('role_id', StaffRoleAssignment::query()->select('role_id')->where('staff_user_id', $staffUserId))
+            ->pluck('permission');
     }
 }

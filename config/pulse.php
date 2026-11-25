@@ -30,7 +30,7 @@ return [
     |
     */
 
-    'path' => env('PULSE_PATH', trim(env('VANI_ADMIN_PATH', 'admin'), '/').'/system/pulse'),
+    'path' => env('PULSE_PATH'),
 
     /*
     |--------------------------------------------------------------------------

@@ -10,7 +10,7 @@ Admin chạy cùng domain với storefront ([ADR-019](ADR-019-shared-domain-bran
 Làm sao giảm bề mặt tấn công của Admin khi không có 2FA.
 
 ## Decision
-- Đường dẫn Admin **cấu hình được** bằng `VANI_ADMIN_PATH` (mặc định `admin` cho dev; production đặt giá trị khó đoán, ví dụ `quan-tri-7f3k`).
+- Đường dẫn Admin **cấu hình được** (mặc định `admin` cho dev; production đặt giá trị khó đoán, ví dụ `quan-tri-7f3k`). Từ 0.5.88 lưu trong DB (`core.security.admin_path`), chỉ **super admin** (vai trò toàn quyền `*`) đổi ở Admin → Đường dẫn Admin; cứu hộ trên máy chủ bằng `php artisan vani:admin-path` (`--reset` về `admin`). Trước đó đặt bằng biến môi trường `VANI_ADMIN_PATH` (đã gỡ).
 - Không có link tới Admin từ storefront. Không khai báo đường dẫn Admin trong `robots.txt`, vì khai báo ở đó sẽ làm lộ nó; thay vào đó dùng header `X-Robots-Tag: noindex`.
 - Kiểm soát bù trừ bắt buộc:
   - Mật khẩu tối thiểu 12 ký tự, kiểm tra với danh sách mật khẩu bị lộ.
