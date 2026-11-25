@@ -46,6 +46,10 @@
                         @error($key)<p id="{{ $key }}-error" class="text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
                 @endforeach
+                <label class="flex items-start gap-2 text-sm" data-checkout-marketing>
+                    <input type="checkbox" name="marketing_email" value="1" @checked(! empty($values['marketing_email'])) class="mt-0.5">
+                    <span>{{ __('theme::checkout.marketing_email') }}</span>
+                </label>
             </fieldset>
             <x-vani::hook-slot name="vani.storefront.checkout.contact_after" :args="[$quote]" />
 

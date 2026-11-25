@@ -1,6 +1,14 @@
 <?php
 
 return [
+    'marketing_title' => 'Newsletter',
+    'marketing_email_label' => 'Email me offers and news. You can unsubscribe at any time.',
+    'save_preferences' => 'Save preferences',
+    'unsubscribe_title' => 'Unsubscribe from promotional emails',
+    'unsubscribe_intro' => 'You will no longer get promotional emails or cart reminders. Order emails are still sent.',
+    'unsubscribe_confirm' => 'Unsubscribe',
+    'unsubscribe_done' => 'Done. You can turn it back on in Account → Profile.',
+    'back_to_store' => 'Back to store',
     'choose_cancellation_reason' => 'Choose a cancellation reason',
     'cancellation_note' => 'Additional note (optional)',
     'account_navigation' => 'Account navigation',

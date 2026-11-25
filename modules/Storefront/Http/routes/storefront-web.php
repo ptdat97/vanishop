@@ -87,6 +87,12 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::get($p('account.email.verify'), [AccountSettingsController::class, 'verifyEmail'])->name('account.email.verify');
                 Route::post($p('account.password.forgot'), [AccountController::class, 'sendPasswordReset'])->name('account.password.email');
                 Route::post($p('account.password.reset'), [AccountController::class, 'resetPassword'])->name('account.password.update-forgotten');
+                // Link huỷ nhận tin trong email marketing: có chữ ký, không cần đăng nhập. GET chỉ hỏi lại, POST mới huỷ
+                // (trình quét link của hộp thư không vô tình huỷ).
+                Route::middleware('signed')->group(function () use ($p): void {
+                    Route::get($p('account.unsubscribe'), [AccountSettingsController::class, 'unsubscribeForm'])->where('channel', '[a-z][a-z0-9_]{1,31}')->name('account.unsubscribe');
+                    Route::post($p('account.unsubscribe'), [AccountSettingsController::class, 'unsubscribe'])->where('channel', '[a-z][a-z0-9_]{1,31}')->name('account.unsubscribe.confirm');
+                });
             });
             Route::middleware('vani.customer-session:required')->group(function () use ($p): void {
                 Route::get($p('account'), [AccountController::class, 'dashboard'])->name('account');
@@ -96,6 +102,7 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::get($p('account.addresses'), [AccountController::class, 'addresses'])->name('account.addresses');
                 Route::get($p('account.profile'), [AccountSettingsController::class, 'profile'])->name('account.profile');
                 Route::put($p('account.profile'), [AccountSettingsController::class, 'updateProfile'])->name('account.profile.update');
+                Route::put($p('account.marketing'), [AccountSettingsController::class, 'updateMarketing'])->name('account.marketing.update');
                 Route::post($p('account.email.resend'), [AccountSettingsController::class, 'resendEmailVerification'])->middleware('throttle:vani-customer-auth')->name('account.email.resend');
                 Route::put($p('account.password'), [AccountSettingsController::class, 'updatePassword'])->middleware('throttle:vani-customer-auth')->name('account.password.update');
                 Route::get($p('account.delete'), [AccountSettingsController::class, 'deletion'])->name('account.delete');

@@ -35,7 +35,7 @@ final class AuthController
     {
         $data = $request->validated();
 
-        return response()->json(['data' => $this->auth->register($data['email'], $data['password'], $data['full_name'])], 202);
+        return response()->json(['data' => $this->auth->register($data['email'], $data['password'], $data['full_name'], (bool) ($data['marketing_email'] ?? false))], 202);
     }
 
     /**

@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'marketing_subscribed' => 'Đã bật nhận ưu đãi qua email.',
+    'marketing_unsubscribed' => 'Đã tắt nhận ưu đãi qua email.',
     'added_items_to_cart' => 'Đã thêm :count sản phẩm vào giỏ.',
     'block_zone_rule' => 'Vị trí này không nhận loại block đã chọn hoặc đã đủ số block.',
     'collection_page_saved' => 'Đã lưu trang bộ sưu tập.',

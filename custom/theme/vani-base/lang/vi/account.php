@@ -1,6 +1,14 @@
 <?php
 
 return [
+    'marketing_title' => 'Nhận tin',
+    'marketing_email_label' => 'Nhận ưu đãi và tin mới qua email. Bạn có thể huỷ bất cứ lúc nào.',
+    'save_preferences' => 'Lưu lựa chọn',
+    'unsubscribe_title' => 'Huỷ nhận email ưu đãi',
+    'unsubscribe_intro' => 'Bạn sẽ không nhận email ưu đãi và nhắc giỏ hàng nữa. Email về đơn hàng vẫn được gửi.',
+    'unsubscribe_confirm' => 'Huỷ nhận email',
+    'unsubscribe_done' => 'Đã huỷ. Bạn có thể bật lại trong Tài khoản → Hồ sơ.',
+    'back_to_store' => 'Về cửa hàng',
     'choose_cancellation_reason' => 'Chọn lý do huỷ đơn',
     'cancellation_note' => 'Ghi chú thêm (không bắt buộc)',
     'account_navigation' => 'Điều hướng tài khoản',

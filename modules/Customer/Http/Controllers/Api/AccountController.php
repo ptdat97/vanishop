@@ -6,14 +6,13 @@ namespace Modules\Customer\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Modules\Customer\Application\AccountLifecycle;
-use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Requests\AddressRequest;
+use Modules\Customer\Contracts\Requests\ConsentRequest;
 use Modules\Customer\Contracts\Requests\DeleteAccountRequest;
 use Modules\Customer\Contracts\Requests\PasswordRequest;
 use Modules\Customer\Contracts\Requests\ProfileRequest;
@@ -84,22 +83,18 @@ final class AccountController
         return response()->json(null, 204);
     }
 
-    public function consents(Request $request, ConsentService $consents): JsonResponse
+    public function consents(Request $request, CustomerAccounts $accounts): JsonResponse
     {
-        return response()->json(['data' => $consents->all(AuthenticateCustomer::customer($request)->id)]);
+        return response()->json(['data' => $accounts->marketingConsents(AuthenticateCustomer::customer($request)->id)]);
     }
 
-    public function updateConsent(Request $request, ConsentService $consents): JsonResponse
+    public function updateConsent(ConsentRequest $request, CustomerAccounts $accounts): JsonResponse
     {
-        $data = $request->validate([
-            'channel' => ['required', 'string', 'regex:'.ConsentService::CHANNEL_PATTERN],
-            'purpose' => ['required', Rule::in(ConsentService::PURPOSES)],
-            'granted' => ['required', 'boolean'],
-        ]);
+        $data = $request->validated();
         $customerId = AuthenticateCustomer::customer($request)->id;
-        $consents->set($customerId, $data['channel'], $data['purpose'], (bool) $data['granted'], 'storefront:account', (string) $request->ip());
+        $accounts->setMarketingConsent($customerId, $data['channel'], (bool) $data['granted'], 'storefront:account', (string) $request->ip());
 
-        return response()->json(['data' => $consents->all($customerId)]);
+        return response()->json(['data' => $accounts->marketingConsents($customerId)]);
     }
 
     public function export(Request $request, AccountLifecycle $lifecycle): JsonResponse

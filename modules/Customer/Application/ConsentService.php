@@ -6,6 +6,7 @@ namespace Modules\Customer\Application;
 
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
+use Modules\Customer\Contracts\Requests\ConsentRequest;
 use Modules\Customer\Events\ConsentChanged;
 use Modules\Shared\Support\StoreClock;
 
@@ -19,9 +20,9 @@ final class ConsentService
      * Kênh consent = mã kênh liên lạc (`email`, `sms`, `zns`, hoặc kênh plugin mới như `webpush`). Không giữ danh
      * sách cố định: plugin kênh mới dùng được consent mà không sửa Core.
      */
-    public const CHANNEL_PATTERN = '/^[a-z][a-z0-9_]{1,31}$/';
+    public const CHANNEL_PATTERN = ConsentRequest::CHANNEL_PATTERN;
 
-    public const PURPOSES = ['marketing'];
+    public const PURPOSES = ConsentRequest::PURPOSES;
 
     /**
      * @return list<array{channel: string, purpose: string, granted: bool, granted_at: ?string, revoked_at: ?string, source: string}>

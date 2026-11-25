@@ -63,6 +63,8 @@ interface OtpSender
 - Template của cửa hàng (logo, màu theo theme), đa ngôn ngữ, gắn với domain event.
 - Tin giao dịch (xác nhận đơn, thanh toán, giao hàng, đổi trả, OTP) không cần consent marketing.
 - Tin marketing chỉ gửi khi có consent theo kênh gửi; mỗi tin có link huỷ đăng ký.
+- **Nơi khách đồng ý (0.5.85):** ô "Nhận ưu đãi và tin mới qua email" (mặc định không chọn) ở form đăng ký (ghi khi bấm link xác minh, nguồn `storefront:register`) và checkout (ghi sau khi đặt hàng thành công, nguồn `storefront:checkout`); bật/tắt ở **Tài khoản → Hồ sơ** và `PUT /me/consents` (cùng `ConsentRequest`, nguồn `storefront:account`). Checkout không tích thì giữ nguyên đồng ý cũ.
+- **Link huỷ nhận tin:** `CustomerAccounts::unsubscribeUrl()` — `/tai-khoan/huy-nhan-tin/{mã khách}/{kênh}` có chữ ký, không hết hạn, không cần đăng nhập. Mở link chỉ hỏi lại; bấm nút mới huỷ (nguồn `unsubscribe_link`), để trình quét link của hộp thư không vô tình huỷ.
 
 ## 6. Kiểm thử
 

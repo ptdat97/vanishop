@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Modules\Customer\Application\AccountEmails;
 use Modules\Customer\Application\AuthService;
+use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerAccountService;
 use Modules\Customer\Application\CustomerNoteService;
 use Modules\Customer\Application\CustomerSegmentService;
@@ -81,7 +82,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
             (int) config('vanishop.customer.otp.max_attempts', 5),
         ));
         $this->app->bind(AuthService::class, fn ($app): AuthService => new AuthService(
-            $app->make(OtpService::class), $app->make(CustomerService::class), $app->make(AccountEmails::class),
+            $app->make(OtpService::class), $app->make(CustomerService::class), $app->make(AccountEmails::class), $app->make(ConsentService::class),
             (int) config('vanishop.customer.token_ttl_days', 90),
             (int) config('vanishop.customer.email_auth.verify_ttl_hours', 24),
             (int) config('vanishop.customer.email_auth.reset_ttl_minutes', 60),

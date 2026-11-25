@@ -40,6 +40,8 @@ const STOREFRONT_API_PAIRS = [
     'storefront.account.logout' => ['api.storefront.v1.auth.logout'],
     'storefront.account.order.cancel' => ['api.storefront.v1.me.orders.cancel'],
     'storefront.account.profile.update' => ['api.storefront.v1.me.update'],
+    'storefront.account.marketing.update' => ['api.storefront.v1.me.consents.update'],
+    'storefront.account.unsubscribe.confirm' => ['api.storefront.v1.me.consents.update'],
     'storefront.account.email.resend' => ['api.storefront.v1.me.email.verification'],
     'storefront.account.password.update' => ['api.storefront.v1.me.password'],
     'storefront.account.addresses.store' => ['api.storefront.v1.me.addresses.store'],
@@ -69,7 +71,7 @@ const STOREFRONT_API_PENDING = [
 const STOREFRONT_SHARED_INPUT = [
     'storefront.cart.add', 'storefront.cart.update', 'storefront.cart.select', 'storefront.cart.voucher',
     'storefront.checkout.store', 'storefront.order.returns.store',
-    'storefront.account.profile.update', 'storefront.account.password.update',
+    'storefront.account.profile.update', 'storefront.account.password.update', 'storefront.account.marketing.update',
     'storefront.account.register.store', 'storefront.account.password.update-forgotten',
     'storefront.account.addresses.store', 'storefront.account.addresses.update',
     'storefront.order.received', 'storefront.order.returns.shipped', 'storefront.order.returns.photos',
@@ -87,6 +89,7 @@ const STOREFRONT_NO_INPUT = [
     'storefront.order.returns.cancel' => 'yêu cầu đổi trả nằm trên URL',
     'storefront.account.logout' => 'chỉ cần phiên/token',
     'storefront.account.email.resend' => 'chỉ cần phiên/token',
+    'storefront.account.unsubscribe.confirm' => 'khách và kênh nằm trên URL có chữ ký (link trong email); API dùng `PUT /me/consents` (ConsentRequest)',
     'storefront.account.addresses.default' => 'Blade chỉ đặt mặc định (id trên URL); API đặt mặc định qua `PUT /me/addresses/{id}` (AddressRequest)',
     'storefront.account.addresses.destroy' => 'địa chỉ nằm trên URL',
     'storefront.p.vani-phone-otp-login.request' => 'plugin kết nối OTP đang đóng băng (chỉ sửa lỗi) — gom khi mở lại',
@@ -402,6 +405,7 @@ const STOREFRONT_WEB_ONLY_PAGES = [
     'storefront.account.password.reset' => 'link trong email mở form; app gọi POST /auth/password/reset',
     'storefront.account.register.verify' => 'link trong email; app gọi POST /auth/register/verify',
     'storefront.account.email.verify' => 'link trong email; app gọi POST /auth/email/verify',
+    'storefront.account.unsubscribe' => 'link huỷ nhận tin trong email marketing (có chữ ký, không cần đăng nhập) chỉ hỏi lại; app tắt đồng ý qua PUT /me/consents',
     'storefront.payment.return' => 'điểm cổng thanh toán trả khách về (HandlesReturn): chỉ chuyển hướng tới trang đơn kèm thông báo, không hiện dữ liệu, không ghi nhận thanh toán; app hỏi GET /payments/{payment}',
 ];
 

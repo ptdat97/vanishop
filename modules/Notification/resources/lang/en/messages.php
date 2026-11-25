@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'unsubscribe_footer' => 'No longer want promotional emails? Unsubscribe here: :url',
     'saved' => 'Template saved.',
     'deleted' => 'Template deleted.',
     'stale' => 'This template was changed by someone else. Please reload.',

@@ -44,6 +44,7 @@ final class AuthService
         private readonly OtpService $otp,
         private readonly CustomerService $customers,
         private readonly AccountEmails $emails,
+        private readonly ConsentService $consents,
         private readonly int $tokenTtlDays = 90,
         private readonly int $verifyTtlHours = 24,
         private readonly int $resetTtlMinutes = 60,
@@ -55,7 +56,7 @@ final class AuthService
      *
      * @return array{email: string, expires_in: int}
      */
-    public function register(string $email, string $password, string $fullName): array
+    public function register(string $email, string $password, string $fullName, bool $marketingEmail = false): array
     {
         $email = self::normalizeEmail($email);
         if ($this->activeByEmail($email)?->isRegistered() === true) {
@@ -65,7 +66,7 @@ final class AuthService
 
         $token = Str::random(64);
         Cache::put(self::REGISTRATION_KEY.hash('sha256', $token), [
-            'email' => $email, 'password' => Hash::make($password), 'full_name' => trim($fullName), 'locale' => App::getLocale(),
+            'email' => $email, 'password' => Hash::make($password), 'full_name' => trim($fullName), 'locale' => App::getLocale(), 'marketing_email' => $marketingEmail,
         ], now()->addHours($this->verifyTtlHours));
         $this->emails->sendVerification($email, trim($fullName), $token, $this->verifyTtlHours);
 
@@ -102,6 +103,9 @@ final class AuthService
                         'public_id' => (string) Str::ulid(), 'email' => $pending['email'], 'status' => CustomerStatus::Active,
                         'full_name' => $pending['full_name'] === '' ? null : $pending['full_name'], 'preferred_locale' => $locale,
                     ]);
+                }
+                if (($pending['marketing_email'] ?? false) === true) {
+                    $this->consents->set($customer->id, 'email', 'marketing', true, 'storefront:register');
                 }
                 event(new CustomerRegistered($customer->id, $customer->public_id, claimedGuestProfile: $guestProfile !== null));
 

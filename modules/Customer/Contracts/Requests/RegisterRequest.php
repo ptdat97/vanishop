@@ -20,6 +20,7 @@ final class RegisterRequest extends FormRequest
             'full_name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'string', 'email', 'max:190'],
             'password' => ['required', 'string', 'min:8', 'max:200', 'confirmed'],
+            'marketing_email' => ['sometimes', 'boolean'],
         ];
     }
 }

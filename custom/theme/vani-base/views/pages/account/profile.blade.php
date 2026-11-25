@@ -78,6 +78,20 @@
                 <button type="submit" class="rounded-[var(--radius-theme)] border border-primary px-4 py-2">{{ $customer->hasPassword ? __('theme::account.change_password') : __('theme::account.set_password') }}</button>
             </form>
 
+            <h2 class="mb-1 mt-10 text-lg font-semibold">{{ __('theme::account.marketing_title') }}</h2>
+            <form action="{{ vani_route('storefront.account.marketing.update') }}" method="post" class="space-y-3" data-account-marketing>
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="channel" value="email">
+                <input type="hidden" name="purpose" value="marketing">
+                <label class="flex items-start gap-2 text-sm">
+                    <input type="hidden" name="granted" value="0">
+                    <input type="checkbox" name="granted" value="1" @checked($marketingEmail ?? false) class="mt-0.5">
+                    <span>{{ __('theme::account.marketing_email_label') }}</span>
+                </label>
+                <button type="submit" class="rounded-[var(--radius-theme)] border border-primary px-4 py-2">{{ __('theme::account.save_preferences') }}</button>
+            </form>
+
             <h2 class="mb-1 mt-10 text-lg font-semibold">{{ __('theme::account.delete_account') }}</h2>
             <p class="text-sm text-slate-500">{{ __('theme::account.deletion_intro') }} <a href="{{ vani_route('storefront.account.delete') }}" class="text-red-700 underline">{{ __('theme::account.delete_account') }}</a></p>
             <x-vani::hook-slot name="vani.storefront.account.profile" :args="[$customer]" />

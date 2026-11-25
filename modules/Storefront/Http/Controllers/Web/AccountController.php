@@ -77,7 +77,7 @@ final class AccountController
     public function storeRegistration(RegisterRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $result = $this->sessions->register($data['email'], $data['password'], $data['full_name']);
+        $result = $this->sessions->register($data['email'], $data['password'], $data['full_name'], (bool) ($data['marketing_email'] ?? false));
 
         return redirect()->to(LocalizedUrls::route('storefront.account.register'))->with('vani.register_sent_to', $result['email']);
     }

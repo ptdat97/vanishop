@@ -14,9 +14,9 @@ final class CustomerSessionService implements CustomerSessions
         private readonly AddressBook $addresses,
     ) {}
 
-    public function register(string $email, string $password, string $fullName): array
+    public function register(string $email, string $password, string $fullName, bool $marketingEmail = false): array
     {
-        return $this->auth->register($email, $password, $fullName);
+        return $this->auth->register($email, $password, $fullName, $marketingEmail);
     }
 
     public function verifyRegistration(string $token, ?string $device = null): array

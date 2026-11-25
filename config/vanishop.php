@@ -6,14 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.84',
+    'version' => '0.5.85',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
     | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
     | requires.extension_api.
     */
-    'extension_api' => '1.33.0',
+    'extension_api' => '1.34.0',
     // Giai đoạn của API cho plugin (Owner 2026-11-18): `dev` = đang phát triển, API chưa chốt — ưu tiên Core; thay đổi phá
     // vỡ (đổi constructor DTO, đổi/xoá method…) chỉ cần tăng minor + ghi CHANGELOG-extension, plugin trong repo cập nhật
     // theo trong cùng commit. `stable` = đã chốt: xoá/đổi phần stable bắt tăng major (ADR-048 §5).
@@ -213,6 +213,8 @@ return [
                 'account.addresses.item' => 'tai-khoan/dia-chi/{address}',
                 'account.addresses.default' => 'tai-khoan/dia-chi/{address}/mac-dinh',
                 'account.profile' => 'tai-khoan/ho-so',
+                'account.marketing' => 'tai-khoan/nhan-tin',
+                'account.unsubscribe' => 'tai-khoan/huy-nhan-tin/{customer}/{channel}',
                 'account.email.verify' => 'tai-khoan/xac-minh-email/{token}',
                 'account.email.resend' => 'tai-khoan/xac-minh-email',
                 'account.password' => 'tai-khoan/mat-khau',
@@ -257,6 +259,8 @@ return [
                 'account.addresses.item' => 'account/addresses/{address}',
                 'account.addresses.default' => 'account/addresses/{address}/default',
                 'account.profile' => 'account/profile',
+                'account.marketing' => 'account/marketing',
+                'account.unsubscribe' => 'account/unsubscribe/{customer}/{channel}',
                 'account.email.verify' => 'account/verify-email/{token}',
                 'account.email.resend' => 'account/verify-email',
                 'account.password' => 'account/password',

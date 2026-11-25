@@ -39,6 +39,8 @@ final readonly class CheckoutRequest
         public string $source = 'web',
         /** IP của khách gửi yêu cầu (cổng thanh toán cần cho chống gian lận); null với đơn tạo trong Admin. */
         public ?string $clientIp = null,
+        /** Khách tích "Nhận ưu đãi qua email" khi đặt hàng: ghi đồng ý marketing kênh email sau khi đặt thành công. */
+        public bool $marketingEmail = false,
     ) {}
 
     /**
@@ -48,7 +50,7 @@ final readonly class CheckoutRequest
     {
         return hash('sha256', (string) json_encode([
             $this->cart->publicId, $this->contact, $this->shippingAddress, $this->shippingMethod, $this->paymentMethod,
-            $this->voucherCodes, $this->note, $this->expectedTotal, $this->extra,
+            $this->voucherCodes, $this->note, $this->expectedTotal, $this->extra, $this->marketingEmail,
         ], JSON_UNESCAPED_UNICODE));
     }
 }

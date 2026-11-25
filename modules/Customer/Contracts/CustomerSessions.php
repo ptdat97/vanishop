@@ -19,11 +19,12 @@ interface CustomerSessions
     public const REQUEST_ATTRIBUTE = 'customer';
 
     /**
-     * Đăng ký: gửi link xác minh tới email; tài khoản chỉ được tạo khi bấm link.
+     * Đăng ký: gửi link xác minh tới email; tài khoản chỉ được tạo khi bấm link. `$marketingEmail` = khách tích "Nhận ưu đãi
+     * qua email"; đồng ý chỉ được ghi khi xác minh xong.
      *
      * @return array{email: string, expires_in: int}
      */
-    public function register(string $email, string $password, string $fullName): array;
+    public function register(string $email, string $password, string $fullName, bool $marketingEmail = false): array;
 
     /**
      * Bấm link xác minh → tạo tài khoản (hoặc nhận hồ sơ khách vãng lai cùng email) và đăng nhập.

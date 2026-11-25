@@ -1,10 +1,16 @@
-Extension API 1.33.0
+Extension API 1.34.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
 class Modules\Cart\Contracts\Data\CartKey
   __construct(string $publicId, string $token)
 class Modules\Cart\Contracts\InvalidCartLineOption extends InvalidArgumentException
+class Modules\Cart\Events\CartAbandoned
+  __construct(string $cartPublicId, int $customerId, int $itemCount, int $subtotal, string $currency, string $lastActivityAt)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
 interface Modules\Catalog\Contracts\CatalogLookup
   const KINDS = array (
   0 => 'category',
@@ -131,7 +137,7 @@ class Modules\Checkout\Contracts\Data\Adjustment
 ))
 class Modules\Checkout\Contracts\Data\CheckoutRequest
   __construct(Modules\Cart\Contracts\Data\CartKey $cart, ?array $contact, ?array $shippingAddress, ?string $shippingMethod, ?string $paymentMethod, ?array $voucherCodes, ?string $note, ?int $expectedTotal, array $extra = array (
-), string $source = 'web', ?string $clientIp = NULL)
+), string $source = 'web', ?string $clientIp = NULL, bool $marketingEmail = false)
   fingerprint(): string
 class Modules\Checkout\Contracts\Data\ShippingOption
   __construct(string $code, string $label, Modules\Shared\Domain\Money\Money $fee, string $source = 'core')

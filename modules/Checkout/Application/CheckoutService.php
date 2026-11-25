@@ -21,6 +21,7 @@ use Modules\Checkout\Contracts\Data\PlaceOrderResult;
 use Modules\Checkout\Contracts\Data\Totals;
 use Modules\Checkout\Contracts\Data\TotalsContext;
 use Modules\Checkout\Contracts\Data\TotalsLine;
+use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\Customers;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
@@ -67,6 +68,7 @@ final class CheckoutService implements Checkout
         private readonly Payments $paymentService,
         private readonly Extensions $extensions,
         private readonly Customers $customers,
+        private readonly CustomerAccounts $accounts,
         private readonly CurrentContext $currentContext,
         private readonly ShippingAddresses $addresses,
         private readonly Metrics $metrics,
@@ -159,8 +161,25 @@ final class CheckoutService implements Checkout
 
             throw $exception;
         }
+        $this->recordMarketingConsent($request, $customerId);
 
         return new PlaceOrderResult(201, $body, replayed: false, payment: $this->paymentView($body, replay: false));
+    }
+
+    /**
+     * Đồng ý nhận ưu đãi qua email tích lúc đặt hàng: ghi NGOÀI transaction đặt hàng, lỗi chỉ ghi log — đơn đã đặt không hỏng.
+     * Không tích thì giữ nguyên đồng ý cũ (không thu hồi).
+     */
+    private function recordMarketingConsent(CheckoutRequest $request, ?int $customerId): void
+    {
+        if (! $request->marketingEmail || $customerId === null) {
+            return;
+        }
+        try {
+            $this->accounts->setMarketingConsent($customerId, 'email', true, 'storefront:checkout', $request->clientIp);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     private function signedInCustomer(): ?int

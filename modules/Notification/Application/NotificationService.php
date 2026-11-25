@@ -6,6 +6,7 @@ namespace Modules\Notification\Application;
 
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
+use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\Customers;
 use Modules\Notification\Contracts\Data\NotificationRequest;
 use Modules\Notification\Contracts\Data\Recipient;
@@ -27,6 +28,7 @@ final class NotificationService implements Notifier
         private readonly ChannelRegistry $channels,
         private readonly Customers $customers,
         private readonly NotificationCatalog $catalog,
+        private readonly CustomerAccounts $accounts,
     ) {}
 
     public function notify(NotificationRequest $request): array
@@ -93,6 +95,11 @@ final class NotificationService implements Notifier
     {
         $skip = $this->consentMissing($request, $channel->code());
         $key = mb_substr("{$request->key}:{$channel->code()}", 0, 160);
+        $variables = $this->variables($request, $channel->code(), $skip);
+        $body = TemplateRenderer::render($template->body, $variables);
+        if (isset($variables['unsubscribe_url']) && $body !== null && ! str_contains($body, (string) $variables['unsubscribe_url'])) {
+            $body = rtrim($body)."\n\n—\n".__('notification::messages.unsubscribe_footer', ['url' => $variables['unsubscribe_url']], $request->recipient->locale ?? StoreLocale::default());
+        }
 
         $inserted = DB::table('notification_logs')->insertOrIgnore([
             'idempotency_key' => $key,
@@ -102,9 +109,9 @@ final class NotificationService implements Notifier
             'template_id' => $template->id,
             'customer_id' => $request->recipient->customerId,
             'recipient' => $this->address($request->recipient, $channel->code()),
-            'subject' => TemplateRenderer::render($template->subject, $request->variables),
-            'body' => TemplateRenderer::render($template->body, $request->variables),
-            'meta' => $template->meta === null ? null : json_encode(TemplateRenderer::renderArray($template->meta, $request->variables), JSON_UNESCAPED_UNICODE),
+            'subject' => TemplateRenderer::render($template->subject, $variables),
+            'body' => $body,
+            'meta' => $template->meta === null ? null : json_encode(TemplateRenderer::renderArray($template->meta, $variables), JSON_UNESCAPED_UNICODE),
             'status' => $skip ? NotificationLog::SKIPPED : NotificationLog::QUEUED,
             'error' => $skip ? 'consent.missing' : null,
             'correlation_id' => Context::get('correlation_id'),
@@ -112,6 +119,22 @@ final class NotificationService implements Notifier
         ]);
 
         return $inserted === 1 ? NotificationLog::query()->where('idempotency_key', $key)->first() : null;
+    }
+
+    /**
+     * Biến của mẫu. Tin marketing gửi qua email có thêm `unsubscribe_url` (link huỷ nhận tin, Nghị định 91/2020); mẫu không
+     * đặt biến này thì Core tự thêm một dòng cuối email — tin marketing không bao giờ thiếu cách huỷ.
+     *
+     * @return array<string, scalar|null>
+     */
+    private function variables(NotificationRequest $request, string $channel, bool $skipped): array
+    {
+        $variables = $request->variables;
+        if (! $skipped && $request->category === NotificationRequest::MARKETING && $channel === 'mail' && $request->recipient->customerId !== null) {
+            $variables['unsubscribe_url'] = $this->accounts->unsubscribeUrl($request->recipient->customerId, 'email');
+        }
+
+        return $variables;
     }
 
     /**

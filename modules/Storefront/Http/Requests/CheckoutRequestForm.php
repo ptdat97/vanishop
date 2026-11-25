@@ -41,6 +41,7 @@ final class CheckoutRequestForm extends FormRequest
             'shipping_method' => ['nullable', 'string', 'max:64'],
             'payment_method' => [$placing ? 'required' : 'nullable', 'string', 'max:64'],
             'note' => ['nullable', 'string', 'max:500'],
+            'marketing_email' => ['sometimes', 'boolean'],
             // Trường bổ sung của plugin: {"<plugin id>": {"<field>": scalar}} — tối đa 10 plugin × 20 trường.
             'extra' => ['nullable', 'array', 'max:10'],
             'extra.*' => ['array', 'max:20'],
@@ -112,6 +113,7 @@ final class CheckoutRequestForm extends FormRequest
             extra: array_filter((array) ($data['extra'] ?? []), fn (mixed $fields, mixed $plugin): bool => is_string($plugin) && is_array($fields), ARRAY_FILTER_USE_BOTH),
             source: $source,
             clientIp: $clientIp,
+            marketingEmail: filter_var($data['marketing_email'] ?? false, FILTER_VALIDATE_BOOLEAN),
         );
     }
 }

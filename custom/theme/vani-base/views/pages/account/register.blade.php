@@ -34,6 +34,10 @@
                     <label for="password_confirmation" class="block text-sm">{{ __('theme::account.confirm_password') }}</label>
                     <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
                 </div>
+                <label class="flex items-start gap-2 text-sm">
+                    <input type="checkbox" name="marketing_email" value="1" @checked(old('marketing_email')) class="mt-0.5">
+                    <span>{{ __('theme::account.marketing_email_label') }}</span>
+                </label>
                 <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ __('theme::account.sign_up') }}</button>
             </form>
         @endif

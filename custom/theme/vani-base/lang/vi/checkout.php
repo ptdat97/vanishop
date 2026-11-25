@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'marketing_email' => 'Nhận ưu đãi và tin mới qua email (cần nhập email).',
     'order_summary' => 'Đơn hàng của bạn',
     'quote_updating' => 'Đang cập nhật tổng tiền.',
     'quote_updated' => 'Đã cập nhật tổng tiền.',

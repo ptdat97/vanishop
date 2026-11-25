@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Customer\Application;
 
+use Illuminate\Support\Facades\URL;
 use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\Data\CustomerData;
+use Modules\Customer\Persistence\Models\Customer;
 
 final class CustomerAccountService implements CustomerAccounts
 {
@@ -14,6 +16,7 @@ final class CustomerAccountService implements CustomerAccounts
         private readonly AuthService $auth,
         private readonly AddressBook $addresses,
         private readonly AccountLifecycle $lifecycle,
+        private readonly ConsentService $consents,
     ) {}
 
     public function updateProfile(int $customerId, array $attributes): CustomerData
@@ -62,5 +65,38 @@ final class CustomerAccountService implements CustomerAccounts
     public function deleteAccount(int $customerId, string $password): void
     {
         $this->lifecycle->deleteOwnAccount($customerId, $password);
+    }
+
+    public function marketingConsents(int $customerId): array
+    {
+        return $this->consents->all($customerId);
+    }
+
+    public function marketingConsent(int $customerId, string $channel): bool
+    {
+        return $this->consents->allows($customerId, $channel, 'marketing');
+    }
+
+    public function setMarketingConsent(int $customerId, string $channel, bool $granted, string $source, ?string $ip = null): void
+    {
+        $this->consents->set($customerId, $channel, 'marketing', $granted, $source, $ip);
+    }
+
+    public function unsubscribeUrl(int $customerId, string $channel): string
+    {
+        $publicId = (string) Customer::query()->whereKey($customerId)->value('public_id');
+
+        return URL::signedRoute('storefront.account.unsubscribe', ['customer' => $publicId, 'channel' => $channel]);
+    }
+
+    public function unsubscribe(string $customerPublicId, string $channel, ?string $ip = null): bool
+    {
+        $customerId = Customer::query()->where('public_id', $customerPublicId)->value('id');
+        if ($customerId === null) {
+            return false;
+        }
+        $this->consents->set((int) $customerId, $channel, 'marketing', false, 'unsubscribe_link', $ip);
+
+        return true;
     }
 }

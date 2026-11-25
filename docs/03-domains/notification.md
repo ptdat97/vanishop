@@ -30,6 +30,7 @@ flowchart LR
 - **Idempotent (R18)**: `idempotency_key = <key của sự việc>:<kênh>` unique; listener chạy lại không gửi trùng. Key của Core: `order_placed:<order id>`, `order_cancelled:<order id>`, `shipment_shipped:<shipment id>`, `shipment_delivered:<shipment id>`.
 - **Retry**: `SendResult::retryable` → thử lại (backoff 1m, 5m, 15m, 1h; tối đa 5 lần), `permanent` → `failed`. Exception bất ngờ coi như retryable.
 - **Consent**: tin `marketing` chỉ gửi khi khách có consent `marketing` theo kênh (`mail` ↔ consent `email`); không có → nhật ký `skipped` (`consent.missing`). Tin giao dịch không cần consent ([customer §5](customer.md)).
+- **Link huỷ nhận tin (0.5.85):** tin `marketing` gửi qua email có biến `{{ unsubscribe_url }}` (`CustomerAccounts::unsubscribeUrl`). Mẫu không đặt biến này thì Core tự thêm một dòng cuối email (`notification::messages.unsubscribe_footer`), nên tin marketing của Core hay plugin đều không thiếu cách huỷ (Nghị định 91/2020).
 - Lỗi xếp hàng tin không làm hỏng nghiệp vụ (listener bắt lỗi, ghi log).
 
 ## 3. Loại tin của Core
@@ -70,4 +71,4 @@ interface Notifier
 
 ## 7. Chưa có
 
-Email HTML theo theme cửa hàng, mẫu tin do plugin khai báo (`notificationTemplates()`), gửi lại tin lỗi từ Admin, chiến dịch marketing + link huỷ đăng ký, kênh dự phòng cho tin giao dịch (ZNS lỗi → SMS; hiện chỉ OTP có dự phòng), dọn nhật ký cũ.
+Email HTML theo theme cửa hàng, mẫu tin do plugin khai báo (`notificationTemplates()`), gửi lại tin lỗi từ Admin, chiến dịch marketing, kênh dự phòng cho tin giao dịch (ZNS lỗi → SMS; hiện chỉ OTP có dự phòng), dọn nhật ký cũ.

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'unsubscribe_footer' => 'Không muốn nhận email ưu đãi nữa? Huỷ nhận tin tại: :url',
     'saved' => 'Đã lưu mẫu tin.',
     'deleted' => 'Đã xoá mẫu tin.',
     'stale' => 'Mẫu tin đã được người khác cập nhật. Vui lòng tải lại trang.',

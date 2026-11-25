@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'marketing_email' => 'Email me offers and news (email required).',
     'order_summary' => 'Order summary',
     'quote_updating' => 'Updating your total.',
     'quote_updated' => 'Order total updated.',

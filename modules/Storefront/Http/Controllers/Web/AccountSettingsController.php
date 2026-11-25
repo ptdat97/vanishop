@@ -12,6 +12,7 @@ use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Requests\AddressRequest;
+use Modules\Customer\Contracts\Requests\ConsentRequest;
 use Modules\Customer\Contracts\Requests\DeleteAccountRequest;
 use Modules\Customer\Contracts\Requests\PasswordRequest;
 use Modules\Customer\Contracts\Requests\ProfileRequest;
@@ -35,7 +36,34 @@ final class AccountSettingsController
 
     public function profile(Request $request): View
     {
-        return view('theme::pages.account.profile', ['customer' => $this->required($request)]);
+        $customer = $this->required($request);
+
+        return view('theme::pages.account.profile', ['customer' => $customer, 'marketingEmail' => $this->accounts->marketingConsent($customer->id, 'email')]);
+    }
+
+    /** Bật/tắt nhận ưu đãi qua email trong trang hồ sơ. */
+    public function updateMarketing(ConsentRequest $request): RedirectResponse
+    {
+        $customer = $this->required($request);
+        $data = $request->validated();
+        $granted = (bool) $data['granted'];
+        $this->accounts->setMarketingConsent($customer->id, $data['channel'], $granted, 'storefront:account', $request->ip());
+
+        return redirect()->to(LocalizedUrls::route('storefront.account.profile'))
+            ->with('status', __($granted ? 'storefront::messages.marketing_subscribed' : 'storefront::messages.marketing_unsubscribed'));
+    }
+
+    /** Link huỷ nhận tin trong email (đã kiểm chữ ký): hỏi lại trước khi huỷ. */
+    public function unsubscribeForm(Request $request): View
+    {
+        return view('theme::pages.account.unsubscribe', ['action' => $request->fullUrl(), 'done' => false]);
+    }
+
+    public function unsubscribe(Request $request, string $customer, string $channel): View
+    {
+        abort_unless($this->accounts->unsubscribe($customer, $channel, $request->ip()), 404);
+
+        return view('theme::pages.account.unsubscribe', ['action' => null, 'done' => true]);
     }
 
     public function updateProfile(ProfileRequest $request): RedirectResponse

@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'marketing_subscribed' => 'You will receive promotional emails.',
+    'marketing_unsubscribed' => 'Promotional emails turned off.',
     'added_items_to_cart' => 'Added :count items to your cart.',
     'block_zone_rule' => 'This area does not accept the selected block type or is already full.',
     'collection_page_saved' => 'Collection page saved.',

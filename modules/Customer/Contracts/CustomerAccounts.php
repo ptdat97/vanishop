@@ -55,4 +55,30 @@ interface CustomerAccounts
      * dở → `customer.deletion_blocked`; sai mật khẩu → `customer.password_mismatch`; chưa có mật khẩu → `customer.password_required`.
      */
     public function deleteAccount(int $customerId, string $password): void;
+
+    /**
+     * Mọi đồng ý nhận tin của khách (đang bật và đã huỷ), theo kênh.
+     *
+     * @return list<array{channel: string, purpose: string, granted: bool, granted_at: ?string, revoked_at: ?string, source: string}>
+     */
+    public function marketingConsents(int $customerId): array;
+
+    /** Khách đang đồng ý nhận tin marketing qua kênh (`email`, `sms`, `zns`…). */
+    public function marketingConsent(int $customerId, string $channel): bool;
+
+    /**
+     * Bật/tắt đồng ý nhận tin marketing qua kênh; ghi lịch sử kèm nguồn (`storefront:account`, `storefront:checkout`…).
+     */
+    public function setMarketingConsent(int $customerId, string $channel, bool $granted, string $source, ?string $ip = null): void;
+
+    /**
+     * Link huỷ nhận tin marketing của kênh, đặt trong mọi tin marketing (Nghị định 91/2020). Link có chữ ký, không hết hạn,
+     * dùng mã công khai của khách; mở link là huỷ ngay, không cần đăng nhập.
+     */
+    public function unsubscribeUrl(int $customerId, string $channel): string;
+
+    /**
+     * Huỷ đồng ý theo link trong email (đã kiểm chữ ký ở route). Khách không tồn tại → false.
+     */
+    public function unsubscribe(string $customerPublicId, string $channel, ?string $ip = null): bool;
 }
