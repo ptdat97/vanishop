@@ -199,7 +199,7 @@ Không triển khai microservices ở giai đoạn hiện tại. Các module ch�
 1. **Core-first invariants:** Các quy tắc đảm bảo tính nhất quán của thương mại được bảo vệ trong Core.
 2. **Plugin-first capabilities:** Nghiệp vụ đặc thù được triển khai bằng plugin.
 3. **Dependency direction:** Module và plugin chỉ phụ thuộc theo hướng được kiến trúc cho phép.
-4. **No core patching:** Không chỉnh sửa Core chỉ để bổ sung một chính sách kinh doanh riêng.
+4. **No core patching:** Không chỉnh sửa Core chỉ để bổ sung một chính sách kinh doanh riêng. Plugin mới thiếu điểm mở rộng thì **đề xuất bổ sung extension point tổng quát vào Core** trước ([plugin-system §10a](docs/05-plugin/plugin-system.md#10a-thiếu-điểm-mở-rộng--đề-xuất-sửa-core)).
 5. **Explicit contracts:** Các module giao tiếp thông qua contract, application service và extension point.
 6. **Transactional consistency:** Những nghiệp vụ cần tính nhất quán cao như checkout, tồn kho và đặt đơn được xử lý trong transaction.
 7. **API-oriented:** Storefront API và native storefront hướng tới sử dụng chung Application layer.

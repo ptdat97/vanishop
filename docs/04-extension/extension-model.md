@@ -35,6 +35,8 @@ flowchart TD
     E --> E1[Registry]
 ```
 
+Không cơ chế nào ở trên đủ để làm đúng nghiệp vụ → **đề xuất sửa Core** (extension point tổng quát) trước khi viết plugin, theo [plugin-system §10a](../05-plugin/plugin-system.md#10a-thiếu-điểm-mở-rộng--đề-xuất-sửa-core). Không vòng qua trong plugin.
+
 ## 2. Khi nào KHÔNG được mở rộng
 
 Các điểm sau **không có** extension point, và sẽ không bao giờ có:

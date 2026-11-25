@@ -15,6 +15,7 @@ Thư mục này trả lời câu hỏi **"viết plugin loại X thì phải imp
 
 ## Quy ước
 
+- **Contract hiện có không đủ để làm đúng nghiệp vụ → đề xuất sửa Core trước**, chờ duyệt rồi mới viết plugin ([plugin-system §10a](../plugin-system.md#10a-thiếu-điểm-mở-rộng--đề-xuất-sửa-core)).
 - Chữ ký trong thư mục này **chép từ code VaniShop**, không từ tài liệu khác. Khi code đổi, cập nhật tại đây cùng PR và ghi [CHANGELOG-extension](../../04-extension/CHANGELOG-extension.md).
 - Chỗ nào code còn thiếu so với thiết kế, ghi ở mục **Giới hạn hiện tại** của từng tài liệu, không giấu.
 - Mỗi extension contract có **bộ contract test** trong `Modules\<Ctx>\Testing`; plugin implement contract nào thì chạy bộ đó (rule R26).

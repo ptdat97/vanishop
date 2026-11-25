@@ -261,7 +261,7 @@ Designed ([commerce-kernel §7](../02-architecture/commerce-kernel.md)). Plugin 
 4. Có test: unit + feature + **contract test của contract mình implement**. CI chạy test của mọi plugin.
 5. Có README đặc tả (phạm vi, cấu hình, bảng dữ liệu, event nghe/phát).
 6. Tuân thủ [clean-room](../01-principles/clean-room-license.md) và [architecture rules](../01-principles/architecture-rules.md).
-7. Thiếu extension point thì mở PR vào Core, không vá Core từ trong plugin (rule R1).
+7. **Thiếu extension point thì đề xuất sửa Core** và chờ duyệt, không vòng qua hay vá Core từ trong plugin (rule R1, [§10a](#10a-thiếu-điểm-mở-rộng--đề-xuất-sửa-core)).
 8. Plugin vào hệ thống qua repo + CI, không upload qua Admin ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)).
 9. Checklist theo loại plugin: [contracts/](contracts/README.md).
 10. Không ghi đè binding, class, route hay middleware của Core (rule R35); thay capability bằng implementation của Contract.
@@ -270,6 +270,46 @@ Designed ([commerce-kernel §7](../02-architecture/commerce-kernel.md)). Plugin 
 12. Tính năng storefront đi qua Storefront API trước, trang Blade sau ([§10b](#10b-storefront-api-first-cho-plugin-adr-044)).
 
 Các rule trên là **ranh giới kiến trúc, không phải sandbox bảo mật**: plugin chạy cùng process PHP với Core nên về kỹ thuật vẫn đọc/ghi được mọi bảng và mọi binding trong container. Arch test chỉ chặn vi phạm viết rõ trong mã nguồn. An toàn dựa vào việc chỉ cài plugin có mã nguồn đã review và đi qua CI ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)); không cài plugin không rõ nguồn gốc.
+
+## 10a. Thiếu điểm mở rộng → đề xuất sửa Core
+
+> **Nguyên tắc bắt buộc khi tạo plugin mới:** nếu extension point hiện có không đủ để làm đúng nghiệp vụ, **dừng lại và đề xuất sửa Core**. Không vòng qua, không làm "gần đúng" trong plugin. Core được sửa trước, plugin dùng điểm mở rộng mới sau.
+
+**Dấu hiệu thiếu điểm mở rộng** (gặp một trong các trường hợp sau là phải đề xuất):
+
+- Contract không nhận đủ dữ liệu để tính đúng. Ví dụ: action khuyến mãi không biết số lượng dòng nên không giảm được "theo số bộ đủ món".
+- Plugin cần ghi vào bảng của Core, hoặc cần tạo/sửa dữ liệu mà Core sở hữu, nhưng không có service contract.
+- Plugin cần truy cập trạng thái của phiên/request (giỏ hiện tại, khách đang đăng nhập) mà Core chưa công bố.
+- Nghiệp vụ chỉ làm được nếu chấp nhận sai lệch (giảm cả phần mua dư, giỏ dở dang khi một món hết hàng) hoặc trải nghiệm kém (Admin phải nhập JSON, phải tạo dữ liệu bằng tay ở hai nơi).
+
+**Không được vòng qua bằng cách:**
+
+- Ghi thẳng bảng của Core (`DB::table('promotions')…`), ghi đè binding/route/middleware (rule R35), sửa file Core từ trong plugin.
+- Chuyển trạng thái giữa hai implementation qua biến tĩnh hoặc singleton (vd. rule "nhắn" kết quả cho action).
+- Chép lại logic của Core vào plugin, hoặc thêm nhánh `if (plugin X)` vào Core.
+- Âm thầm làm phiên bản kém hơn mà không báo người duyệt.
+
+**Quy trình:**
+
+1. Tra [extension-point-catalog](../04-extension/extension-point-catalog.md) và `modules/*/Contracts/` để chắc chắn điểm mở rộng thật sự chưa có.
+2. Viết đề xuất trước khi viết code (mẫu bên dưới) và **chờ Owner duyệt**. Có thể đề xuất nhiều mục; Owner duyệt từng mục.
+3. Thiết kế điểm mở rộng **tổng quát**, dùng được cho plugin khác (rule R1), không đặt tên hay hành vi theo riêng plugin đang làm. Ưu tiên mở rộng tương thích: interface tuỳ chọn kế thừa contract cũ, tham số tuỳ chọn, contract mới.
+4. Làm Core trước, commit riêng: contract `#[PluginApi]`, implementation của Core, bộ contract test trong `Modules\<Ctx>\Testing` nếu là extension point có TAG (rule R26), test, tăng `vanishop.extension_api` đúng mức, cập nhật snapshot, ghi [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md) và [extension-point-catalog](../04-extension/extension-point-catalog.md).
+5. Sau đó làm plugin trên điểm mở rộng mới; plugin khai báo `requires.extension_api` tương ứng.
+
+**Mẫu đề xuất** (một dòng cho mỗi chỗ thiếu):
+
+| # | Chỗ thiếu | Đề xuất sửa Core (tổng quát) | Nếu không sửa thì sao |
+|---|---|---|---|
+| 1 | Contract/dữ liệu nào thiếu, vì sao không làm đúng được | Interface/contract/hook mới, ai gọi, lúc nào, plugin khác dùng lại thế nào | Phương án không sửa Core và hạn chế cụ thể của nó |
+
+**Ví dụ thật — `vani.bundles` (combo sản phẩm, 2026-11):**
+
+| # | Chỗ thiếu | Đã sửa Core |
+|---|---|---|
+| 1 | `PromotionAction::apply()` chỉ nhận số tiền còn lại từng dòng, không biết số lượng → không giảm được cho số bộ đủ món | `ContextualPromotionAction::applyInContext(PromotionContext, …)`; evaluator và `recheck()` dùng khi action implement (dùng lại cho mua X tặng Y, giảm theo bậc) |
+| 2 | Plugin không có cách tạo/đồng bộ khuyến mãi | `ManagedPromotions` (`sync`/`remove`/`ids` theo plugin + khoá); Admin Khuyến mãi chỉ xem, có liên kết sang plugin |
+| 3 | Không thêm được nhiều món vào giỏ một lần, plugin không truy cập được giỏ của phiên | `Carts::addLines()` (tất cả hoặc không món nào), `POST /gio-hang` nhận `items[]`, `window.vani.cart.addItems()` |
 
 ## 10b. Storefront API-first cho plugin (ADR-044)
 

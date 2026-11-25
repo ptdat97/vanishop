@@ -8,7 +8,7 @@
 
 | # | Rule | Kiểm tra |
 |---|---|---|
-| R1 | **Không sửa Core để phục vụ một business capability duy nhất.** Nếu plugin cần, bổ sung **extension point tổng quát** vào Core ([04-extension](../04-extension/extension-model.md)). | Review |
+| R1 | **Không sửa Core để phục vụ một business capability duy nhất.** Nếu plugin cần, bổ sung **extension point tổng quát** vào Core ([04-extension](../04-extension/extension-model.md)). Khi tạo plugin mới mà thiếu điểm mở rộng: **đề xuất sửa Core trước** theo [plugin-system §10a](../05-plugin/plugin-system.md#10a-thiếu-điểm-mở-rộng--đề-xuất-sửa-core), không vòng qua trong plugin. | Review |
 | R2 | Capability có thể thay đổi độc lập mà **không đổi Commerce invariant** thì làm thành **Plugin** ([commerce-kernel](../02-architecture/commerce-kernel.md)). | Review |
 | R3 | Core chỉ chứa commerce primitives, business invariants và extension points. | Review |
 | R4 | Phụ thuộc chỉ đi một chiều **Plugin → Core Contracts → Core**. Core **không bao giờ** import `Plugin\`. | Arch test: `arch()->expect('Modules')->not->toUse('Plugin')` |
