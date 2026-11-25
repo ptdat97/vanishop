@@ -167,7 +167,7 @@ it('nhập CSV: xem trước (không ghi), áp dụng như kiểm kê, bỏ dòn
     expect(stockOnHand($this->hn, $this->s->id))->toBe(8)
         ->and(stockOnHand($this->hn, $this->m->id))->toBe(1)
         ->and(StockMovement::query()->where('variant_id', $this->s->id)->latest('id')->value('reason'))->toBe('Nhập CSV kiem-ke.csv');
-    $this->post("{$this->stockUrl}/import/{$preview['token']}")->assertSessionHasErrors('token'); // dùng một lần
+    $this->post("{$this->stockUrl}/import/{$preview['token']}")->assertSessionHasErrors('business'); // dùng một lần
 
     $export = $this->get("{$this->stockUrl}/export?location=WH-HN")->assertOk()->streamedContent();
     expect($export)->toStartWith("\xEF\xBB\xBFsku,location,on_hand")->toContain("{$this->s->sku},WH-HN,8,");

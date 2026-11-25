@@ -46,6 +46,20 @@ it('lỗi validation: báo tại ô và một toast nhắc; sửa lại thì lư
     expect($this->list->fresh()->name)->toBe('Có tên');
 });
 
+it('nút Back của trình duyệt khi còn thay đổi chưa lưu → hỏi lại; "Thôi" giữ dữ liệu, "Rời trang" thì lùi', function () {
+    $prices = "/admin/pricing/price-lists/{$this->list->id}/prices";
+    $page = visit($prices)->click('Thông tin bảng giá')->assertPathIs($this->edit);
+
+    $page->type(NAME_INPUT, 'Chưa lưu')->back()
+        ->assertSee('Rời trang khi còn thay đổi chưa lưu?')
+        ->click('Thôi')
+        ->assertPathIs($this->edit)
+        ->assertValue(NAME_INPUT, 'Chưa lưu');
+
+    $page->back()->click('Rời trang')->assertPathIs($prices)->assertNoJavaScriptErrors();
+    expect($this->list->fresh()->name)->toBe('Bảng giá');
+});
+
 it('rời trang khi còn thay đổi chưa lưu → hỏi lại; "Thôi" ở lại, "Rời trang" thì đi; đã lưu thì không hỏi', function () {
     $page = visit($this->edit);
 

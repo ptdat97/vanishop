@@ -139,7 +139,7 @@ final class StockCsv
     {
         $data = Cache::pull(self::CACHE_PREFIX.$token);
         if (! is_array($data)) {
-            throw ValidationException::withMessages(['token' => __('inventory::messages.import_expired')]);
+            throw ValidationException::withMessages(['business' => __('inventory::messages.import_expired')]);
         }
         if (count($data['changes']) > StockBulkRun::SYNC_LIMIT) {
             $scope = $this->context->scope();

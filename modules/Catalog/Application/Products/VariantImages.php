@@ -105,7 +105,7 @@ final class VariantImages
         DB::transaction(function () use ($style, $variant, $mediableIds): void {
             $current = $variant->gallery()->pluck('id')->all();
             if (array_diff($mediableIds, $current) !== [] || count($mediableIds) !== count($current)) {
-                throw ValidationException::withMessages(['order' => __('catalog::messages.image_order_invalid')]);
+                throw ValidationException::withMessages(['business' => __('catalog::messages.image_order_invalid')]);
             }
             foreach ($mediableIds as $position => $id) {
                 Mediable::query()->whereKey($id)->update(['position' => $position]);

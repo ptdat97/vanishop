@@ -115,7 +115,7 @@ final class MenuRepository
     public function restore(string $location, int $version): void
     {
         $versions = $this->state($location)['versions'];
-        $items = $versions[$version]['items'] ?? throw ValidationException::withMessages(['version' => __('storefront::texts.menu_repository.version_does_not_exist')]);
+        $items = $versions[$version]['items'] ?? throw ValidationException::withMessages(['business' => __('storefront::texts.menu_repository.version_does_not_exist')]);
 
         $this->write($location, ['draft' => $items, 'updated_at' => now()->toIso8601String()]);
     }

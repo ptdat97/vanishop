@@ -79,8 +79,8 @@ it('plugin đồng bộ, cập nhật và gỡ khuyến mãi theo khoá; Admin c
     $this->actingAs(T::staff(['admin.access', 'promotion.view', 'promotion.manage']), 'staff');
     $this->get(route('admin.promotion.promotions.index'))->assertInertia(fn (Assert $page) => $page->where('promotions.0.managed', true));
     $this->get(route('admin.promotion.promotions.edit', $id))->assertInertia(fn (Assert $page) => $page->where('promotion.managed.owner', 'vani.test'));
-    $this->delete(route('admin.promotion.promotions.destroy', $id))->assertSessionHasErrors('promotion');
-    $this->post(route('admin.promotion.promotions.vouchers.store', $id), ['code' => 'COMBO'])->assertSessionHasErrors('promotion');
+    $this->delete(route('admin.promotion.promotions.destroy', $id))->assertSessionHasErrors('business');
+    $this->post(route('admin.promotion.promotions.vouchers.store', $id), ['code' => 'COMBO'])->assertSessionHasErrors('business');
     $this->assertDatabaseMissing('vouchers', ['promotion_id' => $id]);
     expect(Promotion::query()->whereKey($id)->exists())->toBeTrue();
 

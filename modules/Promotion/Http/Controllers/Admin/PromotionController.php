@@ -141,7 +141,7 @@ final class PromotionController
     private function assertNotManaged(Promotion $promotion): void
     {
         if ($promotion->isManaged()) {
-            throw ValidationException::withMessages(['promotion' => __('promotion::messages.managed', ['owner' => $promotion->managed_by])]);
+            throw ValidationException::withMessages(['business' => __('promotion::messages.managed', ['owner' => $promotion->managed_by])]);
         }
     }
 

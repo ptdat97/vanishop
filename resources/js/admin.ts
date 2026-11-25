@@ -3,6 +3,7 @@ import '../css/admin.css';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createApp, h, type DefineComponent } from 'vue';
 import AdminLayout from './admin/Layouts/AdminLayout.vue';
+import { installBackGuard } from './admin/forms';
 
 type PageModule = { default: DefineComponent & { layout?: unknown } };
 
@@ -36,6 +37,9 @@ async function resolvePage(name: string): Promise<DefineComponent> {
 
     throw new Error(`Không tìm thấy trang Inertia: ${name}`);
 }
+
+// Trước createInertiaApp: bộ nghe nút Back phải chạy trước bộ nghe popstate của Inertia (forms.ts).
+installBackGuard();
 
 createInertiaApp({
     title: (title) => (title ? `${title} · VaniShop Admin` : 'VaniShop Admin'),

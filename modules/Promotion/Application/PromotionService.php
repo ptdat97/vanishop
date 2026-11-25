@@ -103,7 +103,7 @@ final class PromotionService
     public function delete(Promotion $promotion): void
     {
         if (DB::table('promotion_usages')->where('promotion_id', $promotion->id)->exists()) {
-            throw ValidationException::withMessages(['promotion' => __('promotion::messages.in_use')]);
+            throw ValidationException::withMessages(['business' => __('promotion::messages.in_use')]);
         }
 
         DB::transaction(function () use ($promotion): void {

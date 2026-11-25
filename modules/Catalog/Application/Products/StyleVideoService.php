@@ -71,7 +71,7 @@ final class StyleVideoService
         DB::transaction(function () use ($style, $videoIds): void {
             $current = DB::table('style_video')->where('style_id', $style->id)->pluck('video_id')->map(fn ($id): int => (int) $id)->all();
             if (array_diff($videoIds, $current) !== [] || count(array_unique($videoIds)) !== count($current)) {
-                throw ValidationException::withMessages(['order' => __('catalog::messages.video_order_invalid')]);
+                throw ValidationException::withMessages(['business' => __('catalog::messages.video_order_invalid')]);
             }
             foreach ($videoIds as $position => $videoId) {
                 $style->videos()->updateExistingPivot($videoId, ['position' => $position]);

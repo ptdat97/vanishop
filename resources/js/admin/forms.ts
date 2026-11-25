@@ -18,8 +18,8 @@ import { GENERAL_ERROR_KEYS, toast } from './toast';
  * - **Khoá lạc quan**: sau khi *chính form này* lưu thành công, nhận `lock_version` mới từ props (lần lưu thứ hai không báo nhầm
  *   xung đột). Tải lại trang vì thao tác khác (tải ảnh…) không đổi phiên bản trong form → xung đột thật vẫn được phát hiện.
  * - **Trạng thái sau khi lưu**: dữ liệu vừa lưu (kèm `lock_version` mới) thành giá trị gốc → `form.isDirty` về `false`.
- * - **Cảnh báo dữ liệu chưa lưu**: rời trang (link/router của Inertia, đóng hoặc tải lại tab) khi `form.isDirty` → hỏi lại
- *   (`useLeaveGuard`).
+ * - **Cảnh báo dữ liệu chưa lưu**: rời trang (link/router của Inertia, nút Back của trình duyệt, đóng hoặc tải lại tab) khi
+ *   `form.isDirty` → hỏi lại (`useLeaveGuard`, `installBackGuard`).
  *   Giá trị gốc chụp lại sau khi trang gắn xong, nên component chuẩn hoá giá trị lúc gắn (Select, DateInput…) không báo nhầm.
  */
 export interface AdminFormOptions {
@@ -128,9 +128,43 @@ function installLeaveGuard(): void {
     });
 }
 
+/*
+ * Nút Back của trình duyệt (`popstate`) không qua sự kiện `before` của Inertia và không huỷ được: lúc sự kiện tới, URL đã lùi.
+ * Bộ nghe gắn TRƯỚC Inertia (gọi trước createInertiaApp) chặn Inertia đổi trang, tiến lại một bước về trang đang sửa rồi hỏi;
+ * đồng ý thì lùi lại và để Inertia xử lý. Giả định là lùi một bước (Back); Forward khi đang sửa hiếm gặp, sẽ được đưa lại trang sửa.
+ */
+let restoringHistory = false;
+let allowHistoryLeave = false;
+
+export function installBackGuard(): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    window.addEventListener('popstate', (event) => {
+        if (restoringHistory) {
+            restoringHistory = false;
+            event.stopImmediatePropagation();
+            return;
+        }
+        if (allowHistoryLeave || !hasUnsavedChanges()) {
+            allowHistoryLeave = false;
+            return;
+        }
+        event.stopImmediatePropagation();
+        restoringHistory = true;
+        window.history.go(1);
+        confirmAction({ title: t('shared::admin.forms.leave_page_unsaved_changes'), message: t('shared::admin.forms.unsaved_changes_lost'), confirmLabel: t('shared::admin.forms.leave_page'), tone: 'danger' }).then((answer) => {
+            if (answer !== false) {
+                allowHistoryLeave = true;
+                window.history.back();
+            }
+        });
+    });
+}
+
 /**
- * Hỏi lại khi rời trang (link/router của Inertia, đóng/tải lại tab) mà `isDirty()` còn đúng. Gọi trong `setup`. Nút Back của
- * trình duyệt không qua sự kiện `before` của Inertia nên không chặn được.
+ * Hỏi lại khi rời trang (link/router của Inertia, nút Back của trình duyệt, đóng/tải lại tab) mà `isDirty()` còn đúng. Gọi trong
+ * `setup`.
  */
 export function useLeaveGuard(isDirty: () => boolean): void {
     onMounted(() => {
