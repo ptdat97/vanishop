@@ -3,7 +3,7 @@
 return [
     'all_products' => 'All products',
     'browse_categories' => 'Browse categories',
-    'browse_collection' => 'Browse products',
+    'browse_products' => 'Browse products',
     'by_letter' => 'By letter',
     'categories_intro' => 'Choose a category to discover products that are right for you.',
     'remove_filter' => 'Remove filter :filter',

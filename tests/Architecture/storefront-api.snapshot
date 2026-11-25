@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.85
+Storefront API v1 — VaniShop 0.5.86
 GET /address/provinces security[]
   200
     $: object
@@ -1165,23 +1165,14 @@ GET /collections/{slug} security[none,customerBearer,firstPartySession]
   200
     $: object
     $.data: object
-    $.data.blocks: object
-    $.data.blocks.after: array
-    $.data.blocks.after[]: object
-    $.data.blocks.after[].data: object
-    $.data.blocks.after[].type: string
-    $.data.blocks.banner: array
-    $.data.blocks.banner[]: object
-    $.data.blocks.banner[].data: object
-    $.data.blocks.banner[].type: string enum[hero]
-    $.data.blocks.before: array
-    $.data.blocks.before[]: object
-    $.data.blocks.before[].data: object
-    $.data.blocks.before[].type: string
     $.data.description: string|null
     $.data.id: integer
+    $.data.image_srcset: string
+    $.data.image_url: string|null
     $.data.locales: array
     $.data.locales[]: string
+    $.data.meta_description: string|null
+    $.data.meta_title: string|null
     $.data.name: string
     $.data.slug: string
     $.data.slugs: object

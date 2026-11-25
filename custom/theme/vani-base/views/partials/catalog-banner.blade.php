@@ -6,6 +6,9 @@
         </div>
     @endif
     <div class="vani-catalog-banner-copy flex flex-col items-start justify-center">
+        @if (! empty($logoUrl))
+            <img src="{{ $logoUrl }}" @if (! empty($logoSrcset)) srcset="{{ $logoSrcset }}" sizes="128px" @endif alt="{{ $logoAlt ?? '' }}" width="128" height="56" class="mb-4 h-14 w-32 max-w-full object-contain object-left">
+        @endif
         @if ($eyebrow)
             <p class="mb-3 text-xs font-medium uppercase tracking-[0.14em] text-accent">{{ $eyebrow }}</p>
         @endif

@@ -100,7 +100,7 @@ return [
         'visibility' => 'public',
         'since' => '0.3.105',
         'args' => [
-            'context' => 'array{type: "category"|"brand"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null}',
+            'context' => 'array{type: "category"|"brand"|"collection"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null}',
             'listing' => 'array<string, mixed> (ProductViews::listing)',
         ],
         'description' => 'Trong trạng thái không có sản phẩm phù hợp; có thể cung cấp gợi ý hoặc hướng dẫn thay thế.',
@@ -161,13 +161,23 @@ return [
         'args' => [],
         'description' => 'Cột bổ sung ở footer (chính sách, đăng ký nhận tin).',
     ],
+    'vani.storefront.plp.header' => [
+        'type' => 'slot',
+        'builder' => true,
+        'visibility' => 'public',
+        'since' => '0.5.86',
+        'args' => [
+            'context' => 'array{type: "category"|"brand"|"collection", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null}',
+        ],
+        'description' => 'Đầu trang danh mục, thương hiệu, bộ sưu tập (ngoài vùng tải lại khi lọc). Có nội dung thì thay phần đầu trang mặc định của theme (tên, mô tả, ảnh).',
+    ],
     'vani.storefront.plp.before_listing' => [
         'type' => 'slot',
         'builder' => true,
         'visibility' => 'public',
         'since' => '0.3.43',
         'args' => [
-            'context' => 'array{type: "category"|"brand"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null}',
+            'context' => 'array{type: "category"|"brand"|"collection"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null}',
             'listing' => 'array<string, mixed> (ProductViews::listing)',
         ],
         'description' => 'Đầu trang danh sách sản phẩm, trên bộ lọc và lưới (banner danh mục, giới thiệu thương hiệu).',
@@ -338,7 +348,7 @@ return [
         'visibility' => 'public',
         'since' => '0.3.105',
         'args' => [
-            'context' => 'array{type: "category"|"brand"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null}',
+            'context' => 'array{type: "category"|"brand"|"collection"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null}',
             'listing' => 'array<string, mixed> (ProductViews::listing)',
         ],
         'description' => 'Sau bộ lọc, lưới sản phẩm và phân trang của danh sách.',

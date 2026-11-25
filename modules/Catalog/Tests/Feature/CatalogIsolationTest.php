@@ -36,10 +36,13 @@ it('quản lý thương hiệu: tạo, sửa, chống trùng mã/slug, không xo
     $this->actingAs($this->staff, 'staff');
     $payload = fn (array $overrides = []) => array_replace(['code' => 'LM', 'slug' => 'lumiere', 'name' => 'Lumière', 'status' => 'active', 'position' => 0], $overrides);
 
-    $this->post('/admin/catalog/brands', $payload())->assertSessionHasNoErrors();
+    $this->post('/admin/catalog/brands', $payload(['meta_title' => 'Lumière chính hãng']))->assertSessionHasNoErrors();
     $this->post('/admin/catalog/brands', $payload())->assertSessionHasErrors(['code', 'slug']);
 
     $brand = Brand::query()->where('slug', 'lumiere')->sole();
+    // Cùng khuôn với danh mục/bộ sưu tập: tạo xong mở trang sửa riêng, SEO sửa được trong Admin.
+    $this->get("/admin/catalog/brands/{$brand->id}/edit")->assertInertia(fn (Assert $page) => $page->component('Catalog::Brands/Form')
+        ->where('brand.meta_title', 'Lumière chính hãng')->where('extensionLinks', []));
     $this->put("/admin/catalog/brands/{$brand->id}", $payload(['name' => 'Lumière Paris', 'lock_version' => 0]))->assertSessionHasNoErrors();
     expect($brand->fresh())->name->toBe('Lumière Paris')->lock_version->toBe(1);
     // Người thứ hai mở form trước lần lưu trên (phiên bản 0) → báo xung đột, không ghi đè; thiếu phiên bản → lỗi validate.
@@ -51,7 +54,7 @@ it('quản lý thương hiệu: tạo, sửa, chống trùng mã/slug, không xo
     T::product($brand->id, ['style_code' => 'LM-01']);
     $this->delete("/admin/catalog/brands/{$brand->id}")->assertSessionHasErrors('brand');
 
-    $this->get('/admin/catalog/brands')->assertInertia(fn (Assert $page) => $page->component('Catalog::Taxonomy/Brands')
+    $this->get('/admin/catalog/brands')->assertInertia(fn (Assert $page) => $page->component('Catalog::Brands/Index')
         ->has('brands', 1)->where('brands.0.styles_count', 1));
 
     $empty = Brand::factory()->create();

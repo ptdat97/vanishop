@@ -1,4 +1,4 @@
-Extension API 1.34.0
+Extension API 1.35.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -20,6 +20,7 @@ interface Modules\Catalog\Contracts\CatalogLookup
 )
   visible(string $kind, array $ids, string $locale): array
   adminCategories(array $ids, string $locale): array
+  adminItems(string $kind, array $ids, string $locale): array
   search(string $kind, string $query, string $locale, int $limit = 20): array
 interface Modules\Catalog\Contracts\CatalogReader
   const SLUG_PRODUCT = 'product'
@@ -940,7 +941,9 @@ interface Modules\Storefront\Contracts\CustomerProductPrices
 interface Modules\Storefront\Contracts\CustomerSignIn [experimental]
   signIn(Illuminate\Http\Request $request, string $token, int $customerId): string
 class Modules\Storefront\Contracts\Data\BlockContext
-  __construct(string $slot, ?int $productId = NULL, ?string $listingType = NULL, ?string $listingSlug = NULL)
+  __construct(string $slot, ?int $productId = NULL, ?string $listingType = NULL, ?string $listingSlug = NULL, ?int $listingId = NULL)
+class Modules\Storefront\Contracts\Data\BuilderScope
+  __construct(string $label, ?string $previewUrl = NULL, ?string $backUrl = NULL, ?string $listingType = NULL, ?string $listingSlug = NULL)
 class Modules\Storefront\Contracts\Data\BuilderZone
   static slot(string $slot, string $label, ?array $types = NULL, ?int $max = NULL): self
   static page(string $key, string $label, ?array $types = NULL, ?int $max = NULL): self
@@ -973,6 +976,10 @@ interface Modules\Storefront\Contracts\ProductCards
 class Modules\Storefront\Contracts\PublicPageExpiry
   static limit(Illuminate\Http\Request $request, DateTimeInterface $at): void
   static timestamp(Illuminate\Http\Request $request): ?int
+interface Modules\Storefront\Contracts\ScopedBuilderSurface
+  const SCOPE_PATTERN = '[a-z0-9][a-z0-9_-]{0,63}'
+  scopeOf(Modules\Storefront\Contracts\Data\BlockContext $context): ?string
+  describeScope(string $scope): ?Modules\Storefront\Contracts\Data\BuilderScope
 interface Modules\Storefront\Contracts\SitemapProvider
   const TAG = 'vani.storefront.sitemap'
   urls(int $limit): array
@@ -1141,11 +1148,12 @@ hook vani.storefront.pdp.after_videos slot(product: array<string, mixed> (Produc
 hook vani.storefront.pdp.before_add_to_cart slot(product: array<string, mixed> (ProductViews::detail))
 hook vani.storefront.pdp.before_gallery slot(product: array<string, mixed> (ProductViews::detail))
 hook vani.storefront.pdp.gallery_after slot(product: array<string, mixed> (ProductViews::detail))
-hook vani.storefront.plp.after_listing slot(context: array{type: "category"|"brand"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null}, listing: array<string, mixed> (ProductViews::listing))
-hook vani.storefront.plp.before_listing slot(context: array{type: "category"|"brand"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null}, listing: array<string, mixed> (ProductViews::listing))
+hook vani.storefront.plp.after_listing slot(context: array{type: "category"|"brand"|"collection"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null}, listing: array<string, mixed> (ProductViews::listing))
+hook vani.storefront.plp.before_listing slot(context: array{type: "category"|"brand"|"collection"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null}, listing: array<string, mixed> (ProductViews::listing))
 hook vani.storefront.plp.card.actions slot(product: array<string, mixed> (một phần tử ProductViews::listing items))
 hook vani.storefront.plp.card_badges slot(product: array<string, mixed> (một phần tử ProductViews::listing items))
-hook vani.storefront.plp.empty slot(context: array{type: "category"|"brand"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null}, listing: array<string, mixed> (ProductViews::listing))
+hook vani.storefront.plp.empty slot(context: array{type: "category"|"brand"|"collection"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null}, listing: array<string, mixed> (ProductViews::listing))
 hook vani.storefront.plp.filters slot(listing: array<string, mixed> (ProductViews::listing))
+hook vani.storefront.plp.header slot(context: array{type: "category"|"brand"|"collection", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null})
 hook vani.storefront.track.after_order slot(order: array<string, mixed> (OrderPresenter::present))
 hook vani.storefront.view.* filter(data: array<string, mixed>, view: string) [experimental]

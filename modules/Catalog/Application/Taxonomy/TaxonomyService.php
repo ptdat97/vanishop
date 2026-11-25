@@ -68,7 +68,7 @@ final class TaxonomyService
     }
 
     /**
-     * @param  array{code: string, slug: string, name: string, description: string|null, status: string, position: int, logo_media_id?: int|null}  $data
+     * @param  array{code: string, slug: string, name: string, description: string|null, status: string, position: int, logo_media_id?: int|null, meta_title?: string|null, meta_description?: string|null}  $data
      * @param  int|null  $expectedLockVersion  phiên bản form đã mở (sửa); khác phiên bản hiện tại → StaleRecord
      */
     public function saveBrand(array $data, ?Brand $brand = null, ?int $expectedLockVersion = null): Brand

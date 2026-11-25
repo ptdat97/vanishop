@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Application\Collections;
 
-use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\CollectionPages;
-use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 
 final class EloquentCollectionPages implements CollectionPages
 {
-    public function __construct(private readonly MediaDirectory $media) {}
+    public function __construct(private readonly MediaUrls $media) {}
 
     public function published(string $slug, string $locale): ?array
     {
@@ -34,17 +33,7 @@ final class EloquentCollectionPages implements CollectionPages
         }
     }
 
-    public function save(int $id, array $blocks, array $mediaIds): void
-    {
-        DB::transaction(function () use ($id, $blocks, $mediaIds): void {
-            $collection = ProductCollection::query()->lockForUpdate()->findOrFail($id);
-            $collection->page_blocks = $blocks;
-            $collection->save();
-            $this->media->syncUsages(self::MEDIA_OWNER, $id, 'blocks', $mediaIds);
-        });
-    }
-
-    /** @return array<string, mixed> */
+    /** @return array{id: int, slug: string, slugs: array<string, string>, locales: list<string>, name: string, description: string|null, meta_title: string|null, meta_description: string|null, image_url: string|null, image_srcset: string, status: string} */
     private function data(ProductCollection $collection, string $locale): array
     {
         return [
@@ -54,8 +43,12 @@ final class EloquentCollectionPages implements CollectionPages
             'locales' => $collection->translatedLocales(),
             'name' => (string) $collection->translate('name', $locale),
             'description' => $collection->translate('description', $locale),
+            'meta_title' => $collection->translate('meta_title', $locale),
+            'meta_description' => $collection->translate('meta_description', $locale),
+            // Ảnh bìa từ Thư viện ảnh (bản thu nhỏ 1600px cho banner đầu trang và ảnh chia sẻ).
+            'image_url' => $collection->image_media_id === null ? null : $this->media->url($collection->image_media_id, 1600),
+            'image_srcset' => $this->media->srcset($collection->image_media_id),
             'status' => $collection->status,
-            'blocks' => $collection->page_blocks ?? [],
         ];
     }
 }

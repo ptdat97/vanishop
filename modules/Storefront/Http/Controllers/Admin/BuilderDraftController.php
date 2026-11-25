@@ -6,12 +6,11 @@ namespace Modules\Storefront\Http\Controllers\Admin;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Gate;
-use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\Builder\BuilderDrafts;
 use Modules\Storefront\Application\Builder\BuilderEngine;
+use Modules\Storefront\Contracts\ScopedBuilderSurface;
 
 final class BuilderDraftController
 {
@@ -20,17 +19,27 @@ final class BuilderDraftController
     public function surface(Request $request, string $surface, string $operation, BuilderEngine $engine): JsonResponse
     {
         Gate::authorize('storefront.manage');
-        $definition = $engine->surface($surface) ?? abort(404);
+        $definition = $engine->surface($surface);
+        abort_if($definition === null || $definition instanceof ScopedBuilderSurface, 404);
 
         return $this->tool($request, $engine->layout($definition), $operation);
     }
 
-    public function collection(Request $request, int $collection, string $operation, CollectionPages $pages): JsonResponse
+    /**
+     * Xem trước/nhập nháp của một phạm vi: bản xem trước dùng ngữ cảnh trang của chính đối tượng.
+     */
+    public function scope(Request $request, string $surface, string $scope, string $operation, BuilderEngine $engine): JsonResponse
     {
         Gate::authorize('storefront.manage');
-        abort_if($pages->editable($collection, App::getLocale()) === null, 404);
+        $definition = $engine->surface($surface);
+        abort_if(! $definition instanceof ScopedBuilderSurface, 404);
+        $described = $definition->describeScope($scope);
+        abort_if($described === null, 404);
+        if ($described->listingType !== null) {
+            $request->merge(['listing_type' => $described->listingType, 'listing_slug' => $described->listingSlug]);
+        }
 
-        return $this->tool($request, BlockLayout::collection(), $operation);
+        return $this->tool($request, $engine->layout($definition), $operation);
     }
 
     private function tool(Request $request, BlockLayout $layout, string $operation): JsonResponse

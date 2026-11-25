@@ -14,15 +14,15 @@ const baseUrl = computed(() => props.nav.find((item) => item.key === 'categories
 </script>
 
 <template>
-    <Head :title="t('catalog::admin.categories_index.category')" />
+    <Head :title="t('catalog::admin.categories.title')" />
     <CatalogTabs :nav="nav" active="categories" />
-    <PageHeader :title="t('catalog::admin.categories_index.category')">
-        <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">{{ t('catalog::admin.categories_index.add_category') }}</Link>
+    <PageHeader :title="t('catalog::admin.categories.title')" :subtitle="t('catalog::admin.categories.subtitle')">
+        <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">{{ t('catalog::admin.categories.add') }}</Link>
     </PageHeader>
     <div class="rounded-lg border border-slate-200 bg-white px-4">
         <ul v-if="tree.length">
             <CategoryTreeRow v-for="node in tree" :key="node.id" :node="node" :base-url="baseUrl" :can-manage="canManage" />
         </ul>
-        <p v-else class="py-6 text-center text-sm text-slate-500">{{ t('catalog::admin.categories_index.no_categories_yet') }}</p>
+        <p v-else class="py-6 text-center text-sm text-slate-500">{{ t('catalog::admin.categories.empty') }}</p>
     </div>
 </template>

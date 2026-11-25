@@ -15,11 +15,8 @@ use Modules\Catalog\Http\Controllers\Admin\ProductVideoController;
 
 // Prefix: /{admin}/catalog — tên route: admin.catalog.*
 Route::resource('categories', CategoryController::class)->except('show');
-Route::post('categories/{category}/image', [CategoryController::class, 'uploadImage'])->name('categories.image.store');
-Route::post('categories/{category}/image/library', [CategoryController::class, 'attachLibraryImage'])->name('categories.image.library');
-Route::delete('categories/{category}/image', [CategoryController::class, 'removeImage'])->name('categories.image.destroy');
 
-Route::resource('brands', BrandController::class)->only(['index', 'store', 'update', 'destroy']);
+Route::resource('brands', BrandController::class)->except('show');
 Route::resource('attributes', AttributeController::class)->except('show');
 // Tuỳ chọn biến thể (ADR-045): loại tuỳ chọn dùng chung + giá trị.
 Route::resource('option-types', OptionTypeController::class)->parameters(['option-types' => 'optionType'])->only(['index', 'store', 'update', 'destroy']);

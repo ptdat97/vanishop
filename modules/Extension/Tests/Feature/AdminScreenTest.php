@@ -3,6 +3,7 @@
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Contracts\Data\FieldDefinition;
@@ -130,9 +131,8 @@ it('form danh mục và thương hiệu mở cho plugin (0.3.43): phần form tr
     expect($saved)->toBe(["category:{$category->id}" => 'đầm-nữ', "brand:{$brand->id}" => 'lumiere', "brand:{$newBrand->id}" => 'mới']);
 
     $this->get("/admin/catalog/categories/{$category->id}/edit")->assertInertia(fn (Assert $page) => $page->where('extensionSections.0.values.chart', 'đầm-nữ'));
-    $this->get('/admin/catalog/brands')->assertInertia(fn (Assert $page) => $page
-        ->where("extensionSections.{$brand->id}.0.values.chart", 'lumiere')
-        ->where('extensionSections.new.0.values', []));
+    $this->get("/admin/catalog/brands/{$brand->id}/edit")->assertInertia(fn (Assert $page) => $page->where('extensionSections.0.values.chart', 'lumiere'));
+    $this->get('/admin/catalog/brands/create')->assertInertia(fn (Assert $page) => $page->where('extensionSections.0.values', []));
 
     expect(fn () => $this->withoutExceptionHandling()->put("/admin/catalog/brands/{$brand->id}", $brandPayload(['vani-cod' => ['size' => ['chart' => 'boom']]], 'Không lưu')))
         ->toThrow(RuntimeException::class);
@@ -154,4 +154,18 @@ it('phần form có thể khai báo trường bằng closure (0.3.44): chỉ tí
         ->where('extensionSections.0.fields.0.options', ['a' => 'Bảng A', 'b' => 'Bảng B']));
     $this->put("/admin/catalog/products/{$this->style->id}", ($this->payload)(['vani-cod' => ['chart' => ['chart' => 'x']]]))->assertSessionHasErrors('extensions.vani-cod.chart.chart');
     expect($calls)->toBeGreaterThan(0);
+});
+
+it('nút liên kết của plugin trên trang sửa thương hiệu/danh mục/bộ sưu tập: closure trả null hoặc lỗi bị bỏ, plugin chưa bật bị ẩn', function () {
+    $category = T::seed(fn () => Category::factory()->create());
+    $collection = T::seed(fn () => ProductCollection::query()->create(['slug' => 'he-2026', 'status' => 'active', 'position' => 0]));
+    $this->registry->link('collection', 'vani.cod', 'content', 'Nội dung trang', fn (int $id): string => "/admin/plugins/content/collection/{$id}");
+    $this->registry->link('category', 'vani.cod', 'content', 'Nội dung trang', fn (int $id): ?string => $id === $category->id ? null : '/x');
+    $this->registry->link('category', 'vani.cod', 'broken', 'Lỗi', fn (int $id): string => throw new RuntimeException('x'));
+    $this->registry->link('category', 'vani.not-enabled', 'hidden', 'Ẩn', fn (int $id): string => '/y');
+
+    $this->get("/admin/catalog/collections/{$collection->id}/edit")->assertInertia(fn (Assert $page) => $page
+        ->where('extensionLinks', [['key' => 'vani.cod:content', 'label' => 'Nội dung trang', 'url' => "/admin/plugins/content/collection/{$collection->id}"]]));
+    $this->get("/admin/catalog/categories/{$category->id}/edit")->assertInertia(fn (Assert $page) => $page->where('extensionLinks', []));
+    expect(fn () => $this->registry->link('coupon', 'vani.cod', 'x', 'X', fn (int $id): string => '/'))->toThrow(InvalidArgumentException::class);
 });

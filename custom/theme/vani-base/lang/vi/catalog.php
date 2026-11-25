@@ -3,7 +3,7 @@
 return [
     'all_products' => 'Tất cả sản phẩm',
     'browse_categories' => 'Xem danh mục',
-    'browse_collection' => 'Xem sản phẩm',
+    'browse_products' => 'Xem sản phẩm',
     'by_letter' => 'Theo chữ cái',
     'categories_intro' => 'Chọn danh mục để khám phá những sản phẩm phù hợp.',
     'remove_filter' => 'Bỏ lọc :filter',

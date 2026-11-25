@@ -232,10 +232,13 @@ final class CatalogSeeder extends Seeder
             'thu-dong-2026' => ['Thu Đông 2026', 'Len, dạ và lụa cho mùa se lạnh.', [...array_slice($styleCodes['ao'] ?? [], 0, 4), ...array_slice($styleCodes['dam'] ?? [], 0, 4)]],
             'cong-so-thanh-lich' => ['Công sở thanh lịch', 'Đi làm chỉn chu mà vẫn thoải mái.', [...array_slice($styleCodes['chan-vay'] ?? [], 0, 3), ...array_slice($styleCodes['quan'] ?? [], 0, 2), ...array_slice($styleCodes['ao'] ?? [], 4, 2)]],
         ];
+        // Ảnh bìa: ảnh sản phẩm demo (banner đầu trang bộ sưu tập, ảnh chia sẻ).
+        $covers = DemoCatalog::covers(count($collections), 10);
         $position = 0;
         foreach ($collections as $slug => [$name, $description, $codes]) {
             if ($codes !== [] && ! ProductCollection::query()->where('slug', $slug)->exists()) {
-                $this->collections->save(['slug' => $slug, 'status' => 'active', 'position' => $position, 'translations' => [$locale => ['name' => $name, 'description' => $description]]], $codes);
+                $this->collections->save(['slug' => $slug, 'status' => 'active', 'position' => $position, 'image_media_id' => $covers[$position] ?? null,
+                    'translations' => [$locale => ['name' => $name, 'description' => $description]]], $codes);
             }
             $position++;
         }

@@ -6,6 +6,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.86 — 2026-11-25 · Extension API 1.35.0
+
+Đồng nhất Admin thương hiệu / danh mục / bộ sưu tập và Core cho plugin nội dung riêng từng trang danh sách, duyệt theo [plugin-system §10a](../05-plugin/plugin-system.md#10a-thiếu-điểm-mở-rộng--đề-xuất-sửa-core).
+
+- **Admin dùng chung một khuôn** cho thương hiệu, danh mục, bộ sưu tập: trang danh sách (ảnh, slug, số sản phẩm, trạng thái; bấm dòng để sửa) và trang tạo/sửa riêng (cột chính: tên, mô tả, SEO, phần form của plugin; cột phụ: slug, trạng thái, thứ tự, ảnh từ Thư viện ảnh). Thương hiệu sửa được SEO (cột đã có), không còn sửa ngay trên trang danh sách (route `brands.create`, `brands.edit` mới; trang Inertia `Catalog::Taxonomy/Brands` đổi thành `Catalog::Brands/Index` + `Catalog::Brands/Form`). Bộ sưu tập có ảnh bìa (`image_media_id`), SEO theo ngôn ngữ, khoá sửa đồng thời (`lock_version`). Ảnh danh mục chọn bằng ô ảnh chung (`image_media_id` trong form); **gỡ** `POST/DELETE categories/{id}/image` và `POST categories/{id}/image/library`.
+- **EP mới `adminLink()` / `AdminScreen::links()`**: plugin thêm nút liên kết ở đầu trang sửa (vd. "Nội dung trang"), closure trả null thì ẩn với bản ghi đó. Component `ExtensionLinks.vue`.
+- **`collection` là tài nguyên Admin**: plugin thêm phần form, nút liên kết cho bộ sưu tập như thương hiệu/danh mục.
+- **EP mới `ScopedBuilderSurface` + `BuilderScope`**: surface có nội dung riêng theo từng đối tượng. Builder Engine lưu block theo (surface, phạm vi) ở bảng `builder_scoped_blocks`, dùng chung trình biên tập (`/admin/storefront/builder/{surface}/{scope}`), xem trước nháp, ghi nhận ảnh, render. Tại một slot, block riêng của phạm vi **thay** block chung; slot chưa có block riêng vẫn hiện block chung. `BlockContext::$listingId` mới; Storefront API `GET /pages/layouts/listing` gộp nội dung riêng theo đối tượng.
+- **Slot mới `vani.storefront.plp.header`** (`builder: true`) ở đầu trang danh mục, thương hiệu, bộ sưu tập; có block thì thay phần đầu mặc định của theme. Hero đặt ở đây hiện thành banner có h1. `<x-vani::hook-slot>` nhận nội dung mặc định giữa thẻ mở/đóng (hiện khi slot trống). Surface "Danh sách sản phẩm" có thêm vùng "Đầu trang".
+- **Gỡ Builder riêng của bộ sưu tập khỏi Core** (Plugin cần cập nhật nếu có dùng — trong repo không plugin nào dùng): cột `collections.page_blocks`, `CollectionPageController` và route `admin.storefront.collection-pages.*`, `BlockLayout::collection()`, `PageBlocks::renderZones()`/`resolveZones()`, `CollectionPages::save()`. `GET /collections/{slug}` không còn `blocks`, có thêm `meta_title`, `meta_description`, `image_url`, `image_srcset`. Nội dung riêng từng bộ sưu tập chuyển sang plugin.
+- `CatalogLookup::adminItems(kind, ids, locale)`: danh mục, bộ sưu tập, thương hiệu theo id cho Admin (gồm đối tượng đang ẩn), có `slug`.
+- Plugin mới `vani.catalog-pages` 1.0.0: surface theo phạm vi `catalog-pages` (phạm vi `category-{id}`, `brand-{id}`, `collection-{id}`) với vùng Đầu trang, Trên lưới, Dưới lưới, Khi không có sản phẩm; nút "Nội dung trang" ở trang sửa ba loại đối tượng. Dữ liệu demo: nội dung riêng của hai bộ sưu tập mẫu.
+- Theme vani-base: trang danh mục, thương hiệu, bộ sưu tập dùng chung phần đầu `partials/listing-banner` (tên, mô tả, ảnh/logo); `partials/collection-banner` đổi thành `partials/listing-banner`, khoá dịch `catalog.browse_collection` → `catalog.browse_products`.
+
 ## 0.5.85 — 2026-11-25 · Extension API 1.34.0
 
 Sửa Core cho plugin nhắc giỏ bỏ quên (`vani.abandoned-cart`), duyệt theo [plugin-system §10a](../05-plugin/plugin-system.md#10a-thiếu-điểm-mở-rộng--đề-xuất-sửa-core).

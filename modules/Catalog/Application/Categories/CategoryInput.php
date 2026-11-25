@@ -10,6 +10,7 @@ final readonly class CategoryInput
 {
     /**
      * @param  array<string, array{name: string, description?: string|null, meta_title?: string|null, meta_description?: string|null}>  $translations
+     * @param  bool  $replacesImage  false = giữ ảnh hiện tại (nhập file, tạo nhanh); true = đặt ảnh theo `imageMediaId` (null = bỏ ảnh)
      */
     public function __construct(
         public string $slug,
@@ -17,5 +18,7 @@ final readonly class CategoryInput
         public array $translations,
         public ?int $parentId = null,
         public int $position = 0,
+        public ?int $imageMediaId = null,
+        public bool $replacesImage = false,
     ) {}
 }

@@ -32,6 +32,13 @@ beforeEach(function () {
 
 afterEach(fn () => File::deleteDirectory($this->cacheDir));
 
+/** Form sửa danh mục với ảnh chọn từ Thư viện ảnh (khuôn Admin chung của thương hiệu/danh mục/bộ sưu tập). */
+function categoryWithImage(Category $category, ?int $mediaId): array
+{
+    return ['slug' => $category->slug, 'parent_id' => null, 'status' => 'active', 'position' => 0, 'lock_version' => $category->fresh()->lock_version,
+        'translations' => ['vi' => ['name' => 'Đầm']], 'image_media_id' => $mediaId];
+}
+
 function uploadTo(string $folder, array $files): array
 {
     return test()->postJson('/admin/media/upload', ['folder' => $folder, 'images' => $files])->assertOk()->json('items');
@@ -121,7 +128,7 @@ it('đổi tên, chuyển thư mục; xoá chỉ ảnh không còn dùng (kèm f
     expect(Media::query()->find($unused['id'])->folder)->toBe('cu');
 
     $category = T::seed(fn () => Category::factory()->create());
-    $this->post("/admin/catalog/categories/{$category->id}/image/library", ['media_id' => $used['id']])->assertSessionHasNoErrors();
+    $this->put("/admin/catalog/categories/{$category->id}", categoryWithImage($category, $used['id']))->assertSessionHasNoErrors();
 
     $unusedMedia = Media::query()->find($unused['id']);
     $this->get(parse_url($unusedMedia->url(400), PHP_URL_PATH))->assertOk();
@@ -151,9 +158,15 @@ it('chọn từ thư viện: gắn ảnh có sẵn vào SKU (bỏ qua ảnh đã
     $this->post($url, ['media_ids' => [999_999]])->assertSessionHasErrors('images');
 
     $category = T::seed(fn () => Category::factory()->create());
-    $this->post("/admin/catalog/categories/{$category->id}/image/library", ['media_id' => $ids[1], 'alt' => 'Đầm hè'])->assertSessionHasNoErrors();
-    expect(T::seed(fn () => $category->media()->sole()))->media_id->toBe($ids[1])->alt->toBe('Đầm hè');
-    $this->post("/admin/catalog/categories/{$category->id}/image/library", ['media_id' => 999_999])->assertSessionHasErrors('image');
+    $this->put("/admin/catalog/categories/{$category->id}", categoryWithImage($category, $ids[1]))->assertSessionHasNoErrors();
+    $mediable = T::seed(fn () => $category->media()->sole());
+    expect($mediable->media_id)->toBe($ids[1]);
+    // Lưu lại form với ảnh cũ giữ nguyên bản ghi gắn ảnh; chọn ảnh không tồn tại báo lỗi tại ô ảnh; bỏ chọn thì gỡ ảnh.
+    $this->put("/admin/catalog/categories/{$category->id}", categoryWithImage($category, $ids[1]))->assertSessionHasNoErrors();
+    expect(T::seed(fn () => $category->media()->sole()->id))->toBe($mediable->id);
+    $this->put("/admin/catalog/categories/{$category->id}", categoryWithImage($category, 999_999))->assertSessionHasErrors('image_media_id');
+    $this->put("/admin/catalog/categories/{$category->id}", categoryWithImage($category, null))->assertSessionHasNoErrors();
+    expect(T::seed(fn () => $category->media()->count()))->toBe(0);
 
     $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff');
     $this->post($url, ['media_ids' => $ids])->assertForbidden();

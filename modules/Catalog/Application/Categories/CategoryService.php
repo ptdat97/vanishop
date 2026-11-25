@@ -6,11 +6,14 @@ namespace Modules\Catalog\Application\Categories;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\StaleRecord;
 use Modules\Catalog\Domain\Category\CategoryCycle;
 use Modules\Catalog\Domain\Category\CategoryHasChildren;
 use Modules\Catalog\Domain\Category\CategoryPath;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Media;
+use Modules\Catalog\Persistence\Models\Mediable;
 use Modules\Identity\Contracts\AuditLogger;
 
 /**
@@ -18,7 +21,7 @@ use Modules\Identity\Contracts\AuditLogger;
  */
 final class CategoryService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly MediaLibrary $media) {}
 
     public function create(CategoryInput $input): Category
     {
@@ -37,6 +40,7 @@ final class CategoryService
             $path = $parent === null ? CategoryPath::root($category->id) : $parent->categoryPath()->child($category->id);
             $category->forceFill(['path' => $path->toString(), 'depth' => $path->depth()])->save();
             $category->syncTranslations($input->translations);
+            $this->syncImage($category, $input);
 
             $this->audit->record('catalog.category.created', 'category', $category->id, ['slug' => $category->slug]);
 
@@ -62,11 +66,34 @@ final class CategoryService
                 'position' => $input->position,
             ])->save();
             $category->syncTranslations($input->translations);
+            $this->syncImage($category, $input);
 
             $this->audit->record('catalog.category.updated', 'category', $category->id, ['slug' => $category->slug, 'parent_id' => $category->parent_id]);
 
             return $category->refresh();
         });
+    }
+
+    /**
+     * Ảnh danh mục chọn từ Thư viện ảnh; chọn lại đúng ảnh đang dùng thì giữ nguyên (cả mô tả alt).
+     */
+    private function syncImage(Category $category, CategoryInput $input): void
+    {
+        if (! $input->replacesImage) {
+            return;
+        }
+        if ($input->imageMediaId === null) {
+            $this->media->detach($category, 'image');
+
+            return;
+        }
+        $current = Mediable::query()->where('mediable_type', $category->getMorphClass())->where('mediable_id', $category->id)->where('role', 'image')->value('media_id');
+        if ((int) $current === $input->imageMediaId) {
+            return;
+        }
+        $media = Media::query()->find($input->imageMediaId)
+            ?? throw ValidationException::withMessages(['image_media_id' => __('catalog::messages.media_not_found')]);
+        $this->media->attachSingle($category, 'image', $media);
     }
 
     public function delete(Category $category): void

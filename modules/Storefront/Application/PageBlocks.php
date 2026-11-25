@@ -260,17 +260,6 @@ final class PageBlocks
     }
 
     /**
-     * Dữ liệu khối theo vùng của bố cục, cho Storefront API.
-     *
-     * @param  list<array{type: string, config: array<string, mixed>, zone?: string}>  $blocks
-     * @return array<string, list<array{type: string, data: array<string, mixed>}>>
-     */
-    public function resolveZones(BlockLayout $layout, array $blocks): array
-    {
-        return array_map($this->resolve(...), $layout->group($blocks));
-    }
-
-    /**
      * Render các khối đã cấu hình cho Blade: cùng dữ liệu với {@see self::resolve()}; khối render lỗi bị bỏ, ghi log.
      * `$context` là biến thêm cho view của khối (vd. ngữ cảnh trang khi khối làm phần đầu trang).
      *
@@ -293,20 +282,5 @@ final class PageBlocks
         }
 
         return $rendered;
-    }
-
-    /**
-     * @param  list<array{type: string, config: array<string, mixed>, zone?: string}>  $blocks
-     * @param  array<string, array<string, mixed>>  $zoneContext  biến thêm cho view theo từng vùng
-     * @return array<string, list<array{type: string, data: array<string, mixed>, html: HtmlString}>>
-     */
-    public function renderZones(BlockLayout $layout, array $blocks, array $zoneContext = []): array
-    {
-        $zones = $layout->group($blocks);
-        foreach ($zones as $zone => $zoneBlocks) {
-            $zones[$zone] = $this->render($zoneBlocks, $zoneContext[$zone] ?? []);
-        }
-
-        return $zones;
     }
 }

@@ -6,7 +6,10 @@ namespace Modules\Storefront\Contracts\Data;
 
 use Modules\Shared\Contracts\PluginApi;
 
-/** Dữ liệu công khai theo URL. Không mang request, giỏ, khách hoặc dữ liệu phiên. */
+/**
+ * Dữ liệu công khai theo URL. Không mang request, giỏ, khách hoặc dữ liệu phiên.
+ * Trang danh sách: `listingType` (category|brand|collection|search), `listingSlug`, `listingId` (id đối tượng; null khi tìm kiếm).
+ */
 #[PluginApi]
 final readonly class BlockContext
 {
@@ -15,5 +18,6 @@ final readonly class BlockContext
         public ?int $productId = null,
         public ?string $listingType = null,
         public ?string $listingSlug = null,
+        public ?int $listingId = null,
     ) {}
 }

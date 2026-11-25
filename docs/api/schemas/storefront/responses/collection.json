@@ -3,49 +3,76 @@
     "$id": "https://vanishop.dev/schemas/storefront/responses/collection.json",
     "title": "GET /collections/{slug}",
     "type": "object",
-    "required": ["data"],
+    "required": [
+        "data"
+    ],
     "properties": {
         "data": {
             "type": "object",
-            "required": ["id", "slug", "slugs", "locales", "name", "description", "blocks"],
+            "required": [
+                "id",
+                "slug",
+                "slugs",
+                "locales",
+                "name",
+                "description",
+                "meta_title",
+                "meta_description",
+                "image_url",
+                "image_srcset"
+            ],
             "properties": {
-                "id": {"type": "integer"},
-                "slug": {"type": "string"},
-                "slugs": {"type": "object", "additionalProperties": {"type": "string"}},
-                "locales": {"type": "array", "items": {"type": "string"}},
-                "name": {"type": "string"},
-                "description": {"type": ["string", "null"]},
-                "blocks": {
+                "id": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "slugs": {
                     "type": "object",
-                    "required": ["banner", "before", "after"],
-                    "properties": {
-                        "banner": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "required": ["type", "data"],
-                                "properties": {"type": {"type": "string", "enum": ["hero"]}, "data": {"type": "object"}}
-                            }
-                        },
-                        "before": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "required": ["type", "data"],
-                                "properties": {"type": {"type": "string"}, "data": {"type": "object"}}
-                            }
-                        },
-                        "after": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "required": ["type", "data"],
-                                "properties": {"type": {"type": "string"}, "data": {"type": "object"}}
-                            }
-                        }
+                    "additionalProperties": {
+                        "type": "string"
                     }
+                },
+                "locales": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "meta_title": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "meta_description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "image_url": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Ảnh bìa (bản 1600px)."
+                },
+                "image_srcset": {
+                    "type": "string"
                 }
             }
         }
-    }
+    },
+    "description": "Thông tin trang bộ sưu tập. Nội dung Builder của trang (chung và riêng từng bộ sưu tập) lấy qua GET /pages/layouts/listing?type=collection&slug=."
 }

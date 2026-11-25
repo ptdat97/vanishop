@@ -38,6 +38,7 @@ final class CategoryRequest extends FormRequest
             'status' => ['required', Rule::enum(CategoryStatus::class)],
             'position' => ['required', 'integer', 'min:0', 'max:100000'],
             'lock_version' => [$category instanceof Category ? 'required' : 'nullable', 'integer', 'min:0'],
+            'image_media_id' => ['nullable', 'integer', Rule::exists('media', 'id')],
             'translations' => ['required', 'array'],
             'translations.'.StoreLocale::default().'.name' => ['required', 'string', 'max:255'],
             'translations.*' => ['array'],
@@ -62,6 +63,8 @@ final class CategoryRequest extends FormRequest
             translations: $this->normalizeLocalizedSlugs($translations),
             parentId: $this->validated('parent_id') === null ? null : (int) $this->validated('parent_id'),
             position: (int) $this->validated('position'),
+            imageMediaId: $this->validated('image_media_id') === null ? null : (int) $this->validated('image_media_id'),
+            replacesImage: true,
         );
     }
 }

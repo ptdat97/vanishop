@@ -51,6 +51,28 @@ final class EloquentCatalogLookup implements CatalogLookup
             ]])->all();
     }
 
+    public function adminItems(string $kind, array $ids, string $locale): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return match ($kind) {
+            'category' => Category::query()->whereIn('id', $ids)->with('translations')->get()
+                ->mapWithKeys(fn (Category $category): array => [$category->id => [
+                    'id' => $category->id, 'slug' => $category->slugFor($locale), 'name' => (string) $category->translate('name', $locale), 'visible' => $category->status->value === 'active',
+                ]])->all(),
+            'collection' => ProductCollection::query()->whereIn('id', $ids)->with('translations')->get()
+                ->mapWithKeys(fn (ProductCollection $collection): array => [$collection->id => [
+                    'id' => $collection->id, 'slug' => $collection->slugFor($locale), 'name' => (string) $collection->translate('name', $locale), 'visible' => $collection->status === 'active',
+                ]])->all(),
+            'brand' => Brand::query()->whereIn('id', $ids)->get()
+                ->mapWithKeys(fn (Brand $brand): array => [$brand->id => [
+                    'id' => $brand->id, 'slug' => $brand->slug, 'name' => $brand->name, 'visible' => $brand->status === Brand::ACTIVE,
+                ]])->all(),
+        };
+    }
+
     public function search(string $kind, string $query, string $locale, int $limit = 20): array
     {
         $tokens = VietnameseText::tokens($query);

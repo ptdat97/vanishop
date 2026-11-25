@@ -185,6 +185,16 @@ abstract class PluginServiceProvider extends ServiceProvider
     }
 
     /**
+     * Nút liên kết ở đầu trang sửa, mở màn hình riêng của plugin cho bản ghi đó (vd. nội dung trang của một danh mục).
+     *
+     * @param  Closure(int): (string|null)  $url  id → URL; null = không hiện cho bản ghi này
+     */
+    protected function adminLink(string $resource, string $key, string $label, Closure $url, int $order = 500, ?string $permission = null): void
+    {
+        $this->app->make(AdminExtensions::class)->link($resource, $this->pluginId(), $key, $label, $url, $order, $permission);
+    }
+
+    /**
      * Bộ lọc trên trang danh sách: `apply` nhận giá trị đã chọn và trả id thoả (plugin không chạm truy vấn của Core).
      *
      * @param  array<string, string>|Closure(): array<string, string>  $options

@@ -18,7 +18,8 @@ use Modules\Shared\Support\StoreLocale;
  * @property string $slug
  * @property string $status
  * @property int $position
- * @property list<array{type: string, config: array<string, mixed>, zone: string}>|null $page_blocks
+ * @property int|null $image_media_id
+ * @property int $lock_version
  */
 final class ProductCollection extends Model
 {
@@ -27,11 +28,11 @@ final class ProductCollection extends Model
 
     protected $table = 'collections';
 
-    protected $fillable = ['slug', 'status', 'position'];
+    protected $fillable = ['slug', 'status', 'position', 'image_media_id'];
 
     protected function casts(): array
     {
-        return ['page_blocks' => 'array'];
+        return ['position' => 'integer', 'lock_version' => 'integer'];
     }
 
     protected function translationModel(): string
@@ -46,7 +47,7 @@ final class ProductCollection extends Model
 
     public function translatableFields(): array
     {
-        return ['name', 'description', 'slug'];
+        return ['name', 'description', 'slug', 'meta_title', 'meta_description'];
     }
 
     /** @param Builder<static> $query */

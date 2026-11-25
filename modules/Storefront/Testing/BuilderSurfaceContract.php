@@ -7,11 +7,14 @@ namespace Modules\Storefront\Testing;
 use Closure;
 use Modules\Extension\Facades\Hook;
 use Modules\Storefront\Contracts\BuilderSurface;
+use Modules\Storefront\Contracts\Data\BlockContext;
 use Modules\Storefront\Contracts\Data\BuilderZone;
+use Modules\Storefront\Contracts\ScopedBuilderSurface;
 
 /**
  * Contract test cho BuilderSurface: mã ổn định (dùng trong URL Admin) + nhãn; zones() là BuilderZone không trùng khoá;
- * vùng slot trỏ tới slot đã khai báo `builder: true` (Core hoặc hooks.php của plugin).
+ * vùng slot trỏ tới slot đã khai báo `builder: true` (Core hoặc hooks.php của plugin). Surface theo phạm vi
+ * ({@see ScopedBuilderSurface}): trang không mang ngữ cảnh đối tượng không có phạm vi, phạm vi lạ không mô tả được.
  *
  *   BuilderSurfaceContract::define('vani.lookbook', fn () => app(LookbookSurface::class));
  */
@@ -36,6 +39,17 @@ final class BuilderSurfaceContract
                 $rejected = array_values(array_filter($slots, fn (string $slot): bool => ! Hook::acceptsBlocks($slot)));
 
                 expect($rejected)->toBe([], 'Slot chưa khai báo builder: true: '.implode(', ', $rejected));
+            });
+
+            it('surface theo phạm vi: ngữ cảnh trống không có phạm vi, phạm vi lạ trả null', function () use ($surface): void {
+                $definition = $surface();
+                if (! $definition instanceof ScopedBuilderSurface) {
+                    expect($definition)->toBeInstanceOf(BuilderSurface::class);
+
+                    return;
+                }
+                expect($definition->scopeOf(new BlockContext('vani.storefront.home.main')))->toBeNull()
+                    ->and($definition->describeScope('zz-khong-ton-tai-0'))->toBeNull();
             });
         });
     }

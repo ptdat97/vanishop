@@ -25,6 +25,8 @@ final class BrandRequest extends FormRequest
             'slug' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('brands', 'slug')->ignore($ignore)],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
+            'meta_title' => ['nullable', 'string', 'max:255'],
+            'meta_description' => ['nullable', 'string', 'max:512'],
             'logo_media_id' => ['nullable', 'integer', Rule::exists('media', 'id')],
             'status' => ['required', Rule::in([Brand::ACTIVE, Brand::HIDDEN])],
             'position' => ['required', 'integer', 'min:0'],
@@ -34,7 +36,7 @@ final class BrandRequest extends FormRequest
     }
 
     /**
-     * @return array{code: string, slug: string, name: string, description: string|null, status: string, position: int}
+     * @return array{code: string, slug: string, name: string, description: string|null, meta_title: string|null, meta_description: string|null, logo_media_id: int|null, status: string, position: int}
      */
     public function toData(): array
     {
@@ -45,6 +47,8 @@ final class BrandRequest extends FormRequest
             'slug' => $data['slug'],
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
+            'meta_title' => $data['meta_title'] ?? null,
+            'meta_description' => $data['meta_description'] ?? null,
             'logo_media_id' => isset($data['logo_media_id']) ? (int) $data['logo_media_id'] : null,
             'status' => $data['status'],
             'position' => (int) $data['position'],

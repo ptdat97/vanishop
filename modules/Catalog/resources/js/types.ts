@@ -15,6 +15,17 @@ export interface CategoryNode {
     children: CategoryNode[];
 }
 
+/** Dòng danh sách thương hiệu / bộ sưu tập (khuôn Admin chung). */
+export interface TaxonomyRow {
+    id: number;
+    name: string | null;
+    slug: string;
+    status: string;
+    image_url: string | null;
+    styles_count: number;
+    code?: string;
+}
+
 /** Bản dịch theo mã ngôn ngữ của cửa hàng (`vanishop.locale.supported`). */
 export type Translations<T extends string> = Partial<Record<string, Partial<Record<T, string | null>>>>;
 

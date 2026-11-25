@@ -1,9 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Storefront\Contracts\ScopedBuilderSurface;
 use Modules\Storefront\Http\Controllers\Admin\BuilderController;
 use Modules\Storefront\Http\Controllers\Admin\BuilderDraftController;
-use Modules\Storefront\Http\Controllers\Admin\CollectionPageController;
 use Modules\Storefront\Http\Controllers\Admin\MaintenancePreviewController;
 use Modules\Storefront\Http\Controllers\Admin\MenuController;
 use Modules\Storefront\Http\Controllers\Admin\ThemeSettingsController;
@@ -15,10 +15,12 @@ Route::post('builder/{surface}/{operation}', [BuilderDraftController::class, 'su
     ->where('surface', '[a-z][a-z0-9_-]{0,39}')->whereIn('operation', ['preview', 'import'])->middleware('vani.theme')->name('builder.draft');
 Route::get('maintenance-preview', MaintenancePreviewController::class)->name('maintenance.preview');
 
-Route::get('collection-pages/{collection}', [CollectionPageController::class, 'edit'])->whereNumber('collection')->name('collection-pages.edit');
-Route::put('collection-pages/{collection}', [CollectionPageController::class, 'update'])->whereNumber('collection')->name('collection-pages.update');
-Route::post('collection-pages/{collection}/{operation}', [BuilderDraftController::class, 'collection'])
-    ->whereNumber('collection')->whereIn('operation', ['preview', 'import'])->middleware('vani.theme')->name('collection-pages.draft');
+// Surface theo phạm vi (ScopedBuilderSurface): nội dung riêng của từng đối tượng, vd. một thương hiệu.
+Route::get('builder/{surface}/{scope}', [BuilderController::class, 'editScope'])->where(['surface' => '[a-z][a-z0-9_-]{0,39}', 'scope' => ScopedBuilderSurface::SCOPE_PATTERN])->name('builder.scope.edit');
+Route::put('builder/{surface}/{scope}', [BuilderController::class, 'updateScope'])->where(['surface' => '[a-z][a-z0-9_-]{0,39}', 'scope' => ScopedBuilderSurface::SCOPE_PATTERN])->name('builder.scope.update');
+Route::delete('builder/{surface}/{scope}', [BuilderController::class, 'resetScope'])->where(['surface' => '[a-z][a-z0-9_-]{0,39}', 'scope' => ScopedBuilderSurface::SCOPE_PATTERN])->name('builder.scope.reset');
+Route::post('builder/{surface}/{scope}/{operation}', [BuilderDraftController::class, 'scope'])
+    ->where(['surface' => '[a-z][a-z0-9_-]{0,39}', 'scope' => ScopedBuilderSurface::SCOPE_PATTERN])->whereIn('operation', ['preview', 'import'])->middleware('vani.theme')->name('builder.scope.draft');
 
 Route::get('menus', [MenuController::class, 'edit'])->name('menus.edit');
 Route::get('menus/links', [MenuController::class, 'links'])->name('menus.links');

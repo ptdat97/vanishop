@@ -30,16 +30,6 @@ final readonly class BlockLayout
         return new self($keyed);
     }
 
-    /** Trang bộ sưu tập: cấu hình lưu theo từng bộ sưu tập ở Catalog, render bởi controller của trang. */
-    public static function collection(): self
-    {
-        return self::of([
-            BuilderZone::page('banner', __('storefront::admin.collection_pages.banner'), [HeroBlock::TYPE], 1),
-            BuilderZone::page('before', __('storefront::admin.collection_pages.before')),
-            BuilderZone::page('after', __('storefront::admin.collection_pages.after')),
-        ]);
-    }
-
     public function zoned(): bool
     {
         return count($this->zones) > 1;

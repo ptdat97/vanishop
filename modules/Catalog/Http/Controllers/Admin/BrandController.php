@@ -15,20 +15,21 @@ use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Extension\Contracts\AdminScreen;
 
 /**
- * Thương hiệu — thuộc tính catalog (ADR-028).
+ * Thương hiệu — thuộc tính catalog (ADR-028). Cùng khuôn Admin với danh mục và bộ sưu tập: danh sách + trang sửa riêng.
  */
 final class BrandController
 {
-    public function __construct(private readonly AdminQueries $queries) {}
-
     use ConvertsDomainErrors;
 
-    public function index(AdminScreen $screen): Response
+    public function __construct(private readonly AdminQueries $queries) {}
+
+    public function index(): Response
     {
         Gate::authorize('catalog.view');
         $brands = $this->queries->brandsWithUsage();
+        $logos = $this->queries->mediaByIds($brands->pluck('logo_media_id')->filter()->map(fn (mixed $id): int => (int) $id)->values()->all());
 
-        return Inertia::render('Catalog::Taxonomy/Brands', [
+        return Inertia::render('Catalog::Brands/Index', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
             'brands' => $brands->map(fn (Brand $brand): array => [
@@ -36,28 +37,34 @@ final class BrandController
                 'code' => $brand->code,
                 'slug' => $brand->slug,
                 'name' => $brand->name,
-                'description' => $brand->description,
-                'logo_media_id' => $brand->logo_media_id,
                 'status' => $brand->status,
-                'position' => $brand->position,
-                'lock_version' => $brand->lock_version,
+                'image_url' => $brand->logo_media_id === null ? null : $logos->get($brand->logo_media_id)?->url(200),
                 'styles_count' => (int) $brand->getAttribute('styles_count'),
             ])->all(),
             'canManage' => Gate::allows('catalog.manage'),
-            // Phần form của plugin: khoá `new` cho form thêm, id thương hiệu cho form sửa (sửa ngay trên trang danh sách).
-            // `+` giữ khoá là id thương hiệu (spread `...` đánh số lại khoá số).
-            'extensionSections' => Gate::allows('catalog.manage')
-                ? ['new' => $screen->formSections('brand', null)] + $brands->mapWithKeys(fn (Brand $brand): array => [$brand->id => $screen->formSections('brand', $brand->id)])->all()
-                : [],
         ]);
+    }
+
+    public function create(AdminScreen $screen): Response
+    {
+        Gate::authorize('catalog.manage');
+
+        return $this->form(null, $screen);
     }
 
     public function store(BrandRequest $request, TaxonomyService $taxonomy, AdminScreen $screen): RedirectResponse
     {
         $request->validate($screen->validationRules('brand'));
-        $this->orFormError(fn () => $screen->saving('brand', (array) $request->input('extensions', []), fn () => $taxonomy->saveBrand($request->toData()), fn (Brand $brand): int => $brand->id));
+        $brand = $this->orFormError(fn () => $screen->saving('brand', (array) $request->input('extensions', []), fn () => $taxonomy->saveBrand($request->toData()), fn (Brand $brand): int => $brand->id));
 
-        return back()->with('success', __('catalog::messages.saved'));
+        return redirect()->route('admin.catalog.brands.edit', ['brand' => $brand->id])->with('success', __('catalog::messages.saved'));
+    }
+
+    public function edit(Brand $brand, AdminScreen $screen): Response
+    {
+        Gate::authorize('catalog.manage');
+
+        return $this->form($brand, $screen);
     }
 
     public function update(Brand $brand, BrandRequest $request, TaxonomyService $taxonomy, AdminScreen $screen): RedirectResponse
@@ -73,6 +80,30 @@ final class BrandController
         Gate::authorize('catalog.manage');
         $this->orFormError(fn () => $taxonomy->deleteBrand($brand));
 
-        return back()->with('success', __('catalog::messages.deleted'));
+        return redirect()->route('admin.catalog.brands.index')->with('success', __('catalog::messages.deleted'));
+    }
+
+    private function form(?Brand $brand, AdminScreen $screen): Response
+    {
+        return Inertia::render('Catalog::Brands/Form', [
+            'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
+            'brand' => $brand === null ? null : [
+                'id' => $brand->id,
+                'code' => $brand->code,
+                'slug' => $brand->slug,
+                'name' => $brand->name,
+                'description' => $brand->description,
+                'meta_title' => $brand->meta_title,
+                'meta_description' => $brand->meta_description,
+                'logo_media_id' => $brand->logo_media_id,
+                'status' => $brand->status,
+                'position' => $brand->position,
+                'lock_version' => $brand->lock_version,
+                'styles_count' => $brand->styles()->count(),
+            ],
+            'extensionSections' => $screen->formSections('brand', $brand?->id),
+            'extensionLinks' => $brand === null ? [] : $screen->links('brand', $brand->id),
+        ]);
     }
 }

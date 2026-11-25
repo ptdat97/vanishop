@@ -274,7 +274,7 @@
             "get": {
                 "tags": ["Catalog"],
                 "summary": "Nội dung trang bộ sưu tập",
-                "description": "Trả tên, mô tả, slug theo locale và các vùng blocks.banner, blocks.before, blocks.after. Lấy sản phẩm bằng GET /products?collection={slug} với slug trả về.",
+                "description": "Trả tên, mô tả, SEO, ảnh bìa, slug theo locale. Nội dung Builder (chung và riêng từng bộ sưu tập) lấy bằng GET /pages/layouts/listing?type=collection&slug={slug}; sản phẩm bằng GET /products?collection={slug}.",
                 "parameters": [
                     {"name": "slug", "in": "path", "required": true, "schema": {"type": "string"}}
                 ],

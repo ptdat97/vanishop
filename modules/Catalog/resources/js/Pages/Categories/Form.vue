@@ -2,20 +2,21 @@
 import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
-import FileInput from '@admin/Components/FileInput.vue';
 import FormField from '@admin/Components/FormField.vue';
-import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
-import PageHeader from '@admin/Components/PageHeader.vue';
+import MediaField from '@admin/Components/Media/MediaField.vue';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { labelOptions, recordOptions } from '@admin/options';
-import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
+import { inputClass, secondaryButton } from '@admin/styles';
+import { initialExtensionValues, type ExtensionLink, type ExtensionSection } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { slugify } from '@admin/slug';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
+import LocaleTabs from '../../Components/Taxonomy/LocaleTabs.vue';
+import SeoFields from '../../Components/Taxonomy/SeoFields.vue';
+import TaxonomyFormLayout from '../../Components/Taxonomy/TaxonomyFormLayout.vue';
 import type { CatalogLabels, NavItem, Translations } from '../../types';
 
 type Fields = 'name' | 'slug' | 'description' | 'meta_title' | 'meta_description';
@@ -31,15 +32,17 @@ const props = defineProps<{
         position: number;
         lock_version: number;
         translations: Translations<Fields>;
-        image_url: string | null;
+        image_media_id: number | null;
     };
     parents: Array<{ id: number; label: string }>;
     extensionSections: ExtensionSection[];
+    extensionLinks: ExtensionLink[];
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'categories')?.url ?? '');
 const { locales, defaultLocale } = useStoreLocales();
 const locale = ref(defaultLocale);
+const title = computed(() => (props.category ? t('catalog::admin.categories.edit') : t('catalog::admin.categories.add')));
 
 const emptyTranslation = { name: '', slug: '', description: '', meta_title: '', meta_description: '' };
 const { form, save } = useAdminForm({
@@ -47,12 +50,11 @@ const { form, save } = useAdminForm({
     parent_id: props.category?.parent_id ?? null,
     status: props.category?.status ?? 'active',
     position: props.category?.position ?? 0,
+    image_media_id: props.category?.image_media_id ?? null,
     lock_version: props.category?.lock_version ?? null,
     translations: translationsFor(locales, emptyTranslation, props.category?.translations),
     extensions: initialExtensionValues(props.extensionSections),
 }, { lockVersion: () => props.category?.lock_version });
-
-const imageForm = useForm<{ image: File | null; alt: string }>({ image: null, alt: '' });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function submit(): void {
@@ -64,97 +66,55 @@ function submit(): void {
 }
 
 async function destroy(): Promise<void> {
-    if (props.category && (await confirmAction({ title: t('catalog::admin.categories_form.delete_category'), confirmLabel: t('catalog::admin.categories_form.delete'), tone: 'danger' })) !== false) {
+    if (props.category && (await confirmAction({ title: t('catalog::admin.categories.delete_confirm'), confirmLabel: t('catalog::admin.taxonomy.delete'), tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${props.category.id}`);
-    }
-}
-
-function uploadImage(): void {
-    if (props.category) {
-        imageForm.post(`${baseUrl.value}/${props.category.id}/image`, { forceFormData: true, preserveScroll: true, onSuccess: () => imageForm.reset() });
-    }
-}
-
-const picking = ref(false);
-
-function pickImage(items: MediaItem[]): void {
-    if (props.category && items[0]) {
-        router.post(`${baseUrl.value}/${props.category.id}/image/library`, { media_id: items[0].id, alt: imageForm.alt || null }, { preserveScroll: true });
-    }
-}
-
-function removeImage(): void {
-    if (props.category) {
-        router.delete(`${baseUrl.value}/${props.category.id}/image`, { preserveScroll: true });
     }
 }
 </script>
 
 <template>
-    <Head :title="category ? t('catalog::admin.categories_form.edit_category') : t('catalog::admin.categories_form.add_category')" />
+    <Head :title="title" />
     <CatalogTabs :nav="nav" active="categories" />
-    <PageHeader :title="category ? t('catalog::admin.categories_form.edit_category') : t('catalog::admin.categories_form.add_category')">
-        <Link :href="baseUrl" :class="secondaryButton">{{ t('catalog::admin.categories_form.back') }}</Link>
-        <button v-if="category" type="button" :class="dangerButton" @click="destroy">{{ t('catalog::admin.categories_form.delete') }}</button>
-    </PageHeader>
-
-    <form class="grid gap-6 lg:grid-cols-3" @submit.prevent="submit">
-        <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5 lg:col-span-2">
-            <div class="flex gap-2 text-sm">
-                <button v-for="option in locales" :key="option.code" type="button" class="rounded px-2 py-1" :class="locale === option.code ? 'bg-slate-900 text-white' : 'bg-slate-100'" @click="locale = option.code">
-                    {{ option.label }}
-                </button>
-            </div>
-            <FormField :label="locale === defaultLocale ? t('catalog::admin.categories_form.name_required') : t('catalog::admin.categories_form.name')" :error="errors[`translations.${locale}.name`]">
+    <TaxonomyFormLayout :title="title" :back-url="baseUrl" :links="extensionLinks" :processing="form.processing" :can-delete="category !== null" @submit="submit" @delete="destroy">
+        <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
+            <LocaleTabs v-model="locale" :locales="locales" />
+            <FormField :label="locale === defaultLocale ? t('catalog::admin.taxonomy.name_required') : t('catalog::admin.taxonomy.name')" :error="errors[`translations.${locale}.name`]">
                 <input v-model="form.translations[locale].name" :class="inputClass" type="text" />
             </FormField>
-            <FormField v-if="locale !== defaultLocale" :label="t('catalog::admin.categories_form.slug_language')" :hint="t('catalog::admin.categories_form.empty_use_base_slug_changing')" :error="errors[`translations.${locale}.slug`]">
-                    <div class="flex gap-2">
-                        <input v-model="form.translations[locale].slug" :class="inputClass" :placeholder="slugify(form.translations[locale].name ?? '') || form.slug" />
-                        <button type="button" :class="secondaryButton" :disabled="!form.translations[locale].name" @click="form.translations[locale].slug = slugify(form.translations[locale].name ?? '')">{{ t('catalog::admin.categories_form.generate_from_name') }}</button>
-                    </div>
-                </FormField>
-            <FormField :label="t('catalog::admin.categories_form.description')" :error="errors[`translations.${locale}.description`]">
+            <FormField v-if="locale !== defaultLocale" :label="t('catalog::admin.taxonomy.slug_language')" :hint="t('catalog::admin.taxonomy.slug_language_hint')" :error="errors[`translations.${locale}.slug`]">
+                <div class="flex gap-2">
+                    <input v-model="form.translations[locale].slug" :class="inputClass" :placeholder="slugify(form.translations[locale].name ?? '') || form.slug" />
+                    <button type="button" :class="secondaryButton" :disabled="!form.translations[locale].name" @click="form.translations[locale].slug = slugify(form.translations[locale].name ?? '')">{{ t('catalog::admin.taxonomy.generate_from_name') }}</button>
+                </div>
+            </FormField>
+            <FormField :label="t('catalog::admin.taxonomy.description')" :error="errors[`translations.${locale}.description`]">
                 <textarea v-model="form.translations[locale].description" :class="inputClass" rows="4" />
             </FormField>
-            <FormField label="Meta title (SEO)" :error="errors[`translations.${locale}.meta_title`]">
-                <input v-model="form.translations[locale].meta_title" :class="inputClass" type="text" />
-            </FormField>
-            <FormField label="Meta description (SEO)" :error="errors[`translations.${locale}.meta_description`]">
-                <textarea v-model="form.translations[locale].meta_description" :class="inputClass" rows="2" />
-            </FormField>
-            <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
         </div>
+        <SeoFields v-model:title="form.translations[locale].meta_title" v-model:description="form.translations[locale].meta_description" :title-error="errors[`translations.${locale}.meta_title`]" :description-error="errors[`translations.${locale}.meta_description`]" />
+        <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
 
-        <div class="space-y-4">
-            <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
-                <FormField :label="t('catalog::admin.categories_form.slug_path')" :hint="t('catalog::admin.categories_form.lowercase_letters_without_accents_digits')" :error="errors.slug">
+        <template #aside>
+            <FormField :label="t('catalog::admin.taxonomy.slug')" :hint="t('catalog::admin.taxonomy.slug_hint')" :error="errors.slug">
+                <div class="flex gap-2">
                     <input v-model="form.slug" :class="inputClass" type="text" />
-                </FormField>
-                <FormField :label="t('catalog::admin.categories_form.parent_category')" :error="errors.parent_id">
-                    <Select v-model="form.parent_id" :options="recordOptions(parents)" :empty-label="t('catalog::admin.categories_form.root')" :empty-value="null" />
-                </FormField>
-                <FormField :label="t('catalog::admin.categories_form.status')" :error="errors.status">
+                    <button v-if="!category" type="button" :class="secondaryButton" :disabled="!form.translations[defaultLocale].name" @click="form.slug = slugify(form.translations[defaultLocale].name ?? '')">{{ t('catalog::admin.taxonomy.generate_from_name') }}</button>
+                </div>
+            </FormField>
+            <FormField :label="t('catalog::admin.categories.parent')" :error="errors.parent_id">
+                <Select v-model="form.parent_id" :options="recordOptions(parents)" :empty-label="t('catalog::admin.categories.root')" :empty-value="null" />
+            </FormField>
+            <div class="grid grid-cols-2 gap-4">
+                <FormField :label="t('catalog::admin.taxonomy.status')" :error="errors.status">
                     <Select v-model="form.status" :options="labelOptions(labels.visibility)" />
                 </FormField>
-                <FormField :label="t('catalog::admin.categories_form.order')" :error="errors.position">
+                <FormField :label="t('catalog::admin.taxonomy.order')" :error="errors.position">
                     <input v-model.number="form.position" :class="inputClass" type="number" min="0" />
                 </FormField>
-                <button type="submit" :class="primaryButton" :disabled="form.processing" class="w-full">{{ t('catalog::admin.categories_form.save') }}</button>
             </div>
-
-            <div v-if="category" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
-                <h2 class="text-sm font-medium">{{ t('catalog::admin.categories_form.category_image') }}</h2>
-                <img v-if="category.image_url" :src="category.image_url" alt="" class="w-full rounded" />
-                <FileInput v-model="imageForm.image" accept="image/jpeg,image/png,image/webp" :max-kb="10240" :label="t('catalog::admin.categories_form.choose_image')" :progress="imageForm.progress?.percentage ?? null" :error="imageForm.errors.image" />
-                <input v-model="imageForm.alt" :class="inputClass" type="text" :placeholder="t('catalog::admin.categories_form.image_description_alt')" />
-                <div class="flex gap-2">
-                    <button type="button" :class="secondaryButton" :disabled="!imageForm.image || imageForm.processing" @click="uploadImage">{{ t('catalog::admin.categories_form.upload') }}</button>
-                    <button type="button" :class="secondaryButton" @click="picking = true">{{ t('catalog::admin.categories_form.choose_from_library') }}</button>
-                    <button v-if="category.image_url" type="button" :class="dangerButton" @click="removeImage">{{ t('catalog::admin.categories_form.remove_image') }}</button>
-                </div>
-                <MediaPicker v-model:open="picking" :title="t('catalog::admin.categories_form.choose_category_image')" :multiple="false" @select="pickImage" />
-            </div>
-        </div>
-    </form>
+            <FormField :label="t('catalog::admin.taxonomy.image')" :hint="t('catalog::admin.categories.image_hint')" :error="errors.image_media_id">
+                <MediaField v-model="form.image_media_id" :label="t('catalog::admin.taxonomy.image')" />
+            </FormField>
+        </template>
+    </TaxonomyFormLayout>
 </template>

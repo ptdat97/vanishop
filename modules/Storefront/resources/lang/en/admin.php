@@ -4,6 +4,9 @@
 
 return [
     'builder' => [
+        'zone' => 'Position',
+        'scope_back' => 'Back',
+        'scope_help' => 'Content for this page only. A position with blocks here replaces the shared content of that position; empty positions still show the shared content.',
         'listing_grid' => 'Contextual product grid',
         'responsive_preview' => 'Responsive preview',
         'preview_help' => 'Preview draft blocks by zone with the active theme.',
@@ -40,6 +43,7 @@ return [
             'brands' => 'Brands',
         ],
         'zones' => [
+            'plp_header' => 'Page header (replaces the default title, description and image)',
             'home_main' => 'Home page body',
             'pdp_after_details' => 'After product description',
             'pdp_after_related_products' => 'End of product page',
@@ -56,15 +60,6 @@ return [
         'slot_help' => 'Blocks show on every page with this position, alongside plugin content placed there.',
         'reset' => 'Clear configuration',
         'reset_title' => 'Remove all blocks from this page?',
-    ],
-    'collection_pages' => [
-        'title' => 'Collection content for :name',
-        'back' => 'Back to collection',
-        'help' => 'Use one Hero block as the banner. Other blocks can appear before or after the product grid.',
-        'zone' => 'Placement',
-        'banner' => 'Banner',
-        'before' => 'Before product grid',
-        'after' => 'After product grid',
     ],
     'design_home_blocks' => [
         'add_block' => 'Add block',

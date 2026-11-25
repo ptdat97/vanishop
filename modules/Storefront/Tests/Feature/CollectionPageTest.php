@@ -3,103 +3,157 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\View;
-use Illuminate\View\View as BladeView;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Application\Media\MediaLibrary;
-use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
+use Modules\Storefront\Application\Builder\BuilderEngine;
+use Modules\Storefront\Contracts\BuilderSurface;
+use Modules\Storefront\Contracts\Data\BlockContext;
+use Modules\Storefront\Contracts\Data\BuilderScope;
+use Modules\Storefront\Contracts\Data\BuilderZone;
+use Modules\Storefront\Contracts\ScopedBuilderSurface;
+use Modules\Storefront\Testing\BuilderSurfaceContract;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
-it('biên tập banner và các vùng nội dung, render đúng thứ tự và giữ phạm vi sản phẩm theo URL', function () {
+/** Surface theo phạm vi kiểu plugin: nội dung riêng từng bộ sưu tập, gắn vào slot đầu trang và quanh lưới sản phẩm. */
+final class CollectionScopeTestSurface implements ScopedBuilderSurface
+{
+    public function key(): string
+    {
+        return 'test-pages';
+    }
+
+    public function label(): string
+    {
+        return 'Trang riêng';
+    }
+
+    public function zones(): array
+    {
+        return [
+            BuilderZone::slot('vani.storefront.plp.header', 'Đầu trang', max: 1),
+            BuilderZone::slot('vani.storefront.plp.before_listing', 'Trên lưới'),
+            BuilderZone::slot('vani.storefront.plp.after_listing', 'Dưới lưới'),
+        ];
+    }
+
+    public function scopeOf(BlockContext $context): ?string
+    {
+        return $context->listingType === 'collection' && $context->listingId !== null ? "collection-{$context->listingId}" : null;
+    }
+
+    public function describeScope(string $scope): ?BuilderScope
+    {
+        $collection = preg_match('/^collection-(\d+)$/', $scope, $match) === 1 ? ProductCollection::query()->find((int) $match[1]) : null;
+
+        return $collection === null ? null : new BuilderScope('Bộ sưu tập '.$collection->slug, backUrl: '/admin/catalog/collections', listingType: 'collection', listingSlug: $collection->slug);
+    }
+}
+
+BuilderSurfaceContract::define('scoped test surface', fn () => new CollectionScopeTestSurface);
+
+beforeEach(function () {
+    app(Extensions::class)->tag([CollectionScopeTestSurface::class], BuilderSurface::TAG);
+});
+
+it('trang bộ sưu tập: phần đầu mặc định (tên, mô tả, ảnh bìa, SEO), giữ phạm vi sản phẩm theo URL, sitemap và API', function () {
     Storage::fake('public');
     ['s' => $sku, 'location' => $location] = C::store();
     $other = T::product(null, ['name' => 'Sản phẩm ngoài bộ sưu tập']);
     [$otherSku] = P::variants($other, ['S']);
     P::priceList([], [$otherSku->id => [450_000]]);
     I::stock($location, $otherSku->id, 10);
-    [$collection, $media] = T::seed(function () use ($sku): array {
-        $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']);
+    $collection = T::seed(function () use ($sku): ProductCollection {
+        $media = app(MediaLibrary::class)->store(UploadedFile::fake()->image('bia.jpg', 1600, 900));
+        $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active', 'image_media_id' => $media->id]);
         $collection->syncTranslations([
-            'vi' => ['name' => 'Mùa hè'],
+            'vi' => ['name' => 'Mùa hè', 'description' => 'Vải mát cho ngày nắng.', 'meta_title' => 'Mùa hè rực rỡ'],
             'en' => ['name' => 'Summer', 'slug' => 'summer'],
         ]);
         $collection->styles()->attach($sku->style_id);
 
-        return [$collection, app(MediaLibrary::class)->store(UploadedFile::fake()->image('banner.jpg', 1200, 800))];
+        return $collection;
     });
-    $this->actingAs(T::staff(['admin.access', 'catalog.manage', 'storefront.manage']), 'staff');
-    $editor = route('admin.storefront.collection-pages.edit', $collection->id);
-    $this->get(route('admin.catalog.collections.edit', $collection->id))->assertInertia(fn (Assert $page) => $page->where('contentUrl', $editor));
-    $this->get($editor)->assertInertia(fn (Assert $page) => $page->where('collectionName', 'Mùa hè')->where('blocks', []));
-    $this->put($editor, ['blocks' => [['type' => 'rich_text', 'zone' => 'banner', 'config' => ['body' => 'Sai loại']]]])->assertSessionHasErrors('blocks.0.zone');
-    $blocks = [
-        ['type' => 'rich_text', 'zone' => 'after', 'config' => ['body' => '<p>Khung sau lưới</p>']],
-        ['type' => 'hero', 'zone' => 'banner', 'config' => ['title' => 'Banner mùa hè', 'image' => $media->id]],
-        ['type' => 'rich_text', 'zone' => 'before', 'config' => ['body' => '<p>Khung trước lưới</p>']],
-        ['type' => 'rich_text', 'zone' => 'before', 'config' => ['body' => '<p>Giới thiệu chất liệu</p>']],
-    ];
-    $this->put($editor, ['blocks' => [$blocks[1], $blocks[1]]])->assertSessionHasErrors('blocks.1.zone');
-    $this->put($editor, ['blocks' => $blocks])->assertSessionHasNoErrors();
-    expect(DB::table('mediables')->where(['media_id' => $media->id, 'mediable_type' => CollectionPages::MEDIA_OWNER, 'mediable_id' => $collection->id])->exists())->toBeTrue();
 
     $this->get('/tim-kiem')->assertOk()->assertSee('data-vani-product="'.$other->slug.'"', false);
-    $this->get('/bo-suu-tap/mua-he')->assertOk()->assertSeeInOrder([
-        'data-collection-banner', 'Banner mùa hè', 'Khung trước lưới', 'Giới thiệu chất liệu', 'data-vani-listing', 'data-vani-product="'.$sku->style->slug.'"', 'Khung sau lưới',
-    ], false)->assertDontSee('data-vani-product="'.$other->slug.'"', false);
-    $this->get('/bo-suu-tap/mua-he?collection=khong-co')->assertOk()
-        ->assertSee('data-vani-product="'.$sku->style->slug.'"', false);
+    $this->get('/bo-suu-tap/mua-he')->assertOk()
+        ->assertSee('<title>Mùa hè rực rỡ', false)
+        ->assertSeeInOrder(['data-collection-banner', 'Mùa hè', 'Vải mát cho ngày nắng.', '-w', 'data-vani-listing', 'data-vani-product="'.$sku->style->slug.'"'], false)
+        ->assertDontSee('data-vani-product="'.$other->slug.'"', false);
+    $this->get('/bo-suu-tap/mua-he?collection=khong-co')->assertOk()->assertSee('data-vani-product="'.$sku->style->slug.'"', false);
     $this->get('/en/collections/mua-he?sort=price_asc')->assertRedirect('/en/collections/summer?sort=price_asc')->assertStatus(301);
     $this->get('/en/collections/summer')->assertOk()->assertSee('Summer');
     $this->get('/sitemap.xml')->assertOk()->assertSee('/bo-suu-tap/mua-he')->assertSee('/en/collections/summer');
     $this->getJson('/api/storefront/v1/collections/summer', ['X-Vani-Locale' => 'en'])->assertOk()
-        ->assertJsonPath('data.blocks.banner.0.type', 'hero')
-        ->assertJsonPath('data.blocks.before.0.type', 'rich_text')
-        ->assertJsonCount(2, 'data.blocks.before')
-        ->assertJsonPath('data.blocks.after.0.type', 'rich_text');
-    $this->put($editor, ['blocks' => []])->assertSessionHasNoErrors();
-    expect(DB::table('mediables')->where('media_id', $media->id)->exists())->toBeFalse();
-    $this->get('/bo-suu-tap/mua-he')->assertOk()
-        ->assertSeeInOrder(['data-collection-banner', 'Mùa hè', 'data-vani-listing'], false)
-        ->assertDontSee('Khung trước lưới')->assertDontSee('Khung sau lưới');
+        ->assertJsonPath('data.id', $collection->id)->assertJsonPath('data.name', 'Summer')->assertJsonMissingPath('data.blocks');
 
     T::seed(fn () => $collection->update(['status' => 'hidden']));
     $this->get('/bo-suu-tap/mua-he')->assertNotFound();
     $this->getJson('/api/storefront/v1/collections/mua-he')->assertNotFound();
-    $this->actingAs(T::staff(['admin.access', 'catalog.manage']), 'staff')
-        ->put($editor, ['blocks' => $blocks])->assertForbidden();
 });
 
-it('trang chủ và trang bộ sưu tập dùng cùng schema biên tập và view Hero', function () {
-    $collection = T::seed(fn () => ProductCollection::query()->create(['slug' => 'bo-chung', 'status' => 'active']));
-    $this->actingAs(T::staff(['admin.access', 'storefront.manage']), 'staff');
-    $home = route('admin.storefront.builder.edit', 'home');
-    $editor = route('admin.storefront.collection-pages.edit', $collection->id);
-    $homeProps = $this->get($home)->inertiaPage()['props'];
-    expect($homeProps['zones'])->toBe([]);
+it('nội dung theo phạm vi: biên tập riêng từng bộ sưu tập, thay nội dung chung theo vùng, Hero ở đầu trang thành banner có h1', function () {
+    Storage::fake('public');
+    ['s' => $sku] = C::store();
+    [$summer, , $media] = T::seed(function () use ($sku): array {
+        $collections = [];
+        foreach (['mua-he' => 'Mùa hè', 'mua-dong' => 'Mùa đông'] as $slug => $name) {
+            $collection = ProductCollection::query()->create(['slug' => $slug, 'status' => 'active']);
+            $collection->syncTranslations(['vi' => ['name' => $name]]);
+            $collection->styles()->attach($sku->style_id);
+            $collections[] = $collection;
+        }
 
-    $this->get($editor)->assertInertia(fn (Assert $page) => $page->component('Storefront::Design/Builder')
-        ->where('types', $homeProps['types'])
-        ->where('zones', fn ($zones) => collect($zones)->map(fn (array $zone): array => [$zone['key'], $zone['types'], $zone['max'], $zone['slot']])->all() === [
-            ['banner', ['hero'], 1, null], ['before', null, null, null], ['after', null, null, null],
-        ]));
-
-    $invalid = ['type' => 'hero', 'config' => []];
-    $this->put($home, ['blocks' => [$invalid]])->assertSessionHasErrors('blocks.0.config.title');
-    $this->put($editor, ['blocks' => [$invalid + ['zone' => 'banner']]])->assertSessionHasErrors('blocks.0.config.title');
-
-    $hero = ['type' => 'hero', 'config' => ['title' => 'Cùng một khối']];
-    $this->put($home, ['blocks' => [$hero]])->assertSessionHasNoErrors();
-    $this->put($editor, ['blocks' => [$hero + ['zone' => 'banner']]])->assertSessionHasNoErrors();
-    View::composer('theme::blocks.hero', static function (BladeView $view): void {
-        $view->with('title', $view->getData()['title'].' · Hiển thị từ view Hero');
+        return [...$collections, app(MediaLibrary::class)->store(UploadedFile::fake()->image('banner.jpg', 1200, 800))];
     });
+    $this->actingAs(T::staff(['admin.access', 'catalog.manage', 'storefront.manage']), 'staff');
+    $shared = route('admin.storefront.builder.edit', 'listing');
+    $this->put($shared, ['blocks' => [
+        ['type' => 'rich_text', 'zone' => 'vani.storefront.plp.before_listing', 'config' => ['body' => '<p>Ưu đãi chung</p>']],
+        ['type' => 'rich_text', 'zone' => 'vani.storefront.plp.after_listing', 'config' => ['body' => '<p>Cam kết chung</p>']],
+    ]])->assertSessionHasNoErrors();
 
-    $this->get('/')->assertSee('Cùng một khối · Hiển thị từ view Hero');
-    $this->get('/bo-suu-tap/bo-chung')->assertSeeInOrder(['data-collection-banner', 'Cùng một khối · Hiển thị từ view Hero'], false);
+    $editor = route('admin.storefront.builder.scope.edit', ['test-pages', "collection-{$summer->id}"]);
+    $this->get(route('admin.storefront.builder.edit', 'test-pages'))->assertNotFound();
+    $this->get(route('admin.storefront.builder.scope.edit', ['test-pages', 'collection-999999']))->assertNotFound();
+    $this->get($shared)->assertInertia(fn (Assert $page) => $page->where('surfaces', fn ($surfaces) => ! collect($surfaces)->contains('key', 'test-pages')));
+    $this->get($editor)->assertInertia(fn (Assert $page) => $page->component('Storefront::Design/Builder')
+        ->where('scope.label', 'Bộ sưu tập mua-he')->where('configured', false)->where('blocks', []));
+
+    $hero = ['type' => 'hero', 'zone' => 'vani.storefront.plp.header', 'config' => ['title' => 'Banner mùa hè', 'image' => $media->id]];
+    $this->put($editor, ['blocks' => [$hero, $hero]])->assertSessionHasErrors('blocks.1.zone');
+    $this->put($editor, ['blocks' => [
+        $hero,
+        ['type' => 'rich_text', 'zone' => 'vani.storefront.plp.before_listing', 'config' => ['body' => '<p>Chất liệu mùa hè</p>']],
+    ]])->assertSessionHasNoErrors();
+    expect(app(BuilderEngine::class)->configuredScopes('test-pages'))->toBe(["collection-{$summer->id}"])
+        ->and(DB::table('mediables')->where(['media_id' => $media->id, 'mediable_type' => BuilderEngine::SCOPED_MEDIA_OWNER])->exists())->toBeTrue();
+
+    // Vùng có nội dung riêng thay nội dung chung; vùng để trống vẫn hiện nội dung chung. Hero ở đầu trang là banner có h1.
+    $this->get('/bo-suu-tap/mua-he')->assertOk()
+        ->assertSeeInOrder(['<h1 id="listing-title"', 'Banner mùa hè', 'Chất liệu mùa hè', 'data-vani-product="'.$sku->style->slug.'"', 'Cam kết chung'], false)
+        ->assertDontSee('Ưu đãi chung');
+    $this->get('/bo-suu-tap/mua-dong')->assertOk()
+        ->assertSeeInOrder(['data-collection-banner', 'Mùa đông', 'Ưu đãi chung', 'Cam kết chung'], false)
+        ->assertDontSee('Banner mùa hè');
+    $this->getJson('/api/storefront/v1/pages/layouts/listing?type=collection&slug=mua-he')->assertOk()
+        ->assertJsonPath('data.0.key', 'vani.storefront.plp.header')->assertJsonPath('data.0.blocks.0.type', 'hero')
+        ->assertJsonPath('data.1.blocks.0.data.bodyHtml', fn (string $html): bool => str_contains($html, 'Chất liệu mùa hè'));
+    $this->getJson('/api/storefront/v1/pages/layouts/test-pages')->assertNotFound();
+
+    $this->post(route('admin.storefront.builder.scope.draft', ['test-pages', "collection-{$summer->id}", 'preview']), ['blocks' => [$hero]])
+        ->assertOk()->assertJsonPath('html', fn (string $html): bool => str_contains($html, 'Banner mùa hè'));
+
+    $this->delete($editor)->assertSessionHasNoErrors();
+    expect(app(BuilderEngine::class)->configuredScopes('test-pages'))->toBe([])
+        ->and(DB::table('mediables')->where('media_id', $media->id)->exists())->toBeFalse();
+    $this->get('/bo-suu-tap/mua-he')->assertSeeInOrder(['data-collection-banner', 'Ưu đãi chung'], false)->assertDontSee('Banner mùa hè');
+
+    $this->actingAs(T::staff(['admin.access', 'catalog.manage']), 'staff')->put($editor, ['blocks' => []])->assertForbidden();
 });

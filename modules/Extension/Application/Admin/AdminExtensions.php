@@ -23,7 +23,7 @@ use Throwable;
 final class AdminExtensions implements AdminScreen
 {
     /** @var array<string, array<string, array<string, mixed>>> loại => "resource|plugin|key" => định nghĩa */
-    private array $items = ['section' => [], 'column' => [], 'action' => [], 'tab' => [], 'filter' => [], 'tool' => []];
+    private array $items = ['section' => [], 'column' => [], 'action' => [], 'tab' => [], 'filter' => [], 'tool' => [], 'link' => []];
 
     /** @var array<string, true> */
     private array $resources = [];
@@ -80,6 +80,14 @@ final class AdminExtensions implements AdminScreen
     public function tab(string $resource, string $plugin, string $key, string $label, Closure $rows, int $order = 500, ?string $permission = null): void
     {
         $this->put('tab', $resource, $plugin, $key, compact('label', 'rows', 'order', 'permission'));
+    }
+
+    /**
+     * @param  Closure(int): (string|null)  $url  id → URL (null = không hiện cho bản ghi này)
+     */
+    public function link(string $resource, string $plugin, string $key, string $label, Closure $url, int $order = 500, ?string $permission = null): void
+    {
+        $this->put('link', $resource, $plugin, $key, compact('label', 'url', 'order', 'permission'));
     }
 
     /**
@@ -248,6 +256,19 @@ final class AdminExtensions implements AdminScreen
         }
 
         return $tabs;
+    }
+
+    public function links(string $resource, int $id): array
+    {
+        $links = [];
+        foreach ($this->active('link', $resource) as $item) {
+            $url = $this->guard($item, 'url', fn (): mixed => ($item['url'])($id), null);
+            if (is_string($url) && $url !== '') {
+                $links[] = ['key' => "{$item['plugin']}:{$item['key']}", 'label' => __($item['label']), 'url' => $url];
+            }
+        }
+
+        return $links;
     }
 
     /**

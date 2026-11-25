@@ -9,18 +9,14 @@
     @section('og_image', $meta['image'])
 @endif
 
+{{-- Đầu trang: block admin đặt ở "Đầu trang" (Builder, chung hoặc riêng của brand) thay phần đầu mặc định. --}}
+@php($listingContext = ['type' => 'brand', 'category' => null, 'brand' => $brand, 'collection' => null])
 @section('content')
     @include('theme::partials.breadcrumb', ['crumbs' => $crumbs])
-    <header class="mb-6 flex items-center gap-4">
-        @if ($brand['logo_url'])
-            <img src="{{ $brand['logo_url'] }}" @if (! empty($brand['logo_srcset'])) srcset="{{ $brand['logo_srcset'] }}" sizes="128px" @endif alt="{{ $brand['name'] }}" width="128" height="56" class="w-32 h-14 max-w-full object-contain" data-vani-motion-hover>
-        @endif
-        <div>
-            <h1 class="text-2xl font-semibold">{{ $brand['name'] }}</h1>
-            @if ($brand['description'])
-                <p class="text-slate-600">{{ $brand['description'] }}</p>
-            @endif
-        </div>
-    </header>
-    @include('theme::partials.listing', ['listingContext' => ['type' => 'brand', 'category' => null, 'brand' => $brand]])
+    <x-vani::hook-slot name="vani.storefront.plp.header" :args="[$listingContext]">
+        @include('theme::partials.listing-banner', ['type' => 'brand', 'page' => $brand])
+    </x-vani::hook-slot>
+    <div id="listing-products" class="scroll-mt-24">
+        @include('theme::partials.listing', ['listingContext' => $listingContext])
+    </div>
 @endsection

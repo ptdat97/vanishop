@@ -68,8 +68,8 @@ const props = defineProps<{
     allowedZones: Record<string, string[]>;
     surfaces?: Surface[];
     surface?: Surface;
-    collectionName?: string;
-    collectionUrl?: string | null;
+    /** Surface theo phạm vi: nội dung riêng của một đối tượng (thương hiệu, danh mục…), mở từ trang của plugin. */
+    scope?: { key: string; label: string; backUrl: string | null };
 }>();
 
 // --------------------------------------------------
@@ -108,8 +108,8 @@ const busy = computed(
 // Page metadata
 // --------------------------------------------------
 
-const collectionPage = computed(
-    () => props.collectionName !== undefined,
+const scoped = computed(
+    () => props.scope !== undefined,
 );
 
 const home = computed(
@@ -117,10 +117,8 @@ const home = computed(
 );
 
 const title = computed(() =>
-    collectionPage.value
-        ? t('storefront::admin.collection_pages.title', {
-            name: props.collectionName ?? '',
-        })
+    scoped.value
+        ? `${props.surface?.label ?? ''} · ${props.scope?.label ?? ''}`
         : (
             props.surface?.label ??
             t('storefront::admin.design_home_blocks.home_page')
@@ -128,7 +126,7 @@ const title = computed(() =>
 );
 
 const subtitle = computed(() => {
-    if (collectionPage.value || props.configured) {
+    if (props.configured) {
         return t(
             'storefront::admin.design_home_blocks.count_blocks',
             { count: form.blocks.length },
@@ -634,8 +632,8 @@ async function reset(): Promise<void> {
         </p>
 
         <PageHeader :title="title" :subtitle="subtitle">
-            <Link v-if="collectionUrl" :href="collectionUrl" :class="secondaryButton">
-                {{ t('storefront::admin.collection_pages.back') }}
+            <Link v-if="scope?.backUrl" :href="scope.backUrl" :class="secondaryButton">
+                {{ t('storefront::admin.builder.scope_back') }}
             </Link>
 
             <a v-if="previewUrl" :href="previewUrl" target="_blank" rel="noopener noreferrer" :class="secondaryButton">
@@ -650,7 +648,7 @@ async function reset(): Promise<void> {
                 {{ t('storefront::admin.builder.responsive_preview') }}
             </button>
 
-            <button v-if="configured && !collectionPage" type="button" :class="dangerButton" :disabled="busy"
+            <button v-if="configured" type="button" :class="dangerButton" :disabled="busy"
                 @click="reset">
                 {{
                     home
@@ -671,7 +669,7 @@ async function reset(): Promise<void> {
         </PageHeader>
 
         <!-- Design navigation -->
-        <template v-if="!collectionPage">
+        <template v-if="!scoped">
             <DesignTabs active="builder" />
 
             <nav v-if="(surfaces?.length ?? 0) > 1" class="mb-4 flex flex-wrap gap-2 text-sm"
@@ -698,7 +696,7 @@ async function reset(): Promise<void> {
         </template>
 
         <p v-else class="mb-4 text-sm text-slate-600">
-            {{ t('storefront::admin.collection_pages.help') }}
+            {{ t('storefront::admin.builder.scope_help') }}
         </p>
 
         <div class="space-y-4">
@@ -841,7 +839,7 @@ async function reset(): Promise<void> {
 
                     <div class="grid gap-3 md:grid-cols-2">
                         <FormField v-if="zoned" :label="t(
-                            'storefront::admin.collection_pages.zone',
+                            'storefront::admin.builder.zone',
                         )
                             " :error="errors[`blocks.${index}.zone`]">
                             <Select v-model="block.zone as string" :options="availableZoneOptions(block)" />
@@ -890,6 +888,6 @@ async function reset(): Promise<void> {
 
         <!-- Responsive preview -->
         <BuilderPreview v-model:open="previewOpen" :blocks="form.blocks" :url="draftUrls.preview"
-            :product-context="productContext" :listing-context="listingContext" />
+            :product-context="productContext" :listing-context="listingContext && !scoped" />
     </div>
 </template>

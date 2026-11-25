@@ -5,24 +5,18 @@ declare(strict_types=1);
 namespace Modules\Catalog\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Categories\CategoryService;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
-use Modules\Catalog\Application\Media\MediaLibrary;
-use Modules\Catalog\Http\Requests\Admin\CategoryImageRequest;
 use Modules\Catalog\Http\Requests\Admin\CategoryRequest;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Mediable;
 use Modules\Extension\Contracts\AdminScreen;
 
 final class CategoryController
 {
-    public function __construct(private readonly AdminQueries $queries) {}
-
     use ConvertsDomainErrors;
 
     public function index(CategoryTreeQuery $tree): Response
@@ -47,6 +41,7 @@ final class CategoryController
             'category' => null,
             'parents' => $this->parentOptions($tree->tree()),
             'extensionSections' => app(AdminScreen::class)->formSections('category', null),
+            'extensionLinks' => [],
         ]);
     }
 
@@ -64,8 +59,10 @@ final class CategoryController
     {
         Gate::authorize('catalog.manage');
 
-        $category->load(['translations', 'media.media']);
+        $category->load(['translations', 'media']);
+        /** @var Mediable|null $image */
         $image = $category->media->firstWhere('role', 'image');
+        $screen = app(AdminScreen::class);
 
         return Inertia::render('Catalog::Categories/Form', [
             'nav' => CatalogNavigation::all(),
@@ -78,10 +75,11 @@ final class CategoryController
                 'position' => $category->position,
                 'lock_version' => $category->lock_version,
                 'translations' => $category->translationsByLocale(),
-                'image_url' => $image?->media->url(400),
+                'image_media_id' => $image?->media_id,
             ],
             'parents' => $this->parentOptions($tree->tree(), exclude: $category->id),
-            'extensionSections' => app(AdminScreen::class)->formSections('category', $category->id),
+            'extensionSections' => $screen->formSections('category', $category->id),
+            'extensionLinks' => $screen->links('category', $category->id),
         ]);
     }
 
@@ -102,39 +100,6 @@ final class CategoryController
         $this->orFormError(fn () => $categories->delete($category));
 
         return redirect()->route('admin.catalog.categories.index')->with('success', __('catalog::messages.deleted'));
-    }
-
-    public function uploadImage(Category $category, CategoryImageRequest $request, MediaLibrary $media): RedirectResponse
-    {
-        Gate::authorize('catalog.manage');
-
-        $stored = $media->store($request->file('image'));
-        $media->attachSingle($category, 'image', $stored, $request->validated('alt'));
-
-        return back()->with('success', __('catalog::messages.saved'));
-    }
-
-    public function attachLibraryImage(Category $category, Request $request, MediaLibrary $media): RedirectResponse
-    {
-        Gate::authorize('catalog.manage');
-        $data = $request->validate(['media_id' => ['required', 'integer'], 'alt' => ['nullable', 'string', 'max:255']]);
-        $stored = $this->queries->media((int) $data['media_id']);
-        if ($stored === null) {
-            throw ValidationException::withMessages(['image' => __('catalog::messages.media_not_found')]);
-        }
-
-        $media->attachSingle($category, 'image', $stored, $data['alt'] ?? null);
-
-        return back()->with('success', __('catalog::messages.saved'));
-    }
-
-    public function removeImage(Category $category, MediaLibrary $media): RedirectResponse
-    {
-        Gate::authorize('catalog.manage');
-
-        $media->detach($category, 'image');
-
-        return back()->with('success', __('catalog::messages.saved'));
     }
 
     /**

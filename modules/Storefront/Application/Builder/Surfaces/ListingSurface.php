@@ -22,6 +22,7 @@ final class ListingSurface implements BuilderSurface
     public function zones(): array
     {
         return [
+            BuilderZone::slot('vani.storefront.plp.header', __('storefront::admin.builder.zones.plp_header')),
             BuilderZone::slot('vani.storefront.plp.before_listing', __('storefront::admin.builder.zones.plp_before_listing')),
             BuilderZone::slot('vani.storefront.plp.after_listing', __('storefront::admin.builder.zones.plp_after_listing')),
             BuilderZone::slot('vani.storefront.plp.empty', __('storefront::admin.builder.zones.plp_empty')),

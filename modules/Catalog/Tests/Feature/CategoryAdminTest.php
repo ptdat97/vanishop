@@ -113,11 +113,14 @@ it('tải ảnh danh mục, khử trùng lặp theo checksum', function () {
     $category = T::seed(fn () => Category::factory()->create());
     $image = UploadedFile::fake()->image('banner.jpg', 1600, 2000);
 
-    $this->actingAs($this->staff, 'staff')->post("{$this->base}/{$category->id}/image", ['image' => $image, 'alt' => 'Banner'])->assertSessionHasNoErrors();
-    $this->post("{$this->base}/{$category->id}/image", ['image' => $image])->assertSessionHasNoErrors();
+    // Ảnh danh mục chọn từ Thư viện ảnh như logo thương hiệu, ảnh bìa bộ sưu tập (khuôn Admin chung).
+    $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'media.view', 'media.manage']), 'staff');
+    $mediaId = $this->postJson('/admin/media/upload', ['folder' => '', 'images' => [$image]])->assertOk()->json('items.0.id');
+    $this->postJson('/admin/media/upload', ['folder' => '', 'images' => [$image]])->assertOk()->assertJsonPath('items.0.id', $mediaId);
+    $this->put("{$this->base}/{$category->id}", categoryPayload(['slug' => $category->slug, 'lock_version' => $category->fresh()->lock_version, 'image_media_id' => $mediaId]))->assertSessionHasNoErrors();
 
     $this->get("{$this->base}/{$category->id}/edit")
-        ->assertInertia(fn (Assert $page) => $page->component('Catalog::Categories/Form')->whereNot('category.image_url', null));
+        ->assertInertia(fn (Assert $page) => $page->component('Catalog::Categories/Form')->where('category.image_media_id', $mediaId));
     // Một ảnh gốc (khử trùng lặp) + các bản WebP thu nhỏ của chính ảnh đó.
     expect(array_values(array_filter(Storage::disk('public')->allFiles(), fn (string $file): bool => preg_match('/-w\d+\.webp$/', $file) !== 1)))->toHaveCount(1);
 });
@@ -125,9 +128,11 @@ it('tải ảnh danh mục, khử trùng lặp theo checksum', function () {
 it('từ chối file không phải ảnh', function () {
     $category = T::seed(fn () => Category::factory()->create());
 
-    $this->actingAs($this->staff, 'staff')
-        ->post("{$this->base}/{$category->id}/image", ['image' => UploadedFile::fake()->create('virus.php', 10, 'text/x-php')])
-        ->assertSessionHasErrors('image');
+    $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'media.view', 'media.manage']), 'staff')
+        ->postJson('/admin/media/upload', ['folder' => '', 'images' => [UploadedFile::fake()->create('virus.php', 10, 'text/x-php')]])
+        ->assertUnprocessable();
+    $this->put("{$this->base}/{$category->id}", categoryPayload(['slug' => $category->slug, 'lock_version' => $category->fresh()->lock_version, 'image_media_id' => 999_999]))
+        ->assertSessionHasErrors('image_media_id');
 });
 
 it('hiển thị cây danh mục theo thứ tự', function () {

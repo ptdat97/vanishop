@@ -123,6 +123,13 @@ export interface ExtensionList {
     tools?: ExtensionTool[];
 }
 
+/** Nút liên kết của plugin ở đầu trang sửa (`AdminScreen::links`). */
+export interface ExtensionLink {
+    key: string;
+    label: string;
+    url: string;
+}
+
 export interface ExtensionDetail {
     actions: ExtensionAction[];
     tabs: Array<{ key: string; label: string; rows: Array<{ label: string; value: string }> }>;

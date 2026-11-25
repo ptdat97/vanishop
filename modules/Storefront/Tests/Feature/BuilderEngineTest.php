@@ -139,11 +139,12 @@ it('API dựng lưới theo slug công khai của danh mục, bộ sưu tập v�
     $api = '/api/storefront/v1/pages/layouts/listing';
     foreach (['category' => 'dam-lua', 'collection' => 'mua-he', 'brand' => $this->brand->slug] as $type => $slug) {
         $this->getJson("{$api}?type={$type}&slug={$slug}")->assertOk()
-            ->assertJsonPath('data.1.key', 'vani.storefront.plp.after_listing')
-            ->assertJsonPath('data.1.blocks.0.data.products.0.id', $style->id);
+            ->assertJsonPath('data.0.key', 'vani.storefront.plp.header')
+            ->assertJsonPath('data.2.key', 'vani.storefront.plp.after_listing')
+            ->assertJsonPath('data.2.blocks.0.data.products.0.id', $style->id);
     }
     $this->getJson("{$api}?type=collection&slug=summer", ['X-Vani-Locale' => 'en'])->assertOk()
-        ->assertJsonPath('data.1.blocks.0.data.products.0.id', $style->id);
+        ->assertJsonPath('data.2.blocks.0.data.products.0.id', $style->id);
     $this->getJson("{$api}?type=search")->assertOk()->assertJsonPath('data.1.blocks', []);
     $this->getJson("{$api}?type=search&slug=dam-lua")->assertUnprocessable();
     $this->getJson("{$api}?type=brand")->assertUnprocessable();
@@ -151,8 +152,8 @@ it('API dựng lưới theo slug công khai của danh mục, bộ sưu tập v�
 
     T::seed(fn () => app(Settings::class)->set('core', 'storefront.price_visibility', 'members'));
     $this->getJson("{$api}?type=brand&slug={$this->brand->slug}")->assertOk()
-        ->assertJsonPath('data.1.blocks.0.data.products.0.price', null)
-        ->assertJsonPath('data.1.blocks.0.data.products.0.price_hidden', true);
+        ->assertJsonPath('data.2.blocks.0.data.products.0.price', null)
+        ->assertJsonPath('data.2.blocks.0.data.products.0.price_hidden', true);
     T::seed(fn () => $style->update(['status' => 'draft']));
     $this->getJson('/api/storefront/v1/pages/layouts/product?slug='.$style->slug)->assertNotFound();
 });

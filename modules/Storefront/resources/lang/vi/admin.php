@@ -4,6 +4,9 @@
 
 return [
     'builder' => [
+        'zone' => 'Vị trí',
+        'scope_back' => 'Quay lại',
+        'scope_help' => 'Nội dung riêng của trang này. Vùng có block ở đây thay nội dung chung của cùng vị trí; vùng để trống vẫn hiện nội dung chung.',
         'listing_grid' => 'Lưới sản phẩm theo ngữ cảnh',
         'responsive_preview' => 'Xem trước responsive',
         'preview_help' => 'Xem bản nháp theo vùng với giao diện đang dùng.',
@@ -40,6 +43,7 @@ return [
             'brands' => 'Thương hiệu',
         ],
         'zones' => [
+            'plp_header' => 'Đầu trang (thay tiêu đề, mô tả, ảnh mặc định)',
             'home_main' => 'Thân trang chủ',
             'pdp_after_details' => 'Sau mô tả sản phẩm',
             'pdp_after_related_products' => 'Cuối trang sản phẩm',
@@ -56,15 +60,6 @@ return [
         'slot_help' => 'Block hiện trên mọi trang có vị trí này, cùng nội dung plugin đặt ở đó.',
         'reset' => 'Xoá cấu hình',
         'reset_title' => 'Xoá toàn bộ block của trang này?',
-    ],
-    'collection_pages' => [
-        'title' => 'Nội dung bộ sưu tập :name',
-        'back' => 'Về bộ sưu tập',
-        'help' => 'Dùng một block Hero cho banner. Các block khác có thể đặt trước hoặc sau lưới sản phẩm.',
-        'zone' => 'Vị trí',
-        'banner' => 'Banner',
-        'before' => 'Trước lưới sản phẩm',
-        'after' => 'Sau lưới sản phẩm',
     ],
     'design_home_blocks' => [
         'add_block' => 'Thêm khối',

@@ -18,6 +18,7 @@ use Modules\Storefront\Application\Menus\MenuPresenter;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Application\Theme\Themes;
+use Modules\Storefront\Contracts\ScopedBuilderSurface;
 
 /**
  * "Vỏ" trang cho client không phải Blade (ADR-044): thông tin cửa hàng, menu theo vị trí, trang
@@ -61,7 +62,8 @@ final class StoreController
 
     public function layout(string $surface, Request $request, BuilderEngine $builder, CatalogReader $catalog, CollectionPages $collections): JsonResponse
     {
-        abort_if($builder->surface($surface) === null, 404);
+        // Surface theo phạm vi không có bố cục riêng: nội dung riêng đã gộp vào slot của surface chung (vd. listing).
+        abort_if($builder->surface($surface) === null || $builder->surface($surface) instanceof ScopedBuilderSurface, 404);
         $listing = $surface === 'listing';
         $usesSlug = $surface === 'product' || ($listing && $request->query('type') !== 'search');
         $context = $request->validate([
@@ -86,7 +88,7 @@ final class StoreController
                     default => null,
                 };
                 abort_if($entry === null, 404);
-                $public[$type] = ['slug' => $entry['slug']];
+                $public[$type] = ['slug' => $entry['slug'], 'id' => $entry['id']];
             }
         }
 

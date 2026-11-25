@@ -6,14 +6,12 @@ namespace Database\Seeders\Demo;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
-use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Shared\Support\StoreLocale;
-use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\Builder\BuilderEngine;
 use Modules\Storefront\Application\Menus\MenuRepository;
 use Modules\Storefront\Application\PageBlocks;
@@ -21,13 +19,16 @@ use Modules\Storefront\Application\Theme\ThemeSettings;
 
 /**
  * Giao diện: trang chủ (trình chiếu, cam kết, hàng mới, lưới banner, tab sản phẩm, bán chạy, lookbook, tin tức, đã xem),
- * nội dung Builder Engine trên slot của trang sản phẩm, danh sách, giỏ trống, thương hiệu; trang bộ sưu tập (banner + vùng
- * trước/sau lưới); menu đầu trang / di động / chân trang, thông tin chân trang của theme. Chỉ ghi khi cửa hàng chưa cấu hình
+ * nội dung Builder Engine trên slot của trang sản phẩm, danh sách, giỏ trống, thương hiệu; menu đầu trang / di động /
+ * chân trang, thông tin chân trang của theme. Nội dung riêng từng bộ sưu tập do plugin vani.catalog-pages. Chỉ ghi khi cửa hàng chưa cấu hình
  * phần đó. Block của plugin chỉ dùng khi plugin đang bật, không thì dùng block Core thay thế.
  */
 final class StorefrontSeeder extends Seeder
 {
-    public function run(BuilderEngine $builder, PageBlocks $blocks, CollectionPages $collectionPages, MenuRepository $menus, ThemeSettings $theme): void
+    /** Surface nội dung riêng từng danh mục/thương hiệu/bộ sưu tập của plugin vani.catalog-pages. */
+    private const CATALOG_PAGES = 'catalog-pages';
+
+    public function run(BuilderEngine $builder, PageBlocks $blocks, MenuRepository $menus, ThemeSettings $theme): void
     {
         if ($builder->blocks(BuilderEngine::HOME) === null) {
             $builder->save(BuilderEngine::HOME, $this->homeBlocks($blocks));
@@ -37,7 +38,7 @@ final class StorefrontSeeder extends Seeder
                 $builder->save($surface, $surfaceBlocks);
             }
         }
-        $this->seedCollectionPages($blocks, $collectionPages);
+        $this->seedCollectionPages($builder, array_keys($blocks->types()));
         foreach ($this->menus() as $location => $items) {
             if (array_key_exists($location, $menus->locations()) && $menus->published($location) === null) {
                 $menus->saveDraft($location, $items);
@@ -153,43 +154,42 @@ final class StorefrontSeeder extends Seeder
         ];
     }
 
-    /** Trang bộ sưu tập demo: banner Hero có ảnh, câu chuyện trước lưới, gợi ý sau lưới. Bỏ qua trang đã có nội dung. */
-    private function seedCollectionPages(PageBlocks $blocks, CollectionPages $pages): void
+    /**
+     * Nội dung riêng của bộ sưu tập demo (plugin vani.catalog-pages, khi đang bật): banner Hero ở đầu trang, câu chuyện
+     * trên lưới, gợi ý dưới lưới. Bỏ qua bộ sưu tập đã có nội dung riêng.
+     *
+     * @param  list<string>  $available  loại block đang có
+     */
+    private function seedCollectionPages(BuilderEngine $builder, array $available): void
     {
-        $available = array_keys($blocks->types());
-        $images = DemoCatalog::covers(2, 10);
+        if ($builder->surface(self::CATALOG_PAGES) === null) {
+            return;
+        }
         $content = [
             'thu-dong-2026' => [
-                'hero' => ['title' => 'Thu Đông 2026', 'subtitle' => 'Len mềm, dạ dày dặn và lụa nhẹ cho những ngày se lạnh.', 'image' => $images[0] ?? null],
-                'before' => [['rich_text', ['title' => 'Chất liệu mùa này', 'body' => self::doc([
+                ['hero', 'header', ['title' => 'Thu Đông 2026', 'subtitle' => 'Len mềm, dạ dày dặn và lụa nhẹ cho những ngày se lạnh.']],
+                ['rich_text', 'before_listing', ['title' => 'Chất liệu mùa này', 'body' => self::doc([
                     self::paragraph('Bảng màu trầm ấm lấy cảm hứng từ phố cổ Hà Nội cuối thu.'),
-                    self::bullets(['Len merino pha cashmere, không gây ngứa', 'Dạ tweed dệt tay cho áo khoác', 'Lụa tơ tằm cho lớp trong'])])]]],
-                'after' => [in_array('lookbook_latest', $available, true)
-                    ? ['lookbook_latest', ['title' => 'Phối đồ Thu Đông', 'limit' => 3]]
-                    : ['product_grid', ['title' => 'Công sở thanh lịch', 'source' => 'collection', 'slug' => 'cong-so-thanh-lich', 'limit' => 4]]],
+                    self::bullets(['Len merino pha cashmere, không gây ngứa', 'Dạ tweed dệt tay cho áo khoác', 'Lụa tơ tằm cho lớp trong'])])]],
+                in_array('lookbook_latest', $available, true)
+                    ? ['lookbook_latest', 'after_listing', ['title' => 'Phối đồ Thu Đông', 'limit' => 3]]
+                    : ['product_grid', 'after_listing', ['title' => 'Công sở thanh lịch', 'source' => 'collection', 'slug' => 'cong-so-thanh-lich', 'limit' => 4]],
             ],
             'cong-so-thanh-lich' => [
-                'hero' => ['title' => 'Công sở thanh lịch', 'subtitle' => 'Chỉn chu từ cuộc họp sáng đến buổi hẹn tối.', 'image' => $images[1] ?? null],
-                'before' => [['rich_text', ['title' => 'Một tuần, năm cách phối', 'body' => self::doc([
-                    self::ordered(['Chân váy bút chì cùng sơ mi lụa', 'Quần ống suông với áo len mỏng', 'Đầm suông thêm blazer khi cần'])])]]],
-                'after' => [['product_grid', ['title' => 'Thêm từ Thu Đông 2026', 'source' => 'collection', 'slug' => 'thu-dong-2026', 'limit' => 4]]],
+                ['hero', 'header', ['title' => 'Công sở thanh lịch', 'subtitle' => 'Chỉn chu từ cuộc họp sáng đến buổi hẹn tối.']],
+                ['rich_text', 'before_listing', ['title' => 'Một tuần, năm cách phối', 'body' => self::doc([
+                    self::bullets(['Chân váy bút chì cùng sơ mi lụa', 'Quần ống suông với áo len mỏng', 'Đầm suông thêm blazer khi cần'], 'orderedList')])]],
+                ['product_grid', 'after_listing', ['title' => 'Thêm từ Thu Đông 2026', 'source' => 'collection', 'slug' => 'thu-dong-2026', 'limit' => 4]],
             ],
         ];
-
-        foreach (ProductCollection::query()->whereIn('slug', array_keys($content))->get() as $collection) {
-            $page = $pages->editable((int) $collection->id, StoreLocale::default());
-            if ($page === null || $page['blocks'] !== []) {
+        foreach (ProductCollection::query()->whereIn('slug', array_keys($content))->get(['id', 'slug']) as $collection) {
+            $scope = "collection-{$collection->id}";
+            if ($builder->blocks(self::CATALOG_PAGES, $scope) !== null) {
                 continue;
             }
-            $definition = $content[$collection->slug];
-            $submitted = [['type' => 'hero', 'zone' => 'banner', 'config' => array_filter($definition['hero'], fn (mixed $value): bool => $value !== null)]];
-            foreach (['before', 'after'] as $zone) {
-                foreach ($definition[$zone] as [$type, $config]) {
-                    $submitted[] = ['type' => $type, 'zone' => $zone, 'config' => $config];
-                }
-            }
-            ['blocks' => $clean, 'media_ids' => $mediaIds] = $blocks->validate($submitted, BlockLayout::collection());
-            $pages->save((int) $collection->id, $clean, $mediaIds);
+            $builder->save(self::CATALOG_PAGES, array_map(fn (array $block): array => [
+                'type' => $block[0], 'zone' => "vani.storefront.plp.{$block[1]}", 'config' => $block[2],
+            ], $content[$collection->slug]), $scope);
         }
     }
 
@@ -212,15 +212,6 @@ final class StorefrontSeeder extends Seeder
     private static function bullets(array $items, string $type = 'bulletList'): array
     {
         return ['type' => $type, 'content' => array_map(fn (string $item): array => ['type' => 'listItem', 'content' => [self::paragraph($item)]], $items)];
-    }
-
-    /**
-     * @param  list<string>  $items
-     * @return array<string, mixed>
-     */
-    private static function ordered(array $items): array
-    {
-        return self::bullets($items, 'orderedList');
     }
 
     /**

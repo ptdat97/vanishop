@@ -112,4 +112,12 @@ interface AdminScreen
      * @return list<array{key: string, label: string, rows: list<array{label: string, value: string}>}>
      */
     public function tabs(string $resource, int $id): array;
+
+    /**
+     * Nút liên kết của plugin ở đầu trang sửa (vd. "Nội dung trang" mở màn hình riêng của plugin). Liên kết closure trả
+     * null bị bỏ (không áp dụng cho bản ghi này).
+     *
+     * @return list<array{key: string, label: string, url: string}>
+     */
+    public function links(string $resource, int $id): array;
 }
