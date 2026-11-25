@@ -115,14 +115,14 @@ it('Video hero 1.2.0: video chọn từ Thư viện ảnh (id), di động riên
     expect($html)->toContain('src="'.vani_media($mobile->id).'" media="(max-width: 767px)" type="video/webm"')->toContain('type="video/mp4"');
 
     try {
-        app(BuilderEngine::class)->save(BuilderEngine::HOME, [['type' => 'extras_video_hero', 'config' => ['video' => $photo->id, 'poster' => $desktop->id, 'video_mobile' => 99999999]]]);
+        app(BuilderEngine::class)->save([['type' => 'extras_video_hero', 'config' => ['video' => $photo->id, 'poster' => $desktop->id, 'video_mobile' => 99999999]]]);
         $this->fail('Phải từ chối tệp sai loại hoặc không tồn tại.');
     } catch (ValidationException $exception) {
         expect(array_keys($exception->errors()))->toEqualCanonicalizing(['blocks.0.config.video', 'blocks.0.config.poster', 'blocks.0.config.video_mobile']);
     }
 
     // Video đang dùng ở khối trang chủ được khai báo như ảnh — Thư viện ảnh không cho xoá.
-    app(BuilderEngine::class)->save(BuilderEngine::HOME, [['type' => 'extras_video_hero', 'config' => ['video' => $desktop->id, 'video_mobile' => $mobile->id]]]);
+    app(BuilderEngine::class)->save([['type' => 'extras_video_hero', 'config' => ['video' => $desktop->id, 'video_mobile' => $mobile->id]]]);
     expect(DB::table('mediables')->where(['mediable_type' => 'storefront.builder', 'role' => 'home'])->pluck('media_id')->sort()->values()->all())->toBe([$desktop->id, $mobile->id]);
 });
 
@@ -137,7 +137,7 @@ it('Sản phẩm theo tab: tab thiếu tên/nguồn hoặc không có sản ph�
 });
 
 it('trang chủ render khối của plugin + script; giỏ có thanh "Đã xem" (khung rỗng, bỏ sản phẩm trong giỏ), tắt được', function () {
-    T::seed(fn () => app(BuilderEngine::class)->save(BuilderEngine::HOME, [
+    T::seed(fn () => app(BuilderEngine::class)->save([
         ['type' => 'extras_features', 'config' => ['item_1_icon' => 'truck', 'item_1_title' => 'Giao nhanh 2h']],
         ['type' => 'extras_recently_viewed', 'config' => ['title' => 'Bạn đã xem gần đây']],
     ]));
@@ -165,7 +165,7 @@ it('lặp slide kiểm tra ảnh từng mục, bỏ khoá lạ và theo dõi ả
     Storage::fake('public');
     $image = T::seed(fn () => app(MediaLibrary::class)->store(UploadedFile::fake()->image('slide.jpg', 800, 600)));
     $this->actingAs(T::staff(['admin.access', 'storefront.manage']), 'staff');
-    $url = route('admin.storefront.builder.edit', 'home');
+    $url = route('admin.storefront.builder.edit');
     $block = fn (array $slides): array => ['blocks' => [['type' => 'extras_slideshow', 'config' => ['slides' => $slides]]]];
 
     $this->put($url, $block([['media' => $image->id], ['media' => 999999]]))->assertSessionHasErrors('blocks.0.config.slides.1.media');
@@ -190,7 +190,7 @@ it('lưới danh mục trang chủ giữ thứ tự đã chọn trên Blade và 
         $hidden = Category::factory()->create(['slug' => 'mua-cu']);
         $deleted = Category::factory()->create(['slug' => 'da-xoa']);
 
-        app(BuilderEngine::class)->save(BuilderEngine::HOME, [['type' => 'extras_category_grid', 'config' => [
+        app(BuilderEngine::class)->save([['type' => 'extras_category_grid', 'config' => [
             'category_1' => (string) $dresses->id,
             'category_2' => (string) $hidden->id,
             'category_3' => (string) $coats->id,
@@ -222,7 +222,7 @@ it('bộ sưu tập nổi bật dùng đúng locale, ảnh và thẻ sản phẩ
         $collection->syncTranslations(['vi' => ['name' => 'Mùa hè'], 'en' => ['name' => 'Summer edit', 'slug' => 'summer-edit']]);
         $collection->styles()->attach($this->s->style_id);
         $cover = app(MediaLibrary::class)->store(UploadedFile::fake()->image('cover.jpg', 1200, 1500));
-        app(BuilderEngine::class)->save(BuilderEngine::HOME, [['type' => 'extras_featured_collection', 'config' => [
+        app(BuilderEngine::class)->save([['type' => 'extras_featured_collection', 'config' => [
             'collection' => (string) $collection->id, 'image' => $cover->id, 'image_alt' => 'Ảnh bìa mùa hè',
             'description' => '<strong>Phối đồ mùa hè</strong>',
         ]]]);

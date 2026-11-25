@@ -214,7 +214,7 @@ it('khối "Bài viết mới" cho page builder trang chủ', function () {
     $blocks = app(PageBlocks::class);
     expect(array_keys($blocks->types()))->toContain('cms_latest_posts');
 
-    app(BuilderEngine::class)->save(BuilderEngine::HOME, [['type' => 'cms_latest_posts', 'config' => ['title' => 'Góc thời trang', 'limit' => 3]]]);
+    app(BuilderEngine::class)->save([['type' => 'cms_latest_posts', 'config' => ['title' => 'Góc thời trang', 'limit' => 3]]]);
     $this->get('/')->assertOk()->assertSee('Góc thời trang')->assertSee('Bộ sưu tập thu');
 });
 
