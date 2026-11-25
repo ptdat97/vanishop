@@ -18,7 +18,7 @@ Combo sản phẩm: bán theo bộ (vd. áo + chân váy + túi) và giảm theo
 
 - Trang sản phẩm (slot `vani.storefront.pdp.after_details`): khung "Mua trọn bộ" cho các combo đang chạy có sản phẩm này — chọn phân loại từng món, giá trọn bộ, số tiền tiết kiệm, nút "Thêm cả bộ vào giỏ" (`window.vani.cart.addItems`, một món hết hàng thì không món nào được thêm).
 - Block **Combo sản phẩm** cho Builder Engine (trang chủ, bộ sưu tập, slot nhận block).
-- Trang `/combo` (`/en/bundles`) liệt kê combo đang chạy; surface Builder `bundles` có hai vùng `vani.bundles.page.before_list` / `after_list`.
+- Trang `/combo` (`/en/bundles`) liệt kê combo đang chạy; slot `vani.bundles.page.before_list` / `after_list` cho plugin/theme chèn nội dung bằng code.
 - Storefront API `GET /api/storefront/v1/x/vani-bundles/bundles` (`openapi.json`, `schemas/bundles.json`).
 
 ## Dữ liệu

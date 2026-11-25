@@ -23,7 +23,7 @@ interface Row {
 /** Admin → Sản phẩm → Combo (vani.bundles): mỗi combo là một khuyến mãi tự đồng bộ ở Khuyến mãi. */
 defineProps<{
     bundles: Row[];
-    bundleUrls: { create: string; storefront: string; builder: string | null };
+    bundleUrls: { create: string; storefront: string };
     can: { manage: boolean };
 }>();
 
@@ -40,7 +40,6 @@ const columns = computed(() => [
         <Head :title="t('vani-bundles::admin.index.title')" />
         <PageHeader :title="t('vani-bundles::admin.index.title')" :subtitle="t('vani-bundles::admin.index.subtitle')">
             <a :href="bundleUrls.storefront" :class="secondaryButton">{{ t('vani-bundles::admin.index.view_page') }}</a>
-            <Link v-if="bundleUrls.builder" :href="bundleUrls.builder" :class="secondaryButton">{{ t('vani-bundles::admin.index.edit_layout') }}</Link>
             <Link v-if="can.manage" :href="bundleUrls.create" :class="primaryButton">{{ t('vani-bundles::admin.index.add') }}</Link>
         </PageHeader>
         <DataTable :columns="columns" :rows="bundles" :row-label="(row) => row.name" :empty-text="t('vani-bundles::admin.index.empty')">

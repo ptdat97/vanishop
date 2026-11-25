@@ -9,20 +9,18 @@ use Modules\Extension\PluginServiceProvider;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Promotion\Contracts\PromotionAction;
 use Modules\Promotion\Contracts\PromotionRule;
-use Modules\Storefront\Contracts\BuilderSurface;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Plugin\Bundles\Database\BundlesDemoContent;
 use Plugin\Bundles\Infrastructure\BundleAction;
 use Plugin\Bundles\Infrastructure\BundleBlock;
-use Plugin\Bundles\Infrastructure\BundlePageSurface;
 use Plugin\Bundles\Infrastructure\BundlePresenter;
 use Plugin\Bundles\Infrastructure\BundleRule;
 
 /**
  * Combo sản phẩm: mua đủ bộ (vd. áo + váy + túi) giảm theo %. Mỗi combo đồng bộ thành một khuyến mãi của Core
  * (ManagedPromotions) với rule "Mua đủ combo" và action giảm theo số bộ (ContextualPromotionAction). Storefront: khung
- * "Mua trọn bộ" ở trang sản phẩm (slot `pdp.after_details`) và block Combo cho Builder; thêm cả bộ bằng Carts::addLines.
+ * "Mua trọn bộ" ở trang sản phẩm (slot `pdp.after_details`) và block Combo cho trang chủ; thêm cả bộ bằng Carts::addLines.
  */
 final class BundlesServiceProvider extends PluginServiceProvider
 {
@@ -48,7 +46,6 @@ final class BundlesServiceProvider extends PluginServiceProvider
         $this->contribute(PromotionAction::TAG, BundleAction::class);
         $this->contribute(StorefrontBlock::TAG, BundleBlock::class);
         $this->publishHooks($this->pluginPath('hooks.php'));
-        $this->contribute(BuilderSurface::TAG, BundlePageSurface::class);
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-bundles');
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: ['vi' => 'combo', 'en' => 'bundles'], cacheable: true);

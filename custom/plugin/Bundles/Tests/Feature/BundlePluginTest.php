@@ -1,9 +1,11 @@
 <?php
 
 use Database\Seeders\Demo\BundlesSeeder;
+use Illuminate\Support\HtmlString;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as Catalog;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as Checkout;
+use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Testing\StorefrontApiContract;
@@ -17,7 +19,6 @@ use Modules\Shared\Support\StoreClock;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\Bundles\Application\Bundles;
 use Plugin\Bundles\BundlesServiceProvider;
-use Plugin\Bundles\Infrastructure\BundlePageSurface;
 use Plugin\Bundles\Persistence\Bundle;
 
 require_once dirname(__DIR__, 5).'/modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -97,7 +98,6 @@ it('lưu, sửa và xoá combo cùng khuyến mãi được quản lý trong Adm
         ->where('urls.media', route('admin.media.index'))
         ->where('bundleUrls.create', route('admin.plugins.vani-bundles.create'))
         ->where('bundleUrls.storefront', route('storefront.p.vani-bundles.index'))
-        ->where('bundleUrls.builder', route('admin.storefront.builder.edit', BundlePageSurface::KEY))
         ->has('bundles.0.period', 1)
         ->where('bundles.0.promotion_url', route('admin.promotion.promotions.edit', $promotion)));
     $this->get(route('admin.plugins.vani-bundles.edit', $bundle))->assertInertia(fn (Assert $page) => $page->component('Bundles::Form')
@@ -140,12 +140,12 @@ it('chặn lưu và tìm sản phẩm khi nhân viên chỉ có quyền xem comb
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'bundles.view'])->create(), 'staff');
 
     $this->get(route('admin.plugins.vani-bundles.index'))->assertInertia(fn (Assert $page) => $page
-        ->where('can.manage', false)->where('urls.media', null)->where('bundleUrls.builder', null));
+        ->where('can.manage', false)->where('urls.media', null));
     $this->getJson(route('admin.plugins.vani-bundles.products'))->assertForbidden();
     $this->post(route('admin.plugins.vani-bundles.store'))->assertForbidden();
 });
 
-it('trang Combo dùng Builder để bố trí nội dung trước và sau danh sách đang chạy', function () {
+it('trang Combo liệt kê combo đang chạy; slot trước và sau danh sách cho plugin chèn nội dung bằng code', function () {
     [$shirt, , $skirt] = bundleProducts();
     manageBundles($this);
     $this->get('/en/bundles')->assertOk()->assertSee('Product bundles')->assertSee('There are no bundles on this page.');
@@ -156,15 +156,8 @@ it('trang Combo dùng Builder để bố trí nội dung trước và sau danh s
     $this->post($store, [...$payload, 'slug' => 'combo-tat', 'name' => 'Combo đã tắt', 'active' => false])->assertSessionHasNoErrors();
     $this->post($store, [...$payload, 'slug' => 'combo-tuong-lai', 'name' => 'Combo tương lai', 'starts_at' => '2030-01-01T12:00'])->assertSessionHasNoErrors();
 
-    $builder = route('admin.storefront.builder.edit', BundlePageSurface::KEY);
-    $this->get($builder)->assertInertia(fn (Assert $page) => $page->component('Storefront::Design/Builder')
-        ->where('surface.key', BundlePageSurface::KEY)
-        ->where('zones.0.slot', BundlePageSurface::BEFORE_LIST)
-        ->where('zones.1.slot', BundlePageSurface::AFTER_LIST));
-    $this->put($builder, ['blocks' => [
-        ['type' => 'rich_text', 'zone' => BundlePageSurface::BEFORE_LIST, 'config' => ['body' => '<p>Phối đồ trong tuần</p>']],
-        ['type' => 'rich_text', 'zone' => BundlePageSurface::AFTER_LIST, 'config' => ['body' => '<p>Hướng dẫn chọn size</p>']],
-    ]])->assertSessionHasNoErrors();
+    app(HookManager::class)->onSlot('vani.bundles.page.before_list', fn () => new HtmlString('<p>Phối đồ trong tuần</p>'));
+    app(HookManager::class)->onSlot('vani.bundles.page.after_list', fn () => new HtmlString('<p>Hướng dẫn chọn size</p>'));
 
     $this->get('/combo')->assertOk()
         ->assertSeeInOrder(['Phối đồ trong tuần', 'data-vani-bundle-form', 'Hướng dẫn chọn size'], false)
@@ -195,7 +188,7 @@ it('phân trang combo theo thứ tự đã lưu', function () {
         ->assertDontSee('Bộ phối số 8')->assertSee('rel="prev"', false)->assertDontSee('rel="next"', false);
 });
 
-it('hiện combo đang chạy trên PDP và Builder với giá từ SKU đủ hàng', function () {
+it('hiện combo đang chạy trên PDP và block Combo ở trang chủ với giá từ SKU đủ hàng', function () {
     [$shirt, $lowStockShirt, $skirt, $unpricedSkirt] = bundleProducts();
     manageBundles($this);
     $this->travelTo(now()->setDate(2026, 11, 23)->setTime(8, 0));
@@ -210,22 +203,21 @@ it('hiện combo đang chạy trên PDP và Builder với giá từ SKU đủ h�
     }
     $bundle->update(['position' => 7]);
 
-    $this->put(route('admin.storefront.builder.edit', 'product'), ['blocks' => [[
-        'type' => 'bundle', 'zone' => 'vani.storefront.pdp.after_related_products',
-        'config' => ['bundle' => (string) $bundle->id, 'title' => 'Phối đồ'],
+    $this->put(route('admin.storefront.builder.update'), ['blocks' => [[
+        'type' => 'bundle', 'config' => ['bundle' => (string) $bundle->id, 'title' => 'Phối đồ'],
     ]]])->assertSessionHasNoErrors();
+    $this->get('/')->assertOk()->assertSee('data-block="bundle"', false)->assertSee('data-vani-bundle-total data-vani-amount="675000"', false);
 
     $pdp = route('storefront.product', $shirt->style->slug);
     $response = $this->get($pdp)->assertOk()
         ->assertSee('data-vani-bundles', false)
-        ->assertSee('data-block="bundle"', false)
         ->assertSee('data-vani-bundle-total data-vani-amount="675000"', false)
         ->assertSee('name="items[0][quantity]" value="2"', false)
         ->assertDontSee('Combo sắp chạy');
     $html = $response->getContent();
     expect($html)->toMatch('/<option value="'.$lowStockShirt->id.'"\s+disabled/')
         ->and($html)->not->toContain('<option value="'.$unpricedSkirt->id.'"');
-    expect(substr_count($html, 'data-vani-bundle-form'))->toBe(2);
+    expect(substr_count($html, 'data-vani-bundle-form'))->toBe(1);
     expect(substr_count($html, vani_asset(BundlesServiceProvider::ID, 'bundles.js')))->toBe(1);
 
     Catalog::seed(fn () => app(Settings::class)->set('core', 'storefront.price_visibility', 'members'));
@@ -323,10 +315,10 @@ it('khi khách bớt món, tính lại ưu đãi theo số lượng của combo 
     $this->assertDatabaseHas('promotion_usages', ['promotion_id' => $promotionId, 'order_id' => $order->id, 'discount_amount' => 0]);
 });
 
-it('Builder xếp loại block và surface của plugin sau thành phần hệ thống, có nhãn plugin', function () {
+it('Builder trang chủ xếp loại block của plugin sau thành phần hệ thống, có nhãn plugin', function () {
     manageBundles($this);
 
-    $this->get(route('admin.storefront.builder.edit', 'home'))->assertInertia(function (Assert $page): void {
+    $this->get(route('admin.storefront.builder.edit'))->assertInertia(function (Assert $page): void {
         $types = $page->toArray()['props']['types'];
         $firstPlugin = array_search(true, array_map(fn (array $type): bool => $type['plugin'] !== null, $types), true);
         $owners = array_column($types, 'plugin');
@@ -336,10 +328,5 @@ it('Builder xếp loại block và surface của plugin sau thành phần hệ t
             ->and(array_filter(array_slice($owners, $firstPlugin), fn (?string $owner): bool => $owner === null))->toBe([])
             ->and(collect($types)->firstWhere('type', 'bundle')['plugin'])->toBe(BundlesServiceProvider::ID)
             ->and(collect($types)->firstWhere('type', 'hero')['plugin'])->toBeNull();
-
-        $surfaces = $page->toArray()['props']['surfaces'];
-        expect(array_key_last($surfaces))->toBe(array_search('bundles', array_column($surfaces, 'key'), true))
-            ->and($surfaces[0]['key'])->toBe('home')
-            ->and(end($surfaces)['plugin'])->toBe(BundlesServiceProvider::ID);
     });
 });

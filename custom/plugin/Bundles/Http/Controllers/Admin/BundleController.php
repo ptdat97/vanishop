@@ -22,7 +22,6 @@ use Modules\Shared\Support\StoreLocale;
 use Plugin\Bundles\Application\Bundles;
 use Plugin\Bundles\BundlesServiceProvider;
 use Plugin\Bundles\Domain\BundleConfig;
-use Plugin\Bundles\Infrastructure\BundlePageSurface;
 use Plugin\Bundles\Persistence\Bundle;
 use Plugin\Bundles\Persistence\BundleItem;
 
@@ -61,7 +60,6 @@ final class BundleController
             'bundleUrls' => [
                 'create' => route('admin.plugins.vani-bundles.create'),
                 'storefront' => vani_route('storefront.p.vani-bundles.index'),
-                'builder' => Gate::allows('storefront.manage') ? route('admin.storefront.builder.edit', BundlePageSurface::KEY) : null,
             ],
             'can' => ['manage' => Gate::allows('bundles.manage')],
         ]);

@@ -6,7 +6,6 @@ return [
         'subtitle' => 'Sell products as a set with a discount for the full set. Each bundle creates a promotion under Promotions.',
         'add' => 'Add bundle',
         'view_page' => 'View bundles page',
-        'edit_layout' => 'Edit layout',
         'bundle' => 'Bundle',
         'products' => 'Products',
         'discount' => 'Discount',

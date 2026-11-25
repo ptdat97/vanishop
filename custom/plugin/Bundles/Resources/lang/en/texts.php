@@ -21,8 +21,6 @@ return [
     'block_bundle' => 'Bundle',
     'page_title' => 'Product bundles',
     'page_empty' => 'There are no bundles on this page.',
-    'before_list' => 'Before the bundle list',
-    'after_list' => 'After the bundle list',
     'view_all' => 'View all bundles',
     'previous_page' => 'Previous page',
     'next_page' => 'Next page',

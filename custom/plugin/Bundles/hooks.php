@@ -1,19 +1,15 @@
 <?php
 
-use Plugin\Bundles\Infrastructure\BundlePageSurface;
-
 return [
-    BundlePageSurface::BEFORE_LIST => [
+    'vani.bundles.page.before_list' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '1.0.0',
         'args' => [],
         'description' => 'Trước danh sách trên trang Combo.',
     ],
-    BundlePageSurface::AFTER_LIST => [
+    'vani.bundles.page.after_list' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '1.0.0',
         'args' => [],

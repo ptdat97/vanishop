@@ -8,7 +8,6 @@ return [
         'subtitle' => 'Bán theo bộ, giảm khi khách mua đủ các món. Mỗi combo tự tạo một khuyến mãi ở Khuyến mãi.',
         'add' => 'Thêm combo',
         'view_page' => 'Xem trang Combo',
-        'edit_layout' => 'Chỉnh bố cục',
         'bundle' => 'Combo',
         'products' => 'Số món',
         'discount' => 'Giảm',

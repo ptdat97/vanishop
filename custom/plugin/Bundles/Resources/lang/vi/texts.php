@@ -21,8 +21,6 @@ return [
     'block_bundle' => 'Combo',
     'page_title' => 'Combo sản phẩm',
     'page_empty' => 'Trang này chưa có combo nào.',
-    'before_list' => 'Trước danh sách combo',
-    'after_list' => 'Sau danh sách combo',
     'view_all' => 'Xem tất cả combo',
     'previous_page' => 'Trang trước',
     'next_page' => 'Trang sau',
