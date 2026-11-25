@@ -9,7 +9,7 @@
     @section('og_image', $meta['image'])
 @endif
 
-{{-- Đầu trang: block admin đặt ở "Đầu trang" (Builder, chung hoặc riêng của brand) thay phần đầu mặc định. --}}
+{{-- Đầu trang: plugin trả nội dung ở slot plp.header thì thay phần đầu mặc định của theme. --}}
 @php($listingContext = ['type' => 'brand', 'category' => null, 'brand' => $brand, 'collection' => null])
 @section('content')
     @include('theme::partials.breadcrumb', ['crumbs' => $crumbs])

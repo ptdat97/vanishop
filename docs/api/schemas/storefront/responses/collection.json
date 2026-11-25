@@ -74,5 +74,5 @@
             }
         }
     },
-    "description": "Thông tin trang bộ sưu tập. Nội dung Builder của trang (chung và riêng từng bộ sưu tập) lấy qua GET /pages/layouts/listing?type=collection&slug=."
+    "description": "Thông tin trang bộ sưu tập: tên, mô tả, SEO, ảnh bìa. Sản phẩm lấy qua GET /products?collection={slug}."
 }

@@ -138,7 +138,7 @@ it('khối có trường ảnh (media): ảnh Thư viện ảnh có srcset, đư
     $html = $this->get('/')->assertOk()->getContent();
     expect($html)->toContain('srcset="'.e($media->srcset()).'"')->toContain('fetchpriority="high"');
 
-    app(BuilderEngine::class)->reset(BuilderEngine::HOME);
+    app(BuilderEngine::class)->reset();
     expect(DB::table('mediables')->where('media_id', $media->id)->exists())->toBeFalse();
 });
 
@@ -173,7 +173,7 @@ it('migration chuyển URL ảnh cũ của khối sang id Thư viện ảnh (b�
     (require base_path('modules/Storefront/Persistence/Database/migrations/2026_11_22_000100_home_blocks_to_builder_engine.php'))->up();
     app()->forgetInstance(Settings::class);
     app()->forgetScopedInstances();
-    $blocks = app(BuilderEngine::class)->blocks(BuilderEngine::HOME);
+    $blocks = app(BuilderEngine::class)->blocks();
 
     expect($blocks[0]['config'])->toBe(['title' => 'Hè', 'image' => $hero->id])
         ->and($blocks[2]['config'])->toBe(['title' => 'Ngoài', 'image_url' => 'https://cdn.khac.test/a.jpg'])

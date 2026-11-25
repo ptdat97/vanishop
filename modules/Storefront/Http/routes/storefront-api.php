@@ -32,8 +32,6 @@ Route::middleware('vani.customer:optional')->group(function () {
     Route::get('store', [StoreController::class, 'show'])->name('store.show');
     Route::get('menus/{location}', [StoreController::class, 'menu'])->where('location', '[a-z0-9_]{1,32}')->name('menus.show');
     Route::get('pages/home', [StoreController::class, 'home'])->name('pages.home');
-    Route::get('pages/layouts/{surface}', [StoreController::class, 'layout'])
-        ->whereIn('surface', StoreController::PUBLIC_LAYOUTS)->name('pages.layouts.show');
 });
 Route::get('address/provinces', [AddressController::class, 'provinces'])->name('address.provinces');
 Route::get('address/provinces/{province}/wards', [AddressController::class, 'wards'])->where('province', '[0-9A-Za-z_-]{1,16}')->name('address.wards');

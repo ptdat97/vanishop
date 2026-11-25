@@ -19,26 +19,15 @@ use Modules\Storefront\Application\Theme\ThemeSettings;
 
 /**
  * Giao diện: trang chủ (trình chiếu, cam kết, hàng mới, lưới banner, tab sản phẩm, bán chạy, lookbook, tin tức, đã xem),
- * nội dung Builder Engine trên slot của trang sản phẩm, danh sách, giỏ trống, thương hiệu; menu đầu trang / di động /
- * chân trang, thông tin chân trang của theme. Nội dung riêng từng bộ sưu tập do plugin vani.catalog-pages. Chỉ ghi khi cửa hàng chưa cấu hình
- * phần đó. Block của plugin chỉ dùng khi plugin đang bật, không thì dùng block Core thay thế.
+ * menu đầu trang / di động / chân trang, thông tin chân trang của theme. Chỉ ghi khi cửa hàng chưa cấu hình phần đó. Block của plugin chỉ dùng khi plugin đang bật, không thì dùng block Core thay thế.
  */
 final class StorefrontSeeder extends Seeder
 {
-    /** Surface nội dung riêng từng danh mục/thương hiệu/bộ sưu tập của plugin vani.catalog-pages. */
-    private const CATALOG_PAGES = 'catalog-pages';
-
     public function run(BuilderEngine $builder, PageBlocks $blocks, MenuRepository $menus, ThemeSettings $theme): void
     {
-        if ($builder->blocks(BuilderEngine::HOME) === null) {
-            $builder->save(BuilderEngine::HOME, $this->homeBlocks($blocks));
+        if ($builder->blocks() === null) {
+            $builder->save($this->homeBlocks($blocks));
         }
-        foreach ($this->surfaceBlocks(array_keys($blocks->types())) as $surface => $surfaceBlocks) {
-            if ($surfaceBlocks !== [] && $builder->surface($surface) !== null && $builder->blocks($surface) === null) {
-                $builder->save($surface, $surfaceBlocks);
-            }
-        }
-        $this->seedCollectionPages($builder, array_keys($blocks->types()));
         foreach ($this->menus() as $location => $items) {
             if (array_key_exists($location, $menus->locations()) && $menus->published($location) === null) {
                 $menus->saveDraft($location, $items);
@@ -99,119 +88,6 @@ final class StorefrontSeeder extends Seeder
         }
 
         return $result;
-    }
-
-    /**
-     * Nội dung Builder Engine trên slot có sẵn, theo surface. Khoá `zone` là tên slot.
-     *
-     * @param  list<string>  $available  loại block đang có
-     * @return array<string, list<array{type: string, zone: string, config: array<string, mixed>}>>
-     */
-    private function surfaceBlocks(array $available): array
-    {
-        $has = fn (string $type): bool => in_array($type, $available, true);
-        $images = DemoCatalog::covers(4, 6);
-        $image = fn (int $index): ?int => $images[$index] ?? null;
-        $block = fn (string $zone, string $type, array $config): array => ['type' => $type, 'zone' => "vani.storefront.{$zone}", 'config' => $config];
-        $newest = fn (string $zone, string $title, int $limit = 4): array => $block($zone, 'product_grid', ['title' => $title, 'source' => 'category', 'slug' => CatalogSeeder::NEW_ARRIVALS, 'limit' => $limit]);
-
-        return [
-            'product' => array_values(array_filter([
-                $block('pdp.after_details', 'rich_text', ['title' => 'Cam kết của Vani Studio', 'body' => self::doc([
-                    self::bullets(['Kiểm tra hàng trước khi thanh toán COD', 'Đổi size miễn phí trong 7 ngày', 'May tại xưởng Vani, kiểm từng đường chỉ']),
-                ])]),
-                $has('extras_features')
-                    ? $block('pdp.after_related_products', 'extras_features', [
-                        'item_1_icon' => 'truck', 'item_1_title' => 'Giao nhanh 2h', 'item_1_text' => 'Đơn nội thành TP. HCM trước 16h',
-                        'item_2_icon' => 'return', 'item_2_title' => 'Đổi trả dễ dàng', 'item_2_text' => 'Đổi tại cửa hàng hoặc gửi lại qua bưu cục',
-                        'item_3_icon' => 'shield', 'item_3_title' => 'Hàng chính hãng', 'item_3_text' => 'Tem và hoá đơn cho mọi đơn hàng',
-                        'item_4_icon' => 'support', 'item_4_title' => 'Stylist tư vấn', 'item_4_text' => 'Chat để được gợi ý phối đồ'])
-                    : $newest('pdp.after_related_products', 'Hàng mới về'),
-            ])),
-            'listing' => array_values(array_filter([
-                $has('extras_banner_grid') && $image(1) !== null
-                    ? $block('plp.after_listing', 'extras_banner_grid', ['layout' => '2',
-                        'cell_1_media' => $image(0), 'cell_1_title' => 'Thu Đông 2026', 'cell_1_link' => '/bo-suu-tap/thu-dong-2026',
-                        'cell_2_media' => $image(1), 'cell_2_title' => 'Công sở thanh lịch', 'cell_2_link' => '/bo-suu-tap/cong-so-thanh-lich'])
-                    : null,
-                $block('plp.empty', 'rich_text', ['title' => 'Chưa có sản phẩm phù hợp', 'body' => self::doc([
-                    self::paragraph('Thử bỏ bớt bộ lọc, chọn size khác hoặc xem các mẫu mới về bên dưới.'),
-                ])]),
-                $newest('plp.empty', 'Có thể bạn sẽ thích'),
-            ])),
-            'cart' => [
-                $has('extras_bestsellers')
-                    ? $block('cart.empty', 'extras_bestsellers', ['title' => 'Khách hàng đang mua', 'limit' => 4, 'days' => '30'])
-                    : $newest('cart.empty', 'Khách hàng đang mua'),
-                $newest('cart.empty', 'Hàng mới về'),
-            ],
-            'brands' => [
-                $block('brands.before_list', 'rich_text', ['body' => self::doc([
-                    self::paragraph('Thương hiệu được chọn lọc cho tủ đồ công sở và dạo phố. Chọn thương hiệu để xem toàn bộ sản phẩm.'),
-                ])]),
-                $block('brands.after_list', 'product_grid', ['title' => 'Nổi bật từ '.CatalogSeeder::BRAND['name'], 'source' => 'brand', 'slug' => CatalogSeeder::BRAND['slug'], 'limit' => 8]),
-            ],
-        ];
-    }
-
-    /**
-     * Nội dung riêng của bộ sưu tập demo (plugin vani.catalog-pages, khi đang bật): banner Hero ở đầu trang, câu chuyện
-     * trên lưới, gợi ý dưới lưới. Bỏ qua bộ sưu tập đã có nội dung riêng.
-     *
-     * @param  list<string>  $available  loại block đang có
-     */
-    private function seedCollectionPages(BuilderEngine $builder, array $available): void
-    {
-        if ($builder->surface(self::CATALOG_PAGES) === null) {
-            return;
-        }
-        $content = [
-            'thu-dong-2026' => [
-                ['hero', 'header', ['title' => 'Thu Đông 2026', 'subtitle' => 'Len mềm, dạ dày dặn và lụa nhẹ cho những ngày se lạnh.']],
-                ['rich_text', 'before_listing', ['title' => 'Chất liệu mùa này', 'body' => self::doc([
-                    self::paragraph('Bảng màu trầm ấm lấy cảm hứng từ phố cổ Hà Nội cuối thu.'),
-                    self::bullets(['Len merino pha cashmere, không gây ngứa', 'Dạ tweed dệt tay cho áo khoác', 'Lụa tơ tằm cho lớp trong'])])]],
-                in_array('lookbook_latest', $available, true)
-                    ? ['lookbook_latest', 'after_listing', ['title' => 'Phối đồ Thu Đông', 'limit' => 3]]
-                    : ['product_grid', 'after_listing', ['title' => 'Công sở thanh lịch', 'source' => 'collection', 'slug' => 'cong-so-thanh-lich', 'limit' => 4]],
-            ],
-            'cong-so-thanh-lich' => [
-                ['hero', 'header', ['title' => 'Công sở thanh lịch', 'subtitle' => 'Chỉn chu từ cuộc họp sáng đến buổi hẹn tối.']],
-                ['rich_text', 'before_listing', ['title' => 'Một tuần, năm cách phối', 'body' => self::doc([
-                    self::bullets(['Chân váy bút chì cùng sơ mi lụa', 'Quần ống suông với áo len mỏng', 'Đầm suông thêm blazer khi cần'], 'orderedList')])]],
-                ['product_grid', 'after_listing', ['title' => 'Thêm từ Thu Đông 2026', 'source' => 'collection', 'slug' => 'thu-dong-2026', 'limit' => 4]],
-            ],
-        ];
-        foreach (ProductCollection::query()->whereIn('slug', array_keys($content))->get(['id', 'slug']) as $collection) {
-            $scope = "collection-{$collection->id}";
-            if ($builder->blocks(self::CATALOG_PAGES, $scope) !== null) {
-                continue;
-            }
-            $builder->save(self::CATALOG_PAGES, array_map(fn (array $block): array => [
-                'type' => $block[0], 'zone' => "vani.storefront.plp.{$block[1]}", 'config' => $block[2],
-            ], $content[$collection->slug]), $scope);
-        }
-    }
-
-    /** @param  list<array<string, mixed>>  $content */
-    private static function doc(array $content): string
-    {
-        return json_encode(['type' => 'doc', 'content' => $content], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-    }
-
-    /** @return array<string, mixed> */
-    private static function paragraph(string $text): array
-    {
-        return ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]];
-    }
-
-    /**
-     * @param  list<string>  $items
-     * @return array<string, mixed>
-     */
-    private static function bullets(array $items, string $type = 'bulletList'): array
-    {
-        return ['type' => $type, 'content' => array_map(fn (string $item): array => ['type' => 'listItem', 'content' => [self::paragraph($item)]], $items)];
     }
 
     /**

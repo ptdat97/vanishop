@@ -50,7 +50,6 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 | GET | `/store` | "Vỏ" cửa hàng (0.4.13, [ADR-044](../19-adr/ADR-044-storefront-api-first.md)): `name`, `locale{current, default, supported[]}`, `currency` (quy tắc định dạng: `symbol`, `exponent`, dấu phân cách — định dạng giống server), `prices{visibility: public|members, hidden}` (giá có bị ẩn với người đang xem), `guest_checkout`, `popular_searches[]`, `menu_locations[{code, label, depth}]`, `theme.settings` (đầu/chân trang theo ngôn ngữ). **Implemented** |
 | GET | `/menus/{location}` | Menu đã xuất bản của vị trí theme khai báo: `[{label, url, badge, image_url, children[]}]` (link đã giải theo ngôn ngữ, mục hết hạn/ẩn bị bỏ). Chưa xuất bản → `data: []`, `meta.published: false`; vị trí lạ → 404. **Implemented** (0.4.13) |
 | GET | `/pages/home` | Trang chủ dựng bằng khối: `[{type, data}]` theo thứ tự Admin sắp — `data` giống dữ liệu view của khối trên Blade (HTML đã làm sạch dạng chuỗi, vd. `bodyHtml`; sản phẩm như thẻ của `/products`). Khối của plugin có luôn. Chưa cấu hình → `data: null`, `meta.configured: false`. **Implemented** (0.4.13) |
-| GET | `/pages/layouts/{surface}` | Bố cục Builder cho `listing`, `product`, `brands`, `cart`. Phản hồi `data: [{key, blocks: [{type, data}]}]` theo thứ tự vùng và khối, gồm các block plugin gắn vào cùng slot. Giữ cả vùng rỗng. `meta: {surface, configured}`; `configured` cho biết đã lưu bố cục, kể cả khi lưu rỗng. **Implemented** (0.5.78) |
 | GET | `/categories`, `/categories/{slug}` | Cây danh mục của cửa hàng; `/categories/{slug}` có `breadcrumb[{id, slug, name}]` từ gốc (0.3.66). **Implemented** |
 | GET | `/collections/{slug}` | Tên, mô tả và slug theo locale của bộ sưu tập đang hiển thị. `data.blocks` có ba danh sách `banner`, `before`, `after` theo thứ tự biên tập. Dùng `data.slug` để lọc sản phẩm qua `/products?collection=`. **Implemented** (0.5.70) |
 | GET | `/brands`, `/brands/{slug}` | Danh sách brand đang hiện, chi tiết brand (logo, mô tả, SEO). **Implemented**; brand là thuộc tính Catalog, không phải data scope |
@@ -88,13 +87,6 @@ Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác
 | GET | `/address/provinces`, `/address/provinces/{code}/wards` | Địa giới hành chính (khi có `AddressDirectory`, vd. `vani.provinces-vn`). **Implemented** (0.3.11) |
 | GET | `/search?q=&filter[...]` | Tìm kiếm bằng SQL (`Catalog\Application\Search\ProductSearch`; facet màu, size còn hàng, giá) |
 | GET | `/x/vani-cms/pages/{slug}`, `/x/vani-cms/posts`, `/x/vani-cms/posts/{slug}` | Nội dung (plugin `vani.cms`). **Implemented** (0.3.14); menu tuỳ biến: chưa |
-
-### Bố cục Builder
-
-- `/pages/layouts/listing?type=category&slug=dam-vay` dựng block theo danh mục. `type=collection` và `type=brand` cũng cần slug công khai. `type=search` dùng cho trang tìm kiếm và bỏ tham số `slug`.
-- `/pages/layouts/product?slug=dam-lua` dùng sản phẩm đang hiển thị. `/pages/layouts/brands` và `/pages/layouts/cart` không cần tham số ngữ cảnh.
-- Client xác định khi nào hiển thị vùng theo dữ liệu trang. Ví dụ, chỉ dựng `vani.storefront.cart.empty` khi giỏ rỗng. Dùng `/collections/{slug}` để đọc thêm bố cục riêng của từng bộ sưu tập.
-- Slug hoặc bề mặt không công khai trả 404, tham số sai trả 422. Dữ liệu khối theo locale và quyền xem giá của khách. Phản hồi dùng `Cache-Control: private, no-store`.
 
 ## 4. Admin API: nhóm tài nguyên
 

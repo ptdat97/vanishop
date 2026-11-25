@@ -36,16 +36,6 @@ interface CatalogLookup
     public function adminCategories(array $ids, string $locale): array;
 
     /**
-     * Danh mục, bộ sưu tập, thương hiệu theo ID cho Admin, gồm đối tượng đang ẩn (`visible = false`). `slug` là slug của
-     * ngôn ngữ đã chọn (thương hiệu: một slug cho mọi ngôn ngữ).
-     *
-     * @param  'category'|'collection'|'brand'  $kind
-     * @param  list<int>  $ids
-     * @return array<int, array{id: int, slug: string, name: string, visible: bool}>
-     */
-    public function adminItems(string $kind, array $ids, string $locale): array;
-
-    /**
      * Tìm theo tên/mã (không dấu) cho Admin, gồm cả đối tượng đang ẩn (`visible = false`).
      *
      * @param  'category'|'collection'|'brand'|'product'  $kind

@@ -21,7 +21,7 @@ it('sửa repeater cũ, xem trước trên viewport desktop và nhập bố cụ
         ]);
     });
 
-    $page = visit(route('admin.storefront.builder.edit', 'home', absolute: false));
+    $page = visit(route('admin.storefront.builder.edit', absolute: false));
     $page->click('[data-block-toggle="0"]')
         ->click('Thêm mục')
         ->type('[data-builder-repeater] input[type="text"] >> nth=2', 'Cam kết trong bản nháp')
@@ -46,5 +46,5 @@ it('sửa repeater cũ, xem trước trên viewport desktop và nhập bố cụ
         ->assertMissing('[data-block="extras_features"]')
         ->assertNoJavaScriptErrors();
 
-    expect(app(BuilderEngine::class)->blocks('home')[0]['type'])->toBe('extras_features');
+    expect(app(BuilderEngine::class)->blocks()[0]['type'])->toBe('extras_features');
 });

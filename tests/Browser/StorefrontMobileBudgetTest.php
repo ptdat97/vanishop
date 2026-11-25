@@ -258,7 +258,7 @@ it('trang chủ mặc định và trang chủ có khối thương hiệu đều 
         $this->brand->update(['name' => 'Logo ngang', 'logo_media_id' => $wideLogo->id]);
         Brand::factory()->create(['name' => 'Logo dọc', 'logo_media_id' => $tallLogo->id]);
         if ($configured) {
-            app(BuilderEngine::class)->save(BuilderEngine::HOME, [['type' => 'brand_grid', 'config' => ['title' => 'Thương hiệu mùa này']]]);
+            app(BuilderEngine::class)->save([['type' => 'brand_grid', 'config' => ['title' => 'Thương hiệu mùa này']]]);
         }
     });
 
@@ -364,7 +364,7 @@ it('bộ sưu tập nổi bật vừa màn hình nhỏ và dẫn tới đúng t�
             ['type' => 'rich_text', 'zone' => 'before', 'config' => ['body' => '<p>Chất liệu cho ngày nắng</p>']],
             ['type' => 'rich_text', 'zone' => 'after', 'config' => ['body' => '<p>Gợi ý phối đồ</p>']],
         ], [$cover->id]);
-        app(BuilderEngine::class)->save(BuilderEngine::HOME, [['type' => 'extras_featured_collection', 'config' => [
+        app(BuilderEngine::class)->save([['type' => 'extras_featured_collection', 'config' => [
             'collection' => (string) $collection->id,
             'image' => $cover->id,
             'image_alt' => 'Ảnh bộ sưu tập mùa hè',

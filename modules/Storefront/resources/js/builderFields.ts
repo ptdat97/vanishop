@@ -2,7 +2,7 @@ import type { ExtensionField, ExtensionFieldValue } from '@admin/types';
 
 export type RepeaterRow = Record<string, ExtensionFieldValue>;
 export type BuilderValue = ExtensionFieldValue | RepeaterRow[];
-export type BuilderBlock = { type: string; config: Record<string, BuilderValue>; zone?: string };
+export type BuilderBlock = { type: string; config: Record<string, BuilderValue> };
 export type BuilderField = ExtensionField | (Omit<ExtensionField, 'type'> & {
     type: 'repeater';
     max: number;

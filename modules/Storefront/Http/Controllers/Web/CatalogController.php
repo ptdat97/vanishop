@@ -52,7 +52,7 @@ final class CatalogController
         };
         $flatten($categoryTree);
 
-        $heroBlock = collect($builder->zone(BuilderEngine::HOME, 'main') ?? [])->firstWhere('type', 'hero');
+        $heroBlock = collect($builder->blocks() ?? [])->firstWhere('type', 'hero');
         $banner = $heroBlock === null ? [] : ($pageBlocks->resolve([$heroBlock])[0]['data'] ?? []);
         $now = now()->getTimestamp();
 

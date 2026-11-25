@@ -3,7 +3,6 @@
 /*
 | Slot UI của native storefront (ADR-025) — public API, đổi/xoá vị trí là thay đổi major.
 | Listener trả Modules\\Storefront\\Contracts\\Data\\SlotView (hoặc Htmlable); chỉ nối thêm, lỗi một listener bị bỏ qua.
-| `builder: true` = vị trí nhận block của Builder Engine (Admin → Giao diện → Nội dung trang); block không dùng args của slot.
 | Theme render bằng <x-vani::hook-slot name="…" :args="[…]" />. Danh mục: docs/04-extension/extension-point-catalog.md §4.1
 */
 
@@ -73,7 +72,6 @@ return [
     ],
     'vani.storefront.pdp.after_details' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.3',
         'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
@@ -88,7 +86,6 @@ return [
     ],
     'vani.storefront.pdp.after_related_products' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.3.105',
         'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
@@ -96,7 +93,6 @@ return [
     ],
     'vani.storefront.plp.empty' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.3.105',
         'args' => [
@@ -163,17 +159,15 @@ return [
     ],
     'vani.storefront.plp.header' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.5.86',
         'args' => [
             'context' => 'array{type: "category"|"brand"|"collection", category: array<string, mixed>|null, brand: array<string, mixed>|null, collection?: array<string, mixed>|null}',
         ],
-        'description' => 'Đầu trang danh mục, thương hiệu, bộ sưu tập (ngoài vùng tải lại khi lọc). Có nội dung thì thay phần đầu trang mặc định của theme (tên, mô tả, ảnh).',
+        'description' => 'Đầu trang danh mục, thương hiệu, bộ sưu tập (ngoài vùng tải lại khi lọc). Plugin trả nội dung thì thay phần đầu trang mặc định của theme (tên, mô tả, ảnh).',
     ],
     'vani.storefront.plp.before_listing' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.3.43',
         'args' => [
@@ -321,7 +315,6 @@ return [
     ],
     'vani.storefront.brands.after_list' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.3.105',
         'args' => ['brandGroups' => 'array<string, list<array<string, mixed>>>'],
@@ -329,7 +322,6 @@ return [
     ],
     'vani.storefront.brands.before_list' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.3.105',
         'args' => ['brandGroups' => 'array<string, list<array<string, mixed>>>'],
@@ -344,7 +336,6 @@ return [
     ],
     'vani.storefront.plp.after_listing' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.3.105',
         'args' => [
@@ -362,7 +353,6 @@ return [
     ],
     'vani.storefront.cart.empty' => [
         'type' => 'slot',
-        'builder' => true,
         'visibility' => 'public',
         'since' => '0.3.105',
         'args' => [],

@@ -17,7 +17,7 @@ final class HomeController
     public function __invoke(CatalogReader $catalog, ProductViews $products, BuilderEngine $builder, PageBlocks $pageBlocks): View
     {
         $now = now()->getTimestamp();
-        $configured = $builder->zone(BuilderEngine::HOME, 'main');
+        $configured = $builder->blocks();
 
         if ($configured !== null) {
             return view('theme::pages.home', ['blocks' => $pageBlocks->render($configured)]);

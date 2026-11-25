@@ -11,7 +11,7 @@ use Modules\Catalog\Contracts\CollectionPages;
 final class CollectionController
 {
     /**
-     * Thông tin trang bộ sưu tập; nội dung Builder của trang lấy qua `GET /pages/layouts/listing?type=collection&slug=`.
+     * Thông tin trang bộ sưu tập (tên, mô tả, SEO, ảnh bìa); sản phẩm lấy qua `GET /products?collection={slug}`.
      */
     public function show(string $slug, CollectionPages $pages): JsonResponse
     {

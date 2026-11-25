@@ -12,7 +12,7 @@
 > | Đổi/trả trên native (2026-10-08): partial `order-returns` trên `/tai-khoan/don-hang/{id}` và `/don-hang/{id}` (token đơn trong phiên) — danh sách yêu cầu + huỷ khi chờ duyệt, form chọn số lượng, trả hoàn tiền hoặc đổi size/màu cùng mẫu (size hết hàng bị khoá), lý do, ghi chú; `POST /don-hang/{id}/doi-tra`, `POST /don-hang/{id}/doi-tra/{return}/huy`. Đổi mẫu khác: qua CSKH | Implemented |
 > | Cache CDN trang công khai — **tuỳ chọn nâng cao**, mặc định tắt (0.3.34, 0.3.68, §5): không CDN thì trang có phiên, render sẵn theo khách; bật thì không phiên, `Cache-Control: public, s-maxage`, phần riêng của khách qua `/_vani/phien` — hiển thị như nhau | Implemented |
 > | Chọn dòng giỏ (ô chọn + "Chọn tất cả", `POST /gio-hang/chon`), nút "Mua ngay" ở PDP (`buy_now` → `/thanh-toan`), giỏ mini ở header (0.3.64) | Implemented |
-> | Page builder cho trang khác ngoài trang chủ; purge CDN theo event | Designed |
+> | Purge CDN theo event | Designed |
 > | Địa chỉ checkout | Có `vani.provinces-vn`: chọn tỉnh/phường (JS tải phường theo tỉnh). Nếu chưa cấu hình danh mục địa giới, form cho nhập địa chỉ tự do. |
 
 Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
@@ -92,33 +92,19 @@ GET /thuong-hieu/{slug}
 
 ## 4. Block (page builder)
 
-Admin → Giao diện → **Nội dung trang** là Builder Engine: một màn hình biên tập block cho mọi surface. `StorefrontBlock` khai báo `type()`, `label()`, `fields(): list<FieldDefinition>`, `resolve(array $config, string $locale)` và `view()`. Core đăng ký `hero`, `product_grid`, `brand_grid`, `rich_text`. Plugin đóng góp thêm qua `StorefrontBlock::TAG` (`vani.storefront.blocks`).
+Admin → Giao diện → **Trang chủ** (`admin/storefront/builder/home`) là Builder duy nhất: kéo thả block của trang chủ. `StorefrontBlock` khai báo `type()`, `label()`, `fields(): list<FieldDefinition>`, `resolve(array $config, string $locale)` và `view()`. Core đăng ký `hero`, `product_grid`, `brand_grid`, `rich_text`. Plugin đóng góp thêm qua `StorefrontBlock::TAG` (`vani.storefront.blocks`).
 
-`PageBlocks` validate cấu hình và kiểm tra ID ảnh/video có trong Thư viện ảnh, đúng loại trường. Khi ghi cấu hình, module đồng bộ ghi nhận media đang dùng để Thư viện bảo vệ các tệp còn tham chiếu. Thứ tự block theo cấu hình áp dụng cho cả HTML và dữ liệu home API. Khi chưa có cấu hình, theme dùng trang chủ mặc định.
-
-Mọi trang dùng chung một lõi block: registry `StorefrontBlock`, schema cấu hình, trình biên tập Admin và validation/renderer `PageBlocks`. Mỗi trang chỉ khác `BlockLayout` (vùng, loại block và số block tối đa mỗi vùng, dựng từ `BuilderZone`) và nơi lưu cấu hình. Bố cục một vùng lưu block không kèm `zone`. Bố cục nhiều vùng lưu `zone` là khoá vùng.
-
-### Builder Engine và surface
-
-- `BuilderEngine` quản lý các `BuilderSurface` (tag `vani.storefront.builder_surfaces`). Cấu hình của surface lưu ở `core.storefront.builder.{surface}`. Ảnh đang dùng ghi dưới `storefront.builder`, role là mã surface. Route Admin là `admin/storefront/builder/{surface}`.
-- `BuilderZone::page()` là vùng do controller của trang tự render. Surface `home` có vùng `main`. Khi surface `home` chưa cấu hình, theme dùng trang chủ mặc định.
-- `BuilderZone::slot()` gắn vùng vào slot có sẵn. Slot phải khai báo `builder: true` trong `hooks.php` của Core hoặc plugin. Vùng gắn vào slot khác bị bỏ và ghi log. `<x-vani::hook-slot>` render block của mọi surface gắn vào slot đó trước, rồi tới phần tử plugin chèn bằng listener `onSlot`.
-- **Thành phần hệ thống luôn đứng trước thành phần plugin khai báo** (`SystemFirst`, 0.5.81), bất kể thứ tự nạp provider: danh sách loại block trong trình biên tập, tab surface, block tại slot (surface hệ thống trước surface plugin; block Builder trước phần tử `onSlot`). Trình biên tập gắn nhãn "Plugin" cho loại block và surface của plugin. Thứ tự block trong một vùng vẫn theo admin sắp. Block triển khai `ContextualStorefrontBlock` nhận `BlockContext` chỉ gồm định danh công khai của sản phẩm hoặc danh sách.
-- Admin có thể xem trước các block nháp theo vùng trên điện thoại, tablet hoặc desktop, nhân bản block và xuất/nhập bố cục JSON. Tệp cấu hình giữ ID media của cửa hàng.
-- Surface Core: **Trang chủ**, **Trang sản phẩm** (sau mô tả: chỉ Rich Text, tối đa 3; cuối trang), **Danh sách sản phẩm** (đầu trang, trên, dưới lưới và khi không có kết quả; áp dụng cho danh mục, tìm kiếm, thương hiệu và bộ sưu tập), **Giỏ hàng** (khi trống), **Thương hiệu** (trên và dưới danh sách).
-- Plugin mở rộng theo ba cách, kết hợp được: thêm block (`StorefrontBlock`), thêm surface trên slot có sẵn (`BuilderSurface`, contract test `BuilderSurfaceContract`), công bố slot mới có `builder: true` trong `hooks.php` của plugin. Surface của plugin đã tắt không hiện trong Admin và không render.
-- **Surface theo phạm vi** (`ScopedBuilderSurface`, 0.5.86): nội dung riêng cho từng đối tượng, vd. từng danh mục. Surface trả phạm vi của trang đang xem (`scopeOf(BlockContext)`, ngữ cảnh danh sách có `listingType`, `listingSlug`, `listingId`) và mô tả phạm vi cho Admin (`describeScope()` → `BuilderScope`: nhãn, link xem trang, link quay lại, ngữ cảnh xem trước). Block lưu ở bảng `builder_scoped_blocks` (một dòng mỗi surface + phạm vi; không nạp vào Settings), ảnh ghi dưới `storefront.builder_scoped`. Trình biên tập ở `admin/storefront/builder/{surface}/{scope}`, không có tab trong Nội dung trang. Tại một slot, **block riêng của phạm vi thay block chung**; slot chưa có block riêng vẫn hiện block chung. Plugin tham chiếu: `vani.catalog-pages`.
-- Slot **`vani.storefront.plp.header`** (0.5.86): đầu trang danh mục, thương hiệu, bộ sưu tập, ngoài vùng tải lại khi lọc. Theme đặt phần đầu mặc định (tên, mô tả, ảnh/logo — `partials/listing-banner`) làm nội dung mặc định của `<x-vani::hook-slot>`; có block thì thay. Block ở slot này nhận `pageHeader` (loại + dữ liệu công khai của trang): Hero dùng bố cục banner có h1, chữ/ảnh trống thì lấy của trang.
-
-StorefrontExtras dùng Swiper chung của theme cho slideshow từ hai ảnh trở lên. Khoảng chuyển lấy từ cấu hình, rời focus/rê chuột mới chạy tiếp và tắt tự chuyển khi người dùng chọn giảm chuyển động. Slide đầu ưu tiên tải, ảnh sau tải lười và dải ảnh cuộn ngang khi thư viện chưa tải được. Lookbook render các liên kết được đánh số trên ảnh và danh sách tên sản phẩm tương ứng bên dưới.
+- `BuilderEngine` (0.5.87) chỉ còn `blocks()`, `save()`, `reset()` của trang chủ, lưu ở `core.storefront.builder.home`; ảnh đang dùng ghi dưới `storefront.builder`, role `home`. Chưa cấu hình thì theme dùng trang chủ mặc định. Xem trước nháp, nhập/xuất JSON giữ nguyên.
+- Validation/renderer dùng chung `PageBlocks`. Loại block hệ thống đứng trước loại block của plugin (`SystemFirst`), trình biên tập gắn nhãn "Plugin".
+- **Trang khác không có Builder** (gỡ ở 0.5.87: surface trang sản phẩm, danh sách, giỏ, thương hiệu, surface của plugin, surface theo phạm vi, block theo ngữ cảnh, `GET /pages/layouts/{surface}`). Nội dung thêm ở các trang đó do plugin/theme chèn **bằng code** tại slot (`onSlot`, `<x-vani::hook-slot>`). Slot có thể có nội dung mặc định giữa thẻ mở/đóng, hiện khi không listener nào trả nội dung (vd. `vani.storefront.plp.header`).
 
 StorefrontExtras có block `extras_featured_collection` tại Admin → Giao diện → Trang chủ → **Bộ sưu tập nổi bật**. Chọn bộ sưu tập trong danh sách tối đa 200 mục và thêm ảnh từ Thư viện nếu cần. Block dùng tên và slug theo locale, ảnh responsive và hai thẻ sản phẩm đầu từ catalog. Bộ sưu tập ẩn hoặc hết sản phẩm hiển thị sẽ bỏ qua block. Từ 1.4.1, nút xem bộ sưu tập dẫn tới trang riêng.
 
 ### Trang bộ sưu tập
 
 - Trang danh mục, thương hiệu, bộ sưu tập dùng chung bố cục: phần đầu (tên, mô tả, ảnh bìa danh mục/bộ sưu tập hoặc logo thương hiệu, nút cuộn tới lưới), rồi danh sách sản phẩm. SEO lấy từ tiêu đề/mô tả SEO nhập ở Admin, trống thì dùng tên và đoạn đầu mô tả; ảnh chia sẻ là ảnh bìa/logo.
-- Nội dung Builder chung cho mọi trang danh sách: Admin → Giao diện → Nội dung trang → **Danh sách sản phẩm**. Nội dung riêng từng danh mục/thương hiệu/bộ sưu tập: plugin `vani.catalog-pages`, nút **Nội dung trang** ở trang sửa đối tượng (cần quyền `storefront.manage`).
-- Trang công khai ở `/bo-suu-tap/{slug}` và `/en/collections/{slug}`. Bộ lọc và phân trang giữ phạm vi bộ sưu tập. Storefront API `GET /collections/{slug}` trả tên, mô tả, SEO, ảnh bìa; `GET /pages/layouts/listing?type=collection&slug=` trả nội dung Builder (gộp nội dung riêng); `GET /products?collection={slug}` trả sản phẩm. URL tìm kiếm cũ với tham số `collection` vẫn truy cập được.
+- Nội dung thêm ở trang danh sách do plugin chèn bằng code tại slot `vani.storefront.plp.*` (vd. banner danh mục của `vani.cms`).
+- Trang công khai ở `/bo-suu-tap/{slug}` và `/en/collections/{slug}`. Bộ lọc và phân trang giữ phạm vi bộ sưu tập. Storefront API `GET /collections/{slug}` trả tên, mô tả, SEO, ảnh bìa; `GET /products?collection={slug}` trả sản phẩm. URL tìm kiếm cũ với tham số `collection` vẫn truy cập được.
 
 ## 3a. URL theo ngôn ngữ
 

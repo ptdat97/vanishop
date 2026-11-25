@@ -112,6 +112,9 @@
                             }
                         }
                     },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
                     "429": {
                         "$ref": "#/components/responses/RateLimited"
                     }
@@ -124,51 +127,6 @@
                     {
                         "firstPartySession": []
                     }
-                ]
-            }
-        },
-        "/pages/layouts/{surface}": {
-            "get": {
-                "tags": ["Cửa hàng"],
-                "summary": "Bố cục Builder ngoài trang chủ",
-                "parameters": [
-                    {
-                        "name": "surface",
-                        "in": "path",
-                        "required": true,
-                        "schema": {"type": "string", "enum": ["listing", "product", "brands", "cart"]}
-                    },
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "description": "Bắt buộc với listing.",
-                        "schema": {"type": "string", "enum": ["category", "collection", "brand", "search"]}
-                    },
-                    {
-                        "name": "slug",
-                        "in": "query",
-                        "description": "Slug công khai, bắt buộc với product và listing khi type là category, collection hoặc brand.",
-                        "schema": {"type": "string", "maxLength": 255}
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Các vùng theo thứ tự của Builder, kể cả vùng rỗng.",
-                        "content": {
-                            "application/json": {
-                                "schema": {"$ref": "../schemas/storefront/responses/page-layout.json"}
-                            }
-                        }
-                    },
-                    "401": {"$ref": "#/components/responses/Unauthenticated"},
-                    "404": {"$ref": "#/components/responses/NotFound"},
-                    "422": {"$ref": "#/components/responses/ValidationFailed"},
-                    "429": {"$ref": "#/components/responses/RateLimited"}
-                },
-                "security": [
-                    {},
-                    {"customerBearer": []},
-                    {"firstPartySession": []}
                 ]
             }
         },
@@ -274,7 +232,7 @@
             "get": {
                 "tags": ["Catalog"],
                 "summary": "Nội dung trang bộ sưu tập",
-                "description": "Trả tên, mô tả, SEO, ảnh bìa, slug theo locale. Nội dung Builder (chung và riêng từng bộ sưu tập) lấy bằng GET /pages/layouts/listing?type=collection&slug={slug}; sản phẩm bằng GET /products?collection={slug}.",
+                "description": "Trả tên, mô tả, SEO, ảnh bìa, slug theo locale.  sản phẩm bằng GET /products?collection={slug}.",
                 "parameters": [
                     {"name": "slug", "in": "path", "required": true, "schema": {"type": "string"}}
                 ],

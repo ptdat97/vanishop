@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { t } from '@admin/i18n';
 import FileInput from '@admin/Components/FileInput.vue';
-import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import Sortable from '@admin/Components/Sortable.vue';
@@ -14,7 +13,7 @@ import {
     secondaryButton,
 } from '@admin/styles';
 import { toast } from '@admin/toast';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
 import DesignTabs from '../../Components/DesignTabs.vue';
@@ -35,21 +34,6 @@ type BlockType = {
     fields: Field[];
 };
 
-type Zone = {
-    key: string;
-    label: string;
-    slot: string | null;
-    types: string[] | null;
-    max: number | null;
-};
-
-type Surface = {
-    key: string;
-    label: string;
-    plugin?: string | null;
-    url?: string;
-};
-
 type SelectOption = {
     value: string;
     label: string;
@@ -60,16 +44,10 @@ const props = defineProps<{
     blocks: Block[];
     configured: boolean;
     previewUrl: string | null;
-    zones: Zone[];
     draftUrls: {
         preview: string;
         import: string;
     };
-    allowedZones: Record<string, string[]>;
-    surfaces?: Surface[];
-    surface?: Surface;
-    /** Surface theo phạm vi: nội dung riêng của một đối tượng (thương hiệu, danh mục…), mở từ trang của plugin. */
-    scope?: { key: string; label: string; backUrl: string | null };
 }>();
 
 // --------------------------------------------------
@@ -108,22 +86,7 @@ const busy = computed(
 // Page metadata
 // --------------------------------------------------
 
-const scoped = computed(
-    () => props.scope !== undefined,
-);
-
-const home = computed(
-    () => props.surface?.key === 'home',
-);
-
-const title = computed(() =>
-    scoped.value
-        ? `${props.surface?.label ?? ''} · ${props.scope?.label ?? ''}`
-        : (
-            props.surface?.label ??
-            t('storefront::admin.design_home_blocks.home_page')
-        ),
-);
+const title = t('storefront::admin.design_home_blocks.home_page');
 
 const subtitle = computed(() => {
     if (props.configured) {
@@ -133,15 +96,13 @@ const subtitle = computed(() => {
         );
     }
 
-    return home.value
-        ? t(
-            'storefront::admin.design_home_blocks.using_theme_s_default_home',
-        )
-        : t('storefront::admin.builder.not_configured');
+    return t(
+        'storefront::admin.design_home_blocks.using_theme_s_default_home',
+    );
 });
 
 // --------------------------------------------------
-// Type and zone lookup
+// Type lookup
 // --------------------------------------------------
 
 const typesByKey = computed(
@@ -150,63 +111,14 @@ const typesByKey = computed(
     ),
 );
 
-const zonesByKey = computed(
-    () => new Map(
-        props.zones.map(zone => [zone.key, zone]),
-    ),
-);
-
-const zoned = computed(
-    () => props.zones.length > 0,
-);
-
-const hasSlotZones = computed(
-    () => props.zones.some(zone => zone.slot !== null),
-);
-
-const productContext = computed(
-    () => props.zones.some(
-        zone => zone.slot?.startsWith('vani.storefront.pdp.'),
-    ),
-);
-
-const listingContext = computed(
-    () => props.zones.some(
-        zone => zone.slot?.startsWith('vani.storefront.plp.'),
-    ),
-);
-
 function typeOf(type: string): BlockType | undefined {
     return typesByKey.value.get(type);
 }
 
-function zoneLabel(key: string): string {
-    return zonesByKey.value.get(key)?.label ?? key;
-}
-
-function accepts(zone: Zone, type: string): boolean {
-    return props.allowedZones[type]?.includes(zone.key) ?? false;
-}
-
-const availableTypes = computed(() =>
-    props.types.filter(
-        type => (props.allowedZones[type.type]?.length ?? 0) > 0,
-    ),
-);
-
-const adding = ref(availableTypes.value[0]?.type ?? '');
-
-watch(
-    availableTypes,
-    types => {
-        if (!types.some(type => type.type === adding.value)) {
-            adding.value = types[0]?.type ?? '';
-        }
-    },
-);
+const adding = ref(props.types[0]?.type ?? '');
 
 const typeOptions = computed<SelectOption[]>(() =>
-    availableTypes.value.map(type => ({
+    props.types.map(type => ({
         value: type.type,
         label: type.plugin ? `${type.label} · ${t('storefront::admin.builder.plugin')}` : type.label,
     })),
@@ -359,48 +271,6 @@ function summary(block: Block): string {
 }
 
 // --------------------------------------------------
-// Zone capacity
-// --------------------------------------------------
-
-function zoneCount(key: string): number {
-    return form.blocks.filter(
-        block => block.zone === key,
-    ).length;
-}
-
-function canPlaceInZone(
-    zone: Zone,
-    type: string,
-    currentBlock?: Block,
-): boolean {
-    if (!accepts(zone, type)) {
-        return false;
-    }
-
-    if (zone.max === null) {
-        return true;
-    }
-
-    const occupied = zoneCount(zone.key);
-
-    const currentOccupiesZone =
-        currentBlock !== undefined &&
-        form.blocks.includes(currentBlock) &&
-        currentBlock.zone === zone.key;
-
-    return occupied - (currentOccupiesZone ? 1 : 0) < zone.max;
-}
-
-function availableZoneOptions(block: Block): SelectOption[] {
-    return props.zones
-        .filter(zone => canPlaceInZone(zone, block.type, block))
-        .map(zone => ({
-            value: zone.key,
-            label: zone.label,
-        }));
-}
-
-// --------------------------------------------------
 // Block operations
 // --------------------------------------------------
 
@@ -409,34 +279,6 @@ function addBlock(
     after = form.blocks.length - 1,
 ): void {
     if (busy.value) return;
-
-    if (!props.allowedZones[block.type]?.length) {
-        toast(
-            t('storefront::admin.builder.no_zone_available'),
-            'error',
-        );
-        return;
-    }
-
-    if (zoned.value) {
-        const candidates = props.zones.filter(
-            zone => canPlaceInZone(zone, block.type),
-        );
-
-        const zone =
-            candidates.find(candidate => candidate.key === block.zone) ??
-            candidates[0];
-
-        if (!zone) {
-            toast(
-                t('storefront::admin.builder.no_zone_available'),
-                'error',
-            );
-            return;
-        }
-
-        block.zone = zone.key;
-    }
 
     const index = Math.max(
         0,
@@ -508,7 +350,7 @@ function exportLayout(): void {
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = `builder-${props.surface?.key ?? 'collection'}.json`;
+    link.download = 'builder-home.json';
 
     document.body.appendChild(link);
     link.click();
@@ -589,15 +431,11 @@ function save(): void {
 async function reset(): Promise<void> {
     if (busy.value) return;
 
-    const resetTitle = home.value
-        ? t(
-            'storefront::admin.design_home_blocks.use_default_home_page_again',
-        )
-        : t('storefront::admin.builder.reset_title');
+    const resetTitle = t(
+        'storefront::admin.design_home_blocks.use_default_home_page_again',
+    );
 
-    const confirmLabel = home.value
-        ? t('storefront::admin.design_home_blocks.use_default')
-        : t('storefront::admin.builder.reset');
+    const confirmLabel = t('storefront::admin.design_home_blocks.use_default');
 
     const confirmed = await confirmAction({
         title: resetTitle,
@@ -632,10 +470,6 @@ async function reset(): Promise<void> {
         </p>
 
         <PageHeader :title="title" :subtitle="subtitle">
-            <Link v-if="scope?.backUrl" :href="scope.backUrl" :class="secondaryButton">
-                {{ t('storefront::admin.builder.scope_back') }}
-            </Link>
-
             <a v-if="previewUrl" :href="previewUrl" target="_blank" rel="noopener noreferrer" :class="secondaryButton">
                 {{
                     t(
@@ -650,13 +484,7 @@ async function reset(): Promise<void> {
 
             <button v-if="configured" type="button" :class="dangerButton" :disabled="busy"
                 @click="reset">
-                {{
-                    home
-                        ? t(
-                            'storefront::admin.design_home_blocks.use_default',
-                        )
-                        : t('storefront::admin.builder.reset')
-                }}
+                {{ t('storefront::admin.design_home_blocks.use_default') }}
             </button>
 
             <button type="button" :class="primaryButton" :disabled="busy" @click="save">
@@ -669,35 +497,7 @@ async function reset(): Promise<void> {
         </PageHeader>
 
         <!-- Design navigation -->
-        <template v-if="!scoped">
-            <DesignTabs active="builder" />
-
-            <nav v-if="(surfaces?.length ?? 0) > 1" class="mb-4 flex flex-wrap gap-2 text-sm"
-                :aria-label="t('storefront::admin.builder.surface_nav')" data-builder-surfaces>
-                <Link v-for="(candidate, index) in surfaces" :key="candidate.key" :href="candidate.url ?? ''"
-                    class="rounded-full border px-3 py-1.5 transition-colors"
-                    :data-builder-surface-plugin="candidate.plugin ?? undefined"
-                    :style="candidate.plugin && !surfaces?.[index - 1]?.plugin ? 'margin-inline-start: 0.75rem' : undefined"
-                    :class="candidate.key === surface?.key
-                            ? 'border-indigo-600 bg-indigo-50 font-medium text-indigo-700'
-                            : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
-                        " :aria-current="candidate.key === surface?.key
-                            ? 'page'
-                            : undefined
-                        ">
-                    {{ candidate.label }}
-                    <span v-if="candidate.plugin" class="ms-1 text-[10px] tracking-[0.06em] text-slate-400 uppercase">{{ t('storefront::admin.builder.plugin') }}</span>
-                </Link>
-            </nav>
-
-            <p v-if="hasSlotZones" class="mb-4 text-sm text-slate-600">
-                {{ t('storefront::admin.builder.slot_help') }}
-            </p>
-        </template>
-
-        <p v-else class="mb-4 text-sm text-slate-600">
-            {{ t('storefront::admin.builder.scope_help') }}
-        </p>
+        <DesignTabs active="builder" />
 
         <div class="space-y-4">
 
@@ -789,10 +589,6 @@ async function reset(): Promise<void> {
                                 <span v-if="typeOf(block.type)?.plugin" class="ms-1 align-middle text-[10px] font-medium tracking-[0.06em] text-slate-400 uppercase">{{ t('storefront::admin.builder.plugin') }}</span>
                             </span>
 
-                            <span v-if="zoned && block.zone" class="block truncate text-xs text-slate-500">
-                                {{ zoneLabel(block.zone) }}
-                            </span>
-
                             <span v-if="!isExpanded(block)" class="block truncate text-xs text-slate-500">
                                 {{ summary(block) }}
                             </span>
@@ -838,13 +634,6 @@ async function reset(): Promise<void> {
                     </p>
 
                     <div class="grid gap-3 md:grid-cols-2">
-                        <FormField v-if="zoned" :label="t(
-                            'storefront::admin.builder.zone',
-                        )
-                            " :error="errors[`blocks.${index}.zone`]">
-                            <Select v-model="block.zone as string" :options="availableZoneOptions(block)" />
-                        </FormField>
-
                         <BuilderField v-for="field in typeOf(block.type)?.fields ?? []" :key="field.key"
                             v-model="block.config[field.key]" :field="field"
                             :path="`blocks.${index}.config.${field.key}`" :rich-text="block.type === 'rich_text' &&
@@ -876,7 +665,7 @@ async function reset(): Promise<void> {
                 <button type="button" :class="[
                     secondaryButton,
                     'flex h-10 items-center justify-center whitespace-nowrap',
-                ]" :disabled="!availableTypes.length || busy" @click="add">
+                ]" :disabled="!types.length || busy" @click="add">
                     {{
                         t(
                             'storefront::admin.design_home_blocks.add_block',
@@ -887,7 +676,6 @@ async function reset(): Promise<void> {
         </div>
 
         <!-- Responsive preview -->
-        <BuilderPreview v-model:open="previewOpen" :blocks="form.blocks" :url="draftUrls.preview"
-            :product-context="productContext" :listing-context="listingContext && !scoped" />
+        <BuilderPreview v-model:open="previewOpen" :blocks="form.blocks" :url="draftUrls.preview" />
     </div>
 </template>

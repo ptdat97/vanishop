@@ -1,7 +1,3 @@
-{{-- `pageHeader` có khi Hero đặt ở "Đầu trang" của danh mục/thương hiệu/bộ sưu tập: dùng bố cục banner có h1. --}}
-@isset($pageHeader)
-    @include('theme::partials.listing-banner', ['type' => $pageHeader['type'], 'page' => $pageHeader, 'banner' => compact('title', 'subtitle', 'imageUrl', 'imageSrcset', 'linkUrl', 'linkLabel')])
-@else
 <section class="mb-12 overflow-hidden bg-subtle md:mb-16" data-block="hero" data-vani-motion="rise">
     <div @class(['grid items-center', 'md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]' => $imageUrl !== ''])>
         <div class="min-w-0 px-5 py-7 sm:p-8 lg:p-12">
@@ -20,4 +16,3 @@
         @endif
     </div>
 </section>
-@endisset

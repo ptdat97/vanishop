@@ -6,6 +6,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.87 — 2026-11-25 · Extension API 1.36.0
+
+Tối giản Builder: chỉ dùng để xây trang chủ (`admin/storefront/builder/home`). Trang khác thêm nội dung bằng code tại slot, không kéo thả. Phá vỡ API cho plugin (giai đoạn dev, tăng minor).
+
+- **Gỡ** `BuilderSurface`, `ScopedBuilderSurface`, `BuilderScope`, `BuilderZone`, `BlockContext`, `ContextualStorefrontBlock`, `BuilderSurfaceContract`, khoá `builder: true` của hook (`HookDefinition::$builder`, `Hook::acceptsBlocks()`), surface Core `product`/`listing`/`cart`/`brands`, block `listing_product_grid`, bảng `builder_scoped_blocks`, route `admin.storefront.builder.scope.*`, `GET /api/storefront/v1/pages/layouts/{surface}`. Migration xoá cấu hình và ghi nhận ảnh của các surface đã gỡ.
+- `BuilderEngine` chỉ còn `blocks()`, `save(array $blocks)`, `reset()` cho trang chủ; `PageBlocks::validate()`, `inputRules()`, `resolve()`, `render()` bỏ tham số bố cục/ngữ cảnh. Route `admin.storefront.builder.edit|update|reset` không còn tham số surface, `builder.draft` nhận `{operation}`.
+- `<x-vani::hook-slot>` chỉ render phần tử plugin (`onSlot`) và nội dung mặc định khi slot trống. Slot `vani.storefront.plp.header` giữ nguyên: plugin trả nội dung thì thay phần đầu mặc định của theme.
+- **Gỡ plugin `vani.catalog-pages`** (thêm ở 0.5.86) và `CatalogLookup::adminItems()` chỉ plugin đó dùng. `adminLink()`/`AdminScreen::links()` và tài nguyên Admin `collection` giữ lại.
+- `vani.bundles` 1.2.0: bỏ surface Builder trang `/combo` và nút "Chỉnh bố cục"; slot `vani.bundles.page.before_list` / `after_list` vẫn nhận nội dung bằng code. **Plugin cần cập nhật**: plugin ngoài repo dùng `BuilderSurface` hoặc block theo ngữ cảnh chuyển sang `onSlot`.
+- Dữ liệu demo bỏ nội dung Builder ở trang sản phẩm, danh sách, giỏ trống, thương hiệu.
+
 ## 0.5.86 — 2026-11-25 · Extension API 1.35.0
 
 Đồng nhất Admin thương hiệu / danh mục / bộ sưu tập và Core cho plugin nội dung riêng từng trang danh sách, duyệt theo [plugin-system §10a](../05-plugin/plugin-system.md#10a-thiếu-điểm-mở-rộng--đề-xuất-sửa-core).

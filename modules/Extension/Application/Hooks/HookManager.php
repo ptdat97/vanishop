@@ -205,16 +205,6 @@ final class HookManager
     }
 
     /**
-     * Slot public đã khai báo `builder: true` — page builder được gắn block vào vị trí này.
-     */
-    public function acceptsBlocks(string $name): bool
-    {
-        $definition = $this->registry->get($name);
-
-        return $definition !== null && $definition->type === HookType::Slot && $definition->public && $definition->builder;
-    }
-
-    /**
      * Có listener cho hook không — điểm tự động dùng để bỏ qua việc chuẩn bị dữ liệu khi không ai nghe.
      */
     public function hasListeners(string $name): bool
