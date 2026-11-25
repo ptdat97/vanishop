@@ -4,9 +4,80 @@
 @source '../../modules/*/resources/js';
 @source '../../custom/plugin/*/Resources/js';
 
+/*
+ * Admin — Flat Fashion Luxury (đồng bộ storefront vani-base): phẳng (không đổ bóng, bo góc 2–3px, viền mảnh), nền ngà ấm,
+ * chữ màu mực, nhấn màu đồng. Trang module/plugin dùng class Tailwind thường (`slate`, `indigo`, `rounded-lg`, `shadow`…):
+ * token dưới đây đổi nghĩa các class đó nên mọi trang đổi theo, không phải sửa từng trang.
+ * - `slate` → trung tính ấm; `indigo` (màu nhấn cũ) → đồng; `emerald`/`amber`/`red` → xanh rêu, vàng đất, đỏ rượu.
+ * - Chữ trên nền trắng: slate-500 trở lên và indigo-600 trở lên đạt tương phản AA (≥ 4.5:1).
+ */
 @theme {
-    /* Inter: @font-face + preload do `@fonts('inter')` (vite.config.js, provider bunny). */
+    /* Inter: @font-face + preload do `@fonts('inter')`; Anivele (font thương hiệu, chung storefront) cho tiêu đề. */
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Anivele', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    /* Trung tính ấm (giấy ngà → mực). */
+    --color-slate-50: #faf9f6;
+    --color-slate-100: #f3f2ee;
+    --color-slate-200: #e7e5df;
+    --color-slate-300: #d3d0c8;
+    --color-slate-400: #a29e94;
+    --color-slate-500: #6f6b62;
+    --color-slate-600: #57534b;
+    --color-slate-700: #403d37;
+    --color-slate-800: #2b2925;
+    --color-slate-900: #1f1f1d;
+    --color-slate-950: #121211;
+
+    /* Màu nhấn: đồng (thay indigo). 600 là màu liên kết/nhấn trên nền trắng. */
+    --color-indigo-50: #f9f5ec;
+    --color-indigo-100: #f1e8d4;
+    --color-indigo-200: #e3d0a9;
+    --color-indigo-300: #d0b47c;
+    --color-indigo-400: #b8954f;
+    --color-indigo-500: #9c7a3a;
+    --color-indigo-600: #7f622b;
+    --color-indigo-700: #684f22;
+    --color-indigo-800: #523e1b;
+    --color-indigo-900: #3c2d14;
+
+    /* Trạng thái, tông trầm. */
+    --color-emerald-50: #f1f5ef;
+    --color-emerald-100: #e1eadc;
+    --color-emerald-200: #c6d6bc;
+    --color-emerald-600: #3d6a43;
+    --color-emerald-700: #2f5535;
+    --color-emerald-800: #24432a;
+    --color-amber-50: #fbf5e9;
+    --color-amber-100: #f5e8cc;
+    --color-amber-200: #ead29f;
+    --color-amber-600: #9a6a14;
+    --color-amber-700: #7d5510;
+    --color-amber-800: #63430d;
+    --color-amber-900: #4a320a;
+    --color-red-50: #fbf2f1;
+    --color-red-100: #f5e1df;
+    --color-red-200: #e9c1bd;
+    --color-red-300: #d99d97;
+    --color-red-600: #9f2a24;
+    --color-red-700: #85211c;
+    --color-red-800: #6b1a16;
+
+    /* Phẳng: bo góc nhỏ, bóng chỉ còn ở lớp nổi (hộp thoại, toast, menu) và rất nhẹ. */
+    --radius-sm: 2px;
+    --radius: 2px;
+    --radius-md: 2px;
+    --radius-lg: 3px;
+    --radius-xl: 4px;
+    --radius-2xl: 6px;
+    --shadow-2xs: none;
+    --shadow-xs: none;
+    --shadow-sm: none;
+    --shadow: none;
+    --shadow-md: none;
+    --shadow-lg: 0 0 0 1px rgb(31 31 29 / 0.06), 0 12px 28px -14px rgb(31 31 29 / 0.28);
+    --shadow-xl: 0 0 0 1px rgb(31 31 29 / 0.06), 0 16px 36px -16px rgb(31 31 29 / 0.32);
+    --shadow-2xl: 0 0 0 1px rgb(31 31 29 / 0.06), 0 24px 48px -20px rgb(31 31 29 / 0.36);
 }
 
 @layer base {
@@ -16,5 +87,34 @@
 
     button:disabled {
         @apply cursor-not-allowed;
+    }
+
+    ::selection {
+        background-color: var(--color-indigo-100);
+        color: var(--color-slate-900);
+    }
+
+    /* Viền tiêu điểm thống nhất, rõ trên nền ngà và nền tối của sidebar. */
+    :focus-visible {
+        outline-color: var(--color-indigo-500);
+    }
+
+    input[type='checkbox'],
+    input[type='radio'] {
+        accent-color: var(--color-slate-900);
+    }
+
+    /* Liên kết màu nhấn: gạch chân mảnh để nhận ra mà không cần màu (dễ nhìn, không lệ thuộc màu). */
+    a.text-indigo-600,
+    a.text-indigo-700 {
+        text-decoration-line: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+        text-decoration-color: var(--color-indigo-200);
+    }
+
+    a.text-indigo-600:hover,
+    a.text-indigo-700:hover {
+        text-decoration-color: currentColor;
     }
 }

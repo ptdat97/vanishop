@@ -129,9 +129,9 @@ function handleRowClick(event: MouseEvent, row: Row): void {
 
 <template>
     <div>
-    <div v-if="$slots.bulk && selected.length" class="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm" data-bulk-bar>
-        <span class="font-medium text-indigo-900">{{ t('shared::admin.data_table.count_selected', { count: selected.length }) }}</span>
-        <button type="button" class="text-indigo-700 hover:underline" @click="clearSelection">{{ t('shared::admin.data_table.deselect') }}</button>
+    <div v-if="$slots.bulk && selected.length" class="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-slate-900 bg-slate-900 px-3 py-2 text-sm text-white" data-bulk-bar>
+        <span class="font-medium text-white">{{ t('shared::admin.data_table.count_selected', { count: selected.length }) }}</span>
+        <button type="button" class="text-indigo-200 underline-offset-2 hover:underline" @click="clearSelection">{{ t('shared::admin.data_table.deselect') }}</button>
         <slot name="bulk" :selected="selected" :clear="clearSelection" />
     </div>
     <div
@@ -143,7 +143,7 @@ function handleRowClick(event: MouseEvent, row: Row): void {
         :class="[bare ? '' : 'rounded-lg border border-slate-200 bg-white', loading ? 'pointer-events-none opacity-60' : '']"
     >
         <table class="w-full max-sm:min-w-max text-sm">
-            <thead class="bg-slate-50 text-left text-slate-500">
+            <thead class="border-b border-slate-200 bg-slate-50 text-left text-[11px] tracking-[0.08em] text-slate-500 uppercase">
                 <tr>
                     <th v-if="canSelect" class="w-8 px-2 py-2 max-sm:sticky max-sm:left-0 max-sm:z-20 bg-slate-50">
                         <input type="checkbox" :checked="allSelected" :aria-label="t('shared::admin.data_table.select_all_current_page')" @change="toggleAll" />
@@ -152,7 +152,7 @@ function handleRowClick(event: MouseEvent, row: Row): void {
                         <button
                             v-if="column.sortable"
                             type="button"
-                            class="inline-flex items-center gap-1 rounded hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
+                            class="inline-flex items-center gap-1 rounded tracking-[inherit] uppercase hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
                             :class="sort?.key === column.key ? 'text-slate-900' : ''"
                             :title="t('shared::admin.data_table.sort_label', { label: column.label })"
                             @click="emit('sort', nextSort(sort, column.key))"
@@ -168,7 +168,7 @@ function handleRowClick(event: MouseEvent, row: Row): void {
             <tbody>
                 <template v-for="(row, index) in rows" :key="rowKey(row, index)">
                 <tr
-                    class="border-t border-slate-100 hover:bg-slate-50/60"
+                    class="border-t border-slate-100 transition-colors hover:bg-slate-50"
                     :class="[rowClass?.(row), isSelected(row) ? 'bg-indigo-50 hover:bg-indigo-50' : '', rowClick ? 'cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:bg-indigo-50' : '']"
                     :tabindex="rowClick ? 0 : undefined"
                     :aria-label="rowClick ? t('shared::admin.data_table.open_row_label', { row_label: rowLabel(row) }) : undefined"

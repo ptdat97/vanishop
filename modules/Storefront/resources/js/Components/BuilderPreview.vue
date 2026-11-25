@@ -54,7 +54,7 @@ watch(open, (value) => { if (value) void refresh(); });
     <FullscreenDialog v-model:open="open" :title="t('storefront::admin.builder.responsive_preview')" :subtitle="t('storefront::admin.builder.preview_help')">
         <div class="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-white p-3">
             <div class="flex flex-wrap gap-1">
-                <button v-for="device in devices" :key="device.width" type="button" :class="[secondaryButton, width === device.width ? 'border-indigo-600 text-indigo-700' : '']" :aria-pressed="width === device.width" @click="width = device.width">
+                <button v-for="device in devices" :key="device.width" type="button" :class="[secondaryButton, width === device.width ? 'border-slate-900 text-slate-900' : '']" :aria-pressed="width === device.width" @click="width = device.width">
                     {{ device.label }}
                 </button>
             </div>

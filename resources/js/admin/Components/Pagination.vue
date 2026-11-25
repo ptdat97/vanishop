@@ -34,7 +34,7 @@ const perPageChoices = computed(() => (props.perPageOptions ?? []).map((value) =
                         <PaginationListItem
                             v-if="entry.type === 'page'"
                             :value="entry.value"
-                            :class="[item, entry.value === current ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50']"
+                            :class="[item, entry.value === current ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50']"
                         >
                             {{ entry.value }}
                         </PaginationListItem>

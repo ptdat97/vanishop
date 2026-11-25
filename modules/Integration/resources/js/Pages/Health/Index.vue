@@ -147,7 +147,7 @@ function resume(id: number): void {
         <button
             v-for="box in ['outbox', 'inbox'] as const"
             :key="box"
-            :class="[secondaryButton, filters.box === box ? 'border-indigo-500 text-red-700' : '']"
+            :class="[secondaryButton, filters.box === box ? 'border-slate-900 text-slate-900' : '']"
             @click="filter({ box, target: null })"
         >
             {{ box === 'outbox' ? t('integration::admin.health_index.outgoing') : t('integration::admin.health_index.incoming') }}

@@ -41,10 +41,10 @@ function accept(): void {
 <template>
     <AlertDialogRoot :open="confirmState.open" @update:open="onOpenChange">
         <AlertDialogPortal>
-            <AlertDialogOverlay class="fixed inset-0 z-50 bg-slate-900/40" />
+            <AlertDialogOverlay class="fixed inset-0 z-50 bg-slate-950/50" />
             <AlertDialogContent v-if="options" class="fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-5 shadow-xl focus:outline-none">
                 <form @submit.prevent="accept">
-                    <AlertDialogTitle class="text-base font-semibold text-slate-900">{{ options.title }}</AlertDialogTitle>
+                    <AlertDialogTitle class="font-display text-lg text-slate-900">{{ options.title }}</AlertDialogTitle>
                     <AlertDialogDescription v-if="options.message" class="mt-2 text-sm text-slate-600">{{ options.message }}</AlertDialogDescription>
                     <ul v-if="options.details?.length" class="mt-2 max-h-48 list-inside list-disc overflow-y-auto text-xs text-slate-600" data-confirm-details>
                         <li v-for="detail in options.details" :key="detail">{{ detail }}</li>

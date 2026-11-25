@@ -156,14 +156,14 @@ function logout(): void {
         <button
             v-if="mobileNavigationOpen"
             type="button"
-            class="fixed inset-0 z-40 bg-slate-900/40 md:hidden"
+            class="fixed inset-0 z-40 bg-slate-950/50 md:hidden"
             :aria-label="t('shared::admin.layout.close_navigation')"
             @click="closeMobileNavigation"
         />
         <aside
             id="admin-navigation"
             ref="navigationAside"
-            class="fixed inset-y-0 left-0 z-50 h-dvh w-60 shrink-0 overflow-y-auto border-r border-slate-200 bg-white transition-transform md:sticky md:top-0 md:translate-x-0"
+            class="fixed inset-y-0 left-0 z-50 h-dvh w-60 shrink-0 overflow-y-auto bg-slate-900 text-slate-300 transition-transform md:sticky md:top-0 md:translate-x-0"
             :class="mobileNavigationOpen ? 'translate-x-0' : '-translate-x-full'"
             :role="isMobileViewport && mobileNavigationOpen ? 'dialog' : undefined"
             :aria-modal="isMobileViewport && mobileNavigationOpen ? 'true' : undefined"
@@ -173,20 +173,20 @@ function logout(): void {
             @keydown.esc.stop.prevent="closeMobileNavigation"
             @keydown.tab="trapMobileNavigationFocus"
         >
-            <div class="flex items-center justify-between px-5 py-4">
-                <div class="text-lg font-semibold">{{ page.props.app.name }}</div>
-                <button v-if="mobileNavigationOpen" type="button" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100 md:hidden" 
+            <div class="flex items-center justify-between border-b border-white/10 px-5 py-5">
+                <div class="font-display text-lg tracking-[0.14em] text-white uppercase">{{ page.props.app.name }}</div>
+                <button v-if="mobileNavigationOpen" type="button" class="rounded-md px-2 py-1 text-slate-400 hover:bg-white/10 hover:text-white md:hidden" 
                     :aria-label="t('shared::admin.layout.close_menu')" @click="closeMobileNavigation">
                     {{ t('shared::admin.layout.close') }}
                 </button>
             </div>
-            <nav class="flex flex-col gap-1 px-3 pb-6">
+            <nav class="flex flex-col gap-0.5 px-3 py-4">
                 <template v-for="entry in entries" :key="entry.type === 'link' ? entry.item.key : `group-${entry.key}`">
                     <Link
                         v-if="entry.type === 'link'"
                         :href="entry.item.url"
-                        class="rounded-md px-3 py-2 text-sm"
-                        :class="isCurrent(entry.item.key, entry.item.url) ? 'bg-indigo-50 font-medium text-red-700' : 'text-slate-600 hover:bg-slate-100'"
+                        class="border-l-2 px-3 py-2 text-sm transition-colors"
+                        :class="isCurrent(entry.item.key, entry.item.url) ? 'border-indigo-300 bg-white/10 font-medium text-white' : 'border-transparent text-slate-300 hover:bg-white/5 hover:text-white'"
                         :aria-current="isCurrent(entry.item.key, entry.item.url) ? 'page' : undefined"
                         @click="closeMobileNavigation"
                     >
@@ -195,24 +195,24 @@ function logout(): void {
                     <div v-else>
                         <button
                             type="button"
-                            class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm"
-                            :class="entry.items.some((item) => isCurrent(item.key, item.url)) ? 'font-medium text-slate-900' : 'text-slate-600 hover:bg-slate-100'"
+                            class="flex w-full items-center justify-between border-l-2 border-transparent px-3 py-2 text-left text-sm transition-colors"
+                            :class="entry.items.some((item) => isCurrent(item.key, item.url)) ? 'font-medium text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'"
                             :aria-expanded="isGroupOpen(entry.key)"
                             :aria-controls="`nav-group-${entry.key}`"
                             @click="toggleGroup(entry.key)"
                         >
                             <span>{{ entry.label }}</span>
-                            <svg class="h-4 w-4 text-slate-400 transition-transform" :class="isGroupOpen(entry.key) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <svg class="h-4 w-4 text-slate-500 transition-transform" :class="isGroupOpen(entry.key) ? 'rotate-90' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.17 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd" />
                             </svg>
                         </button>
-                        <div v-show="isGroupOpen(entry.key)" :id="`nav-group-${entry.key}`" class="mt-1 flex flex-col gap-1 border-l border-slate-200 pl-2 ml-4">
+                        <div v-show="isGroupOpen(entry.key)" :id="`nav-group-${entry.key}`" class="mt-0.5 mb-1 ml-4 flex flex-col gap-0.5 border-l border-white/10 pl-2">
                             <Link
                                 v-for="item in entry.items"
                                 :key="item.key"
                                 :href="item.url"
-                                class="rounded-md px-3 py-1.5 text-sm"
-                                :class="isCurrent(item.key, item.url) ? 'bg-indigo-50 font-medium text-red-700' : 'text-slate-600 hover:bg-slate-100'"
+                                class="border-l-2 px-3 py-1.5 text-sm transition-colors"
+                                :class="isCurrent(item.key, item.url) ? 'border-indigo-300 bg-white/10 font-medium text-white' : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-white'"
                                 :aria-current="isCurrent(item.key, item.url) ? 'page' : undefined"
                                 @click="closeMobileNavigation"
                             >
@@ -224,11 +224,11 @@ function logout(): void {
             </nav>
         </aside>
         <div class="flex flex-1 flex-col">
-            <header class="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 text-sm sm:px-6 justify-end">
+            <header class="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-slate-200 bg-white/95 px-4 py-3 text-sm backdrop-blur sm:px-8 md:justify-end">
                 <button
                     ref="mobileNavigationButton"
                     type="button"
-                    class="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:bg-slate-50 md:hidden"
+                    class="rounded-md border border-slate-300 px-3 py-2 text-slate-800 hover:border-slate-900 md:hidden"
                     aria-controls="admin-navigation"
                     :aria-expanded="mobileNavigationOpen"
                     @click="openMobileNavigation"
@@ -243,7 +243,7 @@ function logout(): void {
                     <button type="button" class="text-slate-500 hover:text-slate-900" @click="logout">{{ t('shared::admin.layout.sign_out') }}</button>
                 </div>
             </header>
-            <main class="flex-1 p-4 sm:p-6">
+            <main class="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-8 sm:py-8">
                 <slot />
             </main>
         </div>

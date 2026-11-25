@@ -62,7 +62,7 @@ function changePageSize(pageSize: number): void {
     </PageHeader>
 
     <div class="mb-4 flex flex-wrap items-center gap-2">
-        <Link v-for="(labels, key) in kindLabels" :key="key" :href="urls[key]" :class="[secondaryButton, kind === key ? 'border-indigo-500 text-red-700' : '']">
+        <Link v-for="(labels, key) in kindLabels" :key="key" :href="urls[key]" :class="[secondaryButton, kind === key ? 'border-slate-900 text-slate-900' : '']">
             {{ labels.plural }}
         </Link>
         <form class="ml-auto flex gap-2" @submit.prevent="submitSearch()">

@@ -356,7 +356,7 @@ function onPicked(items: MediaItem[]): void {
     padding-left: 1.5em;
 }
 .vani-admin-prose :deep(a) {
-    color: #4f46e5;
+    color: var(--color-indigo-600);
     text-decoration: underline;
 }
 .vani-admin-prose :deep(img) {

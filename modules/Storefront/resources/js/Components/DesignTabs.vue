@@ -20,7 +20,7 @@ const base = window.location.pathname.replace(/\/(builder|menus|theme-settings)(
             :key="tab.key"
             :href="`${base}/${tab.route}`"
             class="-mb-px border-b-2 px-3 py-2"
-            :class="active === tab.key ? 'border-indigo-600 font-medium text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'"
+            :class="active === tab.key ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-600 hover:text-slate-900'"
         >
             {{ tab.label }}
         </Link>

@@ -97,7 +97,7 @@ defineExpose({ close });
         <div
             v-if="keepMounted || open"
             v-show="open"
-            class="fixed inset-0 z-50 flex flex-col bg-slate-900/50 p-2 sm:p-4"
+            class="fixed inset-0 z-50 flex flex-col bg-slate-950/50 p-2 sm:p-4"
             @keydown.esc.stop="close"
             @keydown.tab="trapTab"
             @click.self="size !== 'fullscreen' && close()"
@@ -113,7 +113,7 @@ defineExpose({ close });
             >
                 <header class="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
                     <div class="min-w-0 flex-1">
-                        <h2 :id="titleId" class="truncate text-base font-semibold text-slate-900">{{ title }}</h2>
+                        <h2 :id="titleId" class="truncate font-display text-lg text-slate-900">{{ title }}</h2>
                         <p v-if="subtitle" class="truncate text-xs text-slate-500">{{ subtitle }}</p>
                     </div>
                     <slot name="actions" />

@@ -250,7 +250,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         <button
             type="button"
             class="shrink-0 border-b-2 px-3 py-2"
-            :class="form.stage === '' ? 'border-indigo-600 font-medium text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'"
+            :class="form.stage === '' ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-600 hover:text-slate-900'"
             :aria-current="form.stage === '' ? 'page' : undefined"
             @click="openStage('')"
         >
@@ -259,7 +259,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         <button
             type="button"
             class="flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2"
-            :class="form.actionable === '1' ? 'border-indigo-600 font-medium text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'"
+            :class="form.actionable === '1' ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-600 hover:text-slate-900'"
             :aria-pressed="form.actionable === '1'"
             @click="toggleActionable"
         >
@@ -270,7 +270,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
             :key="stage"
             type="button"
             class="flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2"
-            :class="form.stage === stage ? 'border-indigo-600 font-medium text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'"
+            :class="form.stage === stage ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-600 hover:text-slate-900'"
             :aria-current="form.stage === stage ? 'page' : undefined"
             :data-stage="stage"
             @click="openStage(stage)"

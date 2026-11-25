@@ -56,7 +56,7 @@ function choose(preset: string): void {
             v-for="(label, preset) in presets"
             v-show="preset !== 'custom'"
             :key="preset"
-            :class="[secondaryButton, period.preset === preset ? 'border-indigo-500 text-red-700' : '']"
+            :class="[secondaryButton, period.preset === preset ? 'border-slate-900 text-slate-900' : '']"
             @click="choose(preset)"
         >
             {{ label }}
@@ -64,7 +64,7 @@ function choose(preset: string): void {
         <div class="w-40"><DateInput v-model="start" :aria-label="t('extension::admin.reports_show.from_date')" /></div>
         <span class="text-slate-400">→</span>
         <div class="w-40"><DateInput v-model="end" :aria-label="t('extension::admin.reports_show.date')" /></div>
-        <button :class="[secondaryButton, period.preset === 'custom' ? 'border-indigo-500 text-red-700' : '']" @click="choose('custom')">Xem</button>
+        <button :class="[secondaryButton, period.preset === 'custom' ? 'border-slate-900 text-slate-900' : '']" @click="choose('custom')">Xem</button>
         <span v-if="errors.period" class="text-sm text-red-600">{{ errors.period }}</span>
     </div>
 

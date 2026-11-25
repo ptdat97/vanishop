@@ -52,12 +52,13 @@ onBeforeUnmount(() => {
 });
 
 const toneClass: Record<ToastTone, string> = {
-    success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    error: 'border-red-200 bg-red-50 text-red-800',
-    warning: 'border-amber-200 bg-amber-50 text-amber-900',
-    info: 'border-slate-200 bg-white text-slate-800',
+    success: 'border-emerald-200 border-l-emerald-700 bg-white text-slate-800',
+    error: 'border-red-200 border-l-red-700 bg-white text-slate-800',
+    warning: 'border-amber-200 border-l-amber-600 bg-white text-slate-800',
+    info: 'border-slate-200 border-l-slate-900 bg-white text-slate-800',
 };
 const icon: Record<ToastTone, string> = { success: '✓', error: '!', warning: '!', info: 'i' };
+const iconClass: Record<ToastTone, string> = { success: 'text-emerald-700', error: 'text-red-700', warning: 'text-amber-700', info: 'text-slate-900' };
 </script>
 
 <template>
@@ -68,11 +69,11 @@ const icon: Record<ToastTone, string> = { success: '✓', error: '!', warning: '
             v-model:open="item.open"
             :type="item.tone === 'error' || item.tone === 'warning' ? 'foreground' : 'background'"
             :duration="item.tone === 'error' || item.tone === 'warning' ? Infinity : 4000"
-            class="flex items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-lg"
+            class="flex items-start gap-3 rounded-md border border-l-4 px-4 py-3 text-sm shadow-lg"
             :class="toneClass[item.tone]"
             :data-toast="item.tone"
         >
-            <span aria-hidden="true" class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-xs font-semibold">{{ icon[item.tone] }}</span>
+            <span aria-hidden="true" class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-xs font-semibold" :class="iconClass[item.tone]">{{ icon[item.tone] }}</span>
             <ToastDescription class="flex-1 whitespace-pre-line">{{ item.message }}</ToastDescription>
             <ToastClose class="opacity-70 hover:opacity-100" :aria-label="t('shared::admin.toaster.close')">✕</ToastClose>
         </ToastRoot>

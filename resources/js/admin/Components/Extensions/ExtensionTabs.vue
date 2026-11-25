@@ -11,7 +11,7 @@ const active = ref(props.tabs[0]?.key ?? '');
 <template>
     <section v-if="tabs.length" class="rounded-lg border border-slate-200 bg-white">
         <nav class="flex gap-1 border-b border-slate-100 px-2" role="tablist">
-            <button v-for="tab in tabs" :key="tab.key" type="button" role="tab" :aria-selected="active === tab.key" class="px-3 py-2 text-sm" :class="active === tab.key ? 'border-b-2 border-indigo-600 font-medium' : 'text-slate-500'" @click="active = tab.key">
+            <button v-for="tab in tabs" :key="tab.key" type="button" role="tab" :aria-selected="active === tab.key" class="px-3 py-2 text-sm" :class="active === tab.key ? 'border-b-2 border-slate-900 font-medium text-slate-900' : 'text-slate-500 hover:text-slate-900'" @click="active = tab.key">
                 {{ tab.label }}
             </button>
         </nav>
