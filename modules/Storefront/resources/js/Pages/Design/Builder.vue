@@ -27,9 +27,11 @@ import {
     type BuilderValue,
 } from '../../builderFields';
 
+/** `plugin` = id plugin khai báo (null = hệ thống); server đã xếp hệ thống trước, plugin sau. */
 type BlockType = {
     type: string;
     label: string;
+    plugin?: string | null;
     fields: Field[];
 };
 
@@ -44,6 +46,7 @@ type Zone = {
 type Surface = {
     key: string;
     label: string;
+    plugin?: string | null;
     url?: string;
 };
 
@@ -207,7 +210,7 @@ watch(
 const typeOptions = computed<SelectOption[]>(() =>
     availableTypes.value.map(type => ({
         value: type.type,
-        label: type.label,
+        label: type.plugin ? `${type.label} · ${t('storefront::admin.builder.plugin')}` : type.label,
     })),
 );
 
@@ -673,8 +676,11 @@ async function reset(): Promise<void> {
 
             <nav v-if="(surfaces?.length ?? 0) > 1" class="mb-4 flex flex-wrap gap-2 text-sm"
                 :aria-label="t('storefront::admin.builder.surface_nav')" data-builder-surfaces>
-                <Link v-for="candidate in surfaces" :key="candidate.key" :href="candidate.url ?? ''"
-                    class="rounded-full border px-3 py-1.5 transition-colors" :class="candidate.key === surface?.key
+                <Link v-for="(candidate, index) in surfaces" :key="candidate.key" :href="candidate.url ?? ''"
+                    class="rounded-full border px-3 py-1.5 transition-colors"
+                    :data-builder-surface-plugin="candidate.plugin ?? undefined"
+                    :style="candidate.plugin && !surfaces?.[index - 1]?.plugin ? 'margin-inline-start: 0.75rem' : undefined"
+                    :class="candidate.key === surface?.key
                             ? 'border-indigo-600 bg-indigo-50 font-medium text-indigo-700'
                             : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
                         " :aria-current="candidate.key === surface?.key
@@ -682,6 +688,7 @@ async function reset(): Promise<void> {
                             : undefined
                         ">
                     {{ candidate.label }}
+                    <span v-if="candidate.plugin" class="ms-1 text-[10px] tracking-[0.06em] text-slate-400 uppercase">{{ t('storefront::admin.builder.plugin') }}</span>
                 </Link>
             </nav>
 
@@ -781,6 +788,7 @@ async function reset(): Promise<void> {
                                         { type: block.type },
                                     )
                                 }}
+                                <span v-if="typeOf(block.type)?.plugin" class="ms-1 align-middle text-[10px] font-medium tracking-[0.06em] text-slate-400 uppercase">{{ t('storefront::admin.builder.plugin') }}</span>
                             </span>
 
                             <span v-if="zoned && block.zone" class="block truncate text-xs text-slate-500">

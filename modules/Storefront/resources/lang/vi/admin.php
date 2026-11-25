@@ -50,6 +50,7 @@ return [
             'brands_before_list' => 'Trên danh sách thương hiệu',
             'brands_after_list' => 'Dưới danh sách thương hiệu',
         ],
+        'plugin' => 'Plugin',
         'surface_nav' => 'Trang được biên tập',
         'not_configured' => 'Chưa có block nào',
         'slot_help' => 'Block hiện trên mọi trang có vị trí này, cùng nội dung plugin đặt ở đó.',

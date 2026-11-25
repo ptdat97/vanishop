@@ -75,7 +75,7 @@ it('đặt block vào slot có sẵn của trang sản phẩm, render sau nội 
     ]])->assertSessionHasNoErrors();
 
     $this->get(route('storefront.product', $this->sku->style->slug))->assertOk()->assertSeeInOrder([
-        'data-slot="vani.storefront.pdp.after_details"', 'PLUGIN-PDP', 'Đổi trả trong 30 ngày',
+        'data-slot="vani.storefront.pdp.after_details"', 'Đổi trả trong 30 ngày', 'PLUGIN-PDP',
         'data-slot="vani.storefront.pdp.after_related_products"', 'Cuối trang sản phẩm',
     ], false);
     $api = '/api/storefront/v1/pages/layouts/product?slug='.$this->sku->style->slug;

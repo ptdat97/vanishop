@@ -50,6 +50,7 @@ return [
             'brands_before_list' => 'Above brand list',
             'brands_after_list' => 'Below brand list',
         ],
+        'plugin' => 'Plugin',
         'surface_nav' => 'Edited page',
         'not_configured' => 'No blocks yet',
         'slot_help' => 'Blocks show on every page with this position, alongside plugin content placed there.',

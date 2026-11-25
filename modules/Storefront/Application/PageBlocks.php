@@ -16,6 +16,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Storefront\Application\Blocks\BlockLayout;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
 use Modules\Storefront\Application\Blocks\RichTextRenderer;
+use Modules\Storefront\Application\Builder\SystemFirst;
 use Modules\Storefront\Contracts\ContextualStorefrontBlock;
 use Modules\Storefront\Contracts\Data\BlockContext;
 use Modules\Storefront\Contracts\NormalizesBlockConfiguration;
@@ -40,10 +41,17 @@ final class PageBlocks
      */
     public function types(): array
     {
-        return $this->extensions->implementations(StorefrontBlock::TAG, StorefrontBlock::class, fn (StorefrontBlock $block): string => $block->type());
+        return SystemFirst::order(
+            $this->extensions->implementations(StorefrontBlock::TAG, StorefrontBlock::class, fn (StorefrontBlock $block): string => $block->type()),
+            $this->extensions,
+        );
     }
 
-    /** @return list<array{type: string, label: string, fields: list<array<string, mixed>>}> */
+    /**
+     * Loại block cho trình biên tập: hệ thống trước, plugin sau; `plugin` = id plugin khai báo (null = hệ thống).
+     *
+     * @return list<array{type: string, label: string, plugin: string|null, fields: list<array<string, mixed>>}>
+     */
     public function editorTypes(): array
     {
         $result = [];
@@ -51,6 +59,7 @@ final class PageBlocks
             $result[] = [
                 'type' => $type->type(),
                 'label' => $type->label(),
+                'plugin' => $this->extensions->ownerOf($type),
                 'fields' => array_values(array_map(fn (FieldDefinition $field): array => $field->toArray(), array_filter($type->fields(), fn (FieldDefinition $field): bool => $field->editable))),
             ];
         }

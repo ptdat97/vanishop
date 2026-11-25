@@ -11,7 +11,7 @@ use Modules\Storefront\Contracts\BuilderSurface;
  * Một vùng nhận block của {@see BuilderSurface}.
  *
  * - `BuilderZone::slot()` gắn vào slot storefront đã có (Core hoặc plugin khai báo `builder: true` trong hooks.php):
- *   Builder Engine render block tại `<x-vani::hook-slot>`, sau phần tử của listener `onSlot`.
+ *   Builder Engine render block tại `<x-vani::hook-slot>`, trước phần tử plugin chèn bằng listener `onSlot`.
  * - `BuilderZone::page()` là vùng do controller của trang tự render (vd. thân trang chủ).
  *
  *   BuilderZone::slot('vani.storefront.pdp.after_details', 'Sau mô tả sản phẩm', types: ['rich_text'], max: 2)

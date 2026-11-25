@@ -6,6 +6,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.81 — 2026-11-25 · Extension API 1.31.0
+
+- Builder Engine: thành phần hệ thống luôn đứng trước thành phần do plugin khai báo, bất kể thứ tự nạp provider (`SystemFirst`, dựa trên `Extensions::ownerOf`). Áp cho danh sách loại block trong trình biên tập, tab surface, thứ tự surface khi render slot. Trình biên tập gắn nhãn "Plugin" cho loại block và surface của plugin; `PageBlocks::editorTypes()` trả thêm `plugin`.
+- **Đổi thứ tự render tại slot nhận block:** block Builder (hệ thống) trước, phần tử plugin chèn bằng `onSlot` sau. Plugin cần đứng trước nội dung admin đặt thì dùng slot khác ở vị trí phù hợp. Không đổi chữ ký API cho plugin.
+
 ## 0.5.80 — 2026-11-25 · Extension API 1.31.0
 
 - Admin theo phong cách Flat Fashion Luxury, đồng bộ storefront: token màu/bo góc/bóng ở `resources/css/admin.css` (trung tính ấm, nhấn màu đồng, trạng thái tông trầm, phẳng), sidebar nền mực, tiêu đề font Anivele, bảng có tiêu đề cột in hoa nhỏ, nhãn trạng thái phẳng, toast có vạch màu theo loại. Trang của plugin dùng class Tailwind thường tự nhận giao diện mới, không cần sửa. Không đổi API cho plugin.

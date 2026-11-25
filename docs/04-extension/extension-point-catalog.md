@@ -164,7 +164,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 
 Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả `Modules\Storefront\Contracts\Data\SlotView` (view của plugin + dữ liệu) hoặc `Htmlable`; theme render tại vị trí slot bằng `<x-vani::hook-slot>`, chỉ nối thêm, lỗi một listener (hoặc lỗi lúc render) bị bỏ qua, chuỗi thô bị bỏ. Các slot dưới đây là public API (`since 0.3`); `account.menu` là mục bổ sung cho menu tài khoản native, ngoài các mục do `accountPage()` đăng ký.
 
-Slot khai báo `builder: true` nhận block của Builder Engine (0.5.73): `pdp.after_details`, `pdp.after_related_products`, `plp.before_listing`, `plp.after_listing`, `plp.empty`, `cart.empty`, `brands.before_list`, `brands.after_list`. Block admin đặt vào slot render sau phần tử của listener. Plugin công bố slot riêng có thể khai báo cùng khoá trong `hooks.php` của mình ([storefront §4](../14-storefront/storefront.md)).
+Slot khai báo `builder: true` nhận block của Builder Engine (0.5.73): `pdp.after_details`, `pdp.after_related_products`, `plp.before_listing`, `plp.after_listing`, `plp.empty`, `cart.empty`, `brands.before_list`, `brands.after_list`. Block admin đặt vào slot render trước phần tử plugin chèn bằng listener `onSlot` (thành phần hệ thống trước, plugin sau, 0.5.81). Plugin công bố slot riêng có thể khai báo cùng khoá trong `hooks.php` của mình ([storefront §4](../14-storefront/storefront.md)).
 
 | Slot | Vị trí | Ví dụ plugin |
 |---|---|---|

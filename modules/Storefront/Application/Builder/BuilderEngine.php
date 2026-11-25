@@ -51,11 +51,20 @@ final class BuilderEngine
     ) {}
 
     /**
-     * @return array<string, BuilderSurface> theo thứ tự đăng ký (Core trước)
+     * @return array<string, BuilderSurface> surface hệ thống trước, surface của plugin sau ({@see SystemFirst})
      */
     public function surfaces(): array
     {
-        return $this->surfaces ??= $this->extensions->implementations(BuilderSurface::TAG, BuilderSurface::class, fn (BuilderSurface $surface): string => $surface->key());
+        return $this->surfaces ??= SystemFirst::order(
+            $this->extensions->implementations(BuilderSurface::TAG, BuilderSurface::class, fn (BuilderSurface $surface): string => $surface->key()),
+            $this->extensions,
+        );
+    }
+
+    /** Id plugin khai báo surface; null = hệ thống. */
+    public function ownerOf(BuilderSurface $surface): ?string
+    {
+        return $this->extensions->ownerOf($surface);
     }
 
     public function surface(string $key): ?BuilderSurface

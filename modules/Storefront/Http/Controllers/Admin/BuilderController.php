@@ -37,6 +37,7 @@ final class BuilderController
             'surfaces' => array_values(array_map(fn (BuilderSurface $candidate): array => [
                 'key' => $candidate->key(),
                 'label' => $candidate->label(),
+                'plugin' => $engine->ownerOf($candidate),
                 'url' => route('admin.storefront.builder.edit', $candidate->key()),
             ], $engine->surfaces())),
             'surface' => ['key' => $surface, 'label' => $definition->label()],

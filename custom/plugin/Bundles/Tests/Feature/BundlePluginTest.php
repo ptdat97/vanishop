@@ -322,3 +322,24 @@ it('khi khách bớt món, tính lại ưu đãi theo số lượng của combo 
     expect($order->fresh())->discount_amount->toBe(0)->total_amount->toBe(450_000);
     $this->assertDatabaseHas('promotion_usages', ['promotion_id' => $promotionId, 'order_id' => $order->id, 'discount_amount' => 0]);
 });
+
+it('Builder xếp loại block và surface của plugin sau thành phần hệ thống, có nhãn plugin', function () {
+    manageBundles($this);
+
+    $this->get(route('admin.storefront.builder.edit', 'home'))->assertInertia(function (Assert $page): void {
+        $types = $page->toArray()['props']['types'];
+        $firstPlugin = array_search(true, array_map(fn (array $type): bool => $type['plugin'] !== null, $types), true);
+        $owners = array_column($types, 'plugin');
+
+        expect($firstPlugin)->not->toBeFalse()
+            ->and(array_filter(array_slice($owners, 0, $firstPlugin), fn (?string $owner): bool => $owner !== null))->toBe([])
+            ->and(array_filter(array_slice($owners, $firstPlugin), fn (?string $owner): bool => $owner === null))->toBe([])
+            ->and(collect($types)->firstWhere('type', 'bundle')['plugin'])->toBe(BundlesServiceProvider::ID)
+            ->and(collect($types)->firstWhere('type', 'hero')['plugin'])->toBeNull();
+
+        $surfaces = $page->toArray()['props']['surfaces'];
+        expect(array_key_last($surfaces))->toBe(array_search('bundles', array_column($surfaces, 'key'), true))
+            ->and($surfaces[0]['key'])->toBe('home')
+            ->and(end($surfaces)['plugin'])->toBe(BundlesServiceProvider::ID);
+    });
+});
