@@ -1,9 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Fulfillment\Persistence\Models\Shipment;
+use Modules\Ordering\Application\OrderStatusChanger;
+use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -168,4 +171,15 @@ it('mã lý do ngoài trình tự vẫn cần ghi chú ở cả thao tác riêng
     $event = DB::table('order_events')->where('order_id', $first->id)->where('type', 'status_overridden')->sole();
     expect($event->reason)->toBe('override: Đã đối chiếu phiếu nhận tại quầy')
         ->and(json_decode($event->data, true))->toBe(['reason_code' => 'store_pickup']);
+});
+
+it('ngoài trình tự cần ghi chú ngay tại service, không chỉ ở controller: mã lý do thôi chưa đủ', function () {
+    $order = ($this->place)();
+    $changer = app(OrderStatusChanger::class);
+
+    expect(fn () => $changer->change($order, OrderStatus::Completed, null))->toThrow(ValidationException::class)
+        ->and(fn () => $changer->change($order, OrderStatus::Completed, '   '))->toThrow(ValidationException::class)
+        ->and($order->fresh()->order_status->value)->toBe('pending')
+        ->and($changer->change($order, OrderStatus::Completed, 'Khách lấy tại cửa hàng'))->toBe('forced')
+        ->and($order->fresh()->order_status->value)->toBe('completed');
 });

@@ -103,16 +103,32 @@ final class OrderStatusChanger
     }
 
     /**
-     * Đổi trạng thái (gọi sau khi kiểm quyền theo `plan()`); trả chế độ đã dùng.
+     * Đổi ngoài trình tự (`forced`) bắt buộc có ghi chú của nhân viên; mã lý do thôi chưa đủ. Gọi riêng để thao tác hàng
+     * loạt kiểm cả lô trước khi đổi đơn nào.
+     *
+     * @param  array{mode: 'normal'|'forced'|null, permission: string|null, blocked: string|null}  $plan
+     */
+    public function assertNote(array $plan, ?string $note): void
+    {
+        if ($plan['mode'] === 'forced' && ($note === null || trim($note) === '')) {
+            throw ValidationException::withMessages(['reason' => __('ordering::messages.status_override_note_required')]);
+        }
+    }
+
+    /**
+     * Đổi trạng thái (gọi sau khi kiểm quyền theo `plan()`); trả chế độ đã dùng. `$note` là ghi chú của nhân viên,
+     * `$reasonCode` là mã lý do chọn sẵn; lý do lưu vào lịch sử ghép từ hai giá trị này.
      *
      * @return 'normal'|'forced'
      */
-    public function change(Order $order, OrderStatus $to, string $reason, ?string $reasonCode = null): string
+    public function change(Order $order, OrderStatus $to, ?string $note, ?string $reasonCode = null): string
     {
         $plan = $this->plan($order, $to);
         if ($plan['mode'] === null) {
             throw OrderActionRejected::statusChangeBlocked((string) $plan['blocked']);
         }
+        $this->assertNote($plan, $note);
+        $reason = $this->resolveReason($to, $note, $reasonCode);
 
         if ($plan['mode'] === 'forced') {
             $this->transitions->force($order->id, $to, 'override: '.$reason, 'staff', $reasonCode);

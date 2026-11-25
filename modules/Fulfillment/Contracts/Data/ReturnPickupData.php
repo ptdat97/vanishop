@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Fulfillment\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Dữ liệu gọi hãng đến lấy hàng trả tại nhà khách (EP v3 X3, `ReturnPickup`): lấy tại địa chỉ giao của đơn, trả về kho
  * đã giao hàng.
@@ -11,6 +13,7 @@ namespace Modules\Fulfillment\Contracts\Data;
  * @param  array<string, string>  $pickupAddress
  * @param  array{full_name: string, phone: string}  $contact
  */
+#[PluginApi]
 final readonly class ReturnPickupData
 {
     /**

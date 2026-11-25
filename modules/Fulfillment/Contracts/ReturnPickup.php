@@ -6,12 +6,14 @@ namespace Modules\Fulfillment\Contracts;
 
 use Modules\Fulfillment\Contracts\Data\CarrierShipment;
 use Modules\Fulfillment\Contracts\Data\ReturnPickupData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Interface tuỳ chọn của `ShippingCarrier` (EP v3 X3): hãng đến lấy hàng trả tại nhà khách (đơn hoàn ngược). CSKH bấm
  * "Gọi hãng lấy hàng trả" trên yêu cầu đã duyệt; Core gọi ngoài transaction và chuyển yêu cầu sang "Đang gửi về" với mã
- * vận đơn hãng trả.
+ * vận đơn hãng trả. Plugin hãng vận chuyển implement cùng `ShippingCarrier`.
  */
+#[PluginApi]
 interface ReturnPickup
 {
     public function bookReturn(ReturnPickupData $data): CarrierShipment;

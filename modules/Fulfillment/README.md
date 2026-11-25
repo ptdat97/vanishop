@@ -26,7 +26,7 @@ Vận đơn theo kho, chọn hãng, đẩy lên hãng, webhook trạng thái, th
 | `DeliveryStatistics` | interface | plugin (số liệu COD giao thất bại cho báo cáo) |
 | `FulfillmentRejected` | class | giữa module |
 | `InvalidCarrierEvent` | class | plugin |
-| `ReturnPickup` | interface | giữa module |
+| `ReturnPickup` | interface tuỳ chọn của `ShippingCarrier` | API cho plugin (`#[PluginApi]`) |
 | `ReturnPickups` | interface | giữa module |
 | `ShipmentBooking` | interface | giữa module |
 | `ShipmentReader` | interface | giữa module |

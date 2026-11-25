@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.83 — 2026-11-25 · Extension API 1.33.0
+
+Các việc P1 từ đợt rà soát kiến trúc 2026-11-25. Các hook tự động `vani.service.*` giữ nguyên theo quyết định Owner.
+
+- `ReturnPickup` và `ReturnPickupData` có `#[PluginApi]`: plugin hãng vận chuyển implement được interface tuỳ chọn "hãng đến lấy hàng trả" (trước đây Core có đủ luồng nhưng R5 không cho plugin dùng).
+- Quy tắc "đổi trạng thái đơn ngoài trình tự phải có ghi chú" nằm trong `OrderStatusChanger` (`change()` nhận ghi chú và mã lý do, `assertNote()` cho thao tác hàng loạt kiểm cả lô trước), không còn chỉ ở controller Admin. Ghi chú toàn khoảng trắng cũng bị từ chối.
+
 ## 0.5.82 — 2026-11-25 · Extension API 1.32.0
 
 Hai việc P0 từ đợt rà soát kiến trúc 2026-11-25.

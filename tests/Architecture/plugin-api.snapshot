@@ -1,4 +1,4 @@
-Extension API 1.32.0
+Extension API 1.33.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -343,6 +343,8 @@ class Modules\Fulfillment\Contracts\Data\CarrierEvent
 ))
 class Modules\Fulfillment\Contracts\Data\CarrierShipment
   __construct(string $trackingNumber, ?string $labelUrl = NULL, ?string $serviceCode = NULL)
+class Modules\Fulfillment\Contracts\Data\ReturnPickupData
+  __construct(string $returnNumber, string $orderNumber, int $locationId, array $pickupAddress, array $contact, int $itemCount)
 class Modules\Fulfillment\Contracts\Data\ShipmentData
   __construct(string $publicId, string $orderNumber, int $locationId, ?string $serviceCode, array $items, array $recipient, array $address, Modules\Shared\Domain\Money\Money $codAmount, ?string $trackingNumber = NULL)
 class Modules\Fulfillment\Contracts\Data\ShipmentView [experimental]
@@ -353,6 +355,8 @@ interface Modules\Fulfillment\Contracts\DeliveryStatistics
   cod(DateTimeImmutable $from, DateTimeImmutable $to): array
   codAging(DateTimeImmutable $from, DateTimeImmutable $to, DateTimeImmutable $now): array
 class Modules\Fulfillment\Contracts\InvalidCarrierEvent extends RuntimeException
+interface Modules\Fulfillment\Contracts\ReturnPickup
+  bookReturn(Modules\Fulfillment\Contracts\Data\ReturnPickupData $data): Modules\Fulfillment\Contracts\Data\CarrierShipment
 interface Modules\Fulfillment\Contracts\ShipmentReader [experimental]
   forOrder(int $orderId): array
 interface Modules\Fulfillment\Contracts\ShippingCarrier

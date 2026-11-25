@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
@@ -340,13 +339,7 @@ final class OrderController
             throw OrderActionRejected::statusChangeBlocked((string) $plan['blocked']);
         }
         Gate::authorize((string) $plan['permission']);
-        $note = $data['reason'] ?? null;
-        $reasonCode = $data['reason_code'] ?? null;
-        $reason = $changer->resolveReason($to, $note, $reasonCode);
-        if ($plan['mode'] === 'forced' && $note === null) {
-            throw ValidationException::withMessages(['reason' => __('ordering::messages.status_override_note_required')]);
-        }
-        $mode = $changer->change($order, $to, $reason, $reasonCode);
+        $mode = $changer->change($order, $to, $data['reason'] ?? null, $data['reason_code'] ?? null);
 
         return back()->with('success', __($mode === 'forced' ? 'ordering::messages.status_changed_forced' : 'ordering::messages.status_changed'));
     }
@@ -364,22 +357,20 @@ final class OrderController
         $to = OrderStatus::from($data['status']);
         $note = $data['reason'] ?? null;
         $reasonCode = $data['reason_code'] ?? null;
-        $reason = $changer->resolveReason($to, $note, $reasonCode);
+        $changer->resolveReason($to, $note, $reasonCode); // mã lý do sai → báo lỗi trước khi đổi đơn nào
         $eligible = $this->queries->ordersByIds($data['ids'])->filter(function (Order $order) use ($changer, $to, $note): bool {
             $plan = $changer->plan($order, $to);
             if ($plan['mode'] === null || ! Gate::allows((string) $plan['permission'])) {
                 return false;
             }
-            if ($plan['mode'] === 'forced' && $note === null) {
-                throw ValidationException::withMessages(['reason' => __('ordering::messages.status_override_note_required')]);
-            }
+            $changer->assertNote($plan, $note);
 
             return true;
         });
         $changed = 0;
         foreach ($eligible as $order) {
             try {
-                $changer->change($order, $to, $reason, $reasonCode);
+                $changer->change($order, $to, $note, $reasonCode);
                 $changed++;
             } catch (BusinessRuleViolation) {
                 // Đơn đổi trạng thái giữa chừng: bỏ qua.
