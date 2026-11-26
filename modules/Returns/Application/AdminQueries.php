@@ -8,6 +8,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\DeferredPage;
 
 /**
  * Truy vấn đọc cho màn hình Admin của Returns — controller không tự truy vấn (D4, R9).
@@ -22,10 +23,10 @@ final class AdminQueries
      */
     public function returns(string $status, string $search, ?int $orderId, ?array $ids, int $perPage, ?ListSort $sort = null): LengthAwarePaginator
     {
-        return ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
+        return DeferredPage::paginate(ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match->where('number', $search)->orWhere('order_id', $orderId ?? 0)))
             ->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
-            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id'))->paginate($perPage)->withQueryString();
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id')), $perPage); // trang sâu nhanh (L54)
     }
 
     /**

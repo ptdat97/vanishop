@@ -19,6 +19,7 @@ use Modules\Ordering\Persistence\Models\OrderAdjustment;
 use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\ContactMask;
+use Modules\Shared\Support\DeferredPage;
 use Modules\Shared\Support\Phones;
 use Modules\Shared\Support\StoreClock;
 
@@ -37,17 +38,16 @@ final class OrderQueries
      * @param  ListSort|null  $sort  sắp theo cột người dùng chọn; null → hàng đợi cũ nhất trước, còn lại mới nhất trước
      * @return LengthAwarePaginator<int, Order>
      */
-    public function search(array $filters, int $perPage = 30, ?ListSort $sort = null): LengthAwarePaginator
+    public function search(array $filters, int $perPage = 30, ?ListSort $sort = null, ?int $total = null): LengthAwarePaginator
     {
-        return $this->filtered($filters)
+        // Trang sâu: lấy id qua index phủ rồi nạp 30 đơn (db-refactor L54). `$total` có sẵn (từ số đếm theo bước) thì không đếm lại.
+        return DeferredPage::paginate($this->filtered($filters)
             ->with('lines')
             ->when($sort,
                 fn ($query) => $sort->apply($query, 'orders.id'),
                 fn ($query) => (int) ($filters['aged'] ?? 0) > 0 || (string) ($filters['actionable'] ?? '') === '1'
                     ? $query->orderBy('placed_at')->orderBy('id')
-                    : $query->orderByDesc('placed_at')->orderByDesc('id'))
-            ->paginate($perPage)
-            ->withQueryString();
+                    : $query->orderByDesc('placed_at')->orderByDesc('id')), $perPage, $total);
     }
 
     /** Tối đa số đơn một lần xuất file (A8). */

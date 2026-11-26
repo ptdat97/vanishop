@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.94 — 2026-11-26 · Extension API 1.39.0
+
+Trang sâu của danh sách Admin lớn ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L54, Owner chọn deferred join, giữ phân trang theo số trang). Không đổi API cho plugin.
+
+- `Shared\Support\DeferredPage::paginate()`: lấy id của trang bằng cùng truy vấn nhưng chỉ chọn khoá chính (index phủ), rồi nạp đủ dòng của trang — thay `->paginate()` ở danh sách đơn, thanh toán, vận đơn, đổi trả, khách hàng. Cùng kết quả và thứ tự; nhảy thẳng tới trang bất kỳ vẫn được.
+- Danh sách đơn: tổng số lấy từ số đếm theo bước (không đếm cả bảng lần thứ hai); khi không lọc, phần đơn đã kết thúc trong tổng có thể trễ tối đa 60 giây như thẻ đếm.
+
 ## 0.5.93 — 2026-11-26 · Extension API 1.39.0
 
 Số đếm lớn không quét bảng ở mỗi request ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L56). Không đổi API cho plugin.

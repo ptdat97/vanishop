@@ -104,7 +104,9 @@ final class OrderController
         $scoped = [...$filters, 'ids' => $screen->filterIds('order', $extensionFilters)];
         $sort = ListSort::fromRequest($request, ['number' => 'orders.placed_at', 'total' => 'orders.total_amount']);
         $contacts = Gate::allows(OrderPermissions::CUSTOMER_CONTACTS);
-        $page = $queries->search($scoped, $perPage, $sort);
+        // Tổng số = cộng số đếm theo bước (cùng bộ lọc trừ `stage`) — không đếm cả bảng lần thứ hai.
+        $stageCounts = $queries->stageCounts($scoped);
+        $page = $queries->search($scoped, $perPage, $sort, in_array($filters['stage'], OrderStage::STAGES, true) ? $stageCounts[$filters['stage']] : array_sum($stageCounts));
         $ids = collect($page->items())->pluck('id')->all();
 
         // Cột và thao tác hàng loạt: plugin (AdminScreen) + module Core (slot vani.admin.order.list_columns / bulk_actions).
@@ -149,7 +151,7 @@ final class OrderController
             'sort' => $sort?->toArray(),
             'stages' => OrderStage::STAGES,
             'actionableStages' => OrderStage::ACTIONABLE,
-            'stageCounts' => $queries->stageCounts($scoped),
+            'stageCounts' => $stageCounts,
             'agedCount' => $queries->agedCount(24),
             'statuses' => array_column(OrderStatus::cases(), 'value'),
             'bulkStatus' => $canManage ? [

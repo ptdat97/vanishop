@@ -10,6 +10,7 @@ use Modules\Payment\Domain\RefundStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\DeferredPage;
 
 /**
  * Truy vấn đọc cho màn hình Admin của Payment — controller không tự truy vấn (D4, R9).
@@ -24,11 +25,11 @@ final class AdminQueries
      */
     public function payments(string $status, ?int $orderId, ?array $ids, int $perPage, ?ListSort $sort = null): LengthAwarePaginator
     {
-        return Payment::query()
+        return DeferredPage::paginate(Payment::query()
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($orderId !== null, fn ($query) => $query->where('order_id', $orderId))
             ->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
-            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id'))->paginate($perPage)->withQueryString();
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id')), $perPage); // trang sâu nhanh (L54)
     }
 
     /**

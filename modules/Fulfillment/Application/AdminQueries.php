@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\DeferredPage;
 
 /**
  * Truy vấn đọc cho màn hình Admin và webhook của Fulfillment — controller không tự truy vấn (D4, R9).
@@ -23,11 +24,11 @@ final class AdminQueries
      */
     public function shipments(string $status, ?int $orderId, ?array $ids, int $perPage, ?ListSort $sort = null): LengthAwarePaginator
     {
-        return Shipment::query()->with('lines')
+        return DeferredPage::paginate(Shipment::query()->with('lines')
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($orderId !== null, fn ($query) => $query->where('order_id', $orderId))
             ->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
-            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id'))->paginate($perPage)->withQueryString();
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id')), $perPage); // trang sâu nhanh (L54)
     }
 
     public function hasActiveShipments(int $orderId): bool

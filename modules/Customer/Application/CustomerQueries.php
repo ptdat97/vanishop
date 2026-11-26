@@ -7,6 +7,7 @@ namespace Modules\Customer\Application;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\DeferredPage;
 use Modules\Shared\Support\Phones;
 
 /**
@@ -23,7 +24,8 @@ final class CustomerQueries
         $q = trim((string) $q);
         $phone = $q === '' ? null : Phones::parse($q);
 
-        return Customer::query()
+        // Trang sâu nhanh (db-refactor L54): id qua index phủ rồi nạp dòng của trang.
+        return DeferredPage::paginate(Customer::query()
             ->when($status !== null && $status !== '', fn ($query) => $query->where('status', $status))
             ->when($q !== '', fn ($query) => $query->where(fn ($query) => $phone !== null
                 ? $query->where('phone', $phone->e164)
@@ -31,9 +33,7 @@ final class CustomerQueries
             ->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
             ->when($groupId !== null, fn ($query) => $query->where('customer_group_id', $groupId))
             ->when($tag !== null && $tag !== '', fn ($query) => $query->whereIn('id', fn ($sub) => $sub->select('customer_id')->from('customer_tags')->where('tag', $tag)))
-            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id'))
-            ->paginate($perPage)
-            ->withQueryString();
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id')), $perPage);
     }
 
     public function byPublicId(string $publicId): ?Customer
