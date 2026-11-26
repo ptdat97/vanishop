@@ -95,6 +95,7 @@ Dán vào mô tả PR:
 - File nén `BeikeShop-v3.0.0.zip` vẫn còn ở thư mục cha `~/Ecommerce/` → nên xoá hoặc chuyển cho pháp chế lưu trữ offline (chỉ phục vụ audit ở mục 6).
 - Mã BeikeShop **không** được nằm trong repo VaniShop, không commit, không deploy, không dùng làm dữ liệu test/seed.
 - **Ngoại lệ có ghi nhận (Owner, 2026-11-12):** Owner cho phép xem `~/Ecommerce/beikeshop_v3.0.0.13` (ngoài repo) một lần để thiết kế hệ thống biến thể. Thực hiện theo §3: AI agent ở vai trò nghiên cứu chỉ đọc mô hình dữ liệu, màn hình và hành vi bộ chọn, ghi kết quả **bằng lời** vào [variant-matrix](../03-domains/variant-matrix.md); không chép code, template, tên bảng/hook/class, chuỗi hiển thị; sau đó ngừng đọc và chỉ code từ đặc tả. Thiết kế khác có chủ đích: tham chiếu bằng id thay chỉ số mảng, ảnh theo màu, giá/tồn ở module riêng góp qua contract. Thư mục này nên được xoá/chuyển khỏi máy dev sau khi xong như bản 3.0.0.11.
+- **Ngoại lệ có ghi nhận (Owner, 2026-11-26):** Owner cho phép đọc `~/Ecommerce/shopware-fashion-brand` (Shopware 6.7, phần cache trong `vendor/shopware/core`) và `~/Ecommerce/VaniCommerce` (các chỗ dùng cache) một lần để học cách xây cache. AI agent ở vai trò nghiên cứu chỉ ghi khái niệm bằng lời vào [ADR-051](../19-adr/ADR-051-tagged-page-cache.md), không chép code, tên class/hook/cookie/header hay chuỗi của hệ tham chiếu. Phiên đã đọc không dùng để viết code cho ADR-051 (§3.4).
 
 ## 8. License của VaniShop
 
