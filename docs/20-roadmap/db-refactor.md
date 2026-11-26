@@ -51,8 +51,18 @@ Mỗi giai đoạn là một hoặc vài PR riêng, mỗi PR có test xanh.
    - PDP; thêm vào giỏ; checkout có reserve tồn;
    - danh sách đơn Admin theo trạng thái / khách; sync API `(updated_at, id)`;
    - sản phẩm bán chạy ([EloquentOrderStatistics](../../modules/Ordering/Application/EloquentOrderStatistics.php)).
-3. Mở rộng [AdminWorkflowBenchmarkTest](../../tests/Performance/AdminWorkflowBenchmarkTest.php) làm mốc so sánh sau G2, G3.
+3. Mốc so sánh sau G2, G3: lệnh `vani:bench:measure` (thay cho việc mở rộng [AdminWorkflowBenchmarkTest](../../tests/Performance/AdminWorkflowBenchmarkTest.php) — test đó tự dựng 1.000 sản phẩm bằng `RefreshDatabase`, không chạy được trên DB đã sinh sẵn 5 triệu đơn; giữ nguyên làm mốc quy mô nhỏ).
 4. Ghi kết quả vào mục §7 của tài liệu này.
+
+**Cách chạy** (✅ G0, 2026-11-26):
+
+```bash
+mysql -uroot -e "CREATE DATABASE vanishop_bench; SET GLOBAL innodb_buffer_pool_size = 4294967296;"
+DB_DATABASE=vanishop_bench php artisan vani:bench:seed --fresh          # ~10 phút, ~10 GB; --continue sinh tiếp đơn nếu bị dừng
+DB_DATABASE=vanishop_bench php -d memory_limit=2G artisan vani:bench:measure [--only="listing|admin"]
+```
+
+`vani:bench:seed` chỉ chạy trên MySQL với DB tên `*_bench`; sinh bằng `INSERT … SELECT` (không qua service). `vani:bench:measure` gửi request qua HTTP kernel trong cùng process, 1 lần làm nóng + 5 lần đo, ghi bảng và `EXPLAIN ANALYZE` của truy vấn chậm nhất mỗi kịch bản vào `storage/logs/bench-scale.md`.
 
 ## 3. G1 — Đổi tên Style → Product
 
@@ -192,6 +202,39 @@ product_facet_values
 
 ## 7. Kết quả đo
 
-| Truy vấn | G0 | Sau G2 | Sau G3 |
-|---|---|---|---|
-| _(điền khi làm G0)_ | | | |
+Dữ liệu `vani:bench:seed`: 100.000 sản phẩm (2% nháp, 2% lưu trữ), 1.000.000 SKU (2 màu × 5 size, 10% hết hàng), 220 danh mục 2 cấp, 50 thương hiệu, 500.000 khách, 5.000.000 đơn / 10.000.000 dòng đơn trong 2 năm (~9,8 GB). MySQL 9.7.2 trên Mac (16 GB RAM), buffer pool 4 GB. ms = trung vị toàn request (SQL ms trong ngoặc); "OOM" = vượt `memory_limit` 2 GB.
+
+| Kịch bản | G0 (2026-11-26) | Sau G2 | Sau G3 |
+|---|---:|---:|---:|
+| Listing: danh mục cha (gồm con), mới nhất | 550 (493) | | |
+| Listing: danh mục cha + lọc màu | 936 (871) | | |
+| Listing: danh mục cha + lọc màu + size | 1.353 (1.329) | | |
+| Listing: toàn bộ, giá tăng dần | **88.750** (88.681) | | |
+| Listing: danh mục con, giá giảm dần | 125 (82) | | |
+| Listing: thuộc tính + thương hiệu | 130 (87) | | |
+| Listing: danh mục cha, trang 40 | 1.479 (1.418) | | |
+| Tìm chữ: "áo sơ mi lụa" | 455 (393) | | |
+| Tìm chữ: mã một phần "BP0500" | 356 (294) | | |
+| PDP: API chi tiết sản phẩm | 12 (5) | | |
+| Giỏ: tạo giỏ + thêm 1 dòng | 14 (7) | | |
+| Checkout: đặt đơn COD (giữ tồn) | 52 (26) | | |
+| Admin: danh sách đơn | 2.420 (2.345) | | |
+| Admin: đơn theo bước "chờ xác nhận" | 2.191 (2.120) | | |
+| Admin: đơn theo trạng thái "đã huỷ" | 1.997 (1.927) | | |
+| Admin: tìm đơn theo SĐT khách | 1.615 (1.563) | | |
+| Admin: danh sách sản phẩm | 177 (70) | | |
+| Admin: lưới tồn | **OOM** | | |
+| Admin: tổng quan | **OOM** | | |
+| Sync API: đơn đổi trong 1 ngày, 50 đơn | 55 (20), 251 truy vấn | | |
+| Báo cáo: sản phẩm bán chạy 30 ngày | 1.165 (1.165) | | |
+
+Nguyên nhân (EXPLAIN ANALYZE):
+
+- **Facet tuỳ chọn** (`ProductSearch::optionFacets`) là truy vấn chậm nhất của mọi listing: nối `variants × variant_option_values × option_values` cho cả tập sản phẩm rồi sắp xếp theo biểu thức `CASE` của `OptionFilterToken` để `GROUP BY`. Không lọc danh mục: 1,85 triệu dòng, sắp xếp 67 s → §4.2, §4.3.
+- **Trang sâu** (trang 40): `ORDER BY created_at DESC, id DESC … OFFSET` trên kết quả `whereExists` danh mục, không có index phù hợp → §4.3 (index `product_listing`).
+- **Tìm chữ**: `LIKE '%…%'` quét `products.search_text` → §4.1.
+- **Danh sách đơn Admin**: truy vấn chậm nhất là `select distinct payment_method from orders` (lấy lựa chọn cho bộ lọc, quét 5 triệu dòng, ~1,5 s) — không thuộc truy vấn danh sách; truy vấn danh sách và đếm theo bước dùng index. *Ngoài kế hoạch ban đầu.*
+- **Lưới tồn và Tổng quan**: `EloquentVariantDirectory::searchIndex()` nạp mọi SKU (1 triệu) và mọi giá trị tuỳ chọn (2 triệu) vào PHP để sắp xếp/phân trang trong bộ nhớ; Tổng quan gọi qua việc cần làm "sắp hết hàng". *Ngoài kế hoạch ban đầu* (gần nhất: keyset ở G3).
+- **Sync API**: truy vấn `(updated_at, id)` dùng index (0,07 ms) nhưng dựng payload N+1 — 251 truy vấn cho 50 đơn. *Ngoài kế hoạch ban đầu.*
+- **Bán chạy**: `GROUP BY json_extract(meta, '$.product_id')` trên 94.963 nhóm qua bảng tạm → §4.5.
+- PDP, giỏ, checkout không đổi theo quy mô.
