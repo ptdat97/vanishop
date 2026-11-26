@@ -38,14 +38,43 @@ final class OtpService
      */
     public function request(string $e164, OtpPurpose $purpose, string $ip): array
     {
+        $customer = $this->customers->activeByPhone($e164);
+
+        return $this->issue($e164, new CustomerContact($e164, $customer?->email, $customer?->full_name, $customer?->id), $purpose, $ip);
+    }
+
+    /**
+     * Mã cho khách đã đăng nhập (xác nhận thao tác nhạy cảm — xoá tài khoản, L40): liên hệ lấy từ hồ sơ; khoá mã là SĐT, khách
+     * chỉ có email dùng `c:<id>` (cùng giới hạn tần suất và số lần thử).
+     *
+     * @return array{channel: string, expires_in: int}
+     */
+    public function requestForCustomer(int $customerId, ?string $phone, ?string $email, ?string $fullName, OtpPurpose $purpose, string $ip): array
+    {
+        return $this->issue(self::customerKey($customerId, $phone), new CustomerContact((string) $phone, $email, $fullName, $customerId), $purpose, $ip);
+    }
+
+    public function verifyForCustomer(int $customerId, ?string $phone, OtpPurpose $purpose, string $code): void
+    {
+        $this->verify(self::customerKey($customerId, $phone), $purpose, $code);
+    }
+
+    private static function customerKey(int $customerId, ?string $phone): string
+    {
+        return $phone !== null && $phone !== '' ? $phone : "c:{$customerId}";
+    }
+
+    /**
+     * @return array{channel: string, expires_in: int}
+     */
+    private function issue(string $e164, CustomerContact $contact, OtpPurpose $purpose, string $ip): array
+    {
         foreach (["customer-otp:phone:{$e164}" => $this->perPhone, "customer-otp:ip:{$ip}" => $this->perIp] as $key => $max) {
             if (RateLimiter::tooManyAttempts($key, $max)) {
                 throw CustomerRejected::otpRateLimited(RateLimiter::availableIn($key));
             }
         }
 
-        $customer = $this->customers->activeByPhone($e164);
-        $contact = new CustomerContact($e164, $customer?->email, $customer?->full_name, $customer?->id);
         $senders = $this->senders($contact);
         if ($senders === []) {
             throw CustomerRejected::otpUnavailable();

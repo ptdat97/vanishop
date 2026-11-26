@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.96 — 2026-11-26 · Extension API 1.41.0
+
+Xoá tài khoản khách bằng mã một lần ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L40). Thay đổi API cho plugin (tăng minor).
+
+- `CustomerAccounts::requestDeletionCode()` mới; `CustomerAccounts::deleteAccount(int $customerId, ?string $password = null, ?string $code = null)` nhận mật khẩu **hoặc** mã. Mã dùng mục đích `OtpPurpose::DeleteAccount`: gửi qua email trên hồ sơ — thư riêng "Mã xác nhận xoá tài khoản" — hoặc kênh OTP của plugin (SMS/ZNS) khi tài khoản chưa có email; tài khoản chỉ có email (không SĐT) cũng nhận được mã. Không có kênh gửi → `customer.otp_unavailable`.
+- Storefront API `POST /me/delete/code`; `POST /me/delete` nhận `password` hoặc `code`. Web: trang xoá tài khoản của khách chưa có mật khẩu (OTP/mạng xã hội) gửi mã và nhập mã ngay, không phải đặt mật khẩu trước (`/tai-khoan/xoa/gui-ma`).
+
 ## 0.5.95 — 2026-11-26 · Extension API 1.40.0
 
 Lợi nhuận sau trả hàng và phí giao ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L43). Thêm vào API cho plugin (tăng minor).

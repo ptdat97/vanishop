@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'deletion_code_sent_email' => 'We sent a confirmation code to your email (valid for 5 minutes).',
+    'deletion_code_sent_phone' => 'We sent a confirmation code to your phone (valid for 5 minutes).',
     'marketing_subscribed' => 'You will receive promotional emails.',
     'marketing_unsubscribed' => 'Promotional emails turned off.',
     'added_items_to_cart' => 'Added :count items to your cart.',

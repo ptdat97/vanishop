@@ -49,6 +49,7 @@ const STOREFRONT_API_PAIRS = [
     'storefront.account.addresses.default' => ['api.storefront.v1.me.addresses.update'],
     'storefront.account.addresses.destroy' => ['api.storefront.v1.me.addresses.destroy'],
     'storefront.account.delete.confirm' => ['api.storefront.v1.me.destroy'],
+    'storefront.account.delete.code' => ['api.storefront.v1.me.deletion.code'],
     'storefront.track.search' => ['api.storefront.v1.orders.track'],
     // Plugin (route chỉ có khi plugin bật).
     'storefront.p.vani-phone-otp-login.request' => ['api.storefront.x.vani-phone-otp-login.otp.request'],
@@ -89,6 +90,7 @@ const STOREFRONT_NO_INPUT = [
     'storefront.order.returns.cancel' => 'yêu cầu đổi trả nằm trên URL',
     'storefront.account.logout' => 'chỉ cần phiên/token',
     'storefront.account.email.resend' => 'chỉ cần phiên/token',
+    'storefront.account.delete.code' => 'chỉ cần phiên/token (gửi mã tới liên hệ trên hồ sơ)',
     'storefront.account.unsubscribe.confirm' => 'khách và kênh nằm trên URL có chữ ký (link trong email); API dùng `PUT /me/consents` (ConsentRequest)',
     'storefront.account.addresses.default' => 'Blade chỉ đặt mặc định (id trên URL); API đặt mặc định qua `PUT /me/addresses/{id}` (AddressRequest)',
     'storefront.account.addresses.destroy' => 'địa chỉ nằm trên URL',

@@ -108,9 +108,17 @@ final class AccountController
     public function destroy(DeleteAccountRequest $request, CustomerAccounts $accounts): JsonResponse
     {
         $data = $request->validated();
-        $accounts->deleteAccount(AuthenticateCustomer::customer($request)->id, $data['password']);
+        $accounts->deleteAccount(AuthenticateCustomer::customer($request)->id, $data['password'] ?? null, $data['code'] ?? null);
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Gửi mã một lần xác nhận xoá tài khoản (L40) — dùng khi tài khoản chưa có mật khẩu (đăng nhập OTP/mạng xã hội).
+     */
+    public function deletionCode(Request $request, CustomerAccounts $accounts): JsonResponse
+    {
+        return response()->json(['data' => $accounts->requestDeletionCode(AuthenticateCustomer::customer($request)->id, (string) $request->ip())]);
     }
 
     /**

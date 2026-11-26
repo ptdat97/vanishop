@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'delete_otp_body' => 'Mã xác nhận xoá tài khoản của bạn là :code (hiệu lực 5 phút). Nếu bạn không yêu cầu xoá tài khoản, hãy bỏ qua thư này và đổi mật khẩu.',
+    'delete_otp_subject' => 'Mã xác nhận xoá tài khoản VaniShop',
     'unauthenticated' => 'Vui lòng đăng nhập.',
     'otp_invalid' => 'Mã xác thực không đúng hoặc đã hết hạn.',
     'otp_rate_limited' => 'Bạn yêu cầu mã quá nhiều lần. Vui lòng thử lại sau.',

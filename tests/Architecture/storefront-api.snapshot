@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.95
+Storefront API v1 — VaniShop 0.5.96
 GET /address/provinces security[]
   200
     $: object
@@ -1541,6 +1541,40 @@ GET /me/delete security[customerBearer,firstPartySession]
     $.error.message: string
 POST /me/delete security[customerBearer,firstPartySession]
   204 (không nội dung)
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /me/delete/code security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.channel: string
+    $.data.expires_in: integer
   401
     $: object closed
     $.error: object closed

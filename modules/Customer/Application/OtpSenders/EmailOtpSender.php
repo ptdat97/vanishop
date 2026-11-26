@@ -35,8 +35,12 @@ final class EmailOtpSender implements OtpSender
     public function send(CustomerContact $contact, string $code, OtpPurpose $purpose): void
     {
         try {
-            Mail::raw(__('customer::messages.otp_body', ['code' => $code]), function (Message $message) use ($contact): void {
-                $message->to((string) $contact->email, $contact->fullName)->subject(__('customer::messages.otp_subject'));
+            // Thư riêng cho việc xoá tài khoản (L40): khách nhận ra ngay đây không phải mã đăng nhập.
+            [$subject, $body] = $purpose === OtpPurpose::DeleteAccount
+                ? ['customer::messages.delete_otp_subject', 'customer::messages.delete_otp_body']
+                : ['customer::messages.otp_subject', 'customer::messages.otp_body'];
+            Mail::raw(__($body, ['code' => $code]), function (Message $message) use ($contact, $subject): void {
+                $message->to((string) $contact->email, $contact->fullName)->subject(__($subject));
             });
         } catch (TransportExceptionInterface $exception) {
             // Để Core chuyển sang kênh OTP kế tiếp (SMS/ZNS).

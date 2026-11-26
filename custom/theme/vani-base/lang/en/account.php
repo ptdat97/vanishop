@@ -1,9 +1,13 @@
 <?php
 
 return [
+    'deletion_code_intro' => 'Your account has no password. Get a confirmation code by email (or by text message if the account has no email) to delete it.',
+    'enter_deletion_code' => 'Enter the confirmation code we sent you',
     'marketing_title' => 'Newsletter',
     'marketing_email_label' => 'Email me offers and news. You can unsubscribe at any time.',
+    'resend_deletion_code' => 'Resend code',
     'save_preferences' => 'Save preferences',
+    'send_deletion_code' => 'Send confirmation code',
     'unsubscribe_title' => 'Unsubscribe from promotional emails',
     'unsubscribe_intro' => 'You will no longer get promotional emails or cart reminders. Order emails are still sent.',
     'unsubscribe_confirm' => 'Unsubscribe',
@@ -53,7 +57,6 @@ return [
     'no_addresses_yet_add_one' => 'No addresses yet. Add one to check out faster.',
     'no_keep_my_account' => 'No, keep my account',
     'no_orders_yet' => 'No orders yet.',
-    'no_password_yet' => 'Your account has no password yet. Please set a password first to confirm the deletion.',
     'other' => 'Other',
     'password' => 'Password',
     'password_at_least_8_characters' => 'Password (at least 8 characters)',

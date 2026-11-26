@@ -23,6 +23,7 @@ Route::middleware('vani.customer')->group(function () {
     Route::patch('me', [AccountController::class, 'update'])->name('me.update');
     Route::get('me/delete', [AccountController::class, 'deletion'])->name('me.deletion');
     Route::post('me/delete', [AccountController::class, 'destroy'])->middleware('throttle:vani-customer-auth')->name('me.destroy');
+    Route::post('me/delete/code', [AccountController::class, 'deletionCode'])->middleware('throttle:vani-customer-auth')->name('me.deletion.code');
     Route::put('me/password', [AccountController::class, 'password'])->middleware('throttle:vani-customer-auth')->name('me.password');
     Route::post('me/email/verification', [AccountController::class, 'sendEmailVerification'])->middleware('throttle:vani-customer-auth')->name('me.email.verification');
     Route::get('me/export', [AccountController::class, 'export'])->name('me.export');

@@ -6,6 +6,7 @@ namespace Modules\Customer\Application;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Customer\Contracts\CustomerRejected;
+use Modules\Customer\Contracts\Data\OtpPurpose;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Events\CustomerAnonymized;
 use Modules\Customer\Events\CustomerMerged;
@@ -33,6 +34,7 @@ final class AccountLifecycle
         private readonly CustomerStats $stats,
         private readonly AuditLogger $audit,
         private readonly CurrentContext $context,
+        private readonly OtpService $otp,
     ) {}
 
     /**
@@ -56,14 +58,38 @@ final class AccountLifecycle
      * Khách tự xoá tài khoản (quyền xoá dữ liệu): còn việc dở thì từ chối trước khi kiểm mật khẩu; nhập lại mật khẩu (chưa
      * có → `customer.password_required`, đặt mật khẩu trước); rồi ẩn danh hoá (thu hồi mọi phiên, rút consent có ghi ledger).
      */
-    public function deleteOwnAccount(int $customerId, string $password): void
+    /**
+     * Mã một lần xác nhận xoá tài khoản, gửi tới liên hệ trên hồ sơ (kênh email của Core khi có email, hoặc SMS/ZNS của plugin).
+     *
+     * @return array{channel: string, expires_in: int}
+     */
+    public function requestDeletionCode(int $customerId, string $ip): array
     {
-        Customer::query()->find($customerId) ?? throw CustomerRejected::notFound();
+        $customer = Customer::query()->find($customerId) ?? throw CustomerRejected::notFound();
         if (($blockers = $this->deletionBlockers($customerId)) !== []) {
             throw CustomerRejected::deletionBlocked($blockers);
         }
 
-        $this->auth->confirmPassword($customerId, $password);
+        return $this->otp->requestForCustomer($customer->id, $customer->phone, $customer->email, $customer->full_name, OtpPurpose::DeleteAccount, $ip);
+    }
+
+    /**
+     * Xác nhận bằng mật khẩu hiện tại hoặc mã một lần (`requestDeletionCode`).
+     */
+    public function deleteOwnAccount(int $customerId, ?string $password = null, ?string $code = null): void
+    {
+        $customer = Customer::query()->find($customerId) ?? throw CustomerRejected::notFound();
+        if (($blockers = $this->deletionBlockers($customerId)) !== []) {
+            throw CustomerRejected::deletionBlocked($blockers);
+        }
+
+        if ($code !== null && $code !== '') {
+            $this->otp->verifyForCustomer($customer->id, $customer->phone, OtpPurpose::DeleteAccount, $code);
+        } elseif ($password !== null && $password !== '') {
+            $this->auth->confirmPassword($customerId, $password);
+        } else {
+            throw CustomerRejected::passwordRequired();
+        }
         $this->anonymize($customerId, 'customer_request');
     }
 

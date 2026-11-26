@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerAddress;
@@ -89,6 +90,21 @@ it('xoá tài khoản = ẩn danh hoá (nhập lại mật khẩu): xoá PII, th
 
     H::login($this, '0912345678');
     expect(Customer::query()->count())->toBe(2);
+});
+
+it('xoá tài khoản bằng mã một lần gửi qua email (thư riêng cho việc xoá tài khoản), không cần mật khẩu (L40)', function () {
+    $customer = Customer::query()->sole();
+    $customer->forceFill(['password' => null, 'email' => 'lan@example.com'])->save();
+
+    $this->postJson(H::API.'/me/delete/code', [], H::auth($this->token))->assertOk()->assertJsonPath('data.channel', 'email');
+    $messages = iterator_to_array(Mail::mailer('array')->getSymfonyTransport()->messages());
+    $mail = end($messages)->getOriginalMessage();
+    expect($mail->getSubject())->toBe('Mã xác nhận xoá tài khoản VaniShop');
+    preg_match('/\b(\d{6})\b/', (string) $mail->getTextBody(), $match);
+
+    $this->postJson(H::API.'/me/delete', ['code' => '12'], H::auth($this->token))->assertStatus(422)->assertJsonPath('error.code', 'customer.otp_invalid');
+    $this->postJson(H::API.'/me/delete', ['code' => $match[1]], H::auth($this->token))->assertNoContent();
+    expect($customer->fresh()->status->value)->toBe('anonymized');
 });
 
 it('xoá tài khoản bị từ chối khi còn đơn chưa hoàn tất hoặc đổi trả đang mở (trước khi kiểm mật khẩu)', function () {

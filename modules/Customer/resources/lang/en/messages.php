@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'delete_otp_body' => 'Your account deletion code is :code (valid for 5 minutes). If you did not ask to delete your account, ignore this email and change your password.',
+    'delete_otp_subject' => 'VaniShop account deletion code',
     'unauthenticated' => 'Please sign in.',
     'otp_invalid' => 'The verification code is incorrect or has expired.',
     'otp_rate_limited' => 'Too many code requests. Please try again later.',

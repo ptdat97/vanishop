@@ -51,10 +51,20 @@ interface CustomerAccounts
     public function deletionBlockers(int $customerId): array;
 
     /**
-     * Xoá tài khoản = ẩn danh hoá (giữ đơn theo nghĩa vụ kế toán), thu hồi mọi phiên. Xác nhận bằng mật khẩu hiện tại. Còn việc
-     * dở → `customer.deletion_blocked`; sai mật khẩu → `customer.password_mismatch`; chưa có mật khẩu → `customer.password_required`.
+     * Gửi mã một lần để xác nhận xoá tài khoản (0.5.96, reference-parity L40) — qua email trên hồ sơ (thư riêng cho việc xoá
+     * tài khoản) hoặc kênh OTP của plugin (SMS/ZNS) khi chưa có email. Còn việc dở → `customer.deletion_blocked`; không có
+     * kênh gửi (chưa có email, không plugin SMS/ZNS) → `customer.otp_unavailable` (dùng mật khẩu hoặc liên hệ cửa hàng).
+     *
+     * @return array{channel: string, expires_in: int}
      */
-    public function deleteAccount(int $customerId, string $password): void;
+    public function requestDeletionCode(int $customerId, string $ip): array;
+
+    /**
+     * Xoá tài khoản = ẩn danh hoá (giữ đơn theo nghĩa vụ kế toán), thu hồi mọi phiên. Xác nhận bằng mật khẩu hiện tại hoặc mã
+     * từ `requestDeletionCode()` (0.5.96). Còn việc dở → `customer.deletion_blocked`; sai mật khẩu → `customer.password_mismatch`;
+     * sai/hết hạn mã → `customer.otp_invalid`; không gửi cả hai → `customer.password_required`.
+     */
+    public function deleteAccount(int $customerId, ?string $password = null, ?string $code = null): void;
 
     /**
      * Mọi đồng ý nhận tin của khách (đang bật và đã huỷ), theo kênh.

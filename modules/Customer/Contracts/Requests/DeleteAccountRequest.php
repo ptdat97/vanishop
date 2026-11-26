@@ -7,7 +7,7 @@ namespace Modules\Customer\Contracts\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Khách tự xoá tài khoản (nhập lại mật khẩu) — Storefront API `DELETE /me` và form Blade (ADR-044 §2).
+ * Khách tự xoá tài khoản (nhập lại mật khẩu hoặc mã một lần gửi qua email/SMS) — Storefront API `DELETE /me` và form Blade (ADR-044 §2).
  */
 final class DeleteAccountRequest extends FormRequest
 {
@@ -17,7 +17,9 @@ final class DeleteAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'password' => ['required', 'string', 'max:200'],
+            // Mật khẩu hiện tại hoặc mã một lần (`requestDeletionCode`, L40).
+            'password' => ['required_without:code', 'nullable', 'string', 'max:200'],
+            'code' => ['required_without:password', 'nullable', 'string', 'max:10'],
         ];
     }
 }

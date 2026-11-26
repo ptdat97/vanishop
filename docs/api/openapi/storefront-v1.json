@@ -2092,10 +2092,50 @@
                 "tags": [
                     "Tài khoản"
                 ],
-                "summary": "Xoá tài khoản (nhập lại mật khẩu)",
+                "summary": "Xoá tài khoản (nhập lại mật khẩu hoặc mã một lần từ POST /me/delete/code)",
                 "responses": {
                     "204": {
                         "description": "Không có nội dung."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/delete/code": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Gửi mã một lần xác nhận xoá tài khoản (email trên hồ sơ, hoặc SMS/ZNS của plugin khi chưa có email)",
+                "responses": {
+                    "200": {
+                        "description": "Đã gửi mã: kênh đã dùng và số giây hiệu lực.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/deletion-code.json"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthenticated"

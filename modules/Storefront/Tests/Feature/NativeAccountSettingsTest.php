@@ -6,6 +6,7 @@ use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerAddress;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
+use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -121,12 +122,31 @@ it('xoá tài khoản: nhập lại mật khẩu, đúng thì ẩn danh hoá và
     $this->get('/tai-khoan')->assertRedirect('/tai-khoan/dang-nhap');
 });
 
-it('xoá tài khoản: chưa có mật khẩu (đăng nhập OTP/mạng xã hội) thì phải đặt mật khẩu trước', function () {
+it('xoá tài khoản: chưa có mật khẩu (đăng nhập OTP/mạng xã hội) thì xác nhận bằng mã một lần, không phải đặt mật khẩu trước', function () {
     $customer = ($this->signIn)();
     $customer->forceFill(['password' => null])->save();
 
-    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Vui lòng đặt mật khẩu trước')->assertDontSee('Xoá vĩnh viễn tài khoản');
+    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Gửi mã xác nhận')->assertDontSee('Xoá vĩnh viễn tài khoản');
     $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa', ['password' => 'bat-ky'])->assertSessionHasErrors('business');
+
+    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa/gui-ma')->assertRedirect('/tai-khoan/xoa')
+        ->assertSessionHas('status', 'Đã gửi mã xác nhận tới số điện thoại của bạn (hiệu lực 5 phút).');
+    $code = FakeOtpSender::$codes[$customer->phone.'|delete_account'];
+    $this->get('/tai-khoan/xoa')->assertSee('Nhập mã xác nhận đã gửi cho bạn')->assertSee('Gửi lại mã');
+
+    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa', ['code' => $code === '000000' ? '111111' : '000000'])->assertSessionHasErrors('business');
+    expect($customer->fresh()->status->value)->toBe('active');
+
+    $this->post('/tai-khoan/xoa', ['code' => $code])->assertRedirect('/');
+    expect($customer->fresh()->status->value)->toBe('anonymized');
+});
+
+it('xoá tài khoản: không có kênh gửi mã thì báo dùng cách khác, không xoá', function () {
+    $customer = ($this->signIn)();
+    $customer->forceFill(['password' => null, 'email' => null])->save();
+    FakeOtpSender::$available = false;
+
+    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa/gui-ma')->assertRedirect('/tai-khoan/xoa')->assertSessionHasErrors('business');
     expect($customer->fresh()->status->value)->toBe('active');
 });
 

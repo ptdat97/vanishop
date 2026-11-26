@@ -107,6 +107,7 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::put($p('account.password'), [AccountSettingsController::class, 'updatePassword'])->middleware('throttle:vani-customer-auth')->name('account.password.update');
                 Route::get($p('account.delete'), [AccountSettingsController::class, 'deletion'])->name('account.delete');
                 Route::post($p('account.delete'), [AccountSettingsController::class, 'destroyAccount'])->middleware('throttle:vani-customer-auth')->name('account.delete.confirm');
+                Route::post($p('account.delete.code'), [AccountSettingsController::class, 'sendDeletionCode'])->middleware('throttle:vani-customer-auth')->name('account.delete.code');
                 Route::get($p('account.addresses.create'), [AccountSettingsController::class, 'createAddress'])->name('account.addresses.create');
                 Route::post($p('account.addresses'), [AccountSettingsController::class, 'storeAddress'])->name('account.addresses.store');
                 Route::get($p('account.addresses.edit'), [AccountSettingsController::class, 'editAddress'])->whereNumber('address')->name('account.addresses.edit');

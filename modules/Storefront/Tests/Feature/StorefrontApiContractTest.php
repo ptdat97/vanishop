@@ -216,6 +216,7 @@ it('khách: đăng ký (link email), hồ sơ, mật khẩu, sổ địa chỉ, 
     $call('GET', '/me/export', '/me/export');
     $call('POST', "/me/orders/{$order}/cancel", '/me/orders/{order}/cancel', ['reason_code' => 'changed_mind']);
     $call('GET', '/me/delete', '/me/delete');
+    $call('POST', '/me/delete/code', '/me/delete/code');
 
     $login = assertStorefrontContract($this->postJson("{$this->api}/auth/login", ['email' => 'lan@example.com', 'password' => 'mat-khau-moi-123'])->assertOk(), '/auth/login', 'POST');
     assertStorefrontContract($this->postJson("{$this->api}/auth/logout", [], Cu::auth($login->json('meta.token')))->assertNoContent(), '/auth/logout', 'POST');

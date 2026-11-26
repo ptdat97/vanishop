@@ -1,9 +1,13 @@
 <?php
 
 return [
+    'deletion_code_intro' => 'Tài khoản chưa có mật khẩu. Nhận mã xác nhận qua email (hoặc tin nhắn nếu tài khoản chưa có email) để xoá tài khoản.',
+    'enter_deletion_code' => 'Nhập mã xác nhận đã gửi cho bạn',
     'marketing_title' => 'Nhận tin',
     'marketing_email_label' => 'Nhận ưu đãi và tin mới qua email. Bạn có thể huỷ bất cứ lúc nào.',
+    'resend_deletion_code' => 'Gửi lại mã',
     'save_preferences' => 'Lưu lựa chọn',
+    'send_deletion_code' => 'Gửi mã xác nhận',
     'unsubscribe_title' => 'Huỷ nhận email ưu đãi',
     'unsubscribe_intro' => 'Bạn sẽ không nhận email ưu đãi và nhắc giỏ hàng nữa. Email về đơn hàng vẫn được gửi.',
     'unsubscribe_confirm' => 'Huỷ nhận email',
@@ -53,7 +57,6 @@ return [
     'no_addresses_yet_add_one' => 'Chưa có địa chỉ. Thêm địa chỉ để đặt hàng nhanh hơn.',
     'no_keep_my_account' => 'Thôi, giữ tài khoản',
     'no_orders_yet' => 'Chưa có đơn hàng.',
-    'no_password_yet' => 'Tài khoản chưa có mật khẩu. Vui lòng đặt mật khẩu trước để xác nhận xoá.',
     'other' => 'Khác',
     'password' => 'Mật khẩu',
     'password_at_least_8_characters' => 'Mật khẩu (tối thiểu 8 ký tự)',

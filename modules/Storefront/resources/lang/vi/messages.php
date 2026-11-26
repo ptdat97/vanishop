@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'deletion_code_sent_email' => 'Đã gửi mã xác nhận tới email của bạn (hiệu lực 5 phút).',
+    'deletion_code_sent_phone' => 'Đã gửi mã xác nhận tới số điện thoại của bạn (hiệu lực 5 phút).',
     'marketing_subscribed' => 'Đã bật nhận ưu đãi qua email.',
     'marketing_unsubscribed' => 'Đã tắt nhận ưu đãi qua email.',
     'added_items_to_cart' => 'Đã thêm :count sản phẩm vào giỏ.',

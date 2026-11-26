@@ -121,17 +121,29 @@ final class AccountSettingsController
         return view('theme::pages.account.delete', [
             'customer' => $customer,
             'blockers' => $this->accounts->deletionBlockers($customer->id),
+            'codeSent' => (bool) $request->session()->get('deletion_code_sent', false),
         ]);
     }
 
     /**
-     * Xác nhận bằng mật khẩu hiện tại; tài khoản chưa có mật khẩu (đăng nhập OTP/mạng xã hội) đặt mật khẩu ở trang hồ sơ trước.
+     * Gửi mã một lần xác nhận xoá tài khoản (L40) — tài khoản chưa có mật khẩu (OTP/mạng xã hội) không phải đặt mật khẩu trước.
+     */
+    public function sendDeletionCode(Request $request): RedirectResponse
+    {
+        $customer = $this->required($request);
+        $sent = $this->accounts->requestDeletionCode($customer->id, (string) $request->ip());
+
+        return back()->with('deletion_code_sent', true)->with('status', __('storefront::messages.deletion_code_sent_'.($sent['channel'] === 'email' ? 'email' : 'phone')));
+    }
+
+    /**
+     * Xác nhận bằng mật khẩu hiện tại hoặc mã một lần gửi qua email/SMS.
      */
     public function destroyAccount(DeleteAccountRequest $request): RedirectResponse
     {
         $customer = $this->required($request);
         $data = $request->validated();
-        $this->accounts->deleteAccount($customer->id, $data['password']);
+        $this->accounts->deleteAccount($customer->id, $data['password'] ?? null, $data['code'] ?? null);
 
         // Ẩn danh hoá đã thu hồi mọi token; bỏ phiên web để không còn dấu vết đăng nhập.
         $request->session()->invalidate();
