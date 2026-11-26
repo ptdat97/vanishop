@@ -6,6 +6,7 @@ namespace Modules\Inventory\Tests\Feature;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Inventory\Application\StockGridIndexer;
 use Modules\Inventory\Persistence\Models\Location;
 
 require_once __DIR__.'/../../../Catalog/Tests/Feature/CatalogTestHelpers.php';
@@ -39,5 +40,6 @@ final class InventoryTestHelpers
             ['location_id' => $location->id, 'variant_id' => $variantId],
             ['on_hand' => $onHand, 'reserved' => 0, 'safety_stock' => $safetyStock, 'created_at' => now(), 'updated_at' => now()],
         );
+        app(StockGridIndexer::class)->syncSellable([$variantId]); // ghi thẳng DB: cập nhật read model lưới tồn như sau AvailabilityChanged
     }
 }

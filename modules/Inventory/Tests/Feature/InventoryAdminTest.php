@@ -304,6 +304,7 @@ it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn 
     foreach (array_chunk($links, 500) as $chunk) {
         DB::table('variant_option_values')->insert($chunk);
     }
+    T::project(); // ghi thẳng DB: dựng read model (Catalog → lưới tồn)
     $firstBig = (int) DB::table('variants')->where('sku', 'like', 'BIG-1-%')->min('id');
     I::stock($this->hn, $firstBig, 50);
     $total = 6000 + 2; // + 2 biến thể của LM-DR01 (hết hàng)
@@ -351,6 +352,7 @@ it('sản phẩm không theo dõi tồn: lưới tồn có nhãn riêng, không 
     $made = T::product($this->brand->id, ['product_code' => 'LM-MTO', 'name' => 'Đầm đặt may']);
     [$madeS] = P::variants($made, ['S']);
     DB::table('products')->where('id', $made->id)->update(['track_inventory' => false]);
+    T::project();
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust', 'catalog.view']), 'staff');
     $products = fn (string $query): array => $this->get("{$this->stockUrl}{$query}")->assertOk()->viewData('page')['props']['products'];
     $skus = fn (string $query): array => collect($products($query))->flatMap(fn (array $product) => $product['variants'])->pluck('sku')->all();

@@ -40,7 +40,7 @@ return new class extends Migration
 
             $table->index(['customer_id', 'placed_at']); // đơn của một khách theo thời gian (thay index customer_id đơn lẻ)
             $table->index('placed_at');
-            $table->index('order_status');
+            $table->index(['order_status', 'payment_status']); // đếm "đã giao xong, chưa thu COD" của Tổng quan (db-refactor G3)
             $table->index(['source', 'placed_at']);
         });
 

@@ -8,10 +8,11 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 
 ## 0.5.91 — 2026-11-26 · Extension API 1.38.0
 
-Chuẩn bị bảng lớn ([db-refactor G3](../20-roadmap/db-refactor.md#5-g3--chuẩn-bị-cho-bảng-lớn), phần 1). Không đổi API cho plugin.
+Chuẩn bị bảng lớn ([db-refactor G3](../20-roadmap/db-refactor.md#5-g3--chuẩn-bị-cho-bảng-lớn)). Không đổi API cho plugin. Migration gốc sửa tại chỗ — `migrate:fresh --seed` rồi `vani:catalog:rebuild-listing`.
 
 - Lưu giữ dữ liệu (chạy hằng đêm, số tháng chỉnh ở Admin → Cài đặt → Khác): `vani:integration:prune` xoá sự kiện, outbox đã gửi, inbox đã xử lý > 3 tháng (giữ message lỗi/dead); `vani:notification:prune` xoá nhật ký gửi tin > 6 tháng; `vani:audit:archive` chuyển nhật ký thao tác > 24 tháng sang bảng mới `audit_logs_archive` (giữ id, không mất). Nhật ký nghiệp vụ (`order_events`, `shipment_events`, `return_events`, `customer_consent_events`) không đụng. Xoá theo lô id tăng dần (`Shared\Support\ChunkedPrune`).
 - Lượt xem sản phẩm đếm trong cache theo (giờ, sản phẩm), `vani:catalog:flush-views` (mỗi phút) ghi dồn xuống `product_view_stats`; `--compact` (hằng đêm) gộp dữ liệu theo giờ > 30 ngày thành theo ngày. Số liệu lượt xem trễ tối đa ~1 phút.
+- Lưới tồn và Tổng quan Admin đọc read model mới của Inventory `stock_grid_index` + `stock_grid_options` (listener `SyncStockGridIndex`, chạy ngay sau commit; lệnh `vani:inventory:sync-stock-grid` tính lại số bán được) — trước đây nạp mọi SKU vào bộ nhớ. Xuất file tồn đọc theo lô từ read model. Index `orders (order_status, payment_status)` thay `orders (order_status)`.
 - Read replica (mặc định tắt): `DB_READ_HOST`, `sticky`; thống kê/báo cáo đọc qua kết nối `mysql_report` khi đặt `DB_REPORT_CONNECTION`. Runbook partition `stock_movements`/`price_history` ở [operations §4.1](../18-operations/operations.md).
 
 ## 0.5.90 — 2026-11-26 · Extension API 1.38.0

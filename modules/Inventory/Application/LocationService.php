@@ -12,7 +12,7 @@ use Modules\Inventory\Persistence\Models\Location;
 
 final class LocationService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly StockGridIndexer $grid) {}
 
     public const DEFAULT_CODE = 'KHO-CHINH';
 
@@ -51,7 +51,12 @@ final class LocationService
             }
 
             $location ??= new Location;
-            $location->fill($data)->save();
+            $location->fill($data);
+            $affectsSellable = ! $location->exists || $location->isDirty(['status', 'ships_online_orders']);
+            $location->save();
+            if ($affectsSellable) {
+                $this->grid->syncAllSellable(); // số bán được của lưới tồn tính trên các kho giao online
+            }
 
             $this->audit->record($location->wasRecentlyCreated ? 'inventory.location.created' : 'inventory.location.updated', 'location', $location->id, ['code' => $location->code]);
 

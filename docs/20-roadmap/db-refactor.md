@@ -1,6 +1,6 @@
 # Kế hoạch refactor DB: đổi Style → Product, read model cho listing, chuẩn bị scale
 
-> Trạng thái: **In Progress** (2026-11-26). Owner đã duyệt: đổi `style_code` → `product_code`, đổi toàn bộ tiền tố `style` → `product`, thêm read model `product_listing` / `product_facet_values`. **G1 xong** (Core 0.5.89, [ADR-050](../19-adr/ADR-050-product-replaces-style.md)); **G0 xong** (mốc §7), **G2 xong** (Core 0.5.90, §7); **G3 phần 1 xong** (Core 0.5.91: lưu giữ dữ liệu, đếm lượt xem qua cache, read replica, runbook partition); còn keyset và lưới tồn/Tổng quan; G0 đo sau G1 vì đổi tên không ảnh hưởng hiệu năng (seeder quy mô viết một lần với tên bảng mới). Khi làm xong từng giai đoạn thì cập nhật [status](../00-overview/status.md) và tài liệu liên quan.
+> Trạng thái: **Implemented** (2026-11-26). Owner đã duyệt: đổi `style_code` → `product_code`, đổi toàn bộ tiền tố `style` → `product`, thêm read model `product_listing` / `product_facet_values`. **G1 xong** (Core 0.5.89, [ADR-050](../19-adr/ADR-050-product-replaces-style.md)); **G0 xong** (mốc §7), **G2 xong** (Core 0.5.90, §7); **G3 xong** (Core 0.5.91: lưu giữ dữ liệu, đếm lượt xem qua cache, read replica, runbook partition, read model lưới tồn; keyset ghi §6b theo Owner); G0 đo sau G1 vì đổi tên không ảnh hưởng hiệu năng (seeder quy mô viết một lần với tên bảng mới). Khi làm xong từng giai đoạn thì cập nhật [status](../00-overview/status.md) và tài liệu liên quan.
 >
 > Liên quan: [database](../07-database/database.md) (quy ước giữ nguyên), [catalog-pricing](../03-domains/catalog-pricing.md), [ADR-045](../19-adr/ADR-045-flexible-variant-options.md) (biến thể linh hoạt — lý do chữ "style" không còn đúng), [ADR-048](../19-adr/ADR-048-extension-api-version.md) (version API cho plugin).
 
@@ -28,7 +28,7 @@
 | **G0** | Môi trường Mac + đo hiện trạng | — |
 | **G1** ✅ | Đổi tên Style → Product (một nhánh, không trộn logic) | G0 |
 | **G2** ✅ | Sửa điểm nghẽn: FULLTEXT, `filter_token`, read model, index | G1 |
-| **G3** | Bảng lớn: retention/archive, đếm lượt xem qua Redis, keyset, read replica | G2 |
+| **G3** ✅ | Bảng lớn: retention/archive, đếm lượt xem qua Redis, keyset (để sau — §6b), read replica | G2 |
 
 Mỗi giai đoạn là một hoặc vài PR riêng, mỗi PR có test xanh.
 
@@ -229,13 +229,13 @@ Dữ liệu `vani:bench:seed`: 100.000 sản phẩm (2% nháp, 2% lưu trữ), 1
 | PDP: API chi tiết sản phẩm | 12 (5) | 12 (4) | |
 | Giỏ: tạo giỏ + thêm 1 dòng | 14 (7) | 14 (6) | |
 | Checkout: đặt đơn COD (giữ tồn) | 52 (26) | 49 (22) | |
-| Admin: danh sách đơn | 2.420 (2.345) | 916 (843) | |
+| Admin: danh sách đơn | 2.420 (2.345) | 916 (843) | 930 (857) |
 | Admin: đơn theo bước "chờ xác nhận" | 2.191 (2.120) | 683 (614) | |
 | Admin: đơn theo trạng thái "đã huỷ" | 1.997 (1.927) | 430 (364) | |
 | Admin: tìm đơn theo SĐT khách | 1.615 (1.563) | 151 (107) | |
 | Admin: danh sách sản phẩm | 177 (70) | 183 (72) | |
-| Admin: lưới tồn | **OOM** | OOM (G3) | |
-| Admin: tổng quan | **OOM** | OOM (G3) | |
+| Admin: lưới tồn | **OOM** | OOM (G3) | 214 (123) |
+| Admin: tổng quan | **OOM** | OOM (G3) | 648 (592) |
 | Sync API: đơn đổi trong 1 ngày, 50 đơn | 55 (20), 251 truy vấn | 13 (2), 6 truy vấn | |
 | Báo cáo: sản phẩm bán chạy 30 ngày | 1.165 (1.165) | 617 (616) | |
 
@@ -255,3 +255,5 @@ Sau G2 (2026-11-26, cùng dữ liệu `vani:bench:seed`): `ProductSearch` trên 
 - Listing toàn catalog (1,1 s): đếm facet tuỳ chọn trên ~665.000 dòng `product_facet_values` của 95.000 sản phẩm. Trang danh mục cụ thể 50–600 ms.
 - Danh sách đơn Admin: truy vấn chậm nhất là `select stage, count(*) from orders group by stage` (thẻ đếm theo bước, quét index ~0,5 s ở 5 triệu đơn) — cần bảng đếm hoặc cache nếu thành vấn đề.
 - Bán chạy 30 ngày (0,6 s): group ~400.000 dòng đơn theo `product_id` — báo cáo, có thể cache theo ngày.
+
+Sau G3 (2026-11-26): lưới tồn và Tổng quan đọc read model `stock_grid_index` / `stock_grid_options` của Inventory (bản sao dữ liệu Catalog cần cho lưới, đồng bộ qua `ProductListingProjected`; `sellable` cập nhật khi `AvailabilityChanged`) — lọc, sắp xếp, phân trang, đếm bằng SQL. Tổng quan còn chậm vì đếm đơn theo bước (cùng truy vấn với danh sách đơn); "đã giao, chưa thu COD" dùng index mới `orders (order_status, payment_status)` (8,2 s → vài ms). Phần còn lại ghi [reference-parity §6b](reference-parity-refactor.md) L54–L56.

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Application;
 
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Persistence\Models\Location;
 
 /**
- * Lưới tồn kho Admin: mọi variant (tìm theo tên/mã sản phẩm/SKU, lọc theo giá trị tuỳ chọn — màu, size…, hết hàng / sắp hết theo số bán được
+ * Lưới tồn kho Admin (đọc read model `stock_grid_index`, db-refactor G3): mọi variant (tìm theo tên/mã sản phẩm/SKU, lọc theo giá trị tuỳ chọn — màu, size…, hết hàng / sắp hết theo số bán được
  * online — Σ max(0, tồn − giữ − an toàn) của kho đang giao online, như storefront) × kho. Phân trang theo **sản phẩm**
  * để các variant của một sản phẩm luôn cùng trang (chọn cả sản phẩm, sửa hàng loạt).
  */
@@ -32,36 +34,41 @@ final class StockGrid
      */
     public function page(array $criteria, int $page, int $perPage = 20): array
     {
+        $locations = $this->queries->locations();
         $matching = $this->matching($criteria);
-        $byProduct = [];
-        foreach ($matching['rows'] as $row) {
-            $byProduct[$row['product_id']][] = $row;
-        }
-        $pageRows = array_merge([], ...array_slice(array_values($byProduct), max(0, $page - 1) * $perPage, $perPage));
+        $totals = (clone $matching)->selectRaw('count(*) as variants, count(distinct g.product_id) as products')->first();
+        // Phân trang theo sản phẩm (thứ tự tên, mã) — các SKU của một sản phẩm luôn cùng trang.
+        $productIds = (clone $matching)->groupBy('g.name_sort', 'g.product_code', 'g.product_id') // cùng thứ tự index stock_grid_sort: đọc theo index, không bảng tạm
+            ->orderBy('g.name_sort')->orderBy('g.product_code')->orderBy('g.product_id')
+            ->offset(max(0, $page - 1) * $perPage)->limit($perPage)->pluck('g.product_id')->all();
+        $pageRows = $productIds === [] ? collect() : (clone $matching)->whereIn('g.product_id', $productIds)
+            ->orderBy('g.name_sort')->orderBy('g.product_code')->orderBy('g.product_id')->orderBy('g.variant_rank')->orderBy('g.variant_id')
+            ->get(['g.variant_id', 'g.product_code', 'g.status', 'g.tracked', 'g.sellable']);
 
         // Chỉ phần đang hiển thị mới đọc đủ dữ liệu (tên, SKU) và số liệu từng kho.
-        $ids = array_map(fn (array $row): int => $row['id'], $pageRows);
+        $ids = $pageRows->pluck('variant_id')->map(fn ($id): int => (int) $id)->all();
         $variants = $ids === [] ? [] : $this->variants->find($ids);
         $levels = $ids === [] ? [] : $this->queries->levels($ids);
         $products = [];
         foreach ($pageRows as $row) {
-            $variant = $variants[$row['id']] ?? null;
+            $variant = $variants[(int) $row->variant_id] ?? null;
             if ($variant === null) {
                 continue;
             }
-            $products[$row['product_code']] ??= ['product_code' => $row['product_code'], 'product_name' => $variant->productName, 'tracked' => $variant->tracksInventory, 'sellable' => 0, 'variants' => []];
-            $products[$row['product_code']]['sellable'] += $row['sellable'];
-            $products[$row['product_code']]['variants'][] = [
-                'id' => $row['id'], 'sku' => $variant->sku, 'product_code' => $row['product_code'], 'product_name' => $variant->productName,
-                'options' => $variant->options, 'options_label' => VariantOptionsText::label($variant->options), 'status' => $row['status'], 'sellable' => $row['sellable'], 'tracked' => $row['tracked'],
-                'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$row['id']] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $matching['locations']),
+            $code = (string) $row->product_code;
+            $products[$code] ??= ['product_code' => $code, 'product_name' => $variant->productName, 'tracked' => $variant->tracksInventory, 'sellable' => 0, 'variants' => []];
+            $products[$code]['sellable'] += (int) $row->sellable;
+            $products[$code]['variants'][] = [
+                'id' => (int) $row->variant_id, 'sku' => $variant->sku, 'product_code' => $code, 'product_name' => $variant->productName,
+                'options' => $variant->options, 'options_label' => VariantOptionsText::label($variant->options), 'status' => (string) $row->status, 'sellable' => (int) $row->sellable, 'tracked' => (bool) $row->tracked,
+                'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$row->variant_id] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $locations),
             ];
         }
 
         return [
             'products' => array_values($products),
-            'total_products' => count($byProduct), 'total_variants' => count($matching['rows']),
-            'locations' => $matching['locations'], 'option_filters' => $matching['option_filters'],
+            'total_products' => (int) ($totals->products ?? 0), 'total_variants' => (int) ($totals->variants ?? 0),
+            'locations' => $locations, 'option_filters' => $this->optionFilters($criteria),
         ];
     }
 
@@ -73,7 +80,7 @@ final class StockGrid
      */
     public function variantIds(array $criteria): array
     {
-        return array_map(fn (array $row): int => $row['id'], $this->matching($criteria)['rows']);
+        return $this->matching($criteria)->orderBy('g.variant_id')->limit(self::MAX_BULK_VARIANTS + 1)->pluck('g.variant_id')->map(fn ($id): int => (int) $id)->all();
     }
 
     /**
@@ -109,70 +116,65 @@ final class StockGrid
     public function attentionCounts(): array
     {
         $threshold = $this->lowStock->value();
-        $active = array_filter($this->matching([])['rows'], fn (array $row): bool => $row['status'] === 'active' && $row['tracked']);
+        $row = DB::table('stock_grid_index')->where('status', 'active')->where('tracked', true)
+            ->selectRaw('sum(case when sellable = 0 then 1 else 0 end) as out_count, sum(case when sellable > 0 and sellable <= ? then 1 else 0 end) as low_count', [$threshold])
+            ->first();
 
-        return [
-            'out' => count(array_filter($active, fn (array $row): bool => $row['sellable'] === 0)),
-            'low' => count(array_filter($active, fn (array $row): bool => $row['sellable'] > 0 && $row['sellable'] <= $threshold)),
-        ];
+        return ['out' => (int) ($row->out_count ?? 0), 'low' => (int) ($row->low_count ?? 0)];
     }
 
     /**
-     * Mọi variant khớp (không giới hạn): khoá + số bán được, tính bằng chỉ mục của Catalog và một truy vấn gộp tồn.
+     * Truy vấn SKU khớp bộ lọc trên read model `stock_grid_index` (bí danh `g`).
      *
      * @param  array{q?: string, product?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria  `ids`: giới hạn theo bộ lọc của plugin (EP v3 X1)
-     * @return array{rows: list<array{id: int, product_id: int, product_code: string, options: array<string, string>, status: string, sellable: int, tracked: bool}>, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
      */
-    private function matching(array $criteria): array
+    private function matching(array $criteria, bool $withOptions = true): Builder
     {
-        $only = isset($criteria['ids']) ? array_flip(array_map('intval', $criteria['ids'])) : null;
         $product = trim((string) ($criteria['product'] ?? ''));
+        $text = mb_strtolower(trim((string) ($criteria['q'] ?? '')));
         $filter = in_array($criteria['filter'] ?? 'all', self::FILTERS, true) ? (string) ($criteria['filter'] ?? 'all') : 'all';
-        $wanted = array_filter(array_map(fn ($code): string => trim((string) $code), (array) ($criteria['options'] ?? [])), fn (string $code): bool => $code !== '');
+        $threshold = $this->lowStock->value();
 
-        $locations = $this->queries->locations();
-        $index = $this->variants->searchIndex((string) ($criteria['q'] ?? ''), $product !== '' ? $product : null);
-        // Lựa chọn theo từng loại tuỳ chọn lấy từ kết quả tìm (trước khi lọc tuỳ chọn) để chỉ hiện giá trị có thật.
-        $found = [];
-        foreach ($index as $row) {
-            foreach ($row['options'] as $type => $code) {
-                $found[$type][$code] = true;
+        $query = DB::table('stock_grid_index as g')
+            ->when($product !== '', fn (Builder $q) => $q->where('g.product_code', $product))
+            ->when($product === '' && $text !== '', fn (Builder $q) => $q->where('g.search_text', 'like', '%'.addcslashes($text, '%_\\').'%'))
+            ->when(isset($criteria['ids']), fn (Builder $q) => $q->whereIn('g.variant_id', array_map('intval', (array) $criteria['ids'])))
+            // Sản phẩm không theo dõi tồn: luôn bán được — không thuộc bộ lọc hết hàng/sắp hết.
+            ->when($filter === 'out', fn (Builder $q) => $q->where('g.tracked', true)->where('g.sellable', 0))
+            ->when($filter === 'low', fn (Builder $q) => $q->where('g.tracked', true)->where('g.sellable', '>', 0)->where('g.sellable', '<=', $threshold));
+        if ($withOptions) {
+            foreach (array_filter(array_map(fn ($code): string => trim((string) $code), (array) ($criteria['options'] ?? [])), fn (string $code): bool => $code !== '') as $type => $code) {
+                $query->whereExists(fn (Builder $q) => $q->select(DB::raw(1))->from('stock_grid_options as o')
+                    ->whereColumn('o.variant_id', 'g.variant_id')->where('o.type_code', (string) $type)->where('o.value_code', $code));
             }
         }
-        $optionFilters = [];
+
+        return $query;
+    }
+
+    /**
+     * Lựa chọn theo từng loại tuỳ chọn lấy từ kết quả tìm (trước khi lọc tuỳ chọn) để chỉ hiện giá trị có thật.
+     *
+     * @param  array{q?: string, product?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria
+     * @return list<array{code: string, name: string, values: list<string>}>
+     */
+    private function optionFilters(array $criteria): array
+    {
+        $found = [];
+        $narrowed = trim((string) ($criteria['q'] ?? '')) !== '' || trim((string) ($criteria['product'] ?? '')) !== '' || isset($criteria['ids'])
+            || in_array($criteria['filter'] ?? 'all', ['out', 'low'], true);
+        // Không lọc gì: đọc thẳng khoá chính (type_code, value_code) — không nối cả bảng SKU.
+        foreach (DB::table('stock_grid_options as o')->when($narrowed, fn (Builder $q) => $q->whereIn('o.variant_id', $this->matching($criteria, withOptions: false)->select('g.variant_id')))
+            ->distinct()->orderBy('o.type_code')->orderBy('o.value_code')->get(['o.type_code', 'o.value_code']) as $row) {
+            $found[(string) $row->type_code][] = (string) $row->value_code;
+        }
+        $filters = [];
         foreach ($this->variants->optionTypes() as $type => $name) {
             if (isset($found[$type])) {
-                $optionFilters[] = ['code' => (string) $type, 'name' => $name, 'values' => array_map('strval', array_keys($found[$type]))];
+                $filters[] = ['code' => (string) $type, 'name' => $name, 'values' => $found[$type]];
             }
         }
 
-        $online = array_values(array_map(fn (Location $location): int => $location->id, array_filter($locations, fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders)));
-        $sellable = $this->queries->sellableByVariant($online);
-        $threshold = $this->lowStock->value();
-        // Sản phẩm không theo dõi tồn: luôn bán được — không thuộc bộ lọc hết hàng/sắp hết.
-        $untracked = array_flip($this->variants->untrackedInventory(array_column($index, 'id')));
-
-        $rows = [];
-        foreach ($index as $row) {
-            if ($only !== null && ! isset($only[$row['id']])) {
-                continue;
-            }
-            foreach ($wanted as $type => $code) {
-                if (($row['options'][$type] ?? null) !== $code) {
-                    continue 2;
-                }
-            }
-            $row['sellable'] = $sellable[$row['id']] ?? 0;
-            $row['tracked'] = ! isset($untracked[$row['id']]);
-            if ($filter !== 'all' && ! $row['tracked']) {
-                continue;
-            }
-            if (($filter === 'out' && $row['sellable'] > 0) || ($filter === 'low' && ($row['sellable'] === 0 || $row['sellable'] > $threshold))) {
-                continue;
-            }
-            $rows[] = $row;
-        }
-
-        return ['rows' => $rows, 'locations' => $locations, 'option_filters' => $optionFilters];
+        return $filters;
     }
 }

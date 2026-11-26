@@ -24,6 +24,7 @@ use Modules\Inventory\Application\InventoryReconciler;
 use Modules\Inventory\Application\Listeners\ProductListStock;
 use Modules\Inventory\Application\Listeners\StockDashboardTasks;
 use Modules\Inventory\Application\Listeners\SyncListingAvailability;
+use Modules\Inventory\Application\Listeners\SyncStockGridIndex;
 use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\OnlineLocations;
 use Modules\Inventory\Application\ReservationService;
@@ -38,6 +39,7 @@ use Modules\Inventory\Application\StockQueries;
 use Modules\Inventory\Application\VariantStockFields;
 use Modules\Inventory\Console\EnsureDefaultLocationCommand;
 use Modules\Inventory\Console\ReleaseExpiredReservationsCommand;
+use Modules\Inventory\Console\SyncStockGridCommand;
 use Modules\Inventory\Console\VerifyStockCommand;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Inventory\Contracts\Backorders;
@@ -100,6 +102,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
     {
         // Read model trang danh sách của Catalog: "còn hàng" (db-refactor §4.3).
         Event::listen([AvailabilityChanged::class, ProductListingProjected::class], SyncListingAvailability::class);
+        Event::listen([AvailabilityChanged::class, ProductListingProjected::class], SyncStockGridIndex::class);
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(StockDashboardTasks::class)());
         Hook::onSlot('vani.admin.product.list_columns', fn (array $productIds): ?array => $this->app->make(ProductListStock::class)->column($productIds));
         $this->app->make(Settings::class)->define(new SettingDefinition(
@@ -131,7 +134,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         });
 
         if ($this->app->runningInConsole()) {
-            $this->commands([EnsureDefaultLocationCommand::class, ReleaseExpiredReservationsCommand::class, VerifyStockCommand::class]);
+            $this->commands([EnsureDefaultLocationCommand::class, ReleaseExpiredReservationsCommand::class, VerifyStockCommand::class, SyncStockGridCommand::class]);
         }
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-owner.php'));

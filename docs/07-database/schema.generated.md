@@ -10,6 +10,7 @@
 | [`attribute_values`](#attribute_values) | 6 |
 | [`attributes`](#attributes) | 9 |
 | [`audit_logs`](#audit_logs) | 11 |
+| [`audit_logs_archive`](#audit_logs_archive) | 11 |
 | [`backup_drills`](#backup_drills) | 8 |
 | [`brands`](#brands) | 14 |
 | [`cache`](#cache) | 3 |
@@ -117,6 +118,8 @@
 | [`staff_users`](#staff_users) | 10 |
 | [`stock_count_lines`](#stock_count_lines) | 7 |
 | [`stock_counts`](#stock_counts) | 10 |
+| [`stock_grid_index`](#stock_grid_index) | 9 |
+| [`stock_grid_options`](#stock_grid_options) | 3 |
 | [`stock_levels`](#stock_levels) | 9 |
 | [`stock_movements`](#stock_movements) | 14 |
 | [`stock_receipt_lines`](#stock_receipt_lines) | 4 |
@@ -205,6 +208,24 @@ Khoá ngoại: attribute_id → attributes(id) on delete cascade
 Index: unique (code); PK (id)
 
 ## audit_logs
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `actor_type` | varchar(16) |  |  |
+| `actor_id` | bigint unsigned | có |  |
+| `action` | varchar(128) |  |  |
+| `subject_type` | varchar(64) | có |  |
+| `subject_id` | varchar(64) | có |  |
+| `changes` | json | có |  |
+| `ip_address` | varchar(45) | có |  |
+| `user_agent` | varchar(512) | có |  |
+| `correlation_id` | varchar(64) | có |  |
+| `created_at` | datetime(6) |  |  |
+
+Index: index (actor_type, actor_id); index (subject_type, subject_id); PK (id)
+
+## audit_logs_archive
 
 | Cột | Kiểu | Null | Mặc định |
 |---|---|---|---|
@@ -1244,7 +1265,7 @@ Khoá ngoại: order_id → orders(id) on delete cascade
 | `updated_at` | timestamp | có |  |
 | `stage` | varchar(24) | có |  |
 
-Index: index (customer_id, placed_at); index (customer_phone); unique (number); index (order_status); index (parent_order_id); index (placed_at); unique (public_id); index (source_cart_id); index (source, placed_at); index (stage, placed_at, id); index (updated_at, id); PK (id)
+Index: index (customer_id, placed_at); index (customer_phone); unique (number); index (order_status, payment_status); index (parent_order_id); index (placed_at); unique (public_id); index (source_cart_id); index (source, placed_at); index (stage, placed_at, id); index (updated_at, id); PK (id)
 
 Khoá ngoại: parent_order_id → orders(id)
 
@@ -2036,6 +2057,32 @@ Khoá ngoại: stock_count_id → stock_counts(id) on delete cascade
 | `updated_at` | timestamp | có |  |
 
 Index: PK (id); unique (number); index (status, created_at)
+
+## stock_grid_index
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `variant_id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
+| `product_code` | varchar(64) |  |  |
+| `name_sort` | varchar(191) |  |  |
+| `variant_rank` | int unsigned |  |  |
+| `status` | varchar(16) |  |  |
+| `tracked` | tinyint(1) |  | `1` |
+| `search_text` | varchar(512) |  |  |
+| `sellable` | int unsigned |  | `0` |
+
+Index: PK (variant_id); index (status, tracked, sellable); index (product_id); index (name_sort, product_code, product_id, variant_rank)
+
+## stock_grid_options
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `type_code` | varchar(32) |  |  |
+| `value_code` | varchar(32) |  |  |
+| `variant_id` | bigint unsigned |  |  |
+
+Index: PK (type_code, value_code, variant_id); index (variant_id)
 
 ## stock_levels
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Application;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\Data\VariantData;
@@ -46,8 +47,22 @@ final class StockCsv
         $locations = array_values(array_filter($this->queries->locations(), fn (Location $location): bool => $only === null || $location->id === $only->id));
         yield ['sku', 'location', 'on_hand', 'reserved', 'safety_stock', 'available', 'product', 'options'];
 
-        // Mọi variant, đọc theo lô 500 (không giới hạn số variant — P2 A1).
-        foreach (array_chunk(array_column($this->variants->searchIndex(), 'id'), 500) as $ids) {
+        // Mọi variant theo thứ tự của lưới tồn, đọc theo lô 500 từ read model (không nạp cả danh sách vào bộ nhớ — db-refactor G3).
+        $lastKey = null;
+        while (true) {
+            $ids = DB::table('stock_grid_index')
+                ->when($lastKey !== null, fn ($query) => $query->where(fn ($q) => $q->where('name_sort', '>', $lastKey[0])
+                    ->orWhere(fn ($q) => $q->where('name_sort', $lastKey[0])->where('product_code', '>', $lastKey[1]))
+                    ->orWhere(fn ($q) => $q->where('name_sort', $lastKey[0])->where('product_code', $lastKey[1])->where('product_id', '>', $lastKey[2]))
+                    ->orWhere(fn ($q) => $q->where('name_sort', $lastKey[0])->where('product_code', $lastKey[1])->where('product_id', $lastKey[2])->where('variant_rank', '>', $lastKey[3]))))
+                ->orderBy('name_sort')->orderBy('product_code')->orderBy('product_id')->orderBy('variant_rank')
+                ->limit(500)->get(['variant_id', 'name_sort', 'product_code', 'product_id', 'variant_rank']);
+            if ($ids->isEmpty()) {
+                break;
+            }
+            $last = $ids->last();
+            $lastKey = [$last->name_sort, $last->product_code, $last->product_id, $last->variant_rank];
+            $ids = $ids->pluck('variant_id')->map(fn ($id): int => (int) $id)->all();
             $levels = $this->queries->levels($ids);
             $chunk = $this->variants->find($ids);
             foreach ($ids as $id) {

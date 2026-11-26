@@ -27,6 +27,8 @@ Tồn theo (kho, SKU), giữ hàng atomic, sổ biến động, đối soát n�
 - `stock_receipt_lines`
 - `stock_counts`
 - `stock_count_lines`
+- `stock_grid_index`
+- `stock_grid_options`
 
 ## Contract công bố
 
