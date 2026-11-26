@@ -6,6 +6,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.95 — 2026-11-26 · Extension API 1.40.0
+
+Lợi nhuận sau trả hàng và phí giao ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L43). Thêm vào API cho plugin (tăng minor).
+
+- `OrderStatistics::placedOrderDays()` (đơn không huỷ đặt trong kỳ, theo lô id kèm ngày đặt theo múi giờ) và `OrderStatistics::unitCostsAtSale()` (giá vốn lúc bán theo dòng đơn).
+- `ReturnStatistics::byOrders()`: đổi/trả theo đơn gốc (mọi yêu cầu trừ bị từ chối/huỷ, bất kể tạo lúc nào), dòng có cờ đã nhập lại kho, phí ship trả hàng cửa hàng chịu.
+- `DeliveryStatistics::carrierFees()`: phí hãng thực tế theo đơn và số kiện chưa có phí.
+- `vani.reports` 1.5.0: báo cáo mới **Lợi nhuận sau trả hàng và phí giao** (`net-profit-by-day`) theo ngày đặt — doanh thu có giá vốn, giá vốn, tiền hoàn, giá vốn hàng trả về kho, phí hãng, ship trả hàng, lợi nhuận ròng, tỷ lệ trả theo kỳ bán của đơn gốc; báo số kiện chưa có phí hãng và tiền hoàn của dòng thiếu giá vốn.
+
 ## 0.5.94 — 2026-11-26 · Extension API 1.39.0
 
 Trang sâu của danh sách Admin lớn ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L54, Owner chọn deferred join, giữ phân trang theo số trang). Không đổi API cho plugin.

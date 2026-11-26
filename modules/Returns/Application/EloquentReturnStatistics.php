@@ -51,6 +51,35 @@ final class EloquentReturnStatistics implements ReturnStatistics
         return $at->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
     }
 
+    public function byOrders(array $orderIds): array
+    {
+        $result = [];
+        foreach (array_chunk(array_values(array_unique(array_map('intval', $orderIds))), 1000) as $chunk) {
+            $lines = DB::table('return_lines')
+                ->join('return_requests', 'return_requests.id', '=', 'return_lines.return_request_id')
+                ->whereNotIn('return_requests.status', [ReturnStatus::Rejected->value, ReturnStatus::Cancelled->value])
+                ->whereIn('return_requests.order_id', $chunk)
+                ->orderBy('return_lines.id')
+                ->get(['return_requests.order_id', 'return_lines.order_line_id', 'return_lines.quantity', 'return_lines.refund_amount', 'return_lines.restock_location_id']);
+            foreach ($lines as $line) {
+                $result[(int) $line->order_id] ??= ['store_shipping_fee' => 0, 'lines' => []];
+                $result[(int) $line->order_id]['lines'][] = [
+                    'order_line_id' => (int) $line->order_line_id, 'quantity' => (int) $line->quantity,
+                    'refund_amount' => (int) $line->refund_amount, 'restocked' => $line->restock_location_id !== null,
+                ];
+            }
+            $fees = DB::table('return_requests')->whereIn('order_id', $chunk)
+                ->where('status', ReturnStatus::Resolved->value)->where('return_shipping_payer', 'store')
+                ->groupBy('order_id')->selectRaw('order_id, sum(return_shipping_fee) as fee')->pluck('fee', 'order_id');
+            foreach ($fees as $orderId => $fee) {
+                $result[(int) $orderId] ??= ['store_shipping_fee' => 0, 'lines' => []];
+                $result[(int) $orderId]['store_shipping_fee'] = (int) $fee;
+            }
+        }
+
+        return $result;
+    }
+
     private function lines(DateTimeImmutable $from, DateTimeImmutable $to): Builder
     {
         $utc = fn (DateTimeImmutable $at): string => $this->utc($at);

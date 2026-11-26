@@ -231,6 +231,32 @@ final class EloquentOrderStatistics implements OrderStatistics
             ->where('placed_at', '<', $this->utc($to));
     }
 
+    public function placedOrderDays(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone, int $afterId = 0, int $limit = 1000): array
+    {
+        $zone = new DateTimeZone($timezone);
+        $days = [];
+        foreach ($this->db()->table('orders')->where('order_status', '!=', OrderStatus::Cancelled->value)
+            ->where('placed_at', '>=', $this->utc($from))->where('placed_at', '<', $this->utc($to))
+            ->where('id', '>', $afterId)->orderBy('id')->limit(max(1, $limit))->get(['id', 'placed_at']) as $order) {
+            $days[(int) $order->id] = (new DateTimeImmutable((string) $order->placed_at, new DateTimeZone('UTC')))->setTimezone($zone)->format('Y-m-d');
+        }
+
+        return $days;
+    }
+
+    public function unitCostsAtSale(array $orderLineIds): array
+    {
+        $costs = [];
+        foreach (array_chunk(array_values(array_unique(array_map('intval', $orderLineIds))), 1000) as $chunk) {
+            foreach ($this->db()->table('order_lines')->whereIn('id', $chunk)->get(['id', 'meta']) as $line) {
+                $cost = json_decode((string) $line->meta, true)['unit_cost_at_sale'] ?? null;
+                $costs[(int) $line->id] = is_numeric($cost) ? (int) $cost : null;
+            }
+        }
+
+        return $costs;
+    }
+
     private function lines(DateTimeImmutable $from, DateTimeImmutable $to): Builder
     {
         return $this->db()->table('order_lines')

@@ -16,6 +16,22 @@ final class EloquentDeliveryStatistics implements DeliveryStatistics
 {
     public function __construct(private readonly Reconciliations $reconciliations) {}
 
+    public function carrierFees(array $orderIds): array
+    {
+        $result = [];
+        foreach (array_chunk(array_values(array_unique(array_map('intval', $orderIds))), 1000) as $chunk) {
+            $rows = DB::table('shipments')->whereIn('order_id', $chunk)->whereNotNull('shipped_at')
+                ->groupBy('order_id')
+                ->selectRaw('order_id, sum(coalesce(actual_carrier_fee, 0)) as fee, sum(case when actual_carrier_fee is null then 1 else 0 end) as missing')
+                ->get();
+            foreach ($rows as $row) {
+                $result[(int) $row->order_id] = ['fee' => (int) $row->fee, 'missing' => (int) $row->missing];
+            }
+        }
+
+        return $result;
+    }
+
     public function codAging(DateTimeImmutable $from, DateTimeImmutable $to, DateTimeImmutable $now): array
     {
         $utc = new DateTimeZone('UTC');

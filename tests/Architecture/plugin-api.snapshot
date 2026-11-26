@@ -1,4 +1,4 @@
-Extension API 1.39.0
+Extension API 1.40.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -359,6 +359,7 @@ class Modules\Fulfillment\Contracts\Data\SourcingRequest
 interface Modules\Fulfillment\Contracts\DeliveryStatistics
   cod(DateTimeImmutable $from, DateTimeImmutable $to): array
   codAging(DateTimeImmutable $from, DateTimeImmutable $to, DateTimeImmutable $now): array
+  carrierFees(array $orderIds): array
 class Modules\Fulfillment\Contracts\InvalidCarrierEvent extends RuntimeException
 interface Modules\Fulfillment\Contracts\ReturnPickup
   bookReturn(Modules\Fulfillment\Contracts\Data\ReturnPickupData $data): Modules\Fulfillment\Contracts\Data\CarrierShipment
@@ -645,6 +646,8 @@ interface Modules\Ordering\Contracts\OrderStatistics
   countByStatus(): array
   summarize(array $orderIds): Modules\Ordering\Contracts\Data\SalesTotals
   orderIdsWithPriceLists(array $priceListCodes): array
+  placedOrderDays(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone, int $afterId = 0, int $limit = 1000): array
+  unitCostsAtSale(array $orderLineIds): array
 interface Modules\Ordering\Contracts\OrderStatusAction
   const TAG = 'vani.ordering.status_actions'
   code(): string
@@ -869,6 +872,7 @@ interface Modules\Returns\Contracts\ReturnPolicy
 interface Modules\Returns\Contracts\ReturnStatistics
   byVariant(DateTimeImmutable $from, DateTimeImmutable $to): array
   byReason(DateTimeImmutable $from, DateTimeImmutable $to): array
+  byOrders(array $orderIds): array
 interface Modules\Shared\Contracts\AddressDirectory
   const TAG = 'vani.address.directories'
   code(): string

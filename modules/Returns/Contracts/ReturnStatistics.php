@@ -28,4 +28,14 @@ interface ReturnStatistics
      * @return list<array{reason_code: string, label: string, store_fault: bool, requests: int, quantity: int, store_shipping_fee: int}>
      */
     public function byReason(DateTimeImmutable $from, DateTimeImmutable $to): array;
+
+    /**
+     * Đổi/trả theo đơn gốc (0.5.95 — lợi nhuận sau trả hàng theo kỳ bán của đơn, reference-parity L43): mọi yêu cầu của các
+     * đơn này, trừ yêu cầu bị từ chối hoặc đã huỷ, bất kể tạo lúc nào. `restocked` = dòng đã nhập lại kho. `store_shipping_fee`
+     * = phí ship trả hàng cửa hàng chịu của yêu cầu đã hoàn tất.
+     *
+     * @param  list<int>  $orderIds
+     * @return array<int, array{store_shipping_fee: int, lines: list<array{order_line_id: int, quantity: int, refund_amount: int, restocked: bool}>}> order id => số liệu (đơn không có yêu cầu thì không có mặt)
+     */
+    public function byOrders(array $orderIds): array;
 }

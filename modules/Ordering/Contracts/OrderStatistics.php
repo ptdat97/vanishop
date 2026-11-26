@@ -93,4 +93,20 @@ interface OrderStatistics
      * @return list<int>
      */
     public function orderIdsWithPriceLists(array $priceListCodes): array;
+
+    /**
+     * Đơn không huỷ đặt trong [from, to), theo id tăng dần, từng lô (0.5.95 — báo cáo theo kỳ bán của đơn gốc, reference-parity
+     * L43). Trang sau: truyền id cuối của lô trước.
+     *
+     * @return array<int, string> order id => ngày đặt (Y-m-d theo `$timezone`)
+     */
+    public function placedOrderDays(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone, int $afterId = 0, int $limit = 1000): array;
+
+    /**
+     * Giá vốn đơn vị đã chụp lúc đặt theo dòng đơn (0.5.95); null = dòng không có giá vốn.
+     *
+     * @param  list<int>  $orderLineIds
+     * @return array<int, int|null> order line id => giá vốn đơn vị
+     */
+    public function unitCostsAtSale(array $orderLineIds): array;
 }

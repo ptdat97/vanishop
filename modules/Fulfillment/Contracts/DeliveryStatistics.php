@@ -27,4 +27,13 @@ interface DeliveryStatistics
      * @return list<array{carrier: string, bucket: string, shipments: int, amount: int}>
      */
     public function codAging(DateTimeImmutable $from, DateTimeImmutable $to, DateTimeImmutable $now): array;
+
+    /**
+     * Phí hãng thực tế theo đơn (0.5.95 — lợi nhuận sau phí giao, reference-parity L43): tổng `actual_carrier_fee` của các vận
+     * đơn đã ghi phí; `missing` = số vận đơn đã gửi hãng mà chưa có phí (chưa khớp bảng kê).
+     *
+     * @param  list<int>  $orderIds
+     * @return array<int, array{fee: int, missing: int}> order id => phí (đơn không có vận đơn thì không có mặt)
+     */
+    public function carrierFees(array $orderIds): array;
 }
