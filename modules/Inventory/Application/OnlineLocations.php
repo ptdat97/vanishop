@@ -8,16 +8,22 @@ use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Persistence\Models\Location;
 
 /**
- * Location đang hoạt động và giao đơn online, theo thứ tự ưu tiên.
+ * Location đang hoạt động và giao đơn online, theo thứ tự ưu tiên. Scoped: tra một lần mỗi request/job (trang chủ nhiều khối
+ * sản phẩm, mỗi khối hỏi tồn); lưu/xoá Location gọi `forget()` (InventoryServiceProvider).
  */
 final class OnlineLocations
 {
+    /** @var list<int>|null */
+    private ?array $ids = null;
+
+    private int|false|null $topUp = false;
+
     /**
      * @return list<int>
      */
     public function ids(): array
     {
-        return DB::table('locations')
+        return $this->ids ??= DB::table('locations')
             ->where('status', 'active')
             ->where('ships_online_orders', true)
             ->orderByDesc('priority')
@@ -33,6 +39,9 @@ final class OnlineLocations
      */
     public function topUpLocation(): ?int
     {
+        if ($this->topUp !== false) {
+            return $this->topUp;
+        }
         $id = DB::table('locations')
             ->where('status', 'active')
             ->where('ships_online_orders', true)
@@ -41,6 +50,12 @@ final class OnlineLocations
             ->orderBy('id')
             ->value('id');
 
-        return $id === null ? null : (int) $id;
+        return $this->topUp = $id === null ? null : (int) $id;
+    }
+
+    public function forget(): void
+    {
+        $this->ids = null;
+        $this->topUp = false;
     }
 }

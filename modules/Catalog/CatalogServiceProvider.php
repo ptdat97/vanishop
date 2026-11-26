@@ -24,6 +24,7 @@ use Modules\Catalog\Application\Products\ProductIdentifiers;
 use Modules\Catalog\Application\Products\ProductImporter;
 use Modules\Catalog\Application\Products\ProductListPrices;
 use Modules\Catalog\Application\Products\ProductViewCounter;
+use Modules\Catalog\Application\Products\StorefrontProductQuery;
 use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Application\StorefrontCatalog;
 use Modules\Catalog\Console\FlushViewsCommand;
@@ -76,6 +77,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         ));
 
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
+        $this->app->scoped(StorefrontProductQuery::class);
         // Màn hình Admin của module mở cho plugin thêm form/cột/lọc/thao tác/tab (ADR-030).
         $this->app->make(AdminScreen::class)->declareResource('product');
         $this->app->make(AdminScreen::class)->declareResource('category');

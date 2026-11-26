@@ -6,6 +6,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.100 — 2026-11-26 · Extension API 1.44.0
+
+Trang chủ chậm, lặp truy vấn: mỗi khối sản phẩm gọi API danh sách đầy đủ (đếm tổng, facet, metadata bộ lọc) rồi nạp lại sản phẩm lần hai để dựng thẻ. Trang chủ dữ liệu demo: 207 → 105 truy vấn, truy vấn trùng hẳn 185 → 2. Thêm vào API cho plugin (tăng minor).
+
+- `CatalogReader::productIds(ProductFilters, string $locale)` mới: chỉ id sản phẩm của trang theo bộ lọc + sắp xếp, cùng thứ tự `searchProducts` — không đếm tổng, không facet, không nạp sản phẩm. Hook `vani.catalog.listing.query` vẫn áp dụng.
+- `ProductCards::forFilters(ProductFilters, string $locale)` mới: thẻ sản phẩm theo bộ lọc (tìm id rồi dựng thẻ). Ẩn giá thì bỏ lọc/sắp xếp theo giá như trang danh sách. Khối `product_grid` của Core dùng cách này.
+- Trong một request: danh sách kho giao online (`OnlineLocations`, lưu/xoá kho thì tra lại), thương hiệu và loại tuỳ chọn của thẻ sản phẩm chỉ tra một lần.
+- `vani.storefront-extras` 1.8.0 (cần Extension API ^1.44): khối theo nguồn (mới nhất, danh mục, bộ sưu tập, thương hiệu, tab sản phẩm) dùng `ProductCards::forFilters` — trước đây nạp sản phẩm hai lần.
+- `vani.cms` 1.8.0: khối "Bài viết mới" nạp sẵn danh mục bài viết (hết N+1); menu header/footer đọc cache một lần mỗi request.
+
 ## 0.5.99 — 2026-11-26 · Extension API 1.43.0
 
 Rà soát cache ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L57, L58). Không đổi API cho plugin hay hợp đồng Storefront API.

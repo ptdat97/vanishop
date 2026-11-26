@@ -10,17 +10,23 @@ use Plugin\Cms\Persistence\Page;
 
 /**
  * Link trang CMS ở header/footer storefront.
- * Cache 5 phút; lưu/xoá nội dung xoá cache.
+ * Cache 5 phút; lưu/xoá nội dung xoá cache. Scoped: đọc cache một lần mỗi request.
  */
 final class Navigation
 {
     private const CACHE_KEY = 'plg:cms:navigation';
+
+    /** @var array{header: list<array{label: string, url: string}>, footer: list<array{label: string, url: string}>}|null */
+    private ?array $links = null;
 
     /**
      * @return array{header: list<array{label: string, url: string}>, footer: list<array{label: string, url: string}>}
      */
     public function links(): array
     {
+        if ($this->links !== null) {
+            return $this->links;
+        }
         /** @var array{header: list<array{label: string, slug: string}>, footer: list<array{label: string, slug: string}>} $data */
         $data = Cache::remember(self::CACHE_KEY, 300, function (): array {
             $pages = Page::query()->published()->where(fn (Builder $query) => $query->where('show_in_header', true)->orWhere('show_in_footer', true))
@@ -35,7 +41,7 @@ final class Navigation
         $url = fn (array $link): array => ['label' => $link['label'], 'url' => vani_route('storefront.p.vani-cms.page', $link['slug'])];
         $header = array_map($url, $data['header']);
 
-        return ['header' => $header, 'footer' => array_map($url, $data['footer'])];
+        return $this->links = ['header' => $header, 'footer' => array_map($url, $data['footer'])];
     }
 
     public static function forget(): void

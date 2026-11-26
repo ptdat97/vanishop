@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Contracts;
 
+use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Shared\Contracts\PluginApi;
 
 /**
@@ -21,4 +22,12 @@ interface ProductCards
      * @return list<array<string, mixed>>
      */
     public function forIds(array $productIds, string $locale): array;
+
+    /**
+     * Thẻ sản phẩm theo bộ lọc (0.5.100: danh mục, bộ sưu tập, thương hiệu, sắp xếp, `perPage` tối đa MAX_IDS) — cho khối
+     * "sản phẩm mới / theo danh mục…". Chỉ tìm id rồi dựng thẻ: không đếm tổng, không facet. Ẩn giá thì bỏ lọc/sắp xếp theo giá.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function forFilters(ProductFilters $filters, string $locale): array;
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Application\Products;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Application\Search\ProductSearch;
@@ -15,9 +16,11 @@ use Modules\Catalog\Domain\AttributeKind;
 use Modules\Catalog\Domain\OptionDisplayType;
 use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\VariantStatus;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\LinkType;
 use Modules\Catalog\Persistence\Models\Mediable;
+use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductAttributeValue;
@@ -30,10 +33,17 @@ use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Dữ liệu sản phẩm cho storefront (native và Storefront API dùng chung — ADR-009).
- * Chỉ trả sản phẩm đang hiển thị; thuộc tính internal không bao giờ lộ ra.
+ * Chỉ trả sản phẩm đang hiển thị; thuộc tính internal không bao giờ lộ ra. Scoped: thương hiệu và loại tuỳ chọn của thẻ tra một
+ * lần mỗi request (trang chủ nhiều khối sản phẩm dùng chung vài thương hiệu/loại).
  */
 final class StorefrontProductQuery
 {
+    /** @var array<int, Brand> */
+    private array $brands = [];
+
+    /** @var array<int, OptionType> */
+    private array $optionTypes = [];
+
     public function __construct(
         private readonly ProductSearch $search,
         private readonly ProductLinkService $links,
@@ -49,10 +59,10 @@ final class StorefrontProductQuery
         $filtered = Hook::filter('vani.catalog.listing.query', $query);
         $result = $this->search->search($filtered instanceof ProductSearchQuery ? $filtered : $query);
 
-        $products = Product::query()
+        $products = $this->withReferences(Product::query()
             ->with(self::summaryRelations())
             ->whereIn('id', $result->productIds)
-            ->get()
+            ->get())
             ->keyBy('id');
 
         $items = [];
@@ -64,6 +74,18 @@ final class StorefrontProductQuery
         }
 
         return ['items' => $items, 'total' => $result->total, 'facets' => $result->facets];
+    }
+
+    /**
+     * Chỉ id sản phẩm của trang (không đếm, không facet, không nạp sản phẩm) — cùng hook truy vấn với `list`.
+     *
+     * @return list<int>
+     */
+    public function ids(ProductSearchQuery $query): array
+    {
+        $filtered = Hook::filter('vani.catalog.listing.query', $query);
+
+        return $this->search->ids($filtered instanceof ProductSearchQuery ? $filtered : $query);
     }
 
     /**
@@ -80,7 +102,7 @@ final class StorefrontProductQuery
         }
 
         $at = new \DateTimeImmutable("@{$now}");
-        $products = Product::query()->with(self::summaryRelations())->whereIn('id', $ids)->get()
+        $products = $this->withReferences(Product::query()->with(self::summaryRelations())->whereIn('id', $ids)->get())
             ->filter(fn (Product $product): bool => PublishWindow::isVisible($product->status, $product->publishWindow(), $at))
             ->keyBy('id');
 
@@ -185,8 +207,35 @@ final class StorefrontProductQuery
      */
     private static function summaryRelations(): array
     {
-        return ['translations', 'brand', 'options.type', 'optionValues.value.translations',
+        return ['translations', 'options', 'optionValues.value.translations',
             'variants' => fn ($query) => $query->where('status', 'active')->with(['optionValues', 'gallery.media.poster'])];
+    }
+
+    /**
+     * Gắn `brand` và `options.type` từ bộ nhớ của request (chỉ tra id chưa có).
+     *
+     * @param  EloquentCollection<int, Product>  $products
+     * @return EloquentCollection<int, Product>
+     */
+    private function withReferences(EloquentCollection $products): EloquentCollection
+    {
+        $brandIds = array_diff(array_unique(array_filter($products->pluck('brand_id')->map(fn ($id): int => (int) $id)->all())), array_keys($this->brands));
+        if ($brandIds !== []) {
+            $this->brands += Brand::query()->whereIn('id', $brandIds)->get()->keyBy('id')->all();
+        }
+        $options = $products->flatMap(fn (Product $product) => $product->options);
+        $typeIds = array_diff(array_unique($options->pluck('option_type_id')->map(fn ($id): int => (int) $id)->all()), array_keys($this->optionTypes));
+        if ($typeIds !== []) {
+            $this->optionTypes += OptionType::query()->whereIn('id', $typeIds)->get()->keyBy('id')->all();
+        }
+        foreach ($products as $product) {
+            $product->setRelation('brand', $this->brands[(int) $product->brand_id] ?? null);
+        }
+        foreach ($options as $option) {
+            $option->setRelation('type', $this->optionTypes[(int) $option->option_type_id] ?? null);
+        }
+
+        return $products;
     }
 
     private function summary(Product $product, string $locale): array
@@ -195,6 +244,7 @@ final class StorefrontProductQuery
         $items = $product->variants->flatMap(fn (Variant $variant) => $variant->gallery);
         $firstImage = $items->first(fn ($item): bool => ! $item->media->isVideo());
         $firstPoster = $firstImage === null ? $items->map(fn ($item) => $item->media->poster)->filter()->first() : null;
+        $cover = $firstImage === null ? $firstPoster : $firstImage->media;
 
         return [
             'id' => $product->id,
@@ -204,9 +254,9 @@ final class StorefrontProductQuery
             'product_code' => $product->product_code,
             'name' => $product->translate('name', $locale),
             'brand' => $product->brand === null ? null : ['id' => $product->brand->id, 'slug' => $product->brand->slug, 'name' => $product->brand->name],
-            'image_url' => $firstImage?->media->url(400, ImageSizes::PRODUCT) ?? $firstPoster?->url(400, ImageSizes::PRODUCT),
+            'image_url' => $cover?->url(400, ImageSizes::PRODUCT),
             // Ảnh responsive (0.3.67): theme ghép `sizes` theo bố cục lưới; null khi ảnh không có bản thu nhỏ.
-            'image_srcset' => (($firstImage?->media ?? $firstPoster)?->srcset(ImageSizes::PRODUCT) ?? '') ?: null,
+            'image_srcset' => ($cover?->srcset(ImageSizes::PRODUCT) ?? '') ?: null,
             // Swatch của thẻ: giá trị của trục kiểu ô màu (nếu có) mà SKU đang bán dùng (ADR-045).
             'colors' => $this->swatches($product, $locale),
             'variant_ids' => $product->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),

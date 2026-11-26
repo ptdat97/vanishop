@@ -49,14 +49,7 @@ final class ProductViews implements CustomerProductPrices, ProductCards
     {
         // Ẩn giá với khách chưa đăng nhập: không lọc/sắp xếp theo giá và không trả khoảng giá (lộ giá gián tiếp).
         $hidden = $this->visibility->hidden();
-        if ($hidden && ($filters->priceMin !== null || $filters->priceMax !== null || in_array($filters->sort, [ProductSearchQuery::SORT_PRICE_ASC, ProductSearchQuery::SORT_PRICE_DESC], true))) {
-            $filters = new ProductFilters(
-                now: $filters->now, text: $filters->text, categorySlug: $filters->categorySlug, collectionSlug: $filters->collectionSlug,
-                attributes: $filters->attributes, sort: str_starts_with($filters->sort, 'price_') ? ProductSearchQuery::SORT_NEWEST : $filters->sort,
-                page: $filters->page, perPage: $filters->perPage, brandSlugs: $filters->brandSlugs, options: $filters->options,
-            );
-        }
-        $listing = $this->catalog->searchProducts($filters, $locale);
+        $listing = $this->catalog->searchProducts($this->withoutHiddenPrice($filters), $locale);
         $listing['items'] = $this->cards($listing['items'], $now);
         $listing['sortable_by_price'] = ! $hidden;
         if ($hidden) {
@@ -65,6 +58,28 @@ final class ProductViews implements CustomerProductPrices, ProductCards
         }
 
         return $listing;
+    }
+
+    public function forFilters(ProductFilters $filters, string $locale): array
+    {
+        return $this->forIds($this->catalog->productIds($this->withoutHiddenPrice($filters), $locale), $locale);
+    }
+
+    /**
+     * Ẩn giá với khách chưa đăng nhập: không lọc/sắp xếp theo giá (lộ giá gián tiếp).
+     */
+    private function withoutHiddenPrice(ProductFilters $filters): ProductFilters
+    {
+        if (! $this->visibility->hidden() || ($filters->priceMin === null && $filters->priceMax === null
+            && ! in_array($filters->sort, [ProductSearchQuery::SORT_PRICE_ASC, ProductSearchQuery::SORT_PRICE_DESC], true))) {
+            return $filters;
+        }
+
+        return new ProductFilters(
+            now: $filters->now, text: $filters->text, categorySlug: $filters->categorySlug, collectionSlug: $filters->collectionSlug,
+            attributes: $filters->attributes, sort: str_starts_with($filters->sort, 'price_') ? ProductSearchQuery::SORT_NEWEST : $filters->sort,
+            page: $filters->page, perPage: $filters->perPage, brandSlugs: $filters->brandSlugs, options: $filters->options,
+        );
     }
 
     public function forIds(array $productIds, string $locale): array

@@ -56,6 +56,7 @@ use Modules\Inventory\Contracts\StockJournal;
 use Modules\Inventory\Contracts\StockMovements;
 use Modules\Inventory\Contracts\StockOverview;
 use Modules\Inventory\Events\AvailabilityChanged;
+use Modules\Inventory\Persistence\Models\Location;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
@@ -88,6 +89,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->tag([VariantStockFields::class], VariantFieldProvider::TAG);
         $this->app->make(Extensions::class)->tag([StockedVariants::class], VariantUsage::TAG);
         $this->app->make(Extensions::class)->requires(InventoryStrategy::TAG, Requirement::ExactlyOne, 'inventory::texts.inventory_service_provider.sellable_stock_strategy');
+        $this->app->scoped(OnlineLocations::class);
         $this->app->bind(AvailabilityReader::class, fn ($app): StockAvailability => new StockAvailability(
             $app->make(Extensions::class),
             $app->make(Settings::class),
@@ -103,6 +105,10 @@ final class InventoryServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        // Danh sách kho giao online nhớ trong request (OnlineLocations, scoped) — kho đổi thì tra lại.
+        $forgetLocations = fn () => $this->app->resolved(OnlineLocations::class) ? $this->app->make(OnlineLocations::class)->forget() : null;
+        Location::saved($forgetLocations);
+        Location::deleted($forgetLocations);
         // Read model trang danh sách của Catalog: "còn hàng" (db-refactor §4.3).
         Event::listen([AvailabilityChanged::class, ProductListingProjected::class], SyncListingAvailability::class);
         Event::listen([AvailabilityChanged::class, ProductListingProjected::class], SyncStockGridIndex::class);

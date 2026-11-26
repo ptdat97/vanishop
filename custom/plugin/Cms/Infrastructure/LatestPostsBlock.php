@@ -39,7 +39,7 @@ final class LatestPostsBlock implements StorefrontBlock
 
         return [
             'title' => (string) ($config['title'] ?? ''),
-            'posts' => Post::query()->published()->orderByDesc('published_at')->limit($limit)->get()
+            'posts' => Post::query()->published()->with('category')->orderByDesc('published_at')->limit($limit)->get()
                 ->map(fn (Post $post): array => $this->presenter->postSummary($post))->all(),
         ];
     }

@@ -48,6 +48,8 @@ final class CmsServiceProvider extends PluginServiceProvider
     public function register(): void
     {
         $this->app->singleton(Markdown::class);
+        // Menu header/footer đọc nhiều lần mỗi trang — một lần đọc cache mỗi request.
+        $this->app->scoped(Navigation::class);
     }
 
     public function boot(): void

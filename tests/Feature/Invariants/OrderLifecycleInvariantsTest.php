@@ -335,7 +335,7 @@ it('sản phẩm không theo dõi tồn: chưa nhập tồn vẫn đặt đượ
 it('không theo dõi tồn + kho do hệ thống ngoài quản lý: chỉ bù ở kho VaniShop quản lý; không có kho như vậy thì bán như sản phẩm thường', function () {
     DB::table('stock_levels')->where('variant_id', $this->s->id)->delete();
     DB::table('products')->where('id', $this->s->product_id)->update(['track_inventory' => false]);
-    DB::table('locations')->where('id', $this->location->id)->update(['stock_authority' => 'erp', 'priority' => 10]);
+    $this->location->update(['stock_authority' => 'erp', 'priority' => 10]);
     ($this->snapshot)();
 
     // Chỉ có kho của ERP: không được chỉnh tồn ở VaniShop → hết hàng như sản phẩm thường.

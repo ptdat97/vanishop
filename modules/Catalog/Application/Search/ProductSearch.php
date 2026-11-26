@@ -45,6 +45,28 @@ final class ProductSearch
             ],
         ]);
 
+        return new ProductSearchResult(
+            productIds: $this->orderedIds($filtered, $query),
+            total: $total,
+            facets: $facets,
+        );
+    }
+
+    /**
+     * Chỉ id sản phẩm của trang (đúng thứ tự như `search`) — không đếm tổng, không facet. Cho khối/lưới chỉ cần thẻ sản phẩm.
+     *
+     * @return list<int>
+     */
+    public function ids(ProductSearchQuery $query): array
+    {
+        return $this->orderedIds($this->scoped($this->baseQuery($query), $query), $query);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function orderedIds(Builder $filtered, ProductSearchQuery $query): array
+    {
         $ordered = (clone $filtered)->select('pl.product_id');
         if ($query->categoryId !== null && $query->sort === ProductSearchQuery::SORT_NEWEST && $query->text === '') {
             // Trong trang danh mục: ưu tiên thứ tự merchandising đã ghim.
@@ -57,13 +79,8 @@ final class ProductSearch
             ProductSearchQuery::SORT_PRICE_DESC => $ordered->orderByRaw('pl.list_price_min is null')->orderByDesc('pl.list_price_min'),
             default => $ordered->orderByDesc('pl.created_at'),
         };
-        $ids = $ordered->orderByDesc('pl.product_id')->offset($query->offset())->limit($query->limit())->pluck('pl.product_id')->all();
 
-        return new ProductSearchResult(
-            productIds: array_map('intval', $ids),
-            total: $total,
-            facets: $facets,
-        );
+        return array_map('intval', $ordered->orderByDesc('pl.product_id')->offset($query->offset())->limit($query->limit())->pluck('pl.product_id')->all());
     }
 
     private function baseQuery(ProductSearchQuery $query): Builder

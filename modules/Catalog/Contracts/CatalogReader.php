@@ -81,6 +81,14 @@ interface CatalogReader
     public function searchProducts(ProductFilters $filters, string $locale): array;
 
     /**
+     * Chỉ id sản phẩm của trang theo bộ lọc + sắp xếp (0.5.100), cùng thứ tự `searchProducts` — không đếm tổng, không facet,
+     * không nạp sản phẩm. Cho khối/lưới chỉ cần thẻ sản phẩm (dựng thẻ bằng `productsByIds`).
+     *
+     * @return list<int>
+     */
+    public function productIds(ProductFilters $filters, string $locale): array;
+
+    /**
      * Sản phẩm đang hiển thị theo id product (0.3.43), cùng dạng item của `searchProducts` (có "variant_ids"), giữ thứ tự
      * `$productIds`; id không hiển thị/không tồn tại bị bỏ.
      *

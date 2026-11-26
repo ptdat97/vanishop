@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Plugin\StorefrontExtras\Infrastructure;
 
-use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Storefront\Contracts\ProductCards;
 
@@ -16,7 +15,6 @@ final class Products
     public const SOURCES = ['newest' => 'vani-storefront-extras::texts.products.newest', 'category' => 'vani-storefront-extras::texts.products.category', 'collection' => 'vani-storefront-extras::texts.products.collections', 'brand' => 'vani-storefront-extras::texts.products.brand', 'ids' => 'vani-storefront-extras::texts.products.manual_pick_product_ids'];
 
     public function __construct(
-        private readonly CatalogReader $catalog,
         private readonly ProductCards $cards,
     ) {}
 
@@ -33,15 +31,15 @@ final class Products
         }
 
         $value = trim($value);
-        $items = $this->catalog->searchProducts(new ProductFilters(
+
+        // Chỉ tìm id rồi dựng thẻ (Core 0.5.100) — không đếm tổng, không facet, không nạp sản phẩm hai lần.
+        return $this->cards->forFilters(new ProductFilters(
             now: now()->getTimestamp(),
             categorySlug: $source === 'category' && $value !== '' ? $value : null,
             collectionSlug: $source === 'collection' && $value !== '' ? $value : null,
             perPage: $limit,
             brandSlugs: $source === 'brand' && $value !== '' ? [$value] : [],
-        ), $locale)['items'];
-
-        return $this->cards->forIds(array_map(fn (array $item): int => (int) $item['id'], $items), $locale);
+        ), $locale);
     }
 
     /**

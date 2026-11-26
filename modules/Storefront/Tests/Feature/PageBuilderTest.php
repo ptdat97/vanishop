@@ -48,6 +48,24 @@ it('chưa cấu hình → trang chủ mặc định; cấu hình khối → tran
         ->and(AuditLog::query()->where('action', 'storefront.builder_updated')->exists())->toBeTrue();
 });
 
+it('trang chủ nhiều khối sản phẩm: khối chỉ tìm id rồi dựng thẻ (không đếm/facet); thương hiệu, loại tuỳ chọn, kho tra một lần cả trang', function () {
+    $grid = fn (string $title, string $source, string $slug = ''): array => ['type' => 'product_grid', 'config' => ['title' => $title, 'source' => $source, 'slug' => $slug, 'limit' => 4]];
+    $this->put($this->url, ['blocks' => [$grid('Mới', 'newest'), $grid('Thương hiệu', 'brand', $this->brand->slug), $grid('Mới nữa', 'newest')]])->assertSessionHasNoErrors();
+    $this->get('/')->assertOk();
+    app()->forgetScopedInstances();
+
+    DB::enableQueryLog();
+    $html = $this->get('/')->assertOk()->getContent();
+    $queries = array_column(DB::getQueryLog(), 'query');
+    $count = fn (string $prefix): int => count(array_filter($queries, fn (string $sql): bool => str_starts_with($sql, $prefix)));
+
+    expect(substr_count($html, 'Đầm lụa'))->toBeGreaterThanOrEqual(3)
+        ->and($count('select * from "brands" where "id" in'))->toBe(1)
+        ->and($count('select * from "option_types" where "id" in'))->toBeLessThanOrEqual(1)
+        ->and($count('select "id" from "locations"'))->toBe(1)
+        ->and(array_filter($queries, fn (string $sql): bool => str_contains($sql, 'count(*)') || str_contains($sql, 'from "attributes"')))->toBe([]);
+});
+
 it('renders formatted rich text safely and rejects documents over the character limit', function () {
     $body = json_encode([
         'type' => 'doc',

@@ -109,6 +109,11 @@ final class StorefrontCatalog implements CatalogReader
         return $brand === null ? null : vani_filter('vani.service.catalog.brand', [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description], $slug);
     }
 
+    public function productIds(ProductFilters $filters, string $locale): array
+    {
+        return $this->products->ids($this->toSearchQuery($filters, $locale));
+    }
+
     public function productsByIds(array $productIds, string $locale, int $now): array
     {
         return vani_filter('vani.service.catalog.products_by_ids', $this->products->byIds($productIds, $locale, $now), $locale);

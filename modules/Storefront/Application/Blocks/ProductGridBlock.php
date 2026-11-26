@@ -46,7 +46,7 @@ final class ProductGridBlock implements StorefrontBlock
             brandSlugs: $source === 'brand' && $slug !== '' ? [$slug] : [],
         );
 
-        return ['title' => (string) ($config['title'] ?? ''), 'products' => $this->products->listing($filters, $locale, $now)['items']];
+        return ['title' => (string) ($config['title'] ?? ''), 'products' => $this->products->forFilters($filters, $locale)];
     }
 
     public function view(): string
