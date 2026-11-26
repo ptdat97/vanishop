@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Fulfillment\Application;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Fulfillment\Domain\ShipmentStatus;
@@ -12,6 +11,7 @@ use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Contracts\Reconciliations;
+use Modules\Shared\Support\DurableCache;
 
 /**
  * Đối soát bảng kê COD của hãng vận chuyển (stabilization A9): mỗi dòng (mã vận đơn, tiền thu hộ, phí) → tìm vận đơn, so số
@@ -51,7 +51,7 @@ final class CodStatement
         $token = null;
         if (array_diff(array_keys($summary), self::SKIPPED) !== []) {
             $token = Str::random(40);
-            Cache::put(self::CACHE_PREFIX.$token, ['file' => $fileName, 'rows' => $rows], now()->addMinutes(30));
+            DurableCache::store()->put(self::CACHE_PREFIX.$token, ['file' => $fileName, 'rows' => $rows], now()->addMinutes(30));
         }
 
         return [
@@ -68,7 +68,7 @@ final class CodStatement
     public function apply(string $token): ?array
     {
         $cacheKey = self::CACHE_PREFIX.$token;
-        $pending = Cache::get($cacheKey);
+        $pending = DurableCache::store()->get($cacheKey);
         if (! is_array($pending) || ! isset($pending['rows'])) {
             return null;
         }
@@ -109,7 +109,7 @@ final class CodStatement
             }
         }
         $this->audit->record('payment.cod_statement.imported', 'reconciliation', null, ['file' => (string) ($pending['file'] ?? ''), ...$result]);
-        Cache::forget($cacheKey);
+        DurableCache::store()->forget($cacheKey);
 
         return $result;
     }

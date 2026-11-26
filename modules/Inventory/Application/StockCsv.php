@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Application;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -13,6 +12,7 @@ use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Support\DurableCache;
 
 /**
  * Nhập/xuất tồn kho bằng CSV trong Admin. File xuất mở được bằng Excel (UTF-8 BOM) và nhập lại được: cột bắt buộc
@@ -118,7 +118,7 @@ final class StockCsv
         $token = null;
         if ($changes !== []) {
             $token = Str::random(40);
-            Cache::put(self::CACHE_PREFIX.$token, ['file' => $fileName, 'changes' => $changes], now()->addMinutes(30));
+            DurableCache::store()->put(self::CACHE_PREFIX.$token, ['file' => $fileName, 'changes' => $changes], now()->addMinutes(30));
         }
 
         // File lớn: trang xem trước chỉ hiện dòng cần chú ý trước (lỗi, đổi), tối đa PREVIEW_LINES; tổng vẫn đủ.
@@ -140,7 +140,7 @@ final class StockCsv
      */
     public function pending(string $token): ?array
     {
-        $data = Cache::get(self::CACHE_PREFIX.$token);
+        $data = DurableCache::store()->get(self::CACHE_PREFIX.$token);
 
         return is_array($data) ? $data : null;
     }
@@ -152,7 +152,7 @@ final class StockCsv
      */
     public function apply(string $token): array
     {
-        $data = Cache::pull(self::CACHE_PREFIX.$token);
+        $data = DurableCache::store()->pull(self::CACHE_PREFIX.$token);
         if (! is_array($data)) {
             throw ValidationException::withMessages(['business' => __('inventory::messages.import_expired')]);
         }

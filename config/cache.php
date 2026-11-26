@@ -47,6 +47,16 @@ return [
             'lock_table' => env('DB_CACHE_LOCK_TABLE'),
         ],
 
+        // Dữ liệu tạm phải giữ tới khi hết hạn (token xác minh/đặt lại mật khẩu, bản xem trước nhập file, bộ đếm chờ ghi):
+        // bảng riêng — không bị `cache:clear` hay LRU xoá. Dùng qua Modules\Shared\Support\DurableCache.
+        'durable' => [
+            'driver' => 'database',
+            'connection' => env('DB_CACHE_CONNECTION'),
+            'table' => 'cache_durable',
+            'lock_connection' => env('DB_CACHE_LOCK_CONNECTION'),
+            'lock_table' => env('DB_CACHE_LOCK_TABLE'),
+        ],
+
         'file' => [
             'driver' => 'file',
             'path' => storage_path('framework/cache/data'),
@@ -106,6 +116,19 @@ return [
         ],
 
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Durable Store (VaniShop)
+    |--------------------------------------------------------------------------
+    |
+    | Store của DurableCache. Mặc định bảng `cache_durable`; có thể trỏ sang
+    | một store Redis noeviction. KHÔNG trỏ vào store có thể xoá khoá khi
+    | đầy bộ nhớ (allkeys-lru) hoặc bị `cache:clear` xoá.
+    |
+    */
+
+    'durable_store' => env('CACHE_DURABLE_STORE', 'durable'),
 
     /*
     |--------------------------------------------------------------------------

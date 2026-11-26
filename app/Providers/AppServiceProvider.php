@@ -62,6 +62,7 @@ class AppServiceProvider extends ServiceProvider
             $schedule->command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
             $schedule->command('vani:metrics:snapshot')->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command('vani:alerts:check')->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:cache:prune-durable')->hourly()->withoutOverlapping()->onOneServer();
         });
         // Cảnh báo tự động: kênh email của Core; plugin thêm kênh qua AlertChannel::TAG.
         $this->app->make(Extensions::class)->tag([MailAlertChannel::class], AlertChannel::TAG);

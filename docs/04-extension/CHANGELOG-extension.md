@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.99 — 2026-11-26 · Extension API 1.43.0
+
+Rà soát cache ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L57, L58). Không đổi API cho plugin hay hợp đồng Storefront API.
+
+- Store cache `durable` (bảng `cache_durable`, `CACHE_DURABLE_STORE`): token đăng ký, xác minh email, đặt lại mật khẩu, state đăng nhập mạng xã hội, bản xem trước khi nhập file và tiến độ thao tác hàng loạt không còn mất khi Redis cache allkeys-lru đẩy khoá ra hay khi `cache:clear`. Lệnh `vani:cache:prune-durable` (mỗi giờ) dọn dòng hết hạn. Cần chạy `migrate`.
+- Cài đặt cửa hàng (`Settings`) cache theo namespace với khoá có phiên bản; lưu cài đặt hoặc `migrate` đổi phiên bản sau commit. Plugin ghi cài đặt phải đi qua `Settings::set()`/`forget()` — ghi thẳng bảng `settings` ngoài migration sẽ không được thấy tới khi cache đổi phiên bản.
+
 ## 0.5.98 — 2026-11-26 · Extension API 1.43.0
 
 Poster video và video Thư viện trong gallery sản phẩm ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L24). Thêm vào API cho plugin (tăng minor). Không chuyển mã video, không thêm phụ thuộc (Owner chọn chụp poster bằng trình duyệt).

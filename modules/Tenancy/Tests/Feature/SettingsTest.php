@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -40,6 +42,51 @@ it('secret được mã hoá khi lưu', function () {
     expect($raw->encrypted)->toBeTruthy()
         ->and($raw->value)->not->toContain('bi-mat-123')
         ->and(app(Settings::class)->get('test', 'api_key'))->toBe('bi-mat-123');
+});
+
+it('request sau đọc cài đặt từ cache; đổi qua Settings hoặc chạy migration làm mới cache; secret trong cache vẫn mã hoá', function () {
+    $this->settings->set('test', 'greeting', 'bản một');
+    $this->settings->set('test', 'api_key', 'bi-mat-123');
+    $nextRequest = function (): Settings {
+        app()->forgetScopedInstances();
+
+        return app(Settings::class);
+    };
+    expect($nextRequest()->get('test', 'greeting'))->toBe('bản một');
+
+    // Sửa thẳng bảng (ngoài Settings): request sau vẫn đọc bản đã cache — không truy vấn lại.
+    DB::table('settings')->where('key', 'greeting')->update(['value' => json_encode('sửa thẳng')]);
+    DB::enableQueryLog();
+    expect($nextRequest()->get('test', 'greeting'))->toBe('bản một')
+        ->and(collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => str_contains($sql, 'settings'))->all())->toBe([]);
+    expect(collect(Cache::get('vani:settings:'.Cache::get('vani:settings:version').':test'))->firstWhere('key', 'api_key')['value'])
+        ->not->toContain('bi-mat-123');
+
+    event(new MigrationsEnded('up'));
+    expect($nextRequest()->get('test', 'greeting'))->toBe('sửa thẳng');
+
+    $nextRequest()->set('test', 'greeting', 'bản hai');
+    expect($nextRequest()->get('test', 'greeting'))->toBe('bản hai')
+        ->and($nextRequest()->get('test', 'api_key'))->toBe('bi-mat-123');
+});
+
+it('đổi cài đặt trong giao dịch bị huỷ không làm bẩn cache; request đang đổi đọc giá trị mới ngay', function () {
+    $this->settings->set('test', 'greeting', 'bản một');
+    app()->forgetScopedInstances();
+    expect(app(Settings::class)->get('test', 'greeting'))->toBe('bản một');
+
+    try {
+        DB::transaction(function (): void {
+            $settings = app(Settings::class);
+            $settings->set('test', 'greeting', 'chưa commit');
+            expect($settings->get('test', 'greeting'))->toBe('chưa commit');
+            throw new RuntimeException('huỷ');
+        });
+    } catch (RuntimeException) {
+    }
+
+    app()->forgetScopedInstances();
+    expect(app(Settings::class)->get('test', 'greeting'))->toBe('bản một');
 });
 
 describe('chọn strategy qua cấu hình', function () {

@@ -6,7 +6,6 @@ namespace Modules\Customer\Application;
 
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
@@ -20,6 +19,7 @@ use Modules\Customer\Events\CustomerRegistered;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerIdentity;
 use Modules\Customer\Persistence\Models\CustomerToken;
+use Modules\Shared\Support\DurableCache;
 use Modules\Shared\Support\Phones;
 use Modules\Shared\Support\StoreLocale;
 
@@ -65,7 +65,7 @@ final class AuthService
         $this->throttleEmails("customer-register:{$email}");
 
         $token = Str::random(64);
-        Cache::put(self::REGISTRATION_KEY.hash('sha256', $token), [
+        DurableCache::store()->put(self::REGISTRATION_KEY.hash('sha256', $token), [
             'email' => $email, 'password' => Hash::make($password), 'full_name' => trim($fullName), 'locale' => App::getLocale(), 'marketing_email' => $marketingEmail,
         ], now()->addHours($this->verifyTtlHours));
         $this->emails->sendVerification($email, trim($fullName), $token, $this->verifyTtlHours);
@@ -81,7 +81,7 @@ final class AuthService
      */
     public function verifyRegistration(string $token, ?string $device = null): array
     {
-        $pending = Cache::pull(self::REGISTRATION_KEY.hash('sha256', $token));
+        $pending = DurableCache::store()->pull(self::REGISTRATION_KEY.hash('sha256', $token));
         if (! is_array($pending) || ! isset($pending['email'], $pending['password'])) {
             throw CustomerRejected::registrationLinkInvalid();
         }
@@ -223,7 +223,7 @@ final class AuthService
         RateLimiter::hit("customer-reset:{$email}", 600);
 
         $token = Str::random(64);
-        Cache::put(self::RESET_KEY.hash('sha256', $token), ['customer_id' => $customer->id, 'email' => $email], now()->addMinutes($this->resetTtlMinutes));
+        DurableCache::store()->put(self::RESET_KEY.hash('sha256', $token), ['customer_id' => $customer->id, 'email' => $email], now()->addMinutes($this->resetTtlMinutes));
         $this->emails->sendPasswordReset($email, $customer->full_name, $token, $this->resetTtlMinutes);
     }
 
@@ -318,7 +318,7 @@ final class AuthService
         $this->throttleEmails("customer-email-verify:{$email}");
 
         $token = Str::random(64);
-        Cache::put(self::EMAIL_VERIFY_KEY.hash('sha256', $token), ['customer_id' => $customer->id, 'email' => $email], now()->addHours($this->verifyTtlHours));
+        DurableCache::store()->put(self::EMAIL_VERIFY_KEY.hash('sha256', $token), ['customer_id' => $customer->id, 'email' => $email], now()->addHours($this->verifyTtlHours));
         $this->emails->sendEmailChangeVerification($customer->email, $customer->full_name, $token, $this->verifyTtlHours);
 
         return true;
@@ -345,7 +345,7 @@ final class AuthService
     {
         $key = $prefix.hash('sha256', $token);
 
-        return Cache::lock($key.':consume', 10)->get(fn (): mixed => Cache::pull($key));
+        return DurableCache::store()->lock($key.':consume', 10)->get(fn (): mixed => DurableCache::store()->pull($key));
     }
 
     private function emailChallengeCustomer(mixed $pending): ?Customer

@@ -83,8 +83,11 @@ ALTER TABLE stock_movements REORGANIZE PARTITION pmax INTO (
 
 ## 5. Cache
 
-- Cache theo khoá có version: `product:{id}:v{version}`, `brand:{id}:v{version}`.
-- Invalidate theo event (sản phẩm, giá, tồn) — dùng version key thay vì xoá hàng loạt.
+- **Không cache từng sản phẩm hay thương hiệu.** Trang danh sách, tìm kiếm, bảng giá, lưới tồn đọc read model (`product_listing`, `product_facet_values`, `price_variant_index`, `stock_grid_index`) do projector cập nhật theo event — dữ liệu luôn đúng, không cần xoá cache.
+- Cache theo khoá có phiên bản (không xoá hàng loạt): tổng số + facet trang danh sách `catalog:search:{phiên bản read model}:…` (600 giây, `ListingCacheVersion` tăng khi read model đổi); cài đặt cửa hàng `vani:settings:{phiên bản}:{namespace}` (`DatabaseSettings`: đổi phiên bản sau commit khi lưu cài đặt và sau `migrate`).
+- Cache có hạn ngắn (chấp nhận trễ): số đơn của bước đã kết thúc (60 giây), dashboard kho (300 giây), menu CMS (300 giây), sitemap (1 giờ), khối bán chạy (1 giờ).
+- **Hai store:** store mặc định (`CACHE_STORE`) chỉ chứa dữ liệu tính lại được — có thể là Redis allkeys-lru và được `cache:clear`. Dữ liệu tạm phải giữ tới khi hết hạn (token đăng ký, xác minh email, đặt lại mật khẩu, state đăng nhập mạng xã hội, bản xem trước khi nhập file sản phẩm/tồn/bảng kê COD, tiến độ thao tác hàng loạt) ở store `durable` (`Modules\Shared\Support\DurableCache`): mặc định bảng `cache_durable`, `cache:clear` không xoá, `vani:cache:prune-durable` (mỗi giờ) dọn dòng hết hạn. Muốn dùng Redis thì khai một store Redis **noeviction** rồi đặt `CACHE_DURABLE_STORE` — không trỏ vào instance allkeys-lru.
+- Bộ đếm lượt xem sản phẩm cố ý ở store mặc định (không ghi DB mỗi lượt xem): cache bị xoá thì mất phần chưa ghi, thống kê gần đúng.
 - Trang public (home, PLP, PDP) cache ở CDN ngắn (60–300s) + `stale-while-revalidate`; phần giá/tồn động tải qua API nếu cần độ chính xác cao.
 - **Bật/tắt bảo trì storefront hoặc đổi chế độ hiện giá** (`core`/`storefront.maintenance`, `core`/`storefront.price_visibility`, [storefront §5](../14-storefront/storefront.md)): CDN vẫn phục vụ bản trang đã cache tới khi hết `s-maxage` + `stale-while-revalidate`. Sau khi đổi, **xoá cache CDN** của trang storefront (Core chưa purge tự động). IPN cổng thanh toán và webhook vận chuyển vẫn chạy trong lúc bảo trì.
 

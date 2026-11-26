@@ -6,7 +6,6 @@ namespace Modules\Shared\Support;
 
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Việc hàng loạt lớn chạy nền (tồn kho L20, nhập file sản phẩm): các lô là job `Batchable` trong một `Bus::batch` (bảng
@@ -36,15 +35,15 @@ final class BulkRun
     {
         foreach ($counts as $counter => $value) {
             if ($value > 0) {
-                Cache::add(self::key($batchId, $counter), 0, now()->addHours(self::TTL_HOURS));
-                Cache::increment(self::key($batchId, $counter), $value);
+                DurableCache::store()->add(self::key($batchId, $counter), 0, now()->addHours(self::TTL_HOURS));
+                DurableCache::store()->increment(self::key($batchId, $counter), $value);
             }
         }
         if ($errors !== []) {
-            $lock = Cache::lock(self::key($batchId, 'errors-lock'), 10);
+            $lock = DurableCache::store()->lock(self::key($batchId, 'errors-lock'), 10);
             $lock->block(5, function () use ($batchId, $errors): void {
-                $current = (array) Cache::get(self::key($batchId, 'errors'), []);
-                Cache::put(self::key($batchId, 'errors'), array_slice([...$current, ...$errors], 0, self::MAX_ERRORS), now()->addHours(self::TTL_HOURS));
+                $current = (array) DurableCache::store()->get(self::key($batchId, 'errors'), []);
+                DurableCache::store()->put(self::key($batchId, 'errors'), array_slice([...$current, ...$errors], 0, self::MAX_ERRORS), now()->addHours(self::TTL_HOURS));
             });
         }
     }
@@ -66,8 +65,8 @@ final class BulkRun
             'progress' => $batch->progress(),
             'finished' => $batch->finished(),
             'failed_jobs' => $batch->failedJobs,
-            'counts' => array_combine($counters, array_map(fn (string $counter): int => (int) Cache::get(self::key($batchId, $counter), 0), $counters)),
-            'errors' => array_values(array_map('strval', (array) Cache::get(self::key($batchId, 'errors'), []))),
+            'counts' => array_combine($counters, array_map(fn (string $counter): int => (int) DurableCache::store()->get(self::key($batchId, $counter), 0), $counters)),
+            'errors' => array_values(array_map('strval', (array) DurableCache::store()->get(self::key($batchId, 'errors'), []))),
         ];
     }
 

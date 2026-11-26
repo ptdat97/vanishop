@@ -6,7 +6,6 @@ namespace Modules\Catalog\Application\Products;
 
 use Closure;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -28,6 +27,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Support\BulkRun;
+use Modules\Shared\Support\DurableCache;
 use Modules\Shared\Support\StoreLocale;
 
 /**
@@ -146,7 +146,7 @@ final class ProductFile
         $token = null;
         if ($summary['create'] + $summary['update'] > 0) {
             $token = Str::random(40);
-            Cache::put(self::CACHE_PREFIX.$token, ['file' => $fileName, 'rows' => $rows], now()->addMinutes(30));
+            DurableCache::store()->put(self::CACHE_PREFIX.$token, ['file' => $fileName, 'rows' => $rows], now()->addMinutes(30));
         }
 
         return [
@@ -170,7 +170,7 @@ final class ProductFile
      */
     public function apply(string $token): ?array
     {
-        $pending = Cache::pull(self::CACHE_PREFIX.$token);
+        $pending = DurableCache::store()->pull(self::CACHE_PREFIX.$token);
         if (! is_array($pending) || ! isset($pending['rows'])) {
             return null;
         }

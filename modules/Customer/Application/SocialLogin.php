@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Customer\Application;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Modules\Customer\Contracts\AuthProvider;
 use Modules\Customer\Contracts\AuthProviderFailed;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Shared\Support\DurableCache;
 
 /**
  * Đăng nhập qua AuthProvider của plugin: `state` một lần (10 phút, gắn nhà cung cấp + redirect_uri), redirect_uri theo
@@ -42,7 +42,7 @@ final class SocialLogin
         $this->assertRedirectAllowed($redirectUri);
 
         $state = Str::random(40);
-        Cache::put("vani:social-state:{$state}", ['provider' => $provider, 'redirect_uri' => $redirectUri], self::STATE_TTL);
+        DurableCache::store()->put("vani:social-state:{$state}", ['provider' => $provider, 'redirect_uri' => $redirectUri], self::STATE_TTL);
 
         return ['url' => $implementation->authorizationUrl($state, $redirectUri), 'state' => $state];
     }
@@ -54,7 +54,7 @@ final class SocialLogin
     public function complete(string $provider, string $state, array $params, ?string $device = null): array
     {
         $implementation = $this->provider($provider);
-        $stored = Cache::pull("vani:social-state:{$state}");
+        $stored = DurableCache::store()->pull("vani:social-state:{$state}");
         if (! is_array($stored) || $stored['provider'] !== $provider) {
             throw CustomerRejected::socialState();
         }

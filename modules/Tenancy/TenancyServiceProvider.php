@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Tenancy;
 
+use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Support\Facades\Event;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Application\DatabaseSettings;
 use Modules\Tenancy\Application\EloquentLegalEntityDirectory;
@@ -29,5 +32,7 @@ final class TenancyServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         $this->bootModuleResources();
+        // Migration có thể sửa thẳng bảng `settings` — bỏ cache cài đặt.
+        Event::listen(MigrationsEnded::class, fn () => DatabaseSettings::invalidate($this->app->make(Cache::class)));
     }
 }
