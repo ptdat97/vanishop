@@ -1,4 +1,4 @@
-Extension API 1.37.0
+Extension API 1.38.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -619,12 +619,14 @@ interface Modules\Ordering\Contracts\OrderReader
   findByNumber(string $number): ?Modules\Ordering\Contracts\Data\OrderData
   numbers(array $orderIds): array
   lines(int $orderId): array
+  linesOf(array $orderIds): array
   customerHasPlacedOrder(int $customerId): bool
   customerOrderIds(int $customerId): array
   customerStats(int $customerId): array
   deliveryHistory(string $phone, ?int $exceptOrderId = NULL): array
   cancellations(int $orderId): array
   priceBreakdown(int $orderId): ?Modules\Ordering\Contracts\Data\PriceBreakdown
+  priceBreakdowns(array $orderIds): array
   changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array
 interface Modules\Ordering\Contracts\OrderRiskSignal [experimental]
   const TAG = 'vani.ordering.risk_signals'

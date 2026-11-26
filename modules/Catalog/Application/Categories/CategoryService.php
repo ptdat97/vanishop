@@ -7,6 +7,7 @@ namespace Modules\Catalog\Application\Categories;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Application\Media\MediaLibrary;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Application\StaleRecord;
 use Modules\Catalog\Domain\Category\CategoryCycle;
 use Modules\Catalog\Domain\Category\CategoryHasChildren;
@@ -21,7 +22,7 @@ use Modules\Identity\Contracts\AuditLogger;
  */
 final class CategoryService
 {
-    public function __construct(private readonly AuditLogger $audit, private readonly MediaLibrary $media) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly MediaLibrary $media, private readonly ProductListingProjector $listing) {}
 
     public function create(CategoryInput $input): Category
     {
@@ -58,6 +59,9 @@ final class CategoryService
 
             if ($input->parentId !== $category->parent_id) {
                 $this->moveSubtree($category, $input->parentId);
+                // Facet danh mục lưu cả danh mục cha: sản phẩm trong cây con dựng lại theo cây mới.
+                $subtree = Category::query()->where('path', 'like', $category->refresh()->path.'%')->pluck('id')->map(fn ($id): int => (int) $id)->all();
+                $this->listing->projectLater($this->listing->productsInCategories($subtree));
             }
 
             $category->forceFill([
@@ -103,8 +107,10 @@ final class CategoryService
                 throw new CategoryHasChildren;
             }
 
+            $products = $this->listing->productsInCategories([$category->id]);
             $category->media()->delete();
             $category->delete();
+            $this->listing->projectLater($products);
 
             $this->audit->record('catalog.category.deleted', 'category', $category->id, ['slug' => $category->slug]);
         });

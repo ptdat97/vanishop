@@ -47,6 +47,8 @@ Sản phẩm, SKU (variant) theo 1–3 trục tuỳ chọn, danh mục, bộ sư
 - `product_option_values`
 - `variant_option_values`
 - `slug_redirects`
+- `product_listing`
+- `product_facet_values`
 
 ## Contract công bố
 

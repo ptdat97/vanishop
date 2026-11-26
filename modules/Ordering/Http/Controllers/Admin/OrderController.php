@@ -165,7 +165,7 @@ final class OrderController
                 }))),
             ] : null,
             'paymentStatuses' => PaymentStatus::VALUES,
-            'labels' => [...__('ordering::labels'), 'payment_method' => $this->paymentMethodLabels()],
+            'labels' => [...__('ordering::labels'), 'payment_method' => $this->paymentMethodLabels([$filters['payment_method'], ...collect($page->items())->pluck('payment_method')->all()])],
             // Chốt ① (ADR-046): đơn "Cần xác nhận" kèm lịch sử nhận hàng theo SĐT (đơn khác của SĐT) để xác nhận hàng loạt
             // mà không mở từng đơn.
             'orders' => collect($page->items())->map(fn (Order $order): array => $this->maskRow($contacts, [
@@ -420,16 +420,18 @@ final class OrderController
     }
 
     /**
-     * Cách thanh toán cho bộ lọc/cột: mã đã có trong đơn (kể cả cổng đã gỡ) + nhãn do Payment cung cấp qua slot
-     * `vani.admin.order.payment_methods` (Ordering không biết cổng nào được cài).
+     * Cách thanh toán cho bộ lọc/cột: cổng đang cài (nhãn do Payment cung cấp qua slot `vani.admin.order.payment_methods`
+     * — Ordering không biết cổng nào được cài) + mã trên trang đang xem và mã đang lọc (cổng đã gỡ hiện bằng mã). Không quét
+     * bảng đơn để tìm mã đã dùng (db-refactor §4.7: ~1,5 s ở 5 triệu đơn).
      *
+     * @param  list<mixed>  $seenCodes
      * @return array<string, string>
      */
-    private function paymentMethodLabels(): array
+    private function paymentMethodLabels(array $seenCodes): array
     {
         $labels = [];
-        foreach ($this->queries->usedPaymentMethods() as $code) {
-            $labels[(string) $code] = (string) $code;
+        foreach (array_filter(array_map('strval', $seenCodes)) as $code) {
+            $labels[$code] = $code;
         }
         foreach (array_filter(Hook::slot('vani.admin.order.payment_methods'), 'is_array') as $contributed) {
             $labels = array_replace($labels, $contributed);

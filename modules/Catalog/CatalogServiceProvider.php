@@ -23,8 +23,10 @@ use Modules\Catalog\Application\Products\ProductIdentifiers;
 use Modules\Catalog\Application\Products\ProductImporter;
 use Modules\Catalog\Application\Products\ProductListPrices;
 use Modules\Catalog\Application\Products\ProductViewCounter;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Application\StorefrontCatalog;
 use Modules\Catalog\Console\MediaCacheCommand;
+use Modules\Catalog\Console\RebuildListingCommand;
 use Modules\Catalog\Contracts\CatalogImporter;
 use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Contracts\CatalogReader;
@@ -32,6 +34,7 @@ use Modules\Catalog\Contracts\CollectionDirectory;
 use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Contracts\Data\DefaultWeight;
 use Modules\Catalog\Contracts\ImageFormat;
+use Modules\Catalog\Contracts\ListingAvailability;
 use Modules\Catalog\Contracts\ListPrices;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Contracts\MediaUrls;
@@ -84,6 +87,9 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(CatalogImporter::class, ProductImporter::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
         $this->app->bind(ListPrices::class, ProductListPrices::class);
+        $this->app->bind(ListingAvailability::class, ProductListPrices::class);
+        // Có trạng thái (deferring) — một instance cho cả request/job.
+        $this->app->singleton(ProductListingProjector::class);
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
         $this->app->bind(CollectionPages::class, EloquentCollectionPages::class);
         $this->app->bind(CatalogLookup::class, EloquentCatalogLookup::class);
@@ -99,7 +105,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         Event::listen(SettingChanged::class, DeclareSettingMedia::class);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([MediaCacheCommand::class]);
+            $this->commands([MediaCacheCommand::class, RebuildListingCommand::class]);
         }
 
         // Không lưu tên class vào cột *_type (đổi namespace không làm hỏng dữ liệu).

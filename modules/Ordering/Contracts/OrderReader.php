@@ -36,6 +36,14 @@ interface OrderReader
     public function lines(int $orderId): array;
 
     /**
+     * Dòng đơn theo lô (0.5.90 — đồng bộ/xuất nhiều đơn không tra từng đơn). Một truy vấn cho cả lô.
+     *
+     * @param  list<int>  $orderIds
+     * @return array<int, list<OrderLineData>> order id => dòng theo id tăng dần (đơn không tồn tại thì không có mặt)
+     */
+    public function linesOf(array $orderIds): array;
+
+    /**
      * Khách đã từng đặt đơn (không tính đơn đã huỷ) chưa — dùng cho rule "đơn đầu tiên".
      */
     public function customerHasPlacedOrder(int $customerId): bool;
@@ -48,12 +56,6 @@ interface OrderReader
      */
     public function customerOrderIds(int $customerId): array;
 
-    /**
-     * Đơn thay đổi sau một mốc, theo thứ tự (updated_at, id) tăng dần — cho đồng bộ kéo (keyset pagination).
-     * Trang sau: truyền updated_at + id của đơn cuối trang trước.
-     *
-     * @return list<OrderData>
-     */
     /**
      * Thống kê đơn (không tính đơn đã huỷ) của một khách.
      *
@@ -83,5 +85,19 @@ interface OrderReader
      */
     public function priceBreakdown(int $orderId): ?PriceBreakdown;
 
+    /**
+     * Tầng giá theo lô (0.5.90): ba truy vấn cho cả lô (đơn, dòng, điều chỉnh).
+     *
+     * @param  list<int>  $orderIds
+     * @return array<int, PriceBreakdown> order id => tầng giá (đơn không tồn tại thì không có mặt)
+     */
+    public function priceBreakdowns(array $orderIds): array;
+
+    /**
+     * Đơn thay đổi sau một mốc, theo thứ tự (updated_at, id) tăng dần — cho đồng bộ kéo (keyset pagination).
+     * Trang sau: truyền updated_at + id của đơn cuối trang trước.
+     *
+     * @return list<OrderData>
+     */
     public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array;
 }

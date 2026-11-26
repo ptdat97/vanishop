@@ -64,10 +64,10 @@
 | [`option_type_translations`](#option_type_translations) | 4 |
 | [`option_types`](#option_types) | 7 |
 | [`option_value_translations`](#option_value_translations) | 4 |
-| [`option_values`](#option_values) | 9 |
+| [`option_values`](#option_values) | 10 |
 | [`order_adjustments`](#order_adjustments) | 10 |
 | [`order_events`](#order_events) | 12 |
-| [`order_lines`](#order_lines) | 22 |
+| [`order_lines`](#order_lines) | 23 |
 | [`orders`](#orders) | 33 |
 | [`password_reset_tokens`](#password_reset_tokens) | 3 |
 | [`payment_reconciliation_lines`](#payment_reconciliation_lines) | 10 |
@@ -80,14 +80,16 @@
 | [`price_lists`](#price_lists) | 13 |
 | [`prices`](#prices) | 8 |
 | [`product_attribute_values`](#product_attribute_values) | 6 |
+| [`product_facet_values`](#product_facet_values) | 3 |
 | [`product_link_group_items`](#product_link_group_items) | 4 |
 | [`product_link_groups`](#product_link_groups) | 5 |
+| [`product_listing`](#product_listing) | 8 |
 | [`product_option_values`](#product_option_values) | 6 |
 | [`product_options`](#product_options) | 6 |
 | [`product_translations`](#product_translations) | 9 |
 | [`product_video`](#product_video) | 3 |
 | [`product_view_stats`](#product_view_stats) | 3 |
-| [`products`](#products) | 15 |
+| [`products`](#products) | 14 |
 | [`promotion_rules`](#promotion_rules) | 6 |
 | [`promotion_usages`](#promotion_usages) | 11 |
 | [`promotions`](#promotions) | 21 |
@@ -1123,11 +1125,12 @@ Khoá ngoại: option_value_id → option_values(id) on delete cascade
 | `group` | varchar(16) | có |  |
 | `hex` | char(7) | có |  |
 | `family` | varchar(16) | có |  |
+| `filter_token` | varchar(32) | có |  |
 | `position` | int unsigned |  | `0` |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: index (family); unique (option_type_id, group, code); index (option_type_id, position); PK (id)
+Index: index (family); index (option_type_id, filter_token); unique (option_type_id, group, code); index (option_type_id, position); PK (id)
 
 Khoá ngoại: option_type_id → option_types(id)
 
@@ -1178,6 +1181,7 @@ Khoá ngoại: order_id → orders(id) on delete cascade
 | `id` | bigint unsigned |  |  |
 | `order_id` | bigint unsigned |  |  |
 | `variant_id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned | có |  |
 | `sku` | varchar(64) |  |  |
 | `product_name` | varchar(255) |  |  |
 | `brand_id` | bigint unsigned | có |  |
@@ -1198,7 +1202,7 @@ Khoá ngoại: order_id → orders(id) on delete cascade
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: index (brand_id); index (order_id); index (price_list_code); index (variant_id); PK (id)
+Index: index (brand_id); index (order_id); index (price_list_code); index (product_id); index (variant_id); PK (id)
 
 Khoá ngoại: order_id → orders(id) on delete cascade
 
@@ -1240,7 +1244,7 @@ Khoá ngoại: order_id → orders(id) on delete cascade
 | `updated_at` | timestamp | có |  |
 | `stage` | varchar(24) | có |  |
 
-Index: index (customer_id); index (customer_phone); unique (number); index (order_status); index (parent_order_id); index (placed_at); unique (public_id); index (source_cart_id); index (source, placed_at); index (stage, placed_at, id); index (updated_at, id); PK (id)
+Index: index (customer_id, placed_at); index (customer_phone); unique (number); index (order_status); index (parent_order_id); index (placed_at); unique (public_id); index (source_cart_id); index (source, placed_at); index (stage, placed_at, id); index (updated_at, id); PK (id)
 
 Khoá ngoại: parent_order_id → orders(id)
 
@@ -1424,6 +1428,18 @@ Index: PK (id); index (attribute_id, attribute_value_id); index (attribute_value
 
 Khoá ngoại: attribute_id → attributes(id) on delete cascade; attribute_value_id → attribute_values(id) on delete cascade; product_id → products(id) on delete cascade
 
+## product_facet_values
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `facet` | varchar(48) |  |  |
+| `token` | varchar(64) |  |  |
+| `product_id` | bigint unsigned |  |  |
+
+Index: PK (facet, token, product_id); index (product_id)
+
+Khoá ngoại: product_id → products(id) on delete cascade
+
 ## product_link_group_items
 
 | Cột | Kiểu | Null | Mặc định |
@@ -1451,20 +1467,37 @@ Index: PK (id); index (link_type_id, root_product_id); index (root_product_id)
 
 Khoá ngoại: link_type_id → link_types(id); root_product_id → products(id) on delete cascade
 
+## product_listing
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `product_id` | bigint unsigned |  |  |
+| `status` | varchar(16) |  |  |
+| `published_from` | datetime | có |  |
+| `published_to` | datetime | có |  |
+| `brand_id` | bigint unsigned | có |  |
+| `list_price_min` | bigint | có |  |
+| `in_stock` | tinyint(1) |  | `1` |
+| `created_at` | datetime |  |  |
+
+Index: PK (product_id); index (brand_id, status); index (status, created_at, product_id); index (status, list_price_min, product_id); index (status, published_from)
+
+Khoá ngoại: product_id → products(id) on delete cascade
+
 ## product_option_values
 
 | Cột | Kiểu | Null | Mặc định |
 |---|---|---|---|
 | `id` | bigint unsigned |  |  |
-| `product_id` | bigint unsigned |  |  |
+| `product_option_id` | bigint unsigned |  |  |
 | `option_value_id` | bigint unsigned |  |  |
 | `position` | int unsigned |  | `0` |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: PK (id); index (option_value_id); unique (product_id, option_value_id)
+Index: PK (id); index (option_value_id); unique (product_option_id, option_value_id)
 
-Khoá ngoại: option_value_id → option_values(id); product_id → products(id) on delete cascade
+Khoá ngoại: option_value_id → option_values(id); product_option_id → product_options(id) on delete cascade
 
 ## product_options
 
@@ -1535,13 +1568,12 @@ Index: PK (product_id, hour); index (hour)
 | `published_to` | datetime | có |  |
 | `primary_category_id` | bigint unsigned | có |  |
 | `search_text` | text |  |  |
-| `list_price_min` | bigint | có |  |
 | `meta` | json | có |  |
 | `lock_version` | int unsigned |  | `0` |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: PK (id); index (brand_id); index (list_price_min); index (primary_category_id); unique (product_code); unique (slug); index (status, published_from)
+Index: index (search_text); PK (id); index (brand_id); index (primary_category_id); unique (product_code); unique (slug); index (status, published_from)
 
 Khoá ngoại: brand_id → brands(id); primary_category_id → categories(id) on delete set null
 

@@ -21,7 +21,7 @@ function topProductsOrder(string $placedAt, array $lines, string $status = 'conf
         DB::table('order_lines')->insert([
             'order_id' => $id, 'variant_id' => 1, 'sku' => 'SKU', 'product_name' => 'SP',
             'quantity' => $quantity, 'cancelled_quantity' => $cancelled, 'unit_amount' => 100, 'subtotal_amount' => 100, 'discount_amount' => 0, 'total_amount' => 100,
-            'tax_rate_bp' => 0, 'tax_amount' => 0, 'meta' => $productId === null ? null : json_encode(['product_id' => $productId]), 'created_at' => $placedAt, 'updated_at' => $placedAt,
+            'tax_rate_bp' => 0, 'tax_amount' => 0, 'product_id' => $productId, 'created_at' => $placedAt, 'updated_at' => $placedAt,
         ]);
     }
 }

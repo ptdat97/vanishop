@@ -94,10 +94,11 @@ final class BenchSeedCommand extends Command
         [$colorType, $sizeType] = $this->step('tuỳ chọn, thuộc tính', fn (): array => $this->optionCatalog($now));
         $this->step("{$products} sản phẩm", fn () => $this->products($products, $now));
         $this->step('SKU (×10), giá, tồn', fn () => $this->variants($products, $colorType, $sizeType, $now));
+        $this->step('read model trang danh sách', fn () => $this->listing());
         $this->step("{$customers} khách", fn () => $this->customers($customers, $now));
         $this->step("{$orders} đơn (×2 dòng)", fn () => $this->orders($orders, $products, $customers));
         $this->step('ANALYZE TABLE', function (): void {
-            foreach (['products', 'product_translations', 'category_product', 'collection_product', 'product_attribute_values', 'product_options', 'product_option_values', 'variants', 'variant_option_values', 'prices', 'stock_levels', 'customers', 'orders', 'order_lines'] as $table) {
+            foreach (['products', 'product_listing', 'product_facet_values', 'product_translations', 'category_product', 'collection_product', 'product_attribute_values', 'product_options', 'product_option_values', 'variants', 'variant_option_values', 'prices', 'stock_levels', 'customers', 'orders', 'order_lines'] as $table) {
                 DB::statement("ANALYZE TABLE `{$table}`");
             }
         });
@@ -158,12 +159,12 @@ final class BenchSeedCommand extends Command
         DB::statement('CREATE TABLE bench_color (idx INT UNSIGNED PRIMARY KEY, id BIGINT UNSIGNED NOT NULL)');
         DB::statement('CREATE TABLE bench_size (idx INT UNSIGNED PRIMARY KEY, id BIGINT UNSIGNED NOT NULL, code VARCHAR(8) NOT NULL)');
         foreach (self::COLORS as $index => [$code, $name, $family]) {
-            $id = DB::table('option_values')->insertGetId(['option_type_id' => $colorType, 'code' => $code, 'family' => $family, 'hex' => '#'.substr(md5($code), 0, 6), 'position' => $index, 'created_at' => $now, 'updated_at' => $now]);
+            $id = DB::table('option_values')->insertGetId(['option_type_id' => $colorType, 'code' => $code, 'family' => $family, 'filter_token' => $family, 'hex' => '#'.substr(md5($code), 0, 6), 'position' => $index, 'created_at' => $now, 'updated_at' => $now]);
             DB::table('option_value_translations')->insert(['option_value_id' => $id, 'locale' => 'vi', 'name' => $name]);
             DB::table('bench_color')->insert(['idx' => $index, 'id' => $id]);
         }
         foreach (self::SIZES as $index => $code) {
-            $id = DB::table('option_values')->insertGetId(['option_type_id' => $sizeType, 'code' => $code, 'group' => 'alpha', 'position' => $index, 'created_at' => $now, 'updated_at' => $now]);
+            $id = DB::table('option_values')->insertGetId(['option_type_id' => $sizeType, 'code' => $code, 'filter_token' => $code, 'group' => 'alpha', 'position' => $index, 'created_at' => $now, 'updated_at' => $now]);
             DB::table('option_value_translations')->insert(['option_value_id' => $id, 'locale' => 'vi', 'name' => $code]);
             DB::table('bench_size')->insert(['idx' => $index, 'id' => $id, 'code' => $code]);
         }
@@ -193,11 +194,11 @@ final class BenchSeedCommand extends Command
         foreach ($this->ranges($count) as [$from, $to]) {
             $where = "n >= {$from} AND n < {$to}";
             // ~2 năm sản phẩm mới, 2% nháp, 2% lưu trữ, 1% hẹn giờ hiển thị trong tương lai.
-            DB::statement("INSERT INTO products (id, brand_id, product_code, slug, status, track_inventory, published_from, published_to, primary_category_id, search_text, list_price_min, lock_version, created_at, updated_at)
+            DB::statement("INSERT INTO products (id, brand_id, product_code, slug, status, track_inventory, published_from, published_to, primary_category_id, search_text, lock_version, created_at, updated_at)
                 SELECT n + 1, 1 + n % 50, {$code}, LOWER({$code}),
                     CASE WHEN n % 50 = 0 THEN 'draft' WHEN n % 50 = 1 THEN 'archived' ELSE 'active' END, 1,
                     CASE WHEN n % 100 = 2 THEN '2030-01-01 00:00:00' ELSE NULL END, NULL,
-                    21 + n % 200, CONCAT({$kind(1)}, ' ', {$trait(1)}, ' ', LOWER({$code})), 149000 + (n % 40) * 10000, 0,
+                    21 + n % 200, CONCAT({$kind(1)}, ' ', {$trait(1)}, ' ', LOWER({$code})), 0,
                     TIMESTAMPADD(SECOND, n * 600, '2024-11-26 00:00:00'), TIMESTAMPADD(SECOND, n * 600, '2024-11-26 00:00:00')
                 FROM bench_seq WHERE {$where}");
             DB::statement("INSERT INTO product_translations (product_id, locale, name, description)
@@ -223,9 +224,12 @@ final class BenchSeedCommand extends Command
             DB::statement("INSERT INTO product_options (product_id, option_type_id, position, created_at, updated_at)
                 SELECT n + 1, {$colorType}, 0, '{$now}', '{$now}' FROM bench_seq s WHERE {$where}
                 UNION ALL SELECT n + 1, {$sizeType}, 1, '{$now}', '{$now}' FROM bench_seq s WHERE {$where}");
-            DB::statement("INSERT INTO product_option_values (product_id, option_value_id, position, created_at, updated_at)
-                SELECT s.n + 1, c.id, k.n, '{$now}', '{$now}' FROM bench_seq s JOIN bench_seq k ON k.n < 2 JOIN bench_color c ON c.idx = (s.n + k.n * 7) % 24 WHERE {$where}
-                UNION ALL SELECT s.n + 1, z.id, k.n, '{$now}', '{$now}' FROM bench_seq s JOIN bench_seq k ON k.n < 5 JOIN bench_size z ON z.idx = s.n % 4 + k.n WHERE {$where}");
+            // Trục màu = product_options có position 0, size = 1 (vừa chèn ở trên).
+            DB::statement("INSERT INTO product_option_values (product_option_id, option_value_id, position, created_at, updated_at)
+                SELECT po.id, c.id, k.n, '{$now}', '{$now}' FROM bench_seq s JOIN product_options po ON po.product_id = s.n + 1 AND po.position = 0
+                    JOIN bench_seq k ON k.n < 2 JOIN bench_color c ON c.idx = (s.n + k.n * 7) % 24 WHERE {$where}
+                UNION ALL SELECT po.id, z.id, k.n, '{$now}', '{$now}' FROM bench_seq s JOIN product_options po ON po.product_id = s.n + 1 AND po.position = 1
+                    JOIN bench_seq k ON k.n < 5 JOIN bench_size z ON z.idx = s.n % 4 + k.n WHERE {$where}");
 
             $variant = "FROM bench_seq s JOIN bench_seq k ON k.n < 10
                 JOIN bench_color c ON c.idx = (s.n + (k.n DIV 5) * 7) % 24 JOIN bench_size z ON z.idx = s.n % 4 + k.n % 5 WHERE {$where}";
@@ -245,6 +249,19 @@ final class BenchSeedCommand extends Command
                 SELECT {$location}, s.n * 10 + k.n + 1, IF((s.n * 10 + k.n) % 10 = 0, 0, 5 + (s.n + k.n) % 40), 0, 0, '{$now}', '{$now}'
                 FROM bench_seq s JOIN bench_seq k ON k.n < 10 WHERE {$where}");
         }
+    }
+
+    /**
+     * Dựng `product_listing` / `product_facet_values` bằng ProductListingProjector (như ứng dụng), rồi ghi phần do Pricing và
+     * Inventory sở hữu bằng SQL: giá niêm yết thấp nhất (cùng công thức với `prices`) và còn hàng.
+     */
+    private function listing(): void
+    {
+        Artisan::call('vani:catalog:rebuild-listing');
+        DB::statement('UPDATE product_listing SET list_price_min = 149000 + ((product_id - 1) % 40) * 10000');
+        DB::statement("UPDATE product_listing pl SET in_stock = EXISTS (SELECT 1 FROM variants v JOIN stock_levels sl ON sl.variant_id = v.id
+            WHERE v.product_id = pl.product_id AND v.status = 'active' AND sl.on_hand > sl.reserved + sl.safety_stock)");
+        DB::table('jobs')->where('queue', 'catalog-sync')->delete(); // Inventory tính lại in_stock theo event — đã ghi ở trên
     }
 
     private function customers(int $count, string $now): void
@@ -287,13 +304,13 @@ final class BenchSeedCommand extends Command
                 $id = "({$offset} + s.n + 1)";
                 $variant = "(1 + ((({$id}) * 7 + k.n * 13) * 2654435761) % {$variants})";
                 $product = "((({$variant}) - 1) DIV 10 + 1)";
-                DB::statement("INSERT INTO order_lines (order_id, variant_id, sku, product_name, brand_id, brand_name, variant_options, quantity, cancelled_quantity, unit_amount, compare_at_amount, price_list_code,
+                DB::statement("INSERT INTO order_lines (order_id, variant_id, product_id, sku, product_name, brand_id, brand_name, variant_options, quantity, cancelled_quantity, unit_amount, compare_at_amount, price_list_code,
                         subtotal_amount, discount_amount, total_amount, tax_rate_bp, tax_amount, meta, created_at, updated_at)
-                    SELECT {$id}, {$variant}, CONCAT('BP', LPAD({$product}, 6, '0'), '-', ({$variant} - 1) % 10), CONCAT('Sản phẩm ', {$product}),
+                    SELECT {$id}, {$variant}, {$product}, CONCAT('BP', LPAD({$product}, 6, '0'), '-', ({$variant} - 1) % 10), CONCAT('Sản phẩm ', {$product}),
                         1 + ({$product} - 1) % 50, CONCAT('Thương hiệu ', 1 + ({$product} - 1) % 50),
                         JSON_ARRAY(JSON_OBJECT('type', 'color', 'name', 'Màu', 'code', 'DEN', 'value', 'Đen'), JSON_OBJECT('type', 'size', 'name', 'Size', 'code', 'M', 'value', 'M')),
                         1, 0, 149000 + ({$id} % 40) * 10000, NULL, 'base', 149000 + ({$id} % 40) * 10000, 0, 149000 + ({$id} % 40) * 10000, 1000, 0,
-                        JSON_OBJECT('product_id', {$product}), TIMESTAMPADD(SECOND, FLOOR(({$id} - 1) * 63072000 / {$count}), '2024-11-26 00:00:00'), NULL
+                        NULL, TIMESTAMPADD(SECOND, FLOOR(({$id} - 1) * 63072000 / {$count}), '2024-11-26 00:00:00'), NULL
                     FROM bench_seq s CROSS JOIN bench_seq k WHERE k.n < 2 AND s.n >= {$from} AND s.n < {$to}");
             }
             $offset += $batch;

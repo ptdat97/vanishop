@@ -6,6 +6,7 @@ namespace Modules\Catalog\Application\Taxonomy;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
@@ -16,7 +17,7 @@ use Modules\Identity\Contracts\AuditLogger;
  */
 final class OptionTypeService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly ProductListingProjector $listing) {}
 
     /**
      * @param  array{code: string, display_type: string, is_filterable: bool, position: int, translations: array<string, array{name: string}>}  $data
@@ -25,7 +26,16 @@ final class OptionTypeService
     {
         return DB::transaction(function () use ($data, $type): OptionType {
             $type ??= new OptionType;
-            $type->fill(['code' => $data['code'], 'display_type' => $data['display_type'], 'is_filterable' => $data['is_filterable'], 'position' => $data['position']])->save();
+            $type->fill(['code' => $data['code'], 'display_type' => $data['display_type'], 'is_filterable' => $data['is_filterable'], 'position' => $data['position']]);
+            $retoken = $type->exists && $type->isDirty(['code', 'display_type']);
+            $type->save();
+            if ($retoken) {
+                // Mã lọc và tên facet (`option:<mã loại>`) đổi theo → ghi lại mã lọc, dựng lại sản phẩm dùng loại này.
+                foreach (OptionValue::query()->where('option_type_id', $type->id)->get() as $value) {
+                    $value->setRelation('type', $type)->save();
+                }
+                $this->listing->projectLater($this->listing->productsUsingOptionType($type->id));
+            }
             $type->syncTranslations($data['translations']);
             $this->audit->record($type->wasRecentlyCreated ? 'catalog.option_type.created' : 'catalog.option_type.updated', 'option_type', $type->id, ['code' => $type->code]);
 
@@ -69,7 +79,10 @@ final class OptionTypeService
                 'code' => $data['code'], 'group' => $data['group'], 'hex' => $data['hex'] === null ? null : strtoupper($data['hex']),
                 // Không chọn nhóm màu mà có mã hex → nhóm gần nhất (vẫn lọc được ở danh mục).
                 'family' => $data['family'] ?? ($data['hex'] === null ? null : ColorFamily::nearest($data['hex'])?->value), 'position' => $data['position'],
-            ])->save();
+            ])->setRelation('type', $type)->save();
+            if ($value->wasChanged('filter_token')) {
+                $this->listing->projectLater($this->listing->productsUsingOptionValue($value->id));
+            }
             $value->syncTranslations($data['translations']);
             $this->audit->record($value->wasRecentlyCreated ? 'catalog.option_value.created' : 'catalog.option_value.updated', 'option_value', $value->id, ['type' => $type->code, 'code' => $value->code]);
 

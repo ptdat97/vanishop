@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -28,6 +29,14 @@ return new class extends Migration
             $table->index(['status', 'published_from']);
             $table->index('brand_id');
         });
+
+        // Tìm chữ (db-refactor §4.1): FULLTEXT ngram — tìm được từ 2 ký tự và chuỗi con (văn bản không dấu có nhiều từ
+        // 2 ký tự: "ao", "mi", "so"). Không dùng stopword (kết nối mysql đặt sẵn ở config/database.php; đặt lại ở đây cho
+        // kết nối cấu hình khác). Chỉ MySQL; SQLite tìm bằng LIKE (SearchTextMatch).
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('SET SESSION innodb_ft_enable_stopword = OFF');
+            DB::statement('ALTER TABLE products ADD FULLTEXT INDEX ft_products_search (search_text) WITH PARSER ngram');
+        }
 
         Schema::create('product_translations', function (Blueprint $table) {
             $table->id();

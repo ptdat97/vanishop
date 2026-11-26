@@ -110,6 +110,26 @@ it('orders: danh sách theo updated_since + cursor, chi tiết canonical (nguồ
     H::call($this, $this->erp, 'GET', "{$this->api}/orders/KHONG-CO")->assertStatus(404)->assertJsonPath('error.code', 'integration.order_not_found');
 });
 
+it('orders: số truy vấn của một trang không tăng theo số đơn (db-refactor §4.8)', function () {
+    $count = function (): int {
+        $queries = 0;
+        DB::listen(function () use (&$queries): void {
+            $queries++;
+        });
+        H::call($this, $this->erp, 'GET', "{$this->api}/orders?limit=50")->assertOk();
+
+        return $queries;
+    };
+    ($this->placeOrder)('integration-count-1');
+    $count(); // lần đầu ghi last_used_at của khoá
+    $one = $count();
+    foreach (range(2, 6) as $n) {
+        ($this->placeOrder)("integration-count-{$n}");
+    }
+
+    expect($count())->toBe($one);
+});
+
 it('acknowledgement: bắt buộc Idempotency-Key, idempotent, lưu external reference, chặn số chứng từ khác', function () {
     $number = ($this->placeOrder)();
     $uri = "{$this->api}/orders/{$number}/acknowledgements";

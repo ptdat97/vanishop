@@ -65,6 +65,10 @@ return [
             'dump' => ['use_single_transaction', 'dump_binary_path' => env('DB_DUMP_BINARY_PATH', '')],
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // db-refactor §4.1: chỉ mục FULLTEXT ngram của products.search_text không dùng stopword (danh sách mặc định có
+                // "an", "la", "in"… là bigram của từ tiếng Việt). Thiết lập được chụp khi chỉ mục được dựng — cả khi InnoDB
+                // dựng lại bảng (TRUNCATE, OPTIMIZE, ALTER kiểu COPY) — nên đặt cho mọi phiên.
+                Mysql::ATTR_INIT_COMMAND => 'SET SESSION innodb_ft_enable_stopword = OFF',
             ]) : [],
         ],
 

@@ -91,7 +91,8 @@ final class EloquentVariantDirectory implements VariantDirectory
         $axes = DB::table('product_options')->whereIn('product_id', $productIds)->orderBy('position')->orderBy('id')->get(['product_id', 'option_type_id'])
             ->groupBy('product_id')->map(fn ($rows): array => $rows->pluck('option_type_id')->map(fn ($id): int => (int) $id)->all());
         $positions = [];
-        foreach (DB::table('product_option_values')->whereIn('product_id', $productIds)->orderBy('position')->orderBy('id')->get(['product_id', 'option_value_id', 'position']) as $row) {
+        foreach (DB::table('product_option_values as pov')->join('product_options as po', 'po.id', '=', 'pov.product_option_id')->whereIn('po.product_id', $productIds)
+            ->orderBy('pov.position')->orderBy('pov.id')->get(['po.product_id', 'pov.option_value_id', 'pov.position']) as $row) {
             $positions[(int) $row->product_id][(int) $row->option_value_id] = (int) $row->position;
         }
         $chosen = [];
@@ -190,7 +191,7 @@ final class EloquentVariantDirectory implements VariantDirectory
             ->join('option_types as ot', 'ot.id', '=', 'vov.option_type_id')
             ->join('option_values as ov', 'ov.id', '=', 'vov.option_value_id')
             ->leftJoin('product_options as so', fn ($join) => $join->on('so.product_id', '=', 'v.product_id')->on('so.option_type_id', '=', 'vov.option_type_id'))
-            ->leftJoin('product_option_values as sov', fn ($join) => $join->on('sov.product_id', '=', 'v.product_id')->on('sov.option_value_id', '=', 'vov.option_value_id')))
+            ->leftJoin('product_option_values as sov', fn ($join) => $join->on('sov.product_option_id', '=', 'so.id')->on('sov.option_value_id', '=', 'vov.option_value_id')))
             ->orderBy('so.position')
             ->get(['vov.variant_id', 'ot.code as type_code', 'ov.code as value_code', 'sov.position as value_position'])
             ->groupBy('variant_id');

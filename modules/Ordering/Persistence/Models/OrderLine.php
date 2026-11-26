@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property int $order_id
  * @property int $variant_id
+ * @property int|null $product_id sản phẩm lúc đặt (snapshot, không FK)
  * @property string $sku
  * @property string $product_name
  * @property int|null $brand_id
@@ -35,7 +36,7 @@ final class OrderLine extends Model
     protected function casts(): array
     {
         return [
-            'variant_id' => 'integer', 'quantity' => 'integer', 'cancelled_quantity' => 'integer', 'unit_amount' => 'integer', 'compare_at_amount' => 'integer', 'subtotal_amount' => 'integer',
+            'variant_id' => 'integer', 'product_id' => 'integer', 'quantity' => 'integer', 'cancelled_quantity' => 'integer', 'unit_amount' => 'integer', 'compare_at_amount' => 'integer', 'subtotal_amount' => 'integer',
             'discount_amount' => 'integer', 'total_amount' => 'integer', 'tax_rate_bp' => 'integer', 'tax_amount' => 'integer',
             'meta' => 'array', 'variant_options' => 'array',
         ];

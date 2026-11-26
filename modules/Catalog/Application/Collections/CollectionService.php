@@ -6,6 +6,7 @@ namespace Modules\Catalog\Application\Collections;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Application\StaleRecord;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Events\ProductUpdated;
@@ -18,7 +19,7 @@ use Modules\Identity\Contracts\AuditLogger;
  */
 final class CollectionService
 {
-    public function __construct(private readonly AuditLogger $audit, private readonly MediaDirectory $media) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly MediaDirectory $media, private readonly ProductListingProjector $listing) {}
 
     /** Chủ sở hữu ghi nhận ảnh bìa đang dùng (Thư viện ảnh không cho xoá). */
     public const MEDIA_OWNER = 'collection';
@@ -67,13 +68,12 @@ final class CollectionService
 
             $this->audit->record($collection->wasRecentlyCreated ? 'catalog.collection.created' : 'catalog.collection.updated', 'collection', $collection->id, ['slug' => $collection->slug]);
 
-            // Sản phẩm vào/ra bộ sưu tập cần cập nhật chỉ mục tìm kiếm.
-            foreach (array_unique([...$before, ...array_keys($sync)]) as $productId) {
-                $product = Product::query()->find($productId);
-                if ($product !== null) {
-                    event(new ProductUpdated($product->id, $product->product_code));
-                }
+            // Sản phẩm vào/ra bộ sưu tập cần cập nhật read model trang danh sách (facet bộ sưu tập) và cache.
+            $touched = array_values(array_unique([...$before, ...array_keys($sync)]));
+            foreach (Product::query()->whereIn('id', $touched)->get(['id', 'product_code']) as $product) {
+                event(new ProductUpdated($product->id, $product->product_code));
             }
+            $this->listing->projectLater($touched);
 
             return $collection;
         });
@@ -91,6 +91,7 @@ final class CollectionService
             foreach ($products as $product) {
                 event(new ProductUpdated($product->id, $product->product_code));
             }
+            $this->listing->projectLater($products->pluck('id')->map(fn ($id): int => (int) $id)->all());
         });
     }
 }

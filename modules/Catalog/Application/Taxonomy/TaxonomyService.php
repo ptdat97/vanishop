@@ -63,6 +63,7 @@ final class TaxonomyService
     {
         DB::transaction(function () use ($attribute): void {
             $attribute->delete();
+            DB::table('product_facet_values')->where('facet', "attribute:{$attribute->id}")->delete();
             $this->audit->record('catalog.attribute.deleted', 'attribute', $attribute->id, ['code' => $attribute->code]);
         });
     }
@@ -145,6 +146,9 @@ final class TaxonomyService
     {
         $codes = array_column($values, 'code');
         $attribute->values()->whereNotIn('code', $codes)->delete();
+        // Read model trang danh sách (db-refactor §4.3): bỏ facet của giá trị đã xoá (product_attribute_values xoá theo cascade).
+        DB::table('product_facet_values')->where('facet', "attribute:{$attribute->id}")
+            ->whereNotIn('token', $attribute->values()->pluck('id')->map(fn ($id): string => (string) $id)->all())->delete();
 
         foreach (array_values($values) as $position => $value) {
             $model = $attribute->values()->updateOrCreate(['code' => $value['code']], ['position' => $position]);

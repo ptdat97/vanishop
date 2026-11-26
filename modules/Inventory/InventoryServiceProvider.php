@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Modules\Inventory;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Event;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Contracts\VariantUsage;
+use Modules\Catalog\Events\ProductListingProjected;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
@@ -21,6 +23,7 @@ use Modules\Inventory\Application\IncomingStockService;
 use Modules\Inventory\Application\InventoryReconciler;
 use Modules\Inventory\Application\Listeners\ProductListStock;
 use Modules\Inventory\Application\Listeners\StockDashboardTasks;
+use Modules\Inventory\Application\Listeners\SyncListingAvailability;
 use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\OnlineLocations;
 use Modules\Inventory\Application\ReservationService;
@@ -48,6 +51,7 @@ use Modules\Inventory\Contracts\LocationRegistry;
 use Modules\Inventory\Contracts\StockImporter;
 use Modules\Inventory\Contracts\StockJournal;
 use Modules\Inventory\Contracts\StockMovements;
+use Modules\Inventory\Events\AvailabilityChanged;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
@@ -94,6 +98,8 @@ final class InventoryServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        // Read model trang danh sách của Catalog: "còn hàng" (db-refactor §4.3).
+        Event::listen([AvailabilityChanged::class, ProductListingProjected::class], SyncListingAvailability::class);
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(StockDashboardTasks::class)());
         Hook::onSlot('vani.admin.product.list_columns', fn (array $productIds): ?array => $this->app->make(ProductListStock::class)->column($productIds));
         $this->app->make(Settings::class)->define(new SettingDefinition(

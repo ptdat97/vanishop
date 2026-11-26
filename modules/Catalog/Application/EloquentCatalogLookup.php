@@ -6,6 +6,7 @@ namespace Modules\Catalog\Application;
 
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
+use Modules\Catalog\Application\Search\SearchTextMatch;
 use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Persistence\Models\Brand;
@@ -63,11 +64,7 @@ final class EloquentCatalogLookup implements CatalogLookup
                 ->orderBy('name')->limit($limit)->get()
                 ->map(fn (Brand $brand): array => ['id' => $brand->id, 'name' => $brand->name, 'visible' => $brand->status === Brand::ACTIVE])->all(),
             'product' => Product::query()->with('translations')
-                ->when($tokens !== [], function (Builder $builder) use ($tokens): void {
-                    foreach ($tokens as $token) {
-                        $builder->where('search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
-                    }
-                })
+                ->when($tokens !== [], fn (Builder $builder) => SearchTextMatch::apply($builder, $tokens, 'search_text'))
                 ->orderByDesc('updated_at')->limit($limit)->get()
                 ->map(fn (Product $product): array => [
                     'id' => $product->id,

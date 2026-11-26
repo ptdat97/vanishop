@@ -12,5 +12,5 @@ namespace Tests\Support;
 trait KeepsReferenceData
 {
     /** @var list<string> */
-    protected array $exceptTables = ['return_reasons', 'notification_templates'];
+    protected array $exceptTables = ['return_reasons', 'notification_templates', 'option_types', 'option_type_translations'];
 }

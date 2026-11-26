@@ -15,7 +15,7 @@ return new class extends Migration
             $table->char('public_id', 26)->unique();
             $table->string('number', 32)->unique();
             $table->string('source', 16)->default('web'); // web | app | zalo | admin | pos | exchange
-            $table->unsignedBigInteger('customer_id')->nullable()->index(); // FK khi có module Customer
+            $table->unsignedBigInteger('customer_id')->nullable(); // FK khi có module Customer
             $table->char('currency_code', 3);
             $table->string('order_status', 16);
             $table->string('payment_status', 24);
@@ -38,6 +38,7 @@ return new class extends Migration
             $table->timestamp('placed_at');
             $table->timestamps();
 
+            $table->index(['customer_id', 'placed_at']); // đơn của một khách theo thời gian (thay index customer_id đơn lẻ)
             $table->index('placed_at');
             $table->index('order_status');
             $table->index(['source', 'placed_at']);
@@ -47,6 +48,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->unsignedBigInteger('variant_id')->index(); // không FK: đơn không phụ thuộc catalog
+            $table->unsignedBigInteger('product_id')->nullable()->index(); // snapshot sản phẩm lúc đặt (không FK) — bán chạy, khuyến mãi
             $table->string('sku', 64);
             $table->string('product_name');
             $table->unsignedBigInteger('brand_id')->nullable()->index(); // snapshot thương hiệu (không FK)

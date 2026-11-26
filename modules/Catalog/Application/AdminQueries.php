@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Modules\Catalog\Application\Search\SearchTextMatch;
 use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
@@ -138,11 +139,7 @@ final class AdminQueries
         $missing = $filters['missing'] ?? null;
 
         return Product::query()
-            ->when($search !== '', function ($query) use ($search): void {
-                foreach (VietnameseText::tokens($search) as $token) {
-                    $query->where('search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
-                }
-            })
+            ->when($search !== '', fn ($query) => SearchTextMatch::apply($query, VietnameseText::tokens($search), 'search_text'))
             ->when($status !== null, fn ($query) => $query->where('status', $status))
             ->when($category !== null, fn ($query) => $query->whereIn('id', DB::table('category_product')->whereIn('category_id', $this->categoryWithDescendants((int) $category))->select('product_id')))
             ->when($brand === 'none', fn ($query) => $query->whereNull('brand_id'))

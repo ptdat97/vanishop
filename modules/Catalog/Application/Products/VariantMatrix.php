@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Catalog\Domain\VariantStatus;
@@ -35,6 +36,7 @@ final class VariantMatrix
         private readonly Extensions $extensions,
         private readonly AuditLogger $audit,
         private readonly ProductOptions $options,
+        private readonly ProductListingProjector $listing,
     ) {}
 
     /**
@@ -102,7 +104,8 @@ final class VariantMatrix
             throw ValidationException::withMessages(['adopt_single' => __('catalog::messages.single_variant_adopt_invalid')]);
         }
 
-        $result = DB::transaction(function () use ($product, $axes, $cells, $existing, $typeIds, $single, $adopt, $kept, $others): array {
+        // Read model trang danh sách dựng một lần cuối transaction (thay vì mỗi SKU).
+        $result = DB::transaction(fn (): array => $this->listing->deferring(function () use ($product, $axes, $cells, $existing, $typeIds, $single, $adopt, $kept, $others): array {
             // Tắt ô trước khi đổi trục: đổi tập loại tuỳ chọn chỉ được khi không còn SKU nào.
             $toRemove = [];
             foreach ($cells as $cell) {
@@ -149,9 +152,10 @@ final class VariantMatrix
 
             $this->audit->record('catalog.variants.matrix_saved', 'product', $product->id, compact('created', 'updated', 'deleted', 'deactivated'));
             event(new ProductUpdated($product->id, $product->product_code));
+            $this->listing->project($product->id);
 
             return ['created' => $created, 'updated' => $updated, 'deleted' => $deleted, 'deactivated' => $deactivated, 'variant_ids' => $variantIdsByCell];
-        });
+        }));
 
         // Cột góp vào lưu sau phần Catalog: lỗi của một nhà cung cấp báo theo SKU, không làm mất phần đã lưu.
         $fieldErrors = [];

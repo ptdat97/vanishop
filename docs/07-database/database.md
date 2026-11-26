@@ -17,7 +17,7 @@
 | Thời gian | `DATETIME(6)` lưu **UTC** cho bảng sự kiện/ledger; `DATETIME` cho còn lại; không dùng `TIMESTAMP` |
 | Enum | `VARCHAR` + PHP backed enum (không dùng ENUM của MySQL) |
 | JSON | Cột `json` cho snapshot, payload, cấu hình, `meta`; cần lọc thì tạo generated column + index |
-| Soft delete | Core dùng cho Catalog (`products`); plugin tự quy định cho dữ liệu mình sở hữu. **Không** cho order, payment, ledger. Customer dùng **ẩn danh hoá** thay cho xoá |
+| Soft delete | Core **không** dùng soft delete: sản phẩm ngừng bán dùng trạng thái `archived`, chỉ xoá được sản phẩm nháp ([db-refactor §4.6](../20-roadmap/db-refactor.md#46-dọn-chỗ-lệch)); plugin tự quy định cho dữ liệu mình sở hữu. **Không** xoá order, payment, ledger. Customer dùng **ẩn danh hoá** thay cho xoá |
 | Optimistic lock | Cột `lock_version INT` trên aggregate được sửa qua Admin: `products`, `price_lists`, `promotions`, `orders`, `shipments`, `payments`, `locations` |
 | Pessimistic lock | `SELECT … FOR UPDATE` cho `stock_levels`, `vouchers`, `number_sequences`, `carts` (khi checkout), `payments` (khi IPN/refund) |
 | Phạm vi | Không có cột phạm vi brand/kênh: mọi dữ liệu thuộc một cửa hàng. `brand_id` chỉ xuất hiện như **thuộc tính catalog** (`products.brand_id`) và snapshot (`order_lines.brand_id`) |
@@ -84,7 +84,7 @@ erDiagram
 | Tenancy (cửa hàng) | `legal_entities` (một bản ghi: pháp nhân vận hành), `settings(key, value json, is_encrypted)` (một cấp; theme tokens là một setting) |
 | Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id)`, `audit_logs` |
 | Extension | `plugins(id VARCHAR PK = plugin id, version, status, installed_at, last_error)` (bật/tắt toàn cửa hàng) |
-| Catalog | `brands`, `products(brand_id NULL, meta json)`, `product_translations`, `option_types`, `option_values` (+ bản dịch), `product_options`, `product_option_values`, `variants(option_key, meta json)`, `variant_option_values` (ADR-045 — biến thể theo loại tuỳ chọn dùng chung, 1–3 trục), `attributes`, `attribute_values`, `product_attribute_values`, `size_charts`, `categories`, `category_translations`, `category_product`, `collections`, `collection_rules`, `collection_product`, `media` |
+| Catalog | `brands`, `products(brand_id NULL, meta json)`, `product_translations`, `option_types`, `option_values(filter_token)` (+ bản dịch), `product_options`, `product_option_values(product_option_id)`, `variants(option_key, meta json)`, read model `product_listing` + `product_facet_values` ([db-refactor §4.3](../20-roadmap/db-refactor.md#43-read-model-cho-listing-và-facet-owner-đã-duyệt)), `variant_option_values` (ADR-045 — biến thể theo loại tuỳ chọn dùng chung, 1–3 trục), `attributes`, `attribute_values`, `product_attribute_values`, `size_charts`, `categories`, `category_translations`, `category_product`, `collections`, `collection_rules`, `collection_product`, `media` |
 | Pricing | `price_lists`, `prices`, `price_history` |
 | Inventory | `locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `inventory_reconciliations`, `inventory_reconciliation_lines`; chuyển kho thuộc plugin `vani.warehouse` (`plg_warehouse_*`) |
 | Customer | `customers(customer_group_id, meta json)`, `customer_consents`, `customer_consent_events`, `customer_addresses`, `customer_otps`, `customer_tokens`, `customer_groups`, `customer_tags` |

@@ -36,11 +36,15 @@ return new class extends Migration
             $table->string('group', 16)->nullable();   // nhóm giá trị (vd. hệ size alpha/vn/eu)
             $table->char('hex', 7)->nullable();         // swatch
             $table->string('family', 16)->nullable();   // nhóm màu để lọc (swatch)
+            // Mã lọc ở trang danh sách (db-refactor §4.2): swatch → family, loại khác → code. Ứng dụng ghi (OptionValue::saving,
+            // đổi display_type của loại ghi lại cho mọi giá trị) — không generated column vì phụ thuộc option_types.
+            $table->string('filter_token', 32)->nullable();
             $table->unsignedInteger('position')->default(0);
             $table->timestamps();
             $table->unique(['option_type_id', 'group', 'code']);
             $table->index(['option_type_id', 'position']);
             $table->index('family');
+            $table->index(['option_type_id', 'filter_token']);
         });
         Schema::create('option_value_translations', function (Blueprint $table): void {
             $table->id();
@@ -57,13 +61,15 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['product_id', 'option_type_id']);
         });
+        // Giá trị thuộc đúng trục của sản phẩm (db-refactor §4.6): bỏ trục thì giá trị của trục đi theo. Loại của giá trị
+        // trùng loại của trục do ProductOptions kiểm tra.
         Schema::create('product_option_values', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_option_id')->constrained()->cascadeOnDelete();
             $table->foreignId('option_value_id')->constrained()->restrictOnDelete();
             $table->unsignedInteger('position')->default(0);
             $table->timestamps();
-            $table->unique(['product_id', 'option_value_id']);
+            $table->unique(['product_option_id', 'option_value_id']);
         });
         Schema::create('variant_option_values', function (Blueprint $table): void {
             $table->foreignId('variant_id')->constrained()->cascadeOnDelete();

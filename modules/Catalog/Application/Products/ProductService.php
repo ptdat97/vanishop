@@ -7,6 +7,7 @@ namespace Modules\Catalog\Application\Products;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Application\StaleRecord;
 use Modules\Catalog\Contracts\Data\ProductDraft;
 use Modules\Catalog\Domain\AttributeInputType;
@@ -28,7 +29,7 @@ use Modules\Shared\Domain\Text\VietnameseText;
  */
 final class ProductService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly ProductListingProjector $listing) {}
 
     public function create(ProductInput $input): Product
     {
@@ -43,6 +44,7 @@ final class ProductService
             Hook::action('vani.product.after_save', $product->id);
             $this->audit->record('catalog.product.created', 'product', $product->id, ['product_code' => $product->product_code]);
             event(new ProductCreated($product->id, $product->product_code));
+            $this->listing->project($product->id);
 
             return $product;
         });
@@ -71,6 +73,7 @@ final class ProductService
             event($product->status === ProductStatus::Archived && ! $wasArchived
                 ? new ProductArchived($product->id, $product->product_code)
                 : new ProductUpdated($product->id, $product->product_code));
+            $this->listing->project($product->id);
 
             return $product->refresh();
         });
@@ -99,6 +102,7 @@ final class ProductService
             event($status === ProductStatus::Archived && ! $wasArchived
                 ? new ProductArchived($product->id, $product->product_code)
                 : new ProductUpdated($product->id, $product->product_code));
+            $this->listing->project($product->id);
 
             return true;
         });

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Application\Taxonomy\OptionTypeService;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
 use Modules\Catalog\Contracts\VariantFieldProvider;
@@ -83,6 +84,7 @@ final class ProductFile
         private readonly TaxonomyService $taxonomy,
         private readonly Extensions $extensions,
         private readonly AuditLogger $audit,
+        private readonly ProductListingProjector $listing,
     ) {}
 
     /**
@@ -416,7 +418,7 @@ final class ProductFile
      */
     private function execute(array $plan): array
     {
-        $variantIds = DB::transaction(function () use ($plan): array {
+        $variantIds = DB::transaction(fn () => $this->listing->deferring(function () use ($plan): array {
             $brandId = $plan['brand'] === null ? null : $this->brand($plan['brand'])->id;
             $product = $plan['product_id'] === null ? null : Product::query()->withoutGlobalScopes()->findOrFail($plan['product_id']);
             if ($product === null) {
@@ -478,8 +480,10 @@ final class ProductFile
                 event(new ProductUpdated($product->id, $product->product_code));
             }
 
+            $this->listing->project($product->id);
+
             return ['product_id' => $product->id, 'ids' => $ids];
-        });
+        }));
 
         $errors = [];
         foreach ($this->providers() as $code => $provider) {

@@ -6,6 +6,7 @@ namespace Modules\Catalog\Application\Products;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Events\ProductDuplicated;
 use Modules\Catalog\Persistence\Models\OptionValue;
@@ -26,6 +27,7 @@ final class ProductDuplicator
         private readonly ProductOptions $options,
         private readonly VariantImages $images,
         private readonly AuditLogger $audit,
+        private readonly ProductListingProjector $listing,
     ) {}
 
     public function duplicate(Product $source, string $productCode, string $name): Product
@@ -35,7 +37,7 @@ final class ProductDuplicator
         }
         $source->loadMissing(['options', 'optionValues', 'variants.gallery', 'variants.optionValues', 'videos']);
 
-        return DB::transaction(function () use ($source, $productCode, $name): Product {
+        return DB::transaction(fn () => $this->listing->deferring(function () use ($source, $productCode, $name): Product {
             $translations = array_map(fn (array $fields): array => array_diff_key($fields, ['slug' => true]), $source->translationsByLocale());
             $translations[StoreLocale::default()]['name'] = $name;
 
@@ -81,7 +83,9 @@ final class ProductDuplicator
             $this->audit->record('catalog.product.duplicated', 'product', $product->id, ['product_code' => $productCode, 'source_product_id' => $source->id]);
             event(new ProductDuplicated($source->id, $product->id, $variantIds));
 
+            $this->listing->project($product->id);
+
             return $product;
-        });
+        }));
     }
 }

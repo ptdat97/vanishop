@@ -280,8 +280,12 @@ it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn 
     for ($product = 1; $product <= 300; $product++) {
         $productId = DB::table('products')->insertGetId(['brand_id' => $this->brand->id, 'product_code' => sprintf('BIG-%04d', $product), 'slug' => "big-{$product}", 'status' => 'active', 'search_text' => "mau lon {$product}", 'created_at' => $now, 'updated_at' => $now]);
         DB::table('product_translations')->insert(['product_id' => $productId, 'locale' => 'vi', 'name' => sprintf('Mẫu lớn %04d', $product)]);
-        DB::table('product_options')->insert([['product_id' => $productId, 'option_type_id' => $colorType, 'position' => 0], ['product_id' => $productId, 'option_type_id' => $sizeType, 'position' => 1]]);
-        DB::table('product_option_values')->insert(array_map(fn (int $valueId): array => ['product_id' => $productId, 'option_value_id' => $valueId, 'position' => $valueId], [...$colors, ...$sizes]));
+        $colorAxis = DB::table('product_options')->insertGetId(['product_id' => $productId, 'option_type_id' => $colorType, 'position' => 0]);
+        $sizeAxis = DB::table('product_options')->insertGetId(['product_id' => $productId, 'option_type_id' => $sizeType, 'position' => 1]);
+        DB::table('product_option_values')->insert([
+            ...array_map(fn (int $valueId): array => ['product_option_id' => $colorAxis, 'option_value_id' => $valueId, 'position' => $valueId], $colors),
+            ...array_map(fn (int $valueId): array => ['product_option_id' => $sizeAxis, 'option_value_id' => $valueId, 'position' => $valueId], $sizes),
+        ]);
         foreach ($colors as $colorId) {
             foreach ($sizes as $sizeId) {
                 $variants[] = ['product_id' => $productId, 'option_key' => "{$colorId}-{$sizeId}", 'sku' => "BIG-{$product}-{$colorId}-{$sizeId}", 'status' => 'active', 'created_at' => $now, 'updated_at' => $now];

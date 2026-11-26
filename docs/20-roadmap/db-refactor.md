@@ -1,6 +1,6 @@
 # Kế hoạch refactor DB: đổi Style → Product, read model cho listing, chuẩn bị scale
 
-> Trạng thái: **In Progress** (2026-11-26). Owner đã duyệt: đổi `style_code` → `product_code`, đổi toàn bộ tiền tố `style` → `product`, thêm read model `product_listing` / `product_facet_values`. **G1 xong** (Core 0.5.89, [ADR-050](../19-adr/ADR-050-product-replaces-style.md)); G0 đo sau G1 vì đổi tên không ảnh hưởng hiệu năng (seeder quy mô viết một lần với tên bảng mới). Khi làm xong từng giai đoạn thì cập nhật [status](../00-overview/status.md) và tài liệu liên quan.
+> Trạng thái: **In Progress** (2026-11-26). Owner đã duyệt: đổi `style_code` → `product_code`, đổi toàn bộ tiền tố `style` → `product`, thêm read model `product_listing` / `product_facet_values`. **G1 xong** (Core 0.5.89, [ADR-050](../19-adr/ADR-050-product-replaces-style.md)); **G0 xong** (mốc §7), **G2 xong** (Core 0.5.90, §7); G0 đo sau G1 vì đổi tên không ảnh hưởng hiệu năng (seeder quy mô viết một lần với tên bảng mới). Khi làm xong từng giai đoạn thì cập nhật [status](../00-overview/status.md) và tài liệu liên quan.
 >
 > Liên quan: [database](../07-database/database.md) (quy ước giữ nguyên), [catalog-pricing](../03-domains/catalog-pricing.md), [ADR-045](../19-adr/ADR-045-flexible-variant-options.md) (biến thể linh hoạt — lý do chữ "style" không còn đúng), [ADR-048](../19-adr/ADR-048-extension-api-version.md) (version API cho plugin).
 
@@ -27,7 +27,7 @@
 |---|---|---|
 | **G0** | Môi trường Mac + đo hiện trạng | — |
 | **G1** ✅ | Đổi tên Style → Product (một nhánh, không trộn logic) | G0 |
-| **G2** | Sửa điểm nghẽn: FULLTEXT, `filter_token`, read model, index | G1 |
+| **G2** ✅ | Sửa điểm nghẽn: FULLTEXT, `filter_token`, read model, index | G1 |
 | **G3** | Bảng lớn: retention/archive, đếm lượt xem qua Redis, keyset, read replica | G2 |
 
 Mỗi giai đoạn là một hoặc vài PR riêng, mỗi PR có test xanh.
@@ -181,6 +181,16 @@ product_facet_values
 - Soft delete: [database §1](../07-database/database.md) ghi Catalog dùng soft delete cho `styles`, nhưng không có `deleted_at`. Quyết định: **không soft delete**, dùng trạng thái `archived`; sửa tài liệu.
 - `product_option_values`: thay `style_id` bằng `product_option_id` (FK `product_options`, cascade) để DB đảm bảo giá trị thuộc đúng trục của sản phẩm. Unique `(product_option_id, option_value_id)`. Kiểm tra `option_values.option_type_id = product_options.option_type_id` ở service + test.
 
+### 4.7 Lựa chọn bộ lọc "phương thức thanh toán" ở danh sách đơn (bổ sung sau G0, Owner 2026-11-26)
+
+- Hiện tại: mỗi lần mở danh sách đơn Admin chạy `select distinct payment_method from orders` — quét toàn bảng (~1,5 s ở 5 triệu đơn).
+- Đổi: lấy lựa chọn từ danh sách phương thức thanh toán đã đăng ký (registry của Payment/plugin) thay vì từ dữ liệu đơn; đơn cũ có mã không còn đăng ký vẫn lọc được bằng URL.
+
+### 4.8 Sync API đơn: bỏ N+1 (bổ sung sau G0, Owner 2026-11-26)
+
+- Hiện tại: `OrderFeed::page()` tìm trang bằng index `(updated_at, id)` (0,07 ms) nhưng dựng payload từng đơn — 251 truy vấn cho 50 đơn.
+- Đổi: nạp dòng đơn, thanh toán, vận đơn… của cả trang bằng `whereIn` (eager load); số truy vấn không tăng theo số đơn. Test chặn số truy vấn.
+
 ## 5. G3 — Chuẩn bị cho bảng lớn
 
 | Việc | Chi tiết |
@@ -189,6 +199,7 @@ product_facet_values
 | Partition | Chỉ chuẩn bị (runbook + migration mẫu), chưa bật: `PARTITION BY RANGE (TO_DAYS(created_at))` theo tháng cho `stock_movements`, `price_history` khi vượt ~50 triệu dòng. Bảng partition không có FK — hai bảng này vốn đã không có FK; PK phải gồm cột partition (`PRIMARY KEY (id, created_at)`) |
 | Đếm lượt xem | Hiện `upsert` mỗi lượt xem ([ProductViewCounter.php:33](../../modules/Catalog/Application/Products/ProductViewCounter.php#L33)) — dòng nóng bị tranh khoá. Đổi: `INCR` vào cache Redis theo `(product_id, giờ)`, job mỗi phút ghi dồn xuống `product_view_stats`. Gộp dữ liệu giờ cũ hơn 30 ngày thành theo ngày |
 | Keyset pagination | Danh sách Admin lớn (đơn, tồn, biến động tồn) và sync API dùng `(sort_col, id)` thay `OFFSET` khi vượt trang N; giữ phân trang số trang cho trang đầu |
+| Lưới tồn và Tổng quan Admin (bổ sung sau G0, Owner 2026-11-26) | `EloquentVariantDirectory::searchIndex()` nạp mọi SKU và giá trị tuỳ chọn vào PHP để sắp xếp/phân trang — vượt 2 GB ở 1 triệu SKU. Đổi: lọc, sắp xếp, phân trang bằng SQL (keyset theo khoá sắp xếp), đếm "sắp hết hàng" của Tổng quan bằng truy vấn đếm |
 | Read replica | `config/database.php`: kết nối `mysql` có `read`/`write` + `sticky => true`. Báo cáo (plugin Reports, `EloquentOrderStatistics`) dùng kết nối replica riêng. Chỉ bật bằng env, mặc định tắt |
 
 ## 6. Kiểm tra
@@ -206,27 +217,27 @@ Dữ liệu `vani:bench:seed`: 100.000 sản phẩm (2% nháp, 2% lưu trữ), 1
 
 | Kịch bản | G0 (2026-11-26) | Sau G2 | Sau G3 |
 |---|---:|---:|---:|
-| Listing: danh mục cha (gồm con), mới nhất | 550 (493) | | |
-| Listing: danh mục cha + lọc màu | 936 (871) | | |
-| Listing: danh mục cha + lọc màu + size | 1.353 (1.329) | | |
-| Listing: toàn bộ, giá tăng dần | **88.750** (88.681) | | |
-| Listing: danh mục con, giá giảm dần | 125 (82) | | |
-| Listing: thuộc tính + thương hiệu | 130 (87) | | |
-| Listing: danh mục cha, trang 40 | 1.479 (1.418) | | |
-| Tìm chữ: "áo sơ mi lụa" | 455 (393) | | |
-| Tìm chữ: mã một phần "BP0500" | 356 (294) | | |
-| PDP: API chi tiết sản phẩm | 12 (5) | | |
-| Giỏ: tạo giỏ + thêm 1 dòng | 14 (7) | | |
-| Checkout: đặt đơn COD (giữ tồn) | 52 (26) | | |
-| Admin: danh sách đơn | 2.420 (2.345) | | |
-| Admin: đơn theo bước "chờ xác nhận" | 2.191 (2.120) | | |
-| Admin: đơn theo trạng thái "đã huỷ" | 1.997 (1.927) | | |
-| Admin: tìm đơn theo SĐT khách | 1.615 (1.563) | | |
-| Admin: danh sách sản phẩm | 177 (70) | | |
-| Admin: lưới tồn | **OOM** | | |
-| Admin: tổng quan | **OOM** | | |
-| Sync API: đơn đổi trong 1 ngày, 50 đơn | 55 (20), 251 truy vấn | | |
-| Báo cáo: sản phẩm bán chạy 30 ngày | 1.165 (1.165) | | |
+| Listing: danh mục cha (gồm con), mới nhất | 550 (493) | 283 (220) | |
+| Listing: danh mục cha + lọc màu | 936 (871) | 289 (230) | |
+| Listing: danh mục cha + lọc màu + size | 1.353 (1.329) | 605 (593) | |
+| Listing: toàn bộ, giá tăng dần | **88.750** (88.681) | **1.132** (1.066) | |
+| Listing: danh mục con, giá giảm dần | 125 (82) | 49 (18) | |
+| Listing: thuộc tính + thương hiệu | 130 (87) | 236 (174) | |
+| Listing: danh mục cha, trang 40 | 1.479 (1.418) | 283 (219) | |
+| Tìm chữ: "áo sơ mi lụa" | 455 (393) | 319 (258) | |
+| Tìm chữ: mã một phần "BP0500" | 356 (294) | 213 (152) | |
+| PDP: API chi tiết sản phẩm | 12 (5) | 12 (4) | |
+| Giỏ: tạo giỏ + thêm 1 dòng | 14 (7) | 14 (6) | |
+| Checkout: đặt đơn COD (giữ tồn) | 52 (26) | 49 (22) | |
+| Admin: danh sách đơn | 2.420 (2.345) | 916 (843) | |
+| Admin: đơn theo bước "chờ xác nhận" | 2.191 (2.120) | 683 (614) | |
+| Admin: đơn theo trạng thái "đã huỷ" | 1.997 (1.927) | 430 (364) | |
+| Admin: tìm đơn theo SĐT khách | 1.615 (1.563) | 151 (107) | |
+| Admin: danh sách sản phẩm | 177 (70) | 183 (72) | |
+| Admin: lưới tồn | **OOM** | OOM (G3) | |
+| Admin: tổng quan | **OOM** | OOM (G3) | |
+| Sync API: đơn đổi trong 1 ngày, 50 đơn | 55 (20), 251 truy vấn | 13 (2), 6 truy vấn | |
+| Báo cáo: sản phẩm bán chạy 30 ngày | 1.165 (1.165) | 617 (616) | |
 
 Nguyên nhân (EXPLAIN ANALYZE):
 
@@ -238,3 +249,9 @@ Nguyên nhân (EXPLAIN ANALYZE):
 - **Sync API**: truy vấn `(updated_at, id)` dùng index (0,07 ms) nhưng dựng payload N+1 — 251 truy vấn cho 50 đơn. *Ngoài kế hoạch ban đầu.*
 - **Bán chạy**: `GROUP BY json_extract(meta, '$.product_id')` trên 94.963 nhóm qua bảng tạm → §4.5.
 - PDP, giỏ, checkout không đổi theo quy mô.
+
+Sau G2 (2026-11-26, cùng dữ liệu `vani:bench:seed`): `ProductSearch` trên read model cho **kết quả giống hệt** bản G1 ở 170 tổ hợp lọc/sắp xếp/trang (ids, total, mọi facet — so trên cùng dữ liệu trước khi bỏ truy vấn cũ). Còn lại:
+
+- Listing toàn catalog (1,1 s): đếm facet tuỳ chọn trên ~665.000 dòng `product_facet_values` của 95.000 sản phẩm. Trang danh mục cụ thể 50–600 ms.
+- Danh sách đơn Admin: truy vấn chậm nhất là `select stage, count(*) from orders group by stage` (thẻ đếm theo bước, quét index ~0,5 s ở 5 triệu đơn) — cần bảng đếm hoặc cache nếu thành vấn đề.
+- Bán chạy 30 ngày (0,6 s): group ~400.000 dòng đơn theo `product_id` — báo cáo, có thể cache theo ngày.

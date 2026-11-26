@@ -6,6 +6,21 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.90 — 2026-11-26 · Extension API 1.38.0
+
+Sửa điểm nghẽn khi scale ([db-refactor G2](../20-roadmap/db-refactor.md#4-g2--sửa-điểm-nghẽn-khi-scale)). Thêm vào API cho plugin (tăng minor), không gỡ gì. Migration gốc sửa tại chỗ — chạy `migrate:fresh --seed` rồi `vani:catalog:rebuild-listing`.
+
+- **Read model trang danh sách**: bảng `product_listing` (trạng thái, khung giờ, thương hiệu, `list_price_min`, `in_stock`, ngày tạo) và `product_facet_values` (`category` gồm danh mục cha, `collection`, `attribute:<id>`, `option:<mã loại>`). `ProductSearch` lọc, đếm facet và sắp xếp trên hai bảng này. Use case của Catalog ghi trong cùng transaction (`ProductListingProjector`); lệnh `vani:catalog:rebuild-listing {--product=}`.
+- `products.list_price_min` chuyển sang `product_listing.list_price_min` (Pricing vẫn ghi qua `ListPrices::setMinimums`).
+- Contract mới `Catalog\Contracts\ListingAvailability::setInStock()` — Inventory ghi "còn hàng" (listener `SyncListingAvailability`, hàng đợi `catalog-sync`). Event mới `Catalog\Events\ProductListingProjected` (sau commit).
+- `option_values.filter_token` (ghi khi lưu giá trị; đổi mã/kiểu hiển thị của loại ghi lại). Bỏ `OptionFilterToken::SQL`.
+- `product_option_values.product_id` → `product_option_id` (FK `product_options`, cascade): bỏ trục thì giá trị của trục đi theo. `Product::optionValues()` là `HasManyThrough` (chỉ đọc).
+- Tìm chữ: FULLTEXT `ngram` trên `products.search_text` (MySQL; kết nối `mysql` tắt stopword) — `SearchTextMatch`; SQLite vẫn `LIKE`.
+- `order_lines.product_id` (snapshot, có index) thay cho `order_lines.meta.product_id`; `OrderStatistics::topProducts`/`confirmedQuantitiesByProduct` group theo cột.
+- `OrderReader::linesOf(array $orderIds)` và `OrderReader::priceBreakdowns(array $orderIds)` (theo lô). Sync API đơn (`GET /api/integration/v1/orders`) dựng payload theo lô: số truy vấn không tăng theo số đơn.
+- Index `orders (customer_id, placed_at)` thay `orders (customer_id)`. Bộ lọc "cách thanh toán" ở danh sách đơn Admin lấy từ cổng đang cài + mã trên trang (không còn `select distinct payment_method`).
+- **Plugin cần cập nhật**: plugin ngoài repo đọc `order_lines.meta['product_id']` chuyển sang cột `product_id`; ghi `product_option_values` dùng `product_option_id`. Plugin trong repo không phải sửa.
+
 ## 0.5.89 — 2026-11-26 · Extension API 1.37.0
 
 Đổi tên Style → Product trong DB, model, contract và API ([ADR-050](../19-adr/ADR-050-product-replaces-style.md), [db-refactor G1](../20-roadmap/db-refactor.md#3-g1--đổi-tên-style--product)). Phá vỡ API cho plugin (giai đoạn dev, tăng minor). Không đổi hành vi.

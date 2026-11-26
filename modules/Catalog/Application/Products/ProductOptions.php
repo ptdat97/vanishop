@@ -6,11 +6,13 @@ namespace Modules\Catalog\Application\Products;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Domain\SkuPattern;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Events\VariantCreated;
 use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Product;
+use Modules\Catalog\Persistence\Models\ProductOptionValue;
 use Modules\Catalog\Persistence\Models\Variant;
 
 /**
@@ -19,6 +21,8 @@ use Modules\Catalog\Persistence\Models\Variant;
 final class ProductOptions
 {
     public const MAX_AXES = 3;
+
+    public function __construct(private readonly ProductListingProjector $listing) {}
 
     /**
      * Ghi trục (1–3 loại tuỳ chọn theo thứ tự) và giá trị sản phẩm dùng (theo thứ tự). Đổi tập loại khi đã có SKU → lỗi
@@ -70,16 +74,21 @@ final class ProductOptions
             if (($missing = array_diff($used, $wanted)) !== []) {
                 throw ValidationException::withMessages(['axes' => __('catalog::messages.option_value_in_use', ['count' => count($missing)])]);
             }
-            $product->optionValues()->whereNotIn('option_value_id', $wanted)->delete();
+            $optionIds = $product->options()->pluck('id', 'option_type_id');
+            ProductOptionValue::query()->whereIn('product_option_id', $optionIds->values())->whereNotIn('option_value_id', $wanted)->delete();
             foreach ($axes as $axis) {
                 foreach ($axis['value_ids'] as $position => $valueId) {
-                    $product->optionValues()->updateOrCreate(['option_value_id' => $valueId], ['position' => $position]);
+                    ProductOptionValue::query()->updateOrCreate(
+                        ['product_option_id' => (int) $optionIds->get((int) $axis['option_type_id']), 'option_value_id' => $valueId],
+                        ['position' => $position],
+                    );
                 }
             }
 
             if ($current !== $typeIds) {
                 $this->rekey($product);
             }
+            $this->listing->project($product->id);
         });
         $product->unsetRelation('options')->unsetRelation('optionValues');
     }
@@ -103,6 +112,7 @@ final class ProductOptions
             DB::table('variant_option_values')->insert(['variant_id' => $variant->id, 'option_type_id' => $typeIds[$index], 'option_value_id' => $valueId]);
         }
         event(new VariantCreated($variant->id, $product->id, $variant->sku));
+        $this->listing->project($product->id);
 
         return $variant;
     }
@@ -121,6 +131,7 @@ final class ProductOptions
         }
         $variant->forceFill(['option_key' => Variant::keyFor($valueIds)])->save();
         $variant->unsetRelation('optionValues');
+        $this->listing->project($product->id);
     }
 
     /**
@@ -132,9 +143,9 @@ final class ProductOptions
         DB::table('variant_option_values')->where('variant_id', $kept->id)->delete();
         $kept->forceFill(['option_key' => Variant::keyFor([])])->save();
         $kept->unsetRelation('optionValues');
-        $product->optionValues()->delete();
-        $product->options()->delete();
+        $product->options()->delete(); // giá trị của trục xoá theo (cascade)
         $product->unsetRelation('options')->unsetRelation('optionValues');
+        $this->listing->project($product->id);
     }
 
     /** Tính lại khoá tổ hợp theo thứ tự trục hiện tại (sau khi đổi thứ tự trục). */

@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 use Modules\Catalog\Contracts\CatalogReader;
-use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\ProductStatus;
+use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Persistence\Concerns\HasLocalizedSlug;
 use Modules\Catalog\Persistence\Concerns\RecordsSlugRedirects;
 use Modules\Catalog\Persistence\Database\Factories\ProductFactory;
@@ -31,7 +32,6 @@ use Modules\Shared\Persistence\Concerns\HasTranslations;
  * @property Carbon|null $published_to
  * @property int|null $primary_category_id
  * @property string $search_text
- * @property int|null $list_price_min
  * @property array<string, mixed>|null $meta
  * @property int $lock_version
  * @property bool $track_inventory
@@ -58,7 +58,6 @@ final class Product extends Model
             'published_from' => 'datetime',
             'published_to' => 'datetime',
             'meta' => 'array',
-            'list_price_min' => 'integer',
             'lock_version' => 'integer',
         ];
     }
@@ -100,13 +99,14 @@ final class Product extends Model
     }
 
     /**
-     * Giá trị tuỳ chọn sản phẩm dùng, theo thứ tự riêng của sản phẩm.
+     * Giá trị tuỳ chọn sản phẩm dùng (mọi trục), theo thứ tự riêng của sản phẩm. Chỉ đọc — ghi qua ProductOptions.
      *
-     * @return HasMany<ProductOptionValue, $this>
+     * @return HasManyThrough<ProductOptionValue, ProductOption, $this>
      */
-    public function optionValues(): HasMany
+    public function optionValues(): HasManyThrough
     {
-        return $this->hasMany(ProductOptionValue::class)->orderBy('position')->orderBy('id');
+        return $this->hasManyThrough(ProductOptionValue::class, ProductOption::class)
+            ->orderBy('product_option_values.position')->orderBy('product_option_values.id');
     }
 
     /**

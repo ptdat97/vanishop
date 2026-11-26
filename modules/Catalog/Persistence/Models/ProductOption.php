@@ -6,6 +6,7 @@ namespace Modules\Catalog\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Trục biến thể của sản phẩm (ADR-045): loại tuỳ chọn + thứ tự (tối đa 3 trục).
@@ -31,5 +32,13 @@ final class ProductOption extends Model
     public function type(): BelongsTo
     {
         return $this->belongsTo(OptionType::class, 'option_type_id');
+    }
+
+    /**
+     * @return HasMany<ProductOptionValue, $this>
+     */
+    public function values(): HasMany
+    {
+        return $this->hasMany(ProductOptionValue::class)->orderBy('position')->orderBy('id');
     }
 }

@@ -34,7 +34,7 @@ final class OrderFeed
         $last = $orders === [] ? null : $orders[array_key_last($orders)];
 
         return [
-            'data' => array_map(fn (OrderData $order): array => $this->payloads->order($order), $orders),
+            'data' => $this->payloads->orders($orders),
             'next_cursor' => $last === null || count($orders) < $limit ? null : $this->encode($last),
         ];
     }

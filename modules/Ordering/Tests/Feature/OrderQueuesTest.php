@@ -166,3 +166,18 @@ it('"Cần xác nhận": mỗi dòng kèm lịch sử nhận hàng của SĐT (�
     $this->get($this->url)->assertInertia(fn (Assert $page) => $page->where('orders', fn ($orders) => collect($orders)->firstWhere('id', $delivered->id)['history'] === null));
     expect($queries())->toBe($before);
 });
+
+it('lựa chọn cách thanh toán lấy từ cổng đang cài và mã trên trang, không quét bảng đơn', function () {
+    $order = ($this->place)();
+    DB::table('orders')->where('id', $order->id)->update(['payment_method' => 'cong_da_go']);
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    $this->get($this->url)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('labels.payment_method.cong_da_go', 'cong_da_go')
+        ->where('labels.payment_method.cod', fn (string $label): bool => $label !== 'cod' && $label !== ''));
+
+    expect(array_filter($queries, fn (string $sql): bool => str_contains($sql, 'distinct') && str_contains($sql, 'payment_method')))->toBe([]);
+});

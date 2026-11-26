@@ -28,16 +28,6 @@ final class AdminQueries
     }
 
     /**
-     * Mã phương thức thanh toán đã có trên đơn (bộ lọc danh sách đơn).
-     *
-     * @return list<string>
-     */
-    public function usedPaymentMethods(): array
-    {
-        return Order::query()->distinct()->pluck('payment_method')->filter()->map(fn ($code): string => (string) $code)->values()->all();
-    }
-
-    /**
      * Đơn kèm dòng, theo đúng thứ tự id truyền vào (in phiếu theo thứ tự nhân viên chọn).
      *
      * @param  list<int>  $ids

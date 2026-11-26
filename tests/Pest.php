@@ -19,6 +19,10 @@ pest()->extend(TestCase::class)
 
 pest()->extend(TestCase::class)->in('Architecture', 'Concurrency');
 
+// Hành vi chỉ có trên MySQL (FULLTEXT ngram, read model): nhóm `mysql`, không chạy mặc định, dùng DatabaseTruncation
+// (FULLTEXT không thấy dòng chưa commit) — `DB_CONNECTION=mysql DB_DATABASE=vanishop_testing php artisan test --group=mysql`.
+pest()->extend(TestCase::class)->group('mysql')->in('Mysql');
+
 // Đo thao tác Admin trên dữ liệu cỡ thật (nhóm `performance`, không chạy mặc định): xem tests/Performance.
 pest()->extend(TestCase::class)->use(RefreshDatabase::class)->in('Performance');
 

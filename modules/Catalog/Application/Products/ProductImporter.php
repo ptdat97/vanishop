@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Catalog\Application\Categories\CategoryInput;
 use Modules\Catalog\Application\Categories\CategoryService;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Application\Taxonomy\OptionTypeService;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
 use Modules\Catalog\Contracts\CatalogImporter;
@@ -37,6 +38,7 @@ final class ProductImporter implements CatalogImporter
         private readonly OptionTypeService $optionTypes,
         private readonly TaxonomyService $taxonomy,
         private readonly CategoryService $categories,
+        private readonly ProductListingProjector $listing,
     ) {}
 
     public function upsertProduct(ProductImport $import): ImportedProduct
@@ -45,7 +47,7 @@ final class ProductImporter implements CatalogImporter
             throw new InvalidArgumentException('ProductImport cần ít nhất một màu, một size và tên tiếng Việt.');
         }
 
-        return DB::transaction(function () use ($import): ImportedProduct {
+        return DB::transaction(fn () => $this->listing->deferring(function () use ($import): ImportedProduct {
             $brandId = $import->brand === null ? null : $this->brand($import->brand)->id;
             $categoryIds = array_map(fn (array $category): int => $this->category($category)->id, $import->categories);
 
@@ -103,11 +105,13 @@ final class ProductImporter implements CatalogImporter
                 }
             }
 
+            $this->listing->project($product->id);
+
             return new ImportedProduct(
                 $product->id, $product->slug, $created, $imagesAdded,
                 DB::table('variants')->where('product_id', $product->id)->orderBy('id')->pluck('sku')->map(fn ($sku): string => (string) $sku)->all(),
             );
-        });
+        }));
     }
 
     /**

@@ -32,9 +32,19 @@ final class EloquentOrderReader implements OrderReader
 
     public function priceBreakdown(int $orderId): ?PriceBreakdown
     {
-        $order = Order::query()->with(['lines', 'adjustments'])->find($orderId);
+        return $this->priceBreakdowns([$orderId])[$orderId] ?? null;
+    }
 
-        return $order === null ? null : (new PriceBreakdownCalculator)->for($order);
+    public function priceBreakdowns(array $orderIds): array
+    {
+        if ($orderIds === []) {
+            return [];
+        }
+        $calculator = new PriceBreakdownCalculator;
+
+        return Order::query()->with(['lines', 'adjustments'])->whereIn('id', array_values(array_unique(array_map('intval', $orderIds))))->get()
+            ->mapWithKeys(fn (Order $order): array => [(int) $order->id => $calculator->for($order)])
+            ->all();
     }
 
     public function findByPublicId(string $publicId): ?OrderData
@@ -53,13 +63,21 @@ final class EloquentOrderReader implements OrderReader
 
     public function lines(int $orderId): array
     {
-        if (! Order::query()->whereKey($orderId)->exists()) {
+        return $this->linesOf([$orderId])[$orderId] ?? [];
+    }
+
+    public function linesOf(array $orderIds): array
+    {
+        if ($orderIds === []) {
             return [];
         }
+        $ids = array_values(array_unique(array_map('intval', $orderIds)));
+        $result = array_fill_keys(Order::query()->whereIn('id', $ids)->pluck('id')->map(fn ($id): int => (int) $id)->all(), []);
+        foreach (OrderLine::query()->whereIn('order_id', array_keys($result))->orderBy('id')->get() as $line) {
+            $result[(int) $line->order_id][] = new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity, $line->total_amount, (array) ($line->variant_options ?? []), $line->brand_name, (array) ($line->meta['options'] ?? []), $line->unit_amount);
+        }
 
-        return OrderLine::query()->where('order_id', $orderId)->orderBy('id')->get()
-            ->map(fn (OrderLine $line): OrderLineData => new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity, $line->total_amount, (array) ($line->variant_options ?? []), $line->brand_name, (array) ($line->meta['options'] ?? []), $line->unit_amount))
-            ->all();
+        return $result;
     }
 
     public function customerOrderIds(int $customerId): array

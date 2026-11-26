@@ -7,6 +7,7 @@ namespace Modules\Integration\Application;
 use Modules\Extension\Facades\Hook;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
+use Modules\Ordering\Contracts\Data\PriceBreakdown;
 use Modules\Ordering\Contracts\OrderReader;
 
 /**
@@ -25,17 +26,39 @@ final class CanonicalPayloads
      */
     public function order(OrderData $order): array
     {
-        $payload = $this->canonical($order);
-        $filtered = Hook::filter('vani.integration.order_payload', $payload, $order);
+        return $this->orders([$order])[0];
+    }
 
-        // Plugin chỉ được THÊM field: khoá canonical giữ nguyên giá trị Core (R20, schema có version).
-        return is_array($filtered) ? $payload + array_diff_key($filtered, $payload) : $payload;
+    /**
+     * Payload của nhiều đơn (một trang đồng bộ): dòng, tầng giá, số đơn gốc nạp theo lô — số truy vấn không tăng theo số đơn
+     * (db-refactor §4.8). Giữ thứ tự đầu vào.
+     *
+     * @param  list<OrderData>  $orders
+     * @return list<array<string, mixed>>
+     */
+    public function orders(array $orders): array
+    {
+        $ids = array_map(fn (OrderData $order): int => $order->id, $orders);
+        $lines = $this->orders->linesOf($ids);
+        $pricing = $this->orders->priceBreakdowns($ids);
+        $parents = $this->orders->numbers(array_values(array_filter(array_map(fn (OrderData $order): ?int => $order->parentOrderId, $orders))));
+
+        return array_map(function (OrderData $order) use ($lines, $pricing, $parents): array {
+            $payload = $this->canonical($order, $lines[$order->id] ?? [], $pricing[$order->id] ?? null, $order->parentOrderId === null ? null : ($parents[$order->parentOrderId] ?? null));
+            $filtered = Hook::filter('vani.integration.order_payload', $payload, $order);
+
+            // Plugin chỉ được THÊM field: khoá canonical giữ nguyên giá trị Core (R20, schema có version).
+            return is_array($filtered) ? $payload + array_diff_key($filtered, $payload) : $payload;
+        }, $orders);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function canonical(OrderData $order): array
+    /**
+     * @param  list<OrderLineData>  $lines
+     */
+    private function canonical(OrderData $order, array $lines, ?PriceBreakdown $pricing, ?string $parentNumber): array
     {
         return [
             'schema' => self::ORDER_SCHEMA,
@@ -43,7 +66,7 @@ final class CanonicalPayloads
             'public_id' => $order->publicId,
             'source' => $order->source,
             // Đơn thay thế của đổi hàng (source = exchange, 0.3.32): số đơn gốc; đơn thường là null.
-            'parent_order_number' => $order->parentOrderId === null ? null : $this->orders->find($order->parentOrderId)?->number,
+            'parent_order_number' => $parentNumber,
             'customer_id' => $order->customerId,
             'status' => $order->status->value,
             'payment_status' => $order->paymentStatus,
@@ -64,9 +87,9 @@ final class CanonicalPayloads
                 'variant_options' => $line->variantOptions,
                 'quantity' => $line->quantity,
                 'total_amount' => $line->totalAmount,
-            ], array_values(array_filter($this->orders->lines($order->id), fn (OrderLineData $line): bool => $line->quantity > 0))), // dòng huỷ hết: chỉ có trong order.lines_cancelled
+            ], array_values(array_filter($lines, fn (OrderLineData $line): bool => $line->quantity > 0))), // dòng huỷ hết: chỉ có trong order.lines_cancelled
             // Tầng giá (0.3.37): niêm yết, giảm giá bán, khuyến mãi, mã giảm giá, giảm khác, phí giao, thuế, tổng.
-            'pricing' => $this->orders->priceBreakdown($order->id)?->toArray(),
+            'pricing' => $pricing?->toArray(),
             'placed_at' => $order->placedAt,
             'updated_at' => $order->updatedAt,
         ];

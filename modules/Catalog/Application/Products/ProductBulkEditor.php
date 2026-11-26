@@ -7,6 +7,7 @@ namespace Modules\Catalog\Application\Products;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Brand;
@@ -28,6 +29,7 @@ final class ProductBulkEditor
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly ProductService $products,
+        private readonly ProductListingProjector $listing,
     ) {}
 
     /**
@@ -58,6 +60,7 @@ final class ProductBulkEditor
                 Hook::action('vani.product.after_save', $product->id);
                 $this->audit->record('catalog.product.bulk_edited', 'product', $product->id, ['product_code' => $product->product_code, 'action' => $action, 'target_id' => $targetId]);
                 event(new ProductUpdated($product->id, $product->product_code));
+                $this->listing->project($product->id);
 
                 return 1;
             });

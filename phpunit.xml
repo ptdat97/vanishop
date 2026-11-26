@@ -23,6 +23,9 @@
         <testsuite name="Concurrency">
             <directory>tests/Concurrency</directory>
         </testsuite>
+        <testsuite name="Mysql">
+            <directory>tests/Mysql</directory>
+        </testsuite>
         <testsuite name="Browser">
             <directory>tests/Browser</directory>
         </testsuite>
@@ -33,6 +36,7 @@
     <groups>
         <exclude>
             <group>concurrency</group>
+            <group>mysql</group>
             <group>browser</group>
             <group>performance</group>
         </exclude>

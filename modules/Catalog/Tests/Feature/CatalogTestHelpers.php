@@ -8,6 +8,7 @@ use Closure;
 use Modules\Catalog\Application\Products\ProductInput;
 use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Application\Products\ProductService;
+use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Product;
@@ -18,7 +19,8 @@ use Modules\Shared\Context\CurrentContext;
 final class CatalogTestHelpers
 {
     /**
-     * Tạo dữ liệu với phạm vi hệ thống.
+     * Tạo dữ liệu với phạm vi hệ thống. Sau đó dựng lại read model trang danh sách của mọi sản phẩm (db-refactor §4.3): test
+     * hay sửa thẳng quan hệ/model (gắn danh mục, đổi nhóm màu) — như thể thay đổi đã đi qua use case của Catalog.
      *
      * @template T
      *
@@ -27,7 +29,16 @@ final class CatalogTestHelpers
      */
     public static function seed(Closure $callback): mixed
     {
-        return app(CurrentContext::class)->runAs(ContextScope::system('test seed'), $callback);
+        $result = app(CurrentContext::class)->runAs(ContextScope::system('test seed'), $callback);
+        self::project();
+
+        return $result;
+    }
+
+    /** Dựng lại read model trang danh sách của mọi sản phẩm (sau khi test ghi thẳng DB). */
+    public static function project(): void
+    {
+        app(ProductListingProjector::class)->project(Product::query()->withoutGlobalScopes()->pluck('id')->map(fn ($id): int => (int) $id)->all());
     }
 
     /**
