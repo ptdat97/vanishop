@@ -6,8 +6,11 @@ use Modules\Catalog\Application\Categories\CategoryService;
 use Modules\Catalog\Application\Collections\CollectionService;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Search\ProductListingProjector;
+use Modules\Catalog\Application\Search\ProductSearch;
 use Modules\Catalog\Application\Taxonomy\OptionTypeService;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
+use Modules\Catalog\Contracts\Data\ProductSearchQuery;
+use Modules\Catalog\Contracts\Data\ProductSearchResult;
 use Modules\Catalog\Contracts\ListPrices;
 use Modules\Catalog\Domain\CategoryStatus;
 use Modules\Catalog\Domain\ProductStatus;
@@ -105,4 +108,20 @@ it('xoá sản phẩm nháp xoá dòng read model', function () {
     ($this->as)(fn () => app(ProductService::class)->deleteDraft($this->product->fresh()));
 
     expect(DB::table('product_listing')->count())->toBe(0)->and(DB::table('product_facet_values')->count())->toBe(0);
+});
+
+it('số đếm và facet của trang danh sách được cache, hết hiệu lực ngay khi read model đổi (db-refactor L56)', function () {
+    $search = fn (): ProductSearchResult => app(ProductSearch::class)->search(new ProductSearchQuery(brandIds: [], now: now()->getTimestamp(), categoryId: $this->women->id));
+    expect($search()->total)->toBe(1);
+
+    $queries = 0;
+    DB::listen(function () use (&$queries): void {
+        $queries++;
+    });
+    $search();
+    expect($queries)->toBeLessThanOrEqual(2); // chỉ trang id; số đếm + facet lấy từ cache
+
+    ($this->as)(fn () => app(ProductService::class)->changeStatus($this->product->id, ProductStatus::Archived));
+
+    expect($search()->total)->toBe(0);
 });

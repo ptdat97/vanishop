@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Application\Search;
 
+use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -20,13 +21,29 @@ use Modules\Shared\Domain\Text\VietnameseText;
  */
 final class ProductSearch
 {
+    /** Số đếm + facet giống nhau giữa các trang/cách sắp xếp của cùng bộ lọc — cache theo phiên bản read model (L56). */
+    private const COUNTS_TTL = 600;
+
+    public function __construct(private readonly Cache $cache, private readonly ListingCacheVersion $version) {}
+
     public function search(ProductSearchQuery $query): ProductSearchResult
     {
         $base = $this->baseQuery($query);
 
         $filtered = $this->scoped($base, $query);
 
-        $total = (clone $filtered)->count();
+        // Khung giờ hiển thị phụ thuộc `now`: khoá theo phút — sản phẩm hẹn giờ vào/ra trong số đếm trễ tối đa một phút.
+        $key = 'catalog:search:'.$this->version->current().':'.md5(serialize([$query->text, $query->categoryId, $query->collectionId, $query->attributeValueIds,
+            $query->brandIds, $query->priceMin, $query->priceMax, $query->options, intdiv($query->now, 60)]));
+        ['total' => $total, 'facets' => $facets] = $this->cache->remember($key, self::COUNTS_TTL, fn (): array => [
+            'total' => (clone $filtered)->count(),
+            'facets' => [
+                'attribute_values' => $this->attributeFacet($base, $query),
+                'brands' => $this->brandFacet($base, $query),
+                'options' => $this->optionFacets($base, $query),
+                'price' => $this->priceFacet($base, $query),
+            ],
+        ]);
 
         $ordered = (clone $filtered)->select('pl.product_id');
         if ($query->categoryId !== null && $query->sort === ProductSearchQuery::SORT_NEWEST && $query->text === '') {
@@ -45,12 +62,7 @@ final class ProductSearch
         return new ProductSearchResult(
             productIds: array_map('intval', $ids),
             total: $total,
-            facets: [
-                'attribute_values' => $this->attributeFacet($base, $query),
-                'brands' => $this->brandFacet($base, $query),
-                'options' => $this->optionFacets($base, $query),
-                'price' => $this->priceFacet($base, $query),
-            ],
+            facets: $facets,
         );
     }
 

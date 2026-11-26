@@ -5,6 +5,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Fulfillment\Persistence\Models\Shipment;
+use Modules\Ordering\Application\OrderQueries;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -180,4 +181,19 @@ it('lựa chọn cách thanh toán lấy từ cổng đang cài và mã trên tr
         ->where('labels.payment_method.cod', fn (string $label): bool => $label !== 'cod' && $label !== ''));
 
     expect(array_filter($queries, fn (string $sql): bool => str_contains($sql, 'distinct') && str_contains($sql, 'payment_method')))->toBe([]);
+});
+
+it('đếm theo bước khi không lọc: bước đang xử lý đếm trực tiếp, bước đã kết thúc dùng số cache tối đa 60 giây (db-refactor L56)', function () {
+    $this->useArrayCache();
+    [$a, $b] = [($this->place)(), ($this->place)()];
+    $queries = app(OrderQueries::class);
+    expect($queries->stageCounts([]))->toMatchArray(['to_confirm' => 2, 'cancelled' => 0]);
+
+    DB::table('orders')->where('id', $a->id)->update(['order_status' => 'cancelled', 'payment_status' => 'voided']);
+
+    expect($queries->stageCounts([]))->toMatchArray(['to_confirm' => 1, 'cancelled' => 0])
+        ->and($queries->stageCounts(['source' => 'web']))->toMatchArray(['to_confirm' => 1, 'cancelled' => 1]) // có lọc: luôn đếm trực tiếp
+        ->and($queries->stageCounts([], ['to_confirm']))->toBe(['to_confirm' => 1]);
+    $this->travel(61)->seconds();
+    expect($queries->stageCounts([]))->toMatchArray(['to_confirm' => 1, 'cancelled' => 1]);
 });

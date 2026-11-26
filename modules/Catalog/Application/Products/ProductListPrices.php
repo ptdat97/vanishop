@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Application\Products;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Catalog\Application\Search\ListingCacheVersion;
 use Modules\Catalog\Contracts\ListingAvailability;
 use Modules\Catalog\Contracts\ListPrices;
 
@@ -35,6 +36,7 @@ final class ProductListPrices implements ListingAvailability, ListPrices
             return;
         }
         $current = DB::table('product_listing')->whereIn('product_id', array_keys($byProduct))->pluck($column, 'product_id');
+        $changed = false;
         foreach ($byProduct as $productId => $value) {
             if (! $current->has($productId)) {
                 continue;
@@ -43,7 +45,11 @@ final class ProductListPrices implements ListingAvailability, ListPrices
             $value = $cast($value);
             if (($before === null ? null : (is_bool($value) ? (bool) $before : (int) $before)) !== $value) {
                 DB::table('product_listing')->where('product_id', $productId)->update([$column => $value]);
+                $changed = true;
             }
+        }
+        if ($changed) {
+            app(ListingCacheVersion::class)->bump(); // cache số đếm/facet của trang danh sách hết hiệu lực
         }
     }
 }

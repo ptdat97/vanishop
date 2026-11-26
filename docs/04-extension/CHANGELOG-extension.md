@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.93 — 2026-11-26 · Extension API 1.39.0
+
+Số đếm lớn không quét bảng ở mỗi request ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L56). Không đổi API cho plugin.
+
+- Danh sách đơn Admin, không lọc: số đơn của bước đã kết thúc (`completed`, `cancelled`) lấy từ cache tối đa 60 giây; các bước đang xử lý đếm trực tiếp. Có lọc thì đếm trực tiếp như cũ. Ô "Việc cần làm" chỉ đếm hàng đợi cần xử lý.
+- Trang danh sách sản phẩm: tổng số và facet (thuộc tính, thương hiệu, tuỳ chọn, khoảng giá) cache 10 phút theo bộ lọc, khoá kèm phiên bản read model (`ListingCacheVersion` — tăng khi `ProductListingProjector` dựng lại, giá niêm yết hoặc còn hàng đổi, xoá giá trị thuộc tính): đổi dữ liệu là số đếm mới ngay. Danh sách id của trang không cache. Sản phẩm hẹn giờ vào/ra trong số đếm trễ tối đa một phút.
+
 ## 0.5.92 — 2026-11-26 · Extension API 1.39.0
 
 Trang bảng giá không còn nạp mọi SKU ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L55). Phá vỡ API cho plugin (giai đoạn dev, tăng minor).

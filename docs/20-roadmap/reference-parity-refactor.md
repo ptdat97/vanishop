@@ -459,7 +459,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L53 (db-refactor G1, 2026-11-26) | 3 browser test đỏ từ trước G1: `AdminDialogTest` (giữ Tab trong popup; ô tải ảnh chặn tệp sai loại) và `StorefrontMobileBudgetTest` (bộ sưu tập gọi `CollectionPages::save()`, hàm đã gỡ khi tối giản Builder ở 0.5.87) | Test Browser, Catalog | Sửa test theo API Builder trang chủ; rà lại hai test popup |
 | L54 (db-refactor G3, Owner 2026-11-26) | Keyset pagination cho danh sách Admin lớn (đơn, biến động tồn): vẫn `OFFSET`; trang đầu nhanh, trang rất sâu chậm ở hàng triệu dòng. Sync API đơn đã dùng keyset | Ordering, Inventory, Admin Vue | Quá trang N chuyển sang con trỏ `(sort_col, id)`, giữ số trang cho trang đầu |
 | L55 ✅ (db-refactor G3; xong 0.5.92, 2026-11-26) | Trang bảng giá đọc read model SKU riêng của Pricing `price_variant_index` (như lưới tồn của Inventory); `VariantDirectory::searchIndex()` đã gỡ | Pricing, Catalog | — |
-| L56 (db-refactor G2–G3) | Đếm đơn theo bước (`select stage, count(*) from orders group by stage`, thẻ danh sách đơn và Tổng quan) quét index ~0,5 s ở 5 triệu đơn; listing toàn catalog đếm facet ~1 s | Ordering, Catalog | Bảng đếm theo bước cập nhật khi đổi trạng thái, hoặc cache ngắn; cache facet trang danh sách theo phiên bản catalog |
+| L56 ✅ (db-refactor G2–G3; xong 0.5.93, 2026-11-26) | Đếm đơn của bước đã kết thúc khi không lọc dùng cache 60 giây; tổng số + facet trang danh sách cache theo phiên bản read model | Ordering, Catalog | — |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

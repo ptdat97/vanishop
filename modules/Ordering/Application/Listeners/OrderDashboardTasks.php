@@ -7,6 +7,7 @@ namespace Modules\Ordering\Application\Listeners;
 use Illuminate\Support\Facades\Gate;
 use Modules\Ordering\Application\OrderQueries;
 use Modules\Ordering\Contracts\Data\OrderSettings;
+use Modules\Ordering\Domain\OrderStage;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
@@ -25,7 +26,7 @@ final class OrderDashboardTasks
         if (! Gate::allows('orders.view')) {
             return [];
         }
-        $counts = $this->queries->stageCounts([]);
+        $counts = $this->queries->stageCounts([], OrderStage::ACTIONABLE); // chỉ hàng đợi cần xử lý — không đếm đơn đã kết thúc
         $agedHours = max(1, (int) $this->settings->get('core', OrderSettings::AGED_HOURS));
         $codPending = $this->queries->completedAwaitingCodCount();
         $url = fn (array $query): string => route('admin.orders.orders.index', $query);

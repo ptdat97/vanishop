@@ -42,6 +42,7 @@ final class ProductListingProjector
         foreach (array_chunk($ids, self::CHUNK) as $chunk) {
             $this->rebuild($chunk);
         }
+        app(ListingCacheVersion::class)->bump();
         event(new ProductListingProjected($ids));
     }
 

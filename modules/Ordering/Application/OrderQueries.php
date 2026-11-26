@@ -7,6 +7,7 @@ namespace Modules\Ordering\Application;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Ordering\Contracts\Data\OrderDetail;
@@ -23,6 +24,11 @@ use Modules\Shared\Support\StoreClock;
 
 final class OrderQueries
 {
+    /** Bước đã kết thúc — số đếm khi không lọc được cache (db-refactor L56). */
+    private const TERMINAL_STAGES = ['completed', 'cancelled'];
+
+    private const TERMINAL_COUNT_TTL = 60;
+
     /**
      * Danh sách đơn Admin. Lọc: `status`, `payment_status`, `stage` (OrderStage), `aged` (giờ), `payment_method`, `source`, `from`/`to`
      * (ngày đặt Y-m-d theo giờ cửa hàng), `q` (số đơn hoặc SĐT), `ids`. Mỗi đơn có thêm thuộc tính `stage`.
@@ -93,17 +99,28 @@ final class OrderQueries
      * Số đơn theo giai đoạn với cùng bộ lọc (trừ `stage`) — số trên các thẻ hàng đợi.
      *
      * @param  array<string, mixed>  $filters
+     * @param  list<string>|null  $only  chỉ đếm các giai đoạn này (Tổng quan: hàng đợi cần xử lý)
      * @return array<string, int>
      */
-    public function stageCounts(array $filters): array
+    public function stageCounts(array $filters, ?array $only = null): array
     {
-        $counts = $this->filtered([...$filters, 'stage' => null])
-            ->toBase()
-            ->selectRaw('stage, count(*) as total')
-            ->groupBy('stage')
-            ->pluck('total', 'stage');
+        $count = fn (array $stages): array => $stages === [] ? [] : $this->filtered([...$filters, 'stage' => null])->toBase()
+            ->whereIn('stage', $stages)->selectRaw('stage, count(*) as total')->groupBy('stage')->pluck('total', 'stage')->all();
+        $stages = $only ?? OrderStage::STAGES;
+        $unfiltered = ! isset($filters['ids']) && array_filter(array_diff_key($filters, ['stage' => true, 'ids' => true]), fn (mixed $value): bool => is_scalar($value) && trim((string) $value) !== '') === [];
+        if (! $unfiltered) {
+            $counts = $count($stages);
+        } else {
+            // Không lọc (db-refactor L56): bước đã kết thúc chiếm phần lớn đơn — đếm chúng quét index cả bảng (~0,5 s ở 5 triệu
+            // đơn) nên dùng số của tối đa TERMINAL_COUNT_TTL giây trước; các bước đang xử lý đếm trực tiếp (ít dòng).
+            $terminal = array_values(array_intersect($stages, self::TERMINAL_STAGES));
+            $counts = [
+                ...$count(array_values(array_diff($stages, self::TERMINAL_STAGES))),
+                ...($terminal === [] ? [] : array_intersect_key(Cache::remember('ordering:stage-counts:terminal', self::TERMINAL_COUNT_TTL, fn (): array => $count(self::TERMINAL_STAGES)), array_flip($terminal))),
+            ];
+        }
 
-        return array_map('intval', array_replace(array_fill_keys(OrderStage::STAGES, 0), $counts->all()));
+        return array_map('intval', array_replace(array_fill_keys($stages, 0), $counts));
     }
 
     /**

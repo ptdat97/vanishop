@@ -6,6 +6,7 @@ namespace Modules\Catalog\Application\Taxonomy;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Application\Search\ListingCacheVersion;
 use Modules\Catalog\Application\StaleRecord;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Domain\AttributeInputType;
@@ -64,6 +65,7 @@ final class TaxonomyService
         DB::transaction(function () use ($attribute): void {
             $attribute->delete();
             DB::table('product_facet_values')->where('facet', "attribute:{$attribute->id}")->delete();
+            app(ListingCacheVersion::class)->bump();
             $this->audit->record('catalog.attribute.deleted', 'attribute', $attribute->id, ['code' => $attribute->code]);
         });
     }
@@ -149,6 +151,7 @@ final class TaxonomyService
         // Read model trang danh sách (db-refactor §4.3): bỏ facet của giá trị đã xoá (product_attribute_values xoá theo cascade).
         DB::table('product_facet_values')->where('facet', "attribute:{$attribute->id}")
             ->whereNotIn('token', $attribute->values()->pluck('id')->map(fn ($id): string => (string) $id)->all())->delete();
+        app(ListingCacheVersion::class)->bump();
 
         foreach (array_values($values) as $position => $value) {
             $model = $attribute->values()->updateOrCreate(['code' => $value['code']], ['position' => $position]);
