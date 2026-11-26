@@ -159,7 +159,10 @@ export interface MediaItem {
     name: string;
     /** 0.3.91: `video` không có ảnh thu nhỏ (`thumb_url` null) — xem bằng thẻ <video> với `url`. */
     kind?: 'image' | 'video';
+    /** Video: ảnh thu nhỏ của poster (L24) — null khi chưa có poster. */
     thumb_url: string | null;
+    /** Video: ảnh poster (trình duyệt chụp khung hình khi tải lên, L24). */
+    poster_url?: string | null;
     url: string;
     width: number | null;
     height: number | null;

@@ -18,6 +18,8 @@ return new class extends Migration
             $table->unsignedInteger('width')->nullable();
             $table->unsignedInteger('height')->nullable();
             $table->char('checksum', 64);
+            // Video: ảnh poster (một media ảnh khác, trình duyệt chụp khung hình khi tải lên — reference-parity L24).
+            $table->foreignId('poster_media_id')->nullable()->constrained('media')->nullOnDelete();
             $table->timestamps();
             $table->unique('checksum');
         });

@@ -76,4 +76,9 @@ final class EloquentMediaUrls implements MediaUrls
 
         return array_filter(array_intersect_key($this->loaded, array_flip($ids)));
     }
+
+    public function poster(int $videoMediaId, int|string|null $size = null, ?string $group = null): ?string
+    {
+        return Media::query()->with('poster')->find($videoMediaId)?->posterUrl($size, $group);
+    }
 }

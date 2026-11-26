@@ -83,6 +83,8 @@ final class ProductPage
             [$zoomUrl, $zoomWidth] = self::largest($image);
 
             return [
+                // Video Thư viện (L24): theme hiện <video controls poster>, không phóng to.
+                'kind' => ($image['kind'] ?? 'image') === 'video' ? 'video' : 'image', 'poster' => $image['poster_url'] ?? null,
                 'url' => (string) $image['url'], 'srcset' => $image['srcset'] ?? null, 'sizes' => ($image['srcset'] ?? null) ? self::GALLERY_SIZES : null,
                 'alt' => (string) ($image['alt'] ?? $name), 'width' => 600, 'height' => $height(600),
                 // Ảnh đầu là LCP: tải ngay, ưu tiên cao; ảnh sau tải lười.
@@ -93,7 +95,8 @@ final class ProductPage
         }, array_keys($sources), $sources);
 
         $thumbs = count($images) > 1 ? array_map(fn (int $index, array $image): array => [
-            'index' => $index, 'url' => (string) $image['url'], 'thumb_url' => (string) ($image['thumb_url'] ?? $image['url']),
+            'index' => $index, 'url' => (string) $image['url'], 'kind' => ($image['kind'] ?? 'image') === 'video' ? 'video' : 'image',
+            'thumb_url' => ($image['kind'] ?? 'image') === 'video' ? ($image['thumb_url'] ?? null) : (string) ($image['thumb_url'] ?? $image['url']),
             'width' => 150, 'height' => $height(150), 'active' => $index === 0,
             'label' => __('storefront::labels.product_image', ['index' => $index + 1, 'name' => $name]),
         ], array_keys($images), $images) : [];

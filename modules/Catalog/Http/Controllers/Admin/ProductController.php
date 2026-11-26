@@ -99,7 +99,7 @@ final class ProductController
                     'status' => $product->status->value,
                     'brand' => $product->brand?->name,
                     'skus' => $product->variants->count(),
-                    'image_url' => $product->variants->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(160),
+                    'image_url' => $product->variants->flatMap(fn (Variant $variant) => $variant->gallery)->map(fn ($item): ?string => $item->media->isVideo() ? $item->media->posterUrl(160) : $item->media->url(160))->filter()->first(),
                 ])->all(),
                 'current' => $products->currentPage(),
                 'last' => $products->lastPage(),
@@ -573,7 +573,7 @@ final class ProductController
                         'weight_gram' => $variant->weight_gram,
                         'values' => array_map(fn (OptionValue $value): int => $value->id, VariantOptions::ordered($variant)),
                         'label' => implode(' / ', array_map(fn (OptionValue $value): string => $value->label(), VariantOptions::ordered($variant))),
-                        'images' => $variant->gallery->map(fn ($image): array => ['id' => $image->id, 'url' => $image->media->url(400)])->all(),
+                        'images' => $variant->gallery->map(fn ($image): array => ['id' => $image->id, 'url' => $image->media->isVideo() ? ($image->media->posterUrl(400) ?? $image->media->url()) : $image->media->url(400), 'kind' => $image->media->kind()])->all(),
                     ])->values()->all(),
                 'links' => $this->linkFormValues($product, $linkTypes),
                 // Driver đã tắt/gỡ: vẫn liệt kê để gỡ được, storefront không hiện.

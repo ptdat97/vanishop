@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\Catalog\Application\Media\ImageCache;
@@ -30,7 +31,7 @@ use Modules\Catalog\Application\Media\ImageCache;
  */
 final class Media extends Model
 {
-    protected $fillable = ['disk', 'path', 'folder', 'original_name', 'mime_type', 'size_bytes', 'width', 'height', 'checksum'];
+    protected $fillable = ['disk', 'path', 'folder', 'original_name', 'mime_type', 'size_bytes', 'width', 'height', 'checksum', 'poster_media_id'];
 
     /** @return array{x: int, y: int}|null */
     public function focalPoint(): ?array
@@ -94,5 +95,21 @@ final class Media extends Model
     public function usages(): HasMany
     {
         return $this->hasMany(Mediable::class);
+    }
+
+    /**
+     * Ảnh poster của video (L24); null khi chưa có.
+     *
+     * @return BelongsTo<Media, $this>
+     */
+    public function poster(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'poster_media_id');
+    }
+
+    /** URL poster của video (bản thu nhỏ như ảnh thường), null khi chưa có. */
+    public function posterUrl(int|string|null $size = null, ?string $group = null): ?string
+    {
+        return $this->isVideo() && $this->poster_media_id !== null ? $this->poster?->url($size, $group) : null;
     }
 }

@@ -492,7 +492,7 @@ async function destroy(): Promise<void> {
                         <p class="mt-1 text-sm text-slate-600">{{ t('catalog::admin.products_form.choose_upload_images_drag_reorder') }}</p>
                     </div>
                     <FormField :label="t('catalog::admin.products_form.image')" :error="errors.media_ids ?? errors.images">
-                        <MediaField v-model="form.media_ids" multiple :max="20" />
+                        <MediaField v-model="form.media_ids" kind="any" multiple :max="20" />
                     </FormField>
                 </section>
                 <p class="text-sm text-slate-500">{{ t('catalog::admin.products_form.videos_linked_products_added_after') }}</p>

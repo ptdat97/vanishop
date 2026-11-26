@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Plugin\StorefrontExtras\Infrastructure\Blocks;
 
 use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Plugin\StorefrontExtras\Infrastructure\Products;
@@ -60,7 +61,9 @@ final class VideoHeroBlock implements StorefrontBlock
         return [
             'video' => $video,
             'videoMobile' => $source('video_mobile', 'video_mobile_url'),
-            'poster' => Products::image($config['poster'] ?? null, $config['poster_url'] ?? '', 1600)[0],
+            // Chưa chọn poster → ảnh poster của video Thư viện (Core chụp khung hình khi tải lên, 1.7.0).
+            'poster' => Products::image($config['poster'] ?? null, $config['poster_url'] ?? '', 1600)[0]
+                ?: (is_numeric($config['video'] ?? null) ? (string) app(MediaUrls::class)->poster((int) $config['video'], 1600) : ''),
             'title' => (string) ($config['title'] ?? ''),
             'text' => (string) ($config['text'] ?? ''),
             'ctaLabel' => (string) ($config['cta_label'] ?? ''),

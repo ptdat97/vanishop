@@ -1,4 +1,4 @@
-Extension API 1.42.0
+Extension API 1.43.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -95,6 +95,7 @@ interface Modules\Catalog\Contracts\MediaUrls
   image(?int $mediaId, string|int|null $size = NULL, ?string $group = NULL): ?string
   srcset(?int $mediaId, ?string $group = NULL): string
   productRatio(): ?array
+  poster(int $videoMediaId, string|int|null $size = NULL, ?string $group = NULL): ?string
 interface Modules\Catalog\Contracts\VariantDirectory
   ofProductCode(string $productCode): array
   find(array $variantIds): array

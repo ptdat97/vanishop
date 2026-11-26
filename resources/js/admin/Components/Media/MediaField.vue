@@ -17,7 +17,7 @@ import MediaPicker from './MediaPicker.vue';
  *     <MediaField v-model="form.media_ids" multiple :max="8" />
  *     <MediaField v-model="form.video_media_id" kind="video" label="video" />   (0.3.91)
  */
-const props = withDefaults(defineProps<{ multiple?: boolean; max?: number; disabled?: boolean; label?: string; kind?: 'image' | 'video' }>(), {
+const props = withDefaults(defineProps<{ multiple?: boolean; max?: number; disabled?: boolean; label?: string; kind?: 'image' | 'video' | 'any' }>(), {
     multiple: false,
     max: 50,
     disabled: false,
@@ -82,7 +82,7 @@ function remove(id: number): void {
             :disabled="disabled || !multiple"
             @update:model-value="(next) => (model = next)"
         >
-                <video v-if="previews[id]?.kind === 'video'" :src="previews[id].url" muted playsinline controls preload="metadata" class="h-full w-full object-cover" :class="multiple ? '' : 'max-h-48'" />
+                <video v-if="previews[id]?.kind === 'video'" :src="previews[id].url" :poster="previews[id].poster_url ?? undefined" muted playsinline controls preload="metadata" class="h-full w-full object-cover" :class="multiple ? '' : 'max-h-48'" />
                 <img v-else-if="previews[id]" :src="previews[id].thumb_url ?? previews[id].url" :alt="previews[id].name" class="h-full w-full object-cover" :class="multiple ? '' : 'max-h-48'" />
                 <div v-else class="flex h-24 items-center justify-center text-xs text-slate-400">#{{ id }}</div>
                 <div v-if="!disabled" class="absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-white/80 p-1 text-xs opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">

@@ -69,13 +69,15 @@ export function mountProduct({ loadVendor, mountLightbox }) {
             loadingZoom = true;
             try {
                 const [PhotoSwipeLightbox, { default: PhotoSwipe }] = await Promise.all([loadVendor('photoswipe'), import('photoswipe')]);
-                lightbox = mountLightbox(PhotoSwipeLightbox, slider, (index) => go(index, false), PhotoSwipe);
+                // Lightbox chỉ gồm ảnh (slide video không có liên kết phóng to — L24): đổi chỉ số giữa ảnh và slide.
+                const zoomable = slides.filter((slide) => slide.querySelector('a[data-pswp-width]'));
+                lightbox = mountLightbox(PhotoSwipeLightbox, slider, (index) => go(slides.indexOf(zoomable[index]), false), PhotoSwipe);
                 lightbox.options.returnFocus = false;
                 lightbox.on('destroy', () => {
                     queueMicrotask(() => slides[current]?.querySelector('a[data-pswp-width]')?.focus({ preventScroll: true }));
                 });
                 const pointer = event.clientX || event.clientY ? { x: event.clientX, y: event.clientY } : undefined;
-                lightbox.loadAndOpen(slides.indexOf(link.closest('[data-gallery-slide]')), { gallery: slider }, pointer);
+                lightbox.loadAndOpen(zoomable.indexOf(link.closest('[data-gallery-slide]')), { gallery: slider }, pointer);
             } catch {
                 window.location.assign(link.href);
             } finally {

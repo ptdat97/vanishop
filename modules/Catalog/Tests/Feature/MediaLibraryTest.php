@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Application\Media\EloquentMediaUrls;
 use Modules\Catalog\Application\Media\ImageCache;
+use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
@@ -346,4 +347,20 @@ it('thêm sản phẩm kèm ảnh theo màu trong một lần Lưu: màu có ả
         'NEW-IVR-M' => [$b, $a],
         'NEW-BLK-S' => [$c],
     ]);
+});
+
+it('poster video (L24): gắn ảnh poster do trình duyệt chụp; poster đang được video dùng nên không xoá riêng; xoá video xoá luôn poster', function () {
+    [$mp4] = uploadTo('', [fakeMp4('hero.mp4', 1920, 1080)]);
+    [$image] = uploadTo('', [UploadedFile::fake()->image('anh.jpg', 400, 400)]);
+
+    $this->postJson("{$this->base}/items/{$image['id']}/poster", ['poster' => UploadedFile::fake()->image('p.jpg', 640, 360)])->assertStatus(422);
+    $item = $this->postJson("{$this->base}/items/{$mp4['id']}/poster", ['poster' => UploadedFile::fake()->image('hero-poster.jpg', 640, 360)])->assertOk()->json('item');
+    $posterId = (int) Media::query()->whereKey($mp4['id'])->value('poster_media_id');
+
+    expect($item['poster_url'])->not->toBeNull()->and($item['thumb_url'])->not->toBeNull()
+        ->and(app(MediaUrls::class)->poster($mp4['id'], 800))->toBe($item['poster_url']);
+    $this->postJson("{$this->base}/items/delete", ['ids' => [$posterId]])->assertOk()->assertJsonPath('deleted', 0);
+
+    $this->postJson("{$this->base}/items/delete", ['ids' => [$mp4['id']]])->assertOk()->assertJsonPath('deleted', 1);
+    expect(Media::query()->whereKey([$mp4['id'], $posterId])->count())->toBe(0);
 });

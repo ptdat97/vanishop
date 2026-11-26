@@ -27,6 +27,7 @@ return [
     'bulk_edited' => 'Đã cập nhật :count sản phẩm.',
     'bulk_deleted' => 'Đã xoá :count sản phẩm nháp.',
     'bulk_deleted_skipped' => 'Đã xoá :count sản phẩm nháp; bỏ qua :skipped sản phẩm đã mở bán hoặc ngừng bán (dùng "Ngừng bán" để ẩn).',
+    'media_poster_requires_video' => 'Chỉ video mới có ảnh poster.',
     'parent_not_found' => 'Danh mục cha không tồn tại.',
     'attribute_values_required' => 'Thuộc tính dạng chọn cần ít nhất một giá trị.',
     'category_has_children' => 'Không thể xoá danh mục còn danh mục con.',

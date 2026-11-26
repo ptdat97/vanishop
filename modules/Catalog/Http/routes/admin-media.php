@@ -16,6 +16,7 @@ Route::post('items/move', [MediaLibraryController::class, 'move'])->name('items.
 Route::post('items/delete', [MediaLibraryController::class, 'destroy'])->name('items.destroy');
 Route::post('items/{media}/rename', [MediaLibraryController::class, 'rename'])->name('items.rename');
 Route::post('items/{media}/focal-point', [MediaLibraryController::class, 'focalPoint'])->name('items.focal-point');
+Route::post('items/{media}/poster', [MediaLibraryController::class, 'poster'])->name('items.poster');
 // Kích thước ảnh thu nhỏ (0.3.87).
 Route::get('sizes', [ImageSizeController::class, 'index'])->name('sizes.index');
 Route::put('sizes', [ImageSizeController::class, 'update'])->name('sizes.update');

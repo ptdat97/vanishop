@@ -27,6 +27,7 @@ return [
     'bulk_edited' => 'Updated :count products.',
     'bulk_deleted' => 'Deleted :count draft products.',
     'bulk_deleted_skipped' => 'Deleted :count draft products; skipped :skipped active or archived products (use "Archive" to hide them).',
+    'media_poster_requires_video' => 'Only videos have a poster image.',
     'parent_not_found' => 'The parent category does not exist.',
     'attribute_values_required' => 'A select attribute needs at least one value.',
     'category_has_children' => 'A category with sub-categories cannot be deleted.',

@@ -6,6 +6,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.98 — 2026-11-26 · Extension API 1.43.0
+
+Poster video và video Thư viện trong gallery sản phẩm ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L24). Thêm vào API cho plugin (tăng minor). Không chuyển mã video, không thêm phụ thuộc (Owner chọn chụp poster bằng trình duyệt).
+
+- `media.poster_media_id`: khi tải video lên Thư viện ảnh, trình duyệt chụp một khung hình (canvas) và gửi `POST /{admin}/media/items/{id}/poster`; poster là một ảnh trong Thư viện, ghi nhận "đang dùng" bởi video (không xoá riêng được), xoá video thì xoá theo. Lưới/xem trước Thư viện và ô chọn ảnh hiện poster. Video tải qua đường khác (API, nhập file) chưa có poster.
+- `MediaUrls::poster(int $videoMediaId, $size, $group)` mới.
+- Gallery SKU nhận video từ Thư viện (ô ảnh của sản phẩm, ma trận biến thể, gán hàng loạt). Storefront API `product.v1` `media.gallery[]` thêm `kind` (`image`/`video`) và `poster_url`; `thumb_url` có thể null với video chưa có poster. Ảnh thẻ sản phẩm, ảnh swatch bỏ qua video (dùng ảnh đầu tiên, hoặc poster). Theme `vani-base`: PDP hiện `<video controls poster>`, lightbox chỉ gồm ảnh.
+- `vani.storefront-extras` 1.7.0: Video hero chưa chọn poster thì dùng poster của video Thư viện.
+
 ## 0.5.97 — 2026-11-26 · Extension API 1.42.0
 
 Gợi ý nhập lại và hàng bán chậm ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L41, một phần). Thêm vào API cho plugin (tăng minor).

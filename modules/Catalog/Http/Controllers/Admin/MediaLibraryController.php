@@ -139,6 +139,18 @@ final class MediaLibraryController
         return response()->json(['item' => $this->present($media->loadCount('usages'))]);
     }
 
+    /**
+     * Ảnh poster của video (L24) — trình duyệt chụp một khung hình khi tải video lên rồi gửi ở đây.
+     */
+    public function poster(Media $media, Request $request, MediaManager $manager): JsonResponse
+    {
+        Gate::authorize('media.manage');
+        $request->validate(['poster' => ['required', File::image()->types(self::UPLOAD_TYPES)->max(self::MAX_UPLOAD_KB)]]);
+        $manager->setPoster($media, $request->file('poster'));
+
+        return response()->json(['item' => $this->present($media->refresh()->loadCount('usages'))]);
+    }
+
     public function focalPoint(Media $media, Request $request, MediaManager $manager): JsonResponse
     {
         Gate::authorize('media.manage');
@@ -190,8 +202,9 @@ final class MediaLibraryController
             'id' => $item->id,
             'name' => $item->original_name,
             'kind' => $item->kind(),
-            // Video không có ảnh thu nhỏ: giao diện dùng thẻ <video> với `url`.
-            'thumb_url' => $item->isVideo() ? null : $item->url(400),
+            // Video không có ảnh thu nhỏ: giao diện dùng poster (L24) nếu có, không thì thẻ <video> với `url`.
+            'thumb_url' => $item->isVideo() ? $item->posterUrl(400) : $item->url(400),
+            'poster_url' => $item->posterUrl(800),
             'url' => $item->url(),
             'width' => $item->width,
             'height' => $item->height,

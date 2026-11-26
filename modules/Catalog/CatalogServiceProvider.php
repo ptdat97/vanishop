@@ -45,6 +45,7 @@ use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Contracts\VideoDriver;
 use Modules\Catalog\Listeners\DeclareSettingMedia;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
@@ -117,7 +118,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         });
 
         // Không lưu tên class vào cột *_type (đổi namespace không làm hỏng dữ liệu).
-        Relation::morphMap(['catalog.category' => Category::class, 'catalog.variant' => Variant::class]);
+        Relation::morphMap(['catalog.category' => Category::class, 'catalog.variant' => Variant::class, 'catalog.media' => Media::class]);
 
         $permissions->register('catalog.view', 'Xem catalog', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_MARKETING, PermissionRegistry::PRESET_CONTENT, PermissionRegistry::PRESET_ANALYST]);
         $permissions->register('catalog.manage', 'catalog::texts.catalog_service_provider.edit_catalogue_products_brands_categories', [PermissionRegistry::PRESET_CONTENT]);

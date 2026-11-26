@@ -46,4 +46,10 @@ interface MediaUrls
      * @return array{int, int}|null
      */
     public function productRatio(): ?array;
+
+    /**
+     * Ảnh poster của video theo id (0.5.98, L24 — trình duyệt chụp khung hình khi tải video lên); null khi id không phải
+     * video hoặc video chưa có poster.
+     */
+    public function poster(int $videoMediaId, int|string|null $size = null, ?string $group = null): ?string;
 }

@@ -416,6 +416,13 @@
                             "id": {
                                 "type": "integer"
                             },
+                            "kind": {
+                                "enum": [
+                                    "image",
+                                    "video"
+                                ],
+                                "description": "video (0.5.98): `url` là file video gốc, xem bằng <video> với `poster_url`."
+                            },
                             "url": {
                                 "type": "string"
                             },
@@ -425,8 +432,17 @@
                                     "null"
                                 ]
                             },
+                            "poster_url": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
                             "thumb_url": {
-                                "type": "string"
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
                             },
                             "alt": {
                                 "type": [
@@ -438,7 +454,7 @@
                     }
                 }
             },
-            "description": "Hợp ảnh của mọi SKU, mỗi ảnh một lần (`id` = id media); `variants[].media` trỏ ảnh của chính SKU."
+            "description": "Hợp ảnh/video của mọi SKU, mỗi mục một lần (`id` = id media); `variants[].media` trỏ mục của chính SKU."
         },
         "inventory": {
             "type": "object",

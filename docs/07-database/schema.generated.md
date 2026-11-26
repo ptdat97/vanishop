@@ -55,7 +55,7 @@
 | [`link_type_translations`](#link_type_translations) | 4 |
 | [`link_types`](#link_types) | 6 |
 | [`locations`](#locations) | 15 |
-| [`media`](#media) | 14 |
+| [`media`](#media) | 15 |
 | [`media_folders`](#media_folders) | 4 |
 | [`mediables`](#mediables) | 9 |
 | [`migrations`](#migrations) | 3 |
@@ -995,12 +995,15 @@ Index: unique (code); PK (id)
 | `width` | int unsigned | có |  |
 | `height` | int unsigned | có |  |
 | `checksum` | char(64) |  |  |
+| `poster_media_id` | bigint unsigned | có |  |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 | `focal_x` | tinyint unsigned | có |  |
 | `focal_y` | tinyint unsigned | có |  |
 
-Index: unique (checksum); index (folder); PK (id)
+Index: unique (checksum); index (folder); index (poster_media_id); PK (id)
+
+Khoá ngoại: poster_media_id → media(id) on delete set null
 
 ## media_folders
 

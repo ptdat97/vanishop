@@ -9,6 +9,7 @@ import { confirmAction } from '@admin/confirm';
 import { getJson, HttpError, postJson, uploadJson } from '@admin/http';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
+import { capturePoster } from '@admin/videoPoster';
 import { checkFile, formatSize } from '@admin/upload';
 import { computed, onMounted, ref } from 'vue';
 
@@ -200,6 +201,20 @@ function errorMessage(error: unknown): string {
     return errors[0] ?? (error instanceof Error ? error.message : t('shared::admin.media_media_manager.something_went_wrong'));
 }
 
+async function attachPoster(media: MediaItem, file: File): Promise<MediaItem | null> {
+    const poster = await capturePoster(file);
+    if (!poster) {
+        return null;
+    }
+    const body = new FormData();
+    body.append('poster', poster, `${media.name.replace(/\.[^.]+$/, '')}-poster.jpg`);
+    try {
+        return (await uploadJson<{ item: MediaItem }>(url(`items/${media.id}/poster`), body)).item;
+    } catch {
+        return null;
+    }
+}
+
 function upload(files: File[]): void {
     if (!files.length || !canManage.value) {
         return;
@@ -237,6 +252,12 @@ async function drainQueue(): Promise<void> {
         body.append('images[]', current.file);
         try {
             const result = await uploadJson<{ items: MediaItem[] }>(url('upload'), body, (percent) => (current.progress = percent));
+            // Video (L24): trình duyệt chụp một khung hình làm poster — lỗi thì bỏ qua, video vẫn dùng được.
+            for (const [index, media] of result.items.entries()) {
+                if (media.kind === 'video' && !media.poster_url) {
+                    result.items[index] = (await attachPoster(media, current.file)) ?? media;
+                }
+            }
             uploaded.push(...result.items);
             queue.value = queue.value.filter((entry) => entry.key !== current.key);
         } catch (error) {
@@ -424,7 +445,7 @@ onMounted(load);
                         @dblclick="pickNow(item)"
                     >
                         <div class="relative aspect-square bg-slate-100">
-                            <video v-if="item.kind === 'video'" :src="`${item.url}#t=0.5`" muted playsinline preload="metadata" class="h-full w-full object-cover" />
+                            <video v-if="item.kind === 'video' && !item.thumb_url" :src="`${item.url}#t=0.5`" muted playsinline preload="metadata" class="h-full w-full object-cover" />
                             <img v-else :src="item.thumb_url ?? item.url" :alt="item.name" loading="lazy" class="h-full w-full object-cover" />
                             <span v-if="item.kind === 'video'" class="absolute bottom-1 left-1 rounded bg-slate-900/80 px-1.5 text-[10px] text-white">▶ Video</span>
                             <span v-if="item.usages_count" class="absolute top-1 left-1 rounded bg-emerald-600/90 px-1.5 text-[10px] text-white">{{ t('shared::admin.media_media_manager.use_usages_count', { usages_count: item.usages_count }) }}</span>
@@ -454,7 +475,7 @@ onMounted(load);
                     @update:model-value="reorderSelected"
                 >
                     <button type="button" class="block h-16 w-16 overflow-hidden rounded border border-slate-200" :title="`Xem ${item.name}`" @click="previewing = item">
-                        <video v-if="item.kind === 'video'" :src="`${item.url}#t=0.5`" muted preload="metadata" class="h-full w-full object-cover" />
+                        <video v-if="item.kind === 'video' && !item.thumb_url" :src="`${item.url}#t=0.5`" muted preload="metadata" class="h-full w-full object-cover" />
                         <img v-else :src="item.thumb_url ?? item.url" :alt="item.name" class="h-full w-full object-cover" />
                     </button>
                     <span class="absolute top-0.5 left-0.5 rounded bg-slate-900/70 px-1 text-[10px] text-white">{{ index + 1 }}</span>
@@ -491,7 +512,7 @@ onMounted(load);
         </section>
         <Dialog :open="previewing !== null" :title="previewing?.name ?? ''" :subtitle="previewing ? [previewing.width ? `${previewing.width}×${previewing.height}` : '', size(previewing.size_bytes)].filter(Boolean).join(' · ') : ''" size="large" @update:open="(value) => !value && (previewing = null)">
             <div v-if="previewing" class="flex min-h-0 flex-1 items-center justify-center bg-slate-100">
-                <video v-if="previewing.kind === 'video'" :src="previewing.url" controls class="max-h-full max-w-full" />
+                <video v-if="previewing.kind === 'video'" :src="previewing.url" :poster="previewing.poster_url ?? undefined" controls class="max-h-full max-w-full" />
                 <img v-else :src="previewing.url" :alt="previewing.name" class="max-h-full max-w-full object-contain" />
             </div>
         </Dialog>

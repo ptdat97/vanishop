@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.97
+Storefront API v1 — VaniShop 0.5.98
 GET /address/provinces security[]
   200
     $: object
@@ -3849,8 +3849,10 @@ GET /products/{slug} security[none,customerBearer,firstPartySession]
     $.data.media.gallery[]: object
     $.data.media.gallery[].alt: string|null optional
     $.data.media.gallery[].id: integer
+    $.data.media.gallery[].kind: any optional enum[image,video]
+    $.data.media.gallery[].poster_url: string|null optional
     $.data.media.gallery[].srcset: string|null optional
-    $.data.media.gallery[].thumb_url: string optional
+    $.data.media.gallery[].thumb_url: string|null optional
     $.data.media.gallery[].url: string
     $.data.meta_description: string|null optional
     $.data.meta_title: string|null optional

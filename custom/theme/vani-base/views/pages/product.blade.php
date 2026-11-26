@@ -29,12 +29,17 @@
                     <div class="flex h-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none]" data-gallery-track>
                         @foreach ($gallery['slides'] as $slide)
                             <div class="h-full w-full shrink-0 snap-start" data-gallery-slide>
+                                @if ($slide['kind'] === 'video')
+                                    <video src="{{ $slide['url'] }}" @if ($slide['poster']) poster="{{ $slide['poster'] }}" @endif controls playsinline muted preload="{{ $slide['main'] ? 'metadata' : 'none' }}"
+                                           aria-label="{{ $slide['alt'] }}" class="h-full w-full bg-black object-contain" data-gallery-video></video>
+                                @else
                                 <a href="{{ $slide['zoom']['url'] }}" data-pswp-width="{{ $slide['zoom']['width'] }}" data-pswp-height="{{ $slide['zoom']['height'] }}" target="_blank" rel="noopener" class="block h-full cursor-zoom-in"
                                    aria-label="{{ $slide['zoom_label'] }}">
                                     <img {{ $slide['main'] ? 'data-gallery-main' : 'data-gallery-image' }} src="{{ $slide['url'] }}" alt="{{ $slide['alt'] }}" width="{{ $slide['width'] }}" height="{{ $slide['height'] }}"
                                          @if ($slide['srcset']) srcset="{{ $slide['srcset'] }}" sizes="(min-width: 1536px) 760px, (min-width: 1280px) 640px, (min-width: 768px) 57vw, 100vw" @endif
                                          @if ($slide['main']) fetchpriority="high" @else loading="lazy" @endif decoding="async" class="h-full w-full object-contain md:object-cover">
                                 </a>
+                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -50,7 +55,11 @@
                     <div class="mt-2 flex gap-2 overflow-x-auto pb-1 md:mt-3" data-gallery-thumbs data-js-only>
                         @foreach ($gallery['thumbs'] as $thumb)
                             <button type="button" data-gallery-thumb data-src="{{ $thumb['url'] }}" data-index="{{ $thumb['index'] }}" @class(['w-12 shrink-0 overflow-hidden rounded-[var(--radius-theme)] border md:w-20', 'border-primary' => $thumb['active'], 'border-slate-200' => ! $thumb['active']]) style="aspect-ratio: {{ $gallery['aspect'] }}" aria-label="{{ $thumb['label'] }}" @if ($thumb['active']) aria-current="true" @endif>
-                                <img src="{{ $thumb['thumb_url'] }}" alt="" loading="lazy" decoding="async" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" class="h-full w-full object-cover">
+                                @if ($thumb['thumb_url'])
+                                    <img src="{{ $thumb['thumb_url'] }}" alt="" loading="lazy" decoding="async" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" class="h-full w-full object-cover">
+                                @else
+                                    <span class="flex h-full w-full items-center justify-center bg-black text-lg text-white" aria-hidden="true">▶</span>
+                                @endif
                             </button>
                         @endforeach
                     </div>

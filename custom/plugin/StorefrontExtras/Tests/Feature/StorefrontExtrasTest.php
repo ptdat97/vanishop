@@ -114,6 +114,11 @@ it('Video hero 1.2.0: video chọn từ Thư viện ảnh (id), di động riên
     $html = view(app(VideoHeroBlock::class)->view(), $data)->render();
     expect($html)->toContain('src="'.vani_media($mobile->id).'" media="(max-width: 767px)" type="video/webm"')->toContain('type="video/mp4"');
 
+    // Chưa chọn poster → poster của video Thư viện (Core chụp khung hình khi tải lên, 1.7.0).
+    expect($data['poster'])->toBe('');
+    $desktop->forceFill(['poster_media_id' => $photo->id])->save();
+    expect(app(VideoHeroBlock::class)->resolve(['video' => $desktop->id], 'vi')['poster'])->toBe(vani_image($photo->id, 1600));
+
     try {
         app(BuilderEngine::class)->save([['type' => 'extras_video_hero', 'config' => ['video' => $photo->id, 'poster' => $desktop->id, 'video_mobile' => 99999999]]]);
         $this->fail('Phải từ chối tệp sai loại hoặc không tồn tại.');

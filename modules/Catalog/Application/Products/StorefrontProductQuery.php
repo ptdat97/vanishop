@@ -17,6 +17,7 @@ use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\LinkType;
+use Modules\Catalog\Persistence\Models\Mediable;
 use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductAttributeValue;
@@ -101,7 +102,7 @@ final class StorefrontProductQuery
         $product = Product::query()
             ->with(['translations', 'brand', 'options.type.translations', 'optionValues.value.translations', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations', 'videos',
                 // Mọi SKU (cả ngừng bán) cho `variants`; thẻ và tổng hợp chỉ tính SKU đang bán.
-                'variants' => fn ($query) => $query->with(['optionValues', 'gallery.media'])])
+                'variants' => fn ($query) => $query->with(['optionValues', 'gallery.media.poster'])])
             ->whereLocalizedSlug($slug, $locale)
             ->first();
 
@@ -155,7 +156,7 @@ final class StorefrontProductQuery
         $defaultWeight = DefaultWeight::grams($this->settings);
 
         return Variant::query()
-            ->with(['product.translations', 'product.brand', 'gallery.media', ...VariantOptions::relations()])
+            ->with(['product.translations', 'product.brand', 'gallery.media.poster', ...VariantOptions::relations()])
             ->whereIn('id', $variantIds)
             ->where('status', VariantStatus::Active)
             ->get()
@@ -185,12 +186,15 @@ final class StorefrontProductQuery
     private static function summaryRelations(): array
     {
         return ['translations', 'brand', 'options.type', 'optionValues.value.translations',
-            'variants' => fn ($query) => $query->where('status', 'active')->with(['optionValues', 'gallery.media'])];
+            'variants' => fn ($query) => $query->where('status', 'active')->with(['optionValues', 'gallery.media.poster'])];
     }
 
     private function summary(Product $product, string $locale): array
     {
-        $firstImage = $product->variants->flatMap(fn (Variant $variant) => $variant->gallery)->first();
+        // Ảnh đại diện của thẻ: ảnh đầu tiên của gallery; gallery chỉ có video → poster của video đầu tiên có poster (L24).
+        $items = $product->variants->flatMap(fn (Variant $variant) => $variant->gallery);
+        $firstImage = $items->first(fn ($item): bool => ! $item->media->isVideo());
+        $firstPoster = $firstImage === null ? $items->map(fn ($item) => $item->media->poster)->filter()->first() : null;
 
         return [
             'id' => $product->id,
@@ -200,9 +204,9 @@ final class StorefrontProductQuery
             'product_code' => $product->product_code,
             'name' => $product->translate('name', $locale),
             'brand' => $product->brand === null ? null : ['id' => $product->brand->id, 'slug' => $product->brand->slug, 'name' => $product->brand->name],
-            'image_url' => $firstImage?->media->url(400, ImageSizes::PRODUCT),
+            'image_url' => $firstImage?->media->url(400, ImageSizes::PRODUCT) ?? $firstPoster?->url(400, ImageSizes::PRODUCT),
             // Ảnh responsive (0.3.67): theme ghép `sizes` theo bố cục lưới; null khi ảnh không có bản thu nhỏ.
-            'image_srcset' => ($firstImage?->media->srcset(ImageSizes::PRODUCT) ?? '') ?: null,
+            'image_srcset' => (($firstImage?->media ?? $firstPoster)?->srcset(ImageSizes::PRODUCT) ?? '') ?: null,
             // Swatch của thẻ: giá trị của trục kiểu ô màu (nếu có) mà SKU đang bán dùng (ADR-045).
             'colors' => $this->swatches($product, $locale),
             'variant_ids' => $product->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),
@@ -224,7 +228,7 @@ final class StorefrontProductQuery
 
         return $this->axisValues($product, $axis, onlyUsed: false)->map(fn (OptionValue $value): array => [
             'code' => $value->code, 'name' => $value->translate('name', $locale), 'hex' => $value->hex, 'family' => (string) ($value->family ?? 'multi'),
-            'image_url' => $this->variantsWith($product, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(400, ImageSizes::PRODUCT),
+            'image_url' => self::imageUrl($this->variantsWith($product, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery), 400),
         ])->values()->all();
     }
 
@@ -270,9 +274,13 @@ final class StorefrontProductQuery
         $gallery = [];
         foreach ($variants as $variant) {
             foreach ($variant->gallery as $image) {
-                $gallery[$image->media_id] ??= [
-                    'id' => $image->media_id, 'url' => $image->media->url(800, ImageSizes::PRODUCT), 'srcset' => $image->media->srcset(ImageSizes::PRODUCT) ?: null,
-                    'thumb_url' => $image->media->url(160, ImageSizes::PRODUCT), 'alt' => $image->alt,
+                // Video Thư viện trong gallery (L24): `url` là file gốc, `poster_url`/`thumb_url` từ ảnh poster (có thể null).
+                $gallery[$image->media_id] ??= $image->media->isVideo() ? [
+                    'id' => $image->media_id, 'kind' => 'video', 'url' => $image->media->url(), 'srcset' => null,
+                    'poster_url' => $image->media->posterUrl(800, ImageSizes::PRODUCT), 'thumb_url' => $image->media->posterUrl(160, ImageSizes::PRODUCT), 'alt' => $image->alt,
+                ] : [
+                    'id' => $image->media_id, 'kind' => 'image', 'url' => $image->media->url(800, ImageSizes::PRODUCT), 'srcset' => $image->media->srcset(ImageSizes::PRODUCT) ?: null,
+                    'poster_url' => null, 'thumb_url' => $image->media->url(160, ImageSizes::PRODUCT), 'alt' => $image->alt,
                 ];
             }
         }
@@ -283,7 +291,7 @@ final class StorefrontProductQuery
                 'values' => $this->axisValues($product, $axis)->map(fn (OptionValue $value): array => [
                     'id' => $value->id, 'code' => $value->code, 'name' => $value->translate('name', $locale) ?? $value->code,
                     'hex' => $value->hex, 'family' => $value->family, 'group' => $value->group,
-                    'image_url' => $this->variantsWith($product, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(400, ImageSizes::PRODUCT),
+                    'image_url' => self::imageUrl($this->variantsWith($product, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery), 400),
                 ])->all(),
             ])->values()->all(),
             'variants' => $variants->map(fn (Variant $variant): array => [
@@ -337,5 +345,18 @@ final class StorefrontProductQuery
             ->map(fn (array $item): array => ['code' => $item['code'], 'name' => $item['name'], 'value' => $item['value']])
             ->values()
             ->all();
+    }
+
+    /**
+     * Ảnh đầu tiên của các mục gallery (bỏ qua video), không có thì poster của video đầu tiên có poster (L24).
+     *
+     * @param  iterable<Mediable>  $items
+     */
+    private static function imageUrl(iterable $items, int $size): ?string
+    {
+        $items = collect($items);
+
+        return $items->first(fn (Mediable $item): bool => ! $item->media->isVideo())?->media->url($size, ImageSizes::PRODUCT)
+            ?? $items->map(fn (Mediable $item): ?string => $item->media->posterUrl($size, ImageSizes::PRODUCT))->filter()->first();
     }
 }

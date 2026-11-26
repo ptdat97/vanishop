@@ -687,7 +687,7 @@ const enabledCount = computed(() => rows.value.length);
                                 <span v-if="isSwatch(imageAxis.option_type_id)" class="inline-block h-3 w-3 rounded-full border border-slate-300" :style="{ background: valueById.get(valueId)?.hex ?? 'transparent' }" />
                                 {{ valueName(valueId) }}
                             </p>
-                            <MediaField v-model="valueImages[valueId]" multiple :max="20" :label="t('catalog::admin.variant_matrix_editor.value_id_images', { value_id: valueName(valueId) })" />
+                            <MediaField v-model="valueImages[valueId]" kind="any" multiple :max="20" :label="t('catalog::admin.variant_matrix_editor.value_id_images', { value_id: valueName(valueId) })" />
                         </div>
                     </div>
                     <p v-for="(message, field) in valueImageErrors" :key="field" class="text-red-600">{{ message }}</p>
@@ -812,7 +812,7 @@ const enabledCount = computed(() => rows.value.length);
                 </div>
             </section>
         </div>
-        <MediaPicker v-model:open="assign.picking" :title="t('catalog::admin.variant_matrix_editor.choose_images_assign_multiple_skus')" @select="startAssign" />
+        <MediaPicker v-model:open="assign.picking" kind="any" :title="t('catalog::admin.variant_matrix_editor.choose_images_assign_multiple_skus')" @select="startAssign" />
         <Dialog v-model:open="assign.open" :title="t('catalog::admin.variant_matrix_editor.assign_images_skus')" :subtitle="t('catalog::admin.variant_matrix_editor.count_images_added_end_selected', { count: assign.media.length })" size="large" :dirty="assign.variantIds.length > 0 && !assign.busy">
             <div class="space-y-4 overflow-y-auto">
                 <ol class="flex flex-wrap gap-2" :aria-label="t('catalog::admin.variant_matrix_editor.images_assign_order')">
@@ -849,6 +849,6 @@ const enabledCount = computed(() => rows.value.length);
                 </button>
             </template>
         </Dialog>
-        <MediaPicker :open="picking" :title="t('catalog::admin.variant_matrix_editor.images_label_2', { label: imageVariant?.label ?? '' })" @update:open="(value) => !value && (picking = false)" @select="attachFromLibrary" />
+        <MediaPicker :open="picking" kind="any" :title="t('catalog::admin.variant_matrix_editor.images_label_2', { label: imageVariant?.label ?? '' })" @update:open="(value) => !value && (picking = false)" @select="attachFromLibrary" />
     </div>
 </template>

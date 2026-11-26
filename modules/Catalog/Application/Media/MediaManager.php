@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Persistence\Models\Media;
+use Modules\Catalog\Persistence\Models\Mediable;
 use Modules\Catalog\Persistence\Models\MediaFolder;
 use Modules\Identity\Contracts\AuditLogger;
 
@@ -22,6 +23,9 @@ use Modules\Identity\Contracts\AuditLogger;
  */
 final class MediaManager
 {
+    /** Vai trò ghi nhận ảnh poster đang được video dùng (mediables). */
+    public const POSTER_ROLE = 'poster';
+
     public const MAX_DEPTH = 4;
 
     public const PER_PAGE = 40;
@@ -139,6 +143,30 @@ final class MediaManager
         return $stored;
     }
 
+    /**
+     * Gắn ảnh poster cho video (L24): ảnh lưu vào cùng thư mục, ghi nhận "đang dùng" bởi video (không xoá nhầm khi video còn);
+     * poster cũ bỏ ghi nhận và bị xoá nếu không còn nơi dùng.
+     */
+    public function setPoster(Media $video, UploadedFile $file): Media
+    {
+        if (! $video->isVideo()) {
+            throw ValidationException::withMessages(['poster' => __('catalog::messages.media_poster_requires_video')]);
+        }
+        $poster = $this->library->store($file, (string) $video->folder);
+        $previous = $video->poster;
+        DB::transaction(function () use ($video, $poster): void {
+            Mediable::query()->where('mediable_type', 'catalog.media')->where('mediable_id', $video->id)->where('role', self::POSTER_ROLE)->delete();
+            Mediable::query()->create(['media_id' => $poster->id, 'mediable_type' => 'catalog.media', 'mediable_id' => $video->id, 'role' => self::POSTER_ROLE, 'position' => 0]);
+            $video->forceFill(['poster_media_id' => $poster->id])->save();
+        });
+        if ($previous !== null && $previous->id !== $poster->id && ! $previous->usages()->exists()) {
+            $this->library->delete($previous);
+        }
+        $this->audit->record('catalog.media.poster_set', 'media', $video->id, ['poster_media_id' => $poster->id]);
+
+        return $poster;
+    }
+
     public function rename(Media $media, string $name): void
     {
         $media->update(['original_name' => trim($name)]);
@@ -179,7 +207,15 @@ final class MediaManager
         $deletable = $items->filter(fn (Media $media): bool => (int) $media->getAttribute('usages_count') === 0);
 
         foreach ($deletable as $media) {
+            $poster = $media->poster;
             $this->library->delete($media);
+            if ($poster !== null) {
+                // Poster chỉ phục vụ video này: xoá theo (bỏ ghi nhận "đang dùng" trước).
+                Mediable::query()->where('media_id', $poster->id)->where('mediable_type', 'catalog.media')->where('role', self::POSTER_ROLE)->delete();
+                if (! $poster->usages()->exists()) {
+                    $this->library->delete($poster);
+                }
+            }
         }
         if ($deletable->isNotEmpty()) {
             $this->audit->record('catalog.media.deleted', 'media', null, ['ids' => $deletable->modelKeys()]);
