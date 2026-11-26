@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.97 — 2026-11-26 · Extension API 1.42.0
+
+Gợi ý nhập lại và hàng bán chậm ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L41, một phần). Thêm vào API cho plugin (tăng minor).
+
+- Contract mới `Inventory\Contracts\StockOverview::stockedVariants()`: duyệt SKU đang bán còn tồn bán được online theo lô id, từ read model lưới tồn (không nạp mọi SKU).
+- `vani.reports` 1.6.0: báo cáo **Gợi ý nhập lại** (`reorder-suggestions` — đủ bán thêm một kỳ bằng kỳ đang xem, trừ tồn bán được và hàng đang về) và **Hàng bán chậm** (`slow-movers` — cần hơn 90 ngày mới bán hết hoặc không bán được trong kỳ). Bỏ qua sản phẩm không theo dõi tồn.
+
 ## 0.5.96 — 2026-11-26 · Extension API 1.41.0
 
 Xoá tài khoản khách bằng mã một lần ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L40). Thay đổi API cho plugin (tăng minor).

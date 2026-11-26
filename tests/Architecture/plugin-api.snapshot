@@ -1,4 +1,4 @@
-Extension API 1.41.0
+Extension API 1.42.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -468,6 +468,8 @@ class Modules\Inventory\Contracts\StockMovementRejected extends RuntimeException
 interface Modules\Inventory\Contracts\StockMovements
   transferOut(int $locationId, array $quantities, string $reason, string $reference): void
   transferIn(int $locationId, array $quantities, string $reason, string $reference): void
+interface Modules\Inventory\Contracts\StockOverview
+  stockedVariants(int $afterVariantId = 0, int $limit = 1000): array
 interface Modules\Inventory\Contracts\StockPageLink
   const TAG = 'vani.inventory.stock_links'
   label(): string

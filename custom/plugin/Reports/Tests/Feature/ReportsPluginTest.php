@@ -107,7 +107,7 @@ it('widget Tổng quan + báo cáo của plugin; nhân viên thiếu quyền ch�
             ->where('navigation', fn (mixed $items) => collect($items)->pluck('key')->contains('reports')));
 
     $this->actingAs($manager, 'staff')->get('/admin/reports')
-        ->assertInertia(fn (Assert $page) => $page->has('reports', 12)
+        ->assertInertia(fn (Assert $page) => $page->has('reports', 14)
             ->where('reports', fn (mixed $reports) => collect($reports)->pluck('key')->contains('cod-aging')
                 && collect($reports)->pluck('key')->contains('order-cancellations')
                 && collect($reports)->pluck('key')->contains('net-profit-by-day')));

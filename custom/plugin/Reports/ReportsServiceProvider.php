@@ -19,8 +19,10 @@ use Plugin\Reports\Infrastructure\Reports\NetProfitDailyReport;
 use Plugin\Reports\Infrastructure\Reports\OrderCancellationReport;
 use Plugin\Reports\Infrastructure\Reports\PaymentMethodSalesReport;
 use Plugin\Reports\Infrastructure\Reports\ProductSalesReport;
+use Plugin\Reports\Infrastructure\Reports\ReorderSuggestionsReport;
 use Plugin\Reports\Infrastructure\Reports\ReturnReasonsReport;
 use Plugin\Reports\Infrastructure\Reports\ReturnsByProductReport;
+use Plugin\Reports\Infrastructure\Reports\SlowMoversReport;
 use Plugin\Reports\Infrastructure\Widgets\OrdersToProcessWidget;
 use Plugin\Reports\Infrastructure\Widgets\Revenue30DaysWidget;
 use Plugin\Reports\Infrastructure\Widgets\RevenueTodayWidget;
@@ -58,7 +60,7 @@ final class ReportsServiceProvider extends PluginServiceProvider
             rows: fn (int $campaignId): array => $this->app->make(CampaignResults::class)->rows($campaignId), permission: self::PERMISSION);
 
         foreach ([DailySalesReport::class, ProductSalesReport::class, BrandSalesReport::class, PaymentMethodSalesReport::class, ChannelSalesReport::class,
-            GrossProfitDailyReport::class, NetProfitDailyReport::class, GrossProfitByProductReport::class, ReturnsByProductReport::class, ReturnReasonsReport::class, OrderCancellationReport::class, CodAgingReport::class] as $report) {
+            GrossProfitDailyReport::class, NetProfitDailyReport::class, ReorderSuggestionsReport::class, SlowMoversReport::class, GrossProfitByProductReport::class, ReturnsByProductReport::class, ReturnReasonsReport::class, OrderCancellationReport::class, CodAgingReport::class] as $report) {
             $this->contribute(ReportProvider::TAG, $report);
         }
     }
