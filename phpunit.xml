@@ -53,6 +53,9 @@
         </exclude>
     </source>
     <php>
+        <!-- Test arch() của Pest phân tích cú pháp mọi file và giữ cache tĩnh (~900 MB cho cả repo) — cộng phần feature
+             (~250 MB) vượt 1 GB mặc định. Không phải rò bộ nhớ của ứng dụng (đo 2026-11-26, reference-parity §6b L52). -->
+        <ini name="memory_limit" value="2G"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
