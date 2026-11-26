@@ -167,53 +167,6 @@ final class EloquentVariantDirectory implements VariantDirectory
             ->all();
     }
 
-    public function searchIndex(string $text = '', ?string $productCode = null): array
-    {
-        $text = trim($text);
-        $like = '%'.addcslashes($text, '%_\\').'%';
-        $locale = StoreLocale::default();
-        $scope = fn ($query) => $query
-            ->when($productCode !== null, fn ($query) => $query->where('s.product_code', $productCode))
-            ->when($productCode === null && $text !== '', fn ($query) => $query->where(fn ($inner) => $inner
-                ->where('v.sku', 'like', $like)
-                ->orWhere('s.product_code', 'like', $like)
-                ->orWhereExists(fn ($names) => $names->selectRaw('1')->from('product_translations as tn')->whereColumn('tn.product_id', 's.id')->where('tn.name', 'like', $like))));
-
-        $rows = $scope(DB::table('variants as v')
-            ->join('products as s', 's.id', '=', 'v.product_id')
-            ->leftJoin('product_translations as t', fn ($join) => $join->on('t.product_id', '=', 's.id')->where('t.locale', $locale)))
-            ->get(['v.id', 'v.product_id', 's.product_code', 'v.status', 't.name']);
-
-        // Giá trị của mọi trục (ADR-045) cùng vị trí trục và vị trí giá trị trong sản phẩm — thứ tự hiển thị.
-        $values = $scope(DB::table('variant_option_values as vov')
-            ->join('variants as v', 'v.id', '=', 'vov.variant_id')
-            ->join('products as s', 's.id', '=', 'v.product_id')
-            ->join('option_types as ot', 'ot.id', '=', 'vov.option_type_id')
-            ->join('option_values as ov', 'ov.id', '=', 'vov.option_value_id')
-            ->leftJoin('product_options as so', fn ($join) => $join->on('so.product_id', '=', 'v.product_id')->on('so.option_type_id', '=', 'vov.option_type_id'))
-            ->leftJoin('product_option_values as sov', fn ($join) => $join->on('sov.product_option_id', '=', 'so.id')->on('sov.option_value_id', '=', 'vov.option_value_id')))
-            ->orderBy('so.position')
-            ->get(['vov.variant_id', 'ot.code as type_code', 'ov.code as value_code', 'sov.position as value_position'])
-            ->groupBy('variant_id');
-
-        $index = [];
-        foreach ($rows as $row) {
-            $options = [];
-            $sort = [];
-            foreach ($values->get($row->id, collect()) as $value) {
-                $options[(string) $value->type_code] = (string) $value->value_code;
-                $sort[] = str_pad((string) (int) $value->value_position, 6, '0', STR_PAD_LEFT);
-            }
-            $index[] = [
-                'row' => ['id' => (int) $row->id, 'product_id' => (int) $row->product_id, 'product_code' => (string) $row->product_code, 'options' => $options, 'status' => (string) $row->status],
-                'key' => [mb_strtolower((string) ($row->name ?? $row->product_code)), (string) $row->product_code, implode('|', $sort), (int) $row->id],
-            ];
-        }
-        usort($index, fn (array $a, array $b): int => $a['key'] <=> $b['key']);
-
-        return array_column($index, 'row');
-    }
-
     public function untrackedInventory(array $variantIds): array
     {
         if ($variantIds === []) {

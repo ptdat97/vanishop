@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Application;
 
 use Illuminate\Support\Facades\DB;
-use Modules\Catalog\Contracts\Data\VariantData;
+use Modules\Catalog\Contracts\Data\VariantIndexRows;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Persistence\Models\Location;
 
@@ -34,21 +34,12 @@ final class StockGridIndexer
             $old = DB::table('stock_grid_index')->whereIn('product_id', $chunk)->pluck('variant_id')->map(fn ($id): int => (int) $id)->all();
             $rows = [];
             $options = [];
-            foreach ($byProduct as $productId => $variants) {
-                foreach (array_values($variants) as $rank => $variant) {
-                    /** @var VariantData $variant */
-                    $name = mb_strtolower(trim($variant->productName));
-                    $rows[] = [
-                        'variant_id' => $variant->id, 'product_id' => (int) $productId, 'product_code' => $variant->productCode,
-                        'name_sort' => mb_substr($name === '' ? mb_strtolower($variant->productCode) : $name, 0, 191),
-                        'variant_rank' => $rank, 'status' => $variant->status, 'tracked' => $variant->tracksInventory,
-                        'search_text' => mb_substr(mb_strtolower("{$variant->sku} {$variant->productCode} {$variant->productName}"), 0, 512),
-                        'sellable' => 0,
-                    ];
-                    foreach ($variant->options as $option) {
-                        $options[] = ['type_code' => mb_substr((string) $option['type'], 0, 32), 'value_code' => mb_substr((string) $option['code'], 0, 32), 'variant_id' => $variant->id];
-                    }
+            foreach (VariantIndexRows::from($byProduct) as $row) {
+                foreach ($row['options'] as $option) {
+                    $options[] = ['type_code' => $option['type'], 'value_code' => $option['code'], 'variant_id' => $row['variant_id']];
                 }
+                unset($row['options']);
+                $rows[] = [...$row, 'sellable' => 0];
             }
             $ids = array_column($rows, 'variant_id');
             DB::transaction(function () use ($old, $ids, $rows, $options): void {

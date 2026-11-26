@@ -13,6 +13,7 @@ use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Identity\Contracts\StaffNames;
 use Modules\Pricing\Application\AdminQueries;
+use Modules\Pricing\Application\PriceVariantSearch;
 use Modules\Pricing\Persistence\Models\PriceHistory;
 use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Shared\Support\MoneyFormatter;
@@ -24,7 +25,7 @@ use Modules\Shared\Support\StoreClock;
  */
 final class PriceHistoryController
 {
-    public function index(Request $request, AdminQueries $queries, VariantDirectory $variants, StaffNames $staff, MoneyFormatter $money): Response
+    public function index(Request $request, AdminQueries $queries, VariantDirectory $variants, PriceVariantSearch $search, StaffNames $staff, MoneyFormatter $money): Response
     {
         Gate::authorize('pricing.view');
         $data = $request->validate([
@@ -32,8 +33,9 @@ final class PriceHistoryController
             'price_list' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', Rule::in([50, 100])],
         ]);
-        $search = trim((string) ($data['q'] ?? ''));
-        $variantIds = $search === '' ? null : array_column($variants->searchIndex($search), 'id');
+        $text = trim((string) ($data['q'] ?? ''));
+        // Truy vấn con trên read model SKU (db-refactor L55) — không nạp danh sách id.
+        $variantIds = $text === '' ? null : $search->matching($text)->select('i.variant_id');
         $page = $queries->priceHistory($variantIds, isset($data['price_list']) ? (int) $data['price_list'] : null, (int) ($data['per_page'] ?? 50));
 
         $rows = $page->getCollection();

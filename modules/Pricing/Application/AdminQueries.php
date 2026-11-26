@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Pricing\Application;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Pricing\Persistence\Models\PriceHistory;
 use Modules\Pricing\Persistence\Models\PriceList;
@@ -33,7 +34,7 @@ final class AdminQueries
      * @param  list<int>|null  $variantIds
      * @return LengthAwarePaginator<int, PriceHistory>
      */
-    public function priceHistory(?array $variantIds, ?int $priceListId, int $perPage): LengthAwarePaginator
+    public function priceHistory(Builder|array|null $variantIds, ?int $priceListId, int $perPage): LengthAwarePaginator
     {
         return PriceHistory::query()
             ->when($variantIds !== null, fn ($query) => $query->whereIn('variant_id', $variantIds))

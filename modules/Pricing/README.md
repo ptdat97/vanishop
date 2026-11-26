@@ -17,6 +17,7 @@ Bảng giá niêm yết/sale/thành viên theo lịch và ưu tiên, áp giá h�
 - `price_lists`
 - `prices`
 - `price_history`
+- `price_variant_index`
 
 ## Contract công bố
 

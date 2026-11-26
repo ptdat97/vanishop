@@ -79,6 +79,7 @@
 | [`plugins`](#plugins) | 7 |
 | [`price_history`](#price_history) | 11 |
 | [`price_lists`](#price_lists) | 13 |
+| [`price_variant_index`](#price_variant_index) | 7 |
 | [`prices`](#prices) | 8 |
 | [`product_attribute_values`](#product_attribute_values) | 6 |
 | [`product_facet_values`](#product_facet_values) | 3 |
@@ -1416,6 +1417,20 @@ Index: index (price_list_id, created_at); index (variant_id, created_at); PK (id
 | `updated_at` | timestamp | có |  |
 
 Index: unique (code); PK (id)
+
+## price_variant_index
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `variant_id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
+| `product_code` | varchar(64) |  |  |
+| `name_sort` | varchar(191) |  |  |
+| `variant_rank` | int unsigned |  |  |
+| `status` | varchar(16) |  |  |
+| `search_text` | varchar(512) |  |  |
+
+Index: index (product_id); index (status); index (name_sort, product_code, product_id, variant_rank); PK (variant_id)
 
 ## prices
 

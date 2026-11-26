@@ -159,6 +159,7 @@ function manySkusInSale(object $test, int $count, int $saleId, int $baseId): arr
         DB::table('variants')->insert(array_map(fn (int $i): array => ['sku' => "BULK-{$i}", 'option_key' => "bulk-{$i}", 'barcode' => null] + $template, $chunk));
     }
     $ids = DB::table('variants')->where('sku', 'like', 'BULK-%')->pluck('id')->map(fn ($id): int => (int) $id)->all();
+    T::project(); // ghi thẳng DB: dựng read model SKU (Catalog → bảng giá)
     foreach ([$baseId => 200_000, $saleId => 180_000] as $listId => $amount) {
         foreach (array_chunk($ids, 500) as $chunk) {
             DB::table('prices')->insert(array_map(fn (int $id): array => ['price_list_id' => $listId, 'variant_id' => $id, 'amount' => $amount, 'min_qty' => 1, 'created_at' => now(), 'updated_at' => now()], $chunk));

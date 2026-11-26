@@ -26,7 +26,7 @@ final class PriceOverview
 
     private const SAMPLES = 10;
 
-    public function __construct(private readonly VariantDirectory $variants) {}
+    public function __construct(private readonly VariantDirectory $variants, private readonly PriceVariantSearch $search) {}
 
     /**
      * @return array{
@@ -58,14 +58,16 @@ final class PriceOverview
      */
     private function missingBase(): array
     {
-        $active = array_column(array_filter($this->variants->searchIndex(), fn (array $row): bool => $row['status'] === 'active'), 'id');
+        // SKU đang bán chưa có giá niêm yết — đếm bằng SQL trên read model SKU (db-refactor L55).
         $base = PriceList::query()->where('code', 'base')->value('id');
-        $priced = $base === null ? [] : array_flip(Price::query()->where('price_list_id', $base)->where('min_qty', 1)->whereIn('variant_id', $active)->pluck('variant_id')->map(fn ($id): int => (int) $id)->all());
-        $missing = array_values(array_filter($active, fn (int $id): bool => ! isset($priced[$id])));
-        $found = $this->variants->find(array_slice($missing, 0, self::SAMPLES));
+        $missing = $this->search->matching()->where('i.status', 'active')
+            ->when($base !== null, fn ($query) => $query->whereNotExists(fn ($prices) => $prices->selectRaw('1')->from('prices as p')
+                ->whereColumn('p.variant_id', 'i.variant_id')->where('p.price_list_id', $base)->where('p.min_qty', 1)));
+        $count = (clone $missing)->count();
+        $found = $this->variants->find($this->search->ordered($missing)->limit(self::SAMPLES)->pluck('i.variant_id')->map(fn ($id): int => (int) $id)->all());
 
         return [
-            'count' => count($missing),
+            'count' => $count,
             'samples' => array_values(array_map(fn ($variant): array => ['sku' => $variant->sku, 'product' => $variant->productName, 'product_id' => $variant->productId], $found)),
         ];
     }

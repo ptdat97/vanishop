@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Pricing\Application;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
@@ -43,6 +44,7 @@ final class PriceListWorkspace
         private readonly MoneyFormatter $money,
         private readonly Extensions $extensions,
         private readonly Settings $settings,
+        private readonly PriceVariantSearch $search,
     ) {}
 
     /**
@@ -100,15 +102,7 @@ final class PriceListWorkspace
      */
     public function variantIds(PriceList $list, string $text = '', ?array $only = null): array
     {
-        if ($only !== null) {
-            return array_values(array_intersect($this->variantIds($list, $text), $only));
-        }
-        $inList = array_flip(Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->pluck('variant_id')->map(fn ($id): int => (int) $id)->all());
-        if ($inList === []) {
-            return [];
-        }
-
-        return array_values(array_filter(array_column($this->variants->searchIndex($text), 'id'), fn (int $id): bool => isset($inList[$id])));
+        return $this->search->ordered($this->inList($list, $text, $only))->pluck('i.variant_id')->map(fn ($id): int => (int) $id)->all();
     }
 
     /**
@@ -116,10 +110,24 @@ final class PriceListWorkspace
      */
     public function rows(PriceList $list, string $text, int $page, int $perPage, string $path, ?array $only = null): LengthAwarePaginator
     {
-        $ids = $this->variantIds($list, $text, $only);
-        $slice = array_slice($ids, ($page - 1) * $perPage, $perPage);
+        $query = $this->inList($list, $text, $only);
+        $total = (clone $query)->count();
+        $slice = $this->search->ordered($query)->offset(max(0, $page - 1) * $perPage)->limit($perPage)->pluck('i.variant_id')->map(fn ($id): int => (int) $id)->all();
 
-        return new LengthAwarePaginator($this->describe($list, $slice), count($ids), $perPage, $page, ['path' => $path, 'query' => array_filter(['q' => $text])]);
+        return new LengthAwarePaginator($this->describe($list, $slice), $total, $perPage, $page, ['path' => $path, 'query' => array_filter(['q' => $text])]);
+    }
+
+    /**
+     * SKU của bảng giá (mức số lượng 1) khớp chữ tìm — trên read model SKU, không nạp mọi SKU (db-refactor L55).
+     *
+     * @param  list<int>|null  $only
+     */
+    private function inList(PriceList $list, string $text, ?array $only): Builder
+    {
+        return $this->search->matching($text)
+            ->join('prices as p', 'p.variant_id', '=', 'i.variant_id')
+            ->where('p.price_list_id', $list->id)->where('p.min_qty', 1)
+            ->when($only !== null, fn (Builder $query) => $query->whereIn('i.variant_id', array_map('intval', (array) $only)));
     }
 
     /**
@@ -156,16 +164,13 @@ final class PriceListWorkspace
         if (trim($text) === '' && $only === null) {
             return [];
         }
-        $allowed = $only === null ? null : array_flip($only);
+        $matching = $this->search->matching($text)->when($only !== null, fn (Builder $query) => $query->whereIn('i.variant_id', array_map('intval', (array) $only)));
+        // 30 sản phẩm đầu theo thứ tự hiển thị, mỗi sản phẩm kèm mọi SKU khớp.
+        $productIds = (clone $matching)->groupBy('i.name_sort', 'i.product_code', 'i.product_id')
+            ->orderBy('i.name_sort')->orderBy('i.product_code')->orderBy('i.product_id')->limit(30)->pluck('i.product_id')->all();
         $byProduct = [];
-        foreach ($this->variants->searchIndex($text) as $row) {
-            if ($allowed !== null && ! isset($allowed[$row['id']])) {
-                continue;
-            }
-            if (! isset($byProduct[$row['product_id']]) && count($byProduct) === 30) {
-                break;
-            }
-            $byProduct[$row['product_id']][] = $row['id'];
+        foreach ($productIds === [] ? [] : $this->search->ordered((clone $matching)->whereIn('i.product_id', $productIds))->get(['i.product_id', 'i.variant_id']) as $row) {
+            $byProduct[(int) $row->product_id][] = (int) $row->variant_id;
         }
         $ids = array_merge([], ...array_values($byProduct));
         $found = $this->variants->find($ids);

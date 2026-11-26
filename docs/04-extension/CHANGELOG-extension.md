@@ -6,6 +6,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.92 — 2026-11-26 · Extension API 1.39.0
+
+Trang bảng giá không còn nạp mọi SKU ([reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L55). Phá vỡ API cho plugin (giai đoạn dev, tăng minor).
+
+- Read model SKU của Pricing `price_variant_index` (thứ tự hiển thị, trạng thái, văn bản tìm; listener `SyncPriceVariantIndex` theo `ProductListingProjected`, dựng toàn bộ bằng `vani:catalog:rebuild-listing`). Trang làm việc của bảng giá (lọc, đếm, phân trang), tìm SKU để thêm, lịch sử giá, "SKU chưa có giá niêm yết" ở Tổng quan giá đều bằng SQL.
+- Helper `Catalog\Contracts\Data\VariantIndexRows::from()` — dòng chỉ mục SKU cho read model của module khác (Pricing, Inventory dùng chung).
+- **Gỡ** `VariantDirectory::searchIndex()` (nạp mọi SKU; không còn chỗ dùng). **Plugin cần cập nhật**: plugin ngoài repo dùng `search()` (có giới hạn) hoặc read model riêng.
+
 ## 0.5.91 — 2026-11-26 · Extension API 1.38.0
 
 Chuẩn bị bảng lớn ([db-refactor G3](../20-roadmap/db-refactor.md#5-g3--chuẩn-bị-cho-bảng-lớn)). Không đổi API cho plugin. Migration gốc sửa tại chỗ — `migrate:fresh --seed` rồi `vani:catalog:rebuild-listing`.

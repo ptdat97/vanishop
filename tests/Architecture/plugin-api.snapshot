@@ -1,4 +1,4 @@
-Extension API 1.38.0
+Extension API 1.39.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -101,7 +101,6 @@ interface Modules\Catalog\Contracts\VariantDirectory
   ofProducts(array $productIds): array
   findBySkus(array $skus): array
   search(string $text, int $limit = 2000): array
-  searchIndex(string $text = '', ?string $productCode = NULL): array
   untrackedInventory(array $variantIds): array
   productIdsOf(array $variantIds): array
   optionTypes(): array

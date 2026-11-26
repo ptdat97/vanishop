@@ -51,16 +51,6 @@ interface VariantDirectory
     public function search(string $text, int $limit = 2000): array;
 
     /**
-     * Chỉ mục nhẹ cho màn hình làm việc trên mọi variant (lưới tồn Admin, P2 A1): tìm theo SKU/mã/tên sản phẩm (chuỗi rỗng =
-     * mọi variant, cả ngừng bán), hoặc đúng một mã sản phẩm. Không giới hạn số dòng — chỉ có khoá và mã, đọc thêm bằng find()
-     * cho phần đang hiển thị. Theo thứ tự tên sản phẩm → mã sản phẩm → giá trị từng trục (thứ tự trong sản phẩm).
-     * `options`: mã loại tuỳ chọn => mã giá trị của SKU (ADR-045).
-     *
-     * @return list<array{id: int, product_id: int, product_code: string, options: array<string, string>, status: string}>
-     */
-    public function searchIndex(string $text = '', ?string $productCode = null): array;
-
-    /**
      * Variant thuộc sản phẩm không theo dõi tồn (0.4.48) — một truy vấn nhẹ cho tính ATS trên danh sách/giỏ.
      *
      * @param  list<int>  $variantIds
