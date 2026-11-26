@@ -78,7 +78,7 @@ export function createSession({ urls, cartPage, t }) {
         // Cửa hàng ẩn giá với khách chưa đăng nhập: HTML cache luôn là bản "Đăng nhập để xem giá" → điền giá cho khách đã đăng nhập.
         const hiddenPrices = [...document.querySelectorAll('[data-vani-price-for]')];
         if (session.signed_in && hiddenPrices.length && session.prices_url) {
-            const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['style_ids[]', id]));
+            const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['product_ids[]', id]));
             // Storefront API bằng phiên cùng nguồn (ADR-044): trình duyệt gửi Sec-Fetch-Site: same-origin.
             fetch(`${session.prices_url}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                 .then((response) => (response.ok ? response.json() : null))

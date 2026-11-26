@@ -3,7 +3,7 @@
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
@@ -51,11 +51,11 @@ it('quản lý thương hiệu: tạo, sửa, chống trùng mã/slug, không xo
     $this->put("/admin/catalog/brands/{$brand->id}", $payload(['name' => 'Lumière Paris 2', 'lock_version' => 1]))->assertSessionHasNoErrors();
     expect($brand->fresh())->name->toBe('Lumière Paris 2')->lock_version->toBe(2);
 
-    T::product($brand->id, ['style_code' => 'LM-01']);
+    T::product($brand->id, ['product_code' => 'LM-01']);
     $this->delete("/admin/catalog/brands/{$brand->id}")->assertSessionHasErrors('brand');
 
     $this->get('/admin/catalog/brands')->assertInertia(fn (Assert $page) => $page->component('Catalog::Brands/Index')
-        ->has('brands', 1)->where('brands.0.styles_count', 1));
+        ->has('brands', 1)->where('brands.0.products_count', 1));
 
     $empty = Brand::factory()->create();
     $this->delete("/admin/catalog/brands/{$empty->id}")->assertSessionHasNoErrors();
@@ -66,10 +66,10 @@ it('sản phẩm gắn thương hiệu qua form; brand không tồn tại bị t
     $brand = Brand::factory()->create();
     $category = T::seed(fn () => Category::factory()->create());
     $this->actingAs($this->staff, 'staff');
-    $product = fn (array $overrides = []) => array_replace(['style_code' => 'ST-01', 'slug' => 'st-01', 'status' => 'draft', 'category_ids' => [$category->id], 'translations' => ['vi' => ['name' => 'Áo']]], $overrides);
+    $product = fn (array $overrides = []) => array_replace(['product_code' => 'ST-01', 'slug' => 'st-01', 'status' => 'draft', 'category_ids' => [$category->id], 'translations' => ['vi' => ['name' => 'Áo']]], $overrides);
 
     $this->post('/admin/catalog/products', $product(['brand_id' => 999_999]))->assertSessionHasErrors('brand_id');
     $this->post('/admin/catalog/products', $product(['brand_id' => $brand->id]))->assertSessionHasNoErrors();
 
-    expect(T::seed(fn () => Style::query()->where('style_code', 'ST-01')->value('brand_id')))->toBe($brand->id);
+    expect(T::seed(fn () => Product::query()->where('product_code', 'ST-01')->value('brand_id')))->toBe($brand->id);
 });

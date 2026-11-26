@@ -14,11 +14,11 @@ use Modules\Shared\Contracts\PluginApi;
 interface VariantDirectory
 {
     /**
-     * Mọi variant (cả ngừng bán) của một style, theo thứ tự giá trị của từng trục.
+     * Mọi variant (cả ngừng bán) của một product, theo thứ tự giá trị của từng trục.
      *
      * @return list<VariantData>
      */
-    public function ofStyleCode(string $styleCode): array;
+    public function ofProductCode(string $productCode): array;
 
     /**
      * @param  list<int>  $variantIds
@@ -27,12 +27,12 @@ interface VariantDirectory
     public function find(array $variantIds): array;
 
     /**
-     * Variant (cả ngừng bán) theo style id (0.3.103 — thao tác hàng loạt trên danh sách sản phẩm: đổi giá, tồn).
+     * Variant (cả ngừng bán) theo product id (0.3.103 — thao tác hàng loạt trên danh sách sản phẩm: đổi giá, tồn).
      *
-     * @param  list<int>  $styleIds
-     * @return array<int, list<VariantData>> style id => variant theo thứ tự giá trị của từng trục (style không có variant thì không có mặt)
+     * @param  list<int>  $productIds
+     * @return array<int, list<VariantData>> product id => variant theo thứ tự giá trị của từng trục (product không có variant thì không có mặt)
      */
-    public function ofStyles(array $styleIds): array;
+    public function ofProducts(array $productIds): array;
 
     /**
      * Tra theo SKU (mã duy nhất toàn hệ thống) — dùng cho đồng bộ từ hệ thống ngoài.
@@ -56,9 +56,9 @@ interface VariantDirectory
      * cho phần đang hiển thị. Theo thứ tự tên sản phẩm → mã sản phẩm → giá trị từng trục (thứ tự trong sản phẩm).
      * `options`: mã loại tuỳ chọn => mã giá trị của SKU (ADR-045).
      *
-     * @return list<array{id: int, style_id: int, style_code: string, options: array<string, string>, status: string}>
+     * @return list<array{id: int, product_id: int, product_code: string, options: array<string, string>, status: string}>
      */
-    public function searchIndex(string $text = '', ?string $styleCode = null): array;
+    public function searchIndex(string $text = '', ?string $productCode = null): array;
 
     /**
      * Variant thuộc sản phẩm không theo dõi tồn (0.4.48) — một truy vấn nhẹ cho tính ATS trên danh sách/giỏ.
@@ -69,12 +69,12 @@ interface VariantDirectory
     public function untrackedInventory(array $variantIds): array;
 
     /**
-     * Sản phẩm (style) của từng SKU — một truy vấn nhẹ cho đếm sản phẩm trên danh sách lớn (không dựng VariantData).
+     * Sản phẩm của từng SKU — một truy vấn nhẹ cho đếm sản phẩm trên danh sách lớn (không dựng VariantData).
      *
      * @param  list<int>  $variantIds
-     * @return array<int, int> variant id => style id (SKU không tồn tại thì không có mặt)
+     * @return array<int, int> variant id => product id (SKU không tồn tại thì không có mặt)
      */
-    public function styleIdsOf(array $variantIds): array;
+    public function productIdsOf(array $variantIds): array;
 
     /**
      * Loại tuỳ chọn biến thể (ADR-045) theo thứ tự: mã => tên theo ngôn ngữ mặc định — nhãn cho bộ lọc theo tuỳ chọn.

@@ -23,9 +23,9 @@ final class CmsDemoContent implements DemoContent
     public function seed(): void
     {
         $this->pages();
-        $styleIds = DemoCatalog::styleIds();
-        $this->posts($this->media, $styleIds);
-        $this->extraContent($this->settings, $styleIds);
+        $productIds = DemoCatalog::productIds();
+        $this->posts($this->media, $productIds);
+        $this->extraContent($this->settings, $productIds);
     }
 
     public function links(): array
@@ -62,8 +62,8 @@ final class CmsDemoContent implements DemoContent
         }
     }
 
-    /** @param list<int> $styles */
-    private function posts(MediaDirectory $media, array $styles): void
+    /** @param list<int> $products */
+    private function posts(MediaDirectory $media, array $products): void
     {
         $categories = [];
         foreach (['xu-huong' => 'Xu hướng', 'phoi-do' => 'Phối đồ'] as $slug => $name) {
@@ -82,7 +82,7 @@ final class CmsDemoContent implements DemoContent
             $post = Post::query()->create([
                 'slug' => $slug, 'title' => $title, 'excerpt' => $excerpt, 'body' => $body, 'status' => 'published',
                 'published_at' => now()->subDays(10 - $index * 3), 'category_id' => $categories[$category],
-                'cover_media_id' => $covers[$index] ?? null, 'product_ids' => array_slice($styles, $index * 3, 3),
+                'cover_media_id' => $covers[$index] ?? null, 'product_ids' => array_slice($products, $index * 3, 3),
             ]);
             if ($post->cover_media_id !== null) {
                 $media->syncUsages(CmsMedia::POST, $post->id, 'cover', [$post->cover_media_id]);
@@ -90,8 +90,8 @@ final class CmsDemoContent implements DemoContent
         }
     }
 
-    /** @param list<int> $styleIds */
-    private function extraContent(Settings $settings, array $styleIds): void
+    /** @param list<int> $productIds */
+    private function extraContent(Settings $settings, array $productIds): void
     {
         $locale = StoreLocale::default();
         // Chỉ khi cửa hàng chưa tự cấu hình (get() trả mặc định nên dùng explicit()).
@@ -103,9 +103,9 @@ final class CmsDemoContent implements DemoContent
         }
 
         $content = app(ExtraContent::class);
-        foreach (array_slice($styleIds, 0, 8) as $styleId) {
-            if ($content->productForm($styleId)[ExtraContent::highlightKey($locale)] === '') {
-                $content->saveProduct($styleId, [ExtraContent::highlightKey($locale) => "Chất liệu mềm, thoáng mát\nĐường may tỉ mỉ, không xù\nĐổi size miễn phí trong 7 ngày"]);
+        foreach (array_slice($productIds, 0, 8) as $productId) {
+            if ($content->productForm($productId)[ExtraContent::highlightKey($locale)] === '') {
+                $content->saveProduct($productId, [ExtraContent::highlightKey($locale) => "Chất liệu mềm, thoáng mát\nĐường may tỉ mỉ, không xù\nĐổi size miễn phí trong 7 ngày"]);
             }
         }
 

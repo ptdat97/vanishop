@@ -22,7 +22,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
     ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m] = C::store();
-    $this->product = $this->s->style;
+    $this->product = $this->s->product;
     $this->urbanx = Brand::factory()->create(['slug' => 'urbanx', 'name' => 'Urbanx']);
     T::product($this->urbanx->id, ['name' => 'Áo thun Urbanx', 'slug' => 'ao-thun-urbanx']);
     $this->checkout = fn (array $overrides = []) => array_replace_recursive([
@@ -429,12 +429,12 @@ it('robots.txt chặn trang riêng tư, không lộ đường dẫn Admin; sitem
 
 it('PDP có ảnh đầu ưu tiên và ảnh sau tải lười, liên kết phóng to và dữ liệu ảnh theo biến thể', function () {
     Storage::fake('public');
-    $styleColor = $this->s; // ảnh theo SKU (ADR-045)
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($this->product, $styleColor, [
+    $productColor = $this->s; // ảnh theo SKU (ADR-045)
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($this->product, $productColor, [
         UploadedFile::fake()->image('truoc.jpg', 300, 400),
         UploadedFile::fake()->image('sau.jpg', 310, 410),
     ]));
-    $urls = $styleColor->gallery()->with('media')->orderBy('position')->get()->map(fn ($image) => $image->media->url(800))->all();
+    $urls = $productColor->gallery()->with('media')->orderBy('position')->get()->map(fn ($image) => $image->media->url(800))->all();
 
     $html = $this->get("/san-pham/{$this->product->slug}")->assertOk()
         ->assertSee('data-gallery-main src="'.e($urls[0]).'"', false)

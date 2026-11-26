@@ -1,7 +1,7 @@
 <?php
 
 use Modules\Catalog\Persistence\Models\LinkType;
-use Modules\Catalog\Persistence\Models\StyleLinkGroup;
+use Modules\Catalog\Persistence\Models\ProductLinkGroup;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
@@ -12,11 +12,11 @@ beforeEach(function () {
     $this->similar->syncTranslations(['vi' => ['name' => 'Sản phẩm tương tự']]);
     $this->crossSell = T::seed(fn () => LinkType::factory()->create(['code' => 'cross-sell', 'position' => 1]));
 
-    $this->shirt = T::product(null, ['style_code' => 'SHIRT', 'slug' => 'ao']);
-    $this->pants = T::product(null, ['style_code' => 'PANTS', 'slug' => 'quan']);
-    $this->skirt = T::product(null, ['style_code' => 'SKIRT', 'slug' => 'vay']);
-    $this->draft = T::product(null, ['style_code' => 'DRAFT', 'slug' => 'nhap', 'status' => 'draft']);
-    $this->url = fn ($style) => "/admin/catalog/products/{$style->id}/links";
+    $this->shirt = T::product(null, ['product_code' => 'SHIRT', 'slug' => 'ao']);
+    $this->pants = T::product(null, ['product_code' => 'PANTS', 'slug' => 'quan']);
+    $this->skirt = T::product(null, ['product_code' => 'SKIRT', 'slug' => 'vay']);
+    $this->draft = T::product(null, ['product_code' => 'DRAFT', 'slug' => 'nhap', 'status' => 'draft']);
+    $this->url = fn ($product) => "/admin/catalog/products/{$product->id}/links";
 });
 
 function linkedSlugs(string $slug, string $code): array
@@ -27,7 +27,7 @@ function linkedSlugs(string $slug, string $code): array
 }
 
 it('liên kết hai chiều: mọi sản phẩm trong nhóm thấy nhau trên PDP', function () {
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'style_codes' => ['PANTS', 'SKIRT']])
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'product_codes' => ['PANTS', 'SKIRT']])
         ->assertSessionHasNoErrors()
         ->assertSessionHas('success', 'Đã liên kết thêm 2 sản phẩm.');
 
@@ -38,15 +38,15 @@ it('liên kết hai chiều: mọi sản phẩm trong nhóm thấy nhau trên PD
 });
 
 it('liên kết một chiều: chỉ sản phẩm gốc thấy các sản phẩm được gợi ý', function () {
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->crossSell->id, 'style_codes' => ['PANTS'], 'one_way' => true])->assertSessionHasNoErrors();
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->crossSell->id, 'product_codes' => ['PANTS'], 'one_way' => true])->assertSessionHasNoErrors();
 
     expect(linkedSlugs('ao', 'cross-sell'))->toBe(['quan'])
         ->and(linkedSlugs('quan', 'cross-sell'))->toBe([]);
 });
 
 it('PDP xếp loại theo thứ tự, bỏ sản phẩm không hiển thị và loại đang tắt', function () {
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'style_codes' => ['PANTS', 'DRAFT']]);
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->crossSell->id, 'style_codes' => ['DRAFT'], 'one_way' => true]);
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'product_codes' => ['PANTS', 'DRAFT']]);
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->crossSell->id, 'product_codes' => ['DRAFT'], 'one_way' => true]);
 
     // cross-sell chỉ có sản phẩm nháp → cả loại bị bỏ.
     $this->getJson('/api/storefront/v1/products/ao')
@@ -60,16 +60,16 @@ it('PDP xếp loại theo thứ tự, bỏ sản phẩm không hiển thị và 
 });
 
 it('gỡ liên kết khỏi nhóm; nhóm chỉ còn một sản phẩm thì bị xoá', function () {
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'style_codes' => ['PANTS']]);
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'product_codes' => ['PANTS']]);
 
     $this->delete(($this->url)($this->shirt)."/{$this->similar->id}/{$this->pants->id}")->assertSessionHasNoErrors();
 
     expect(linkedSlugs('ao', 'similar'))->toBe([])
-        ->and(T::seed(fn () => StyleLinkGroup::query()->count()))->toBe(0);
+        ->and(T::seed(fn () => ProductLinkGroup::query()->count()))->toBe(0);
 });
 
 it('gỡ liên kết từ sản phẩm thành viên không đụng nhóm một chiều của sản phẩm gốc', function () {
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->crossSell->id, 'style_codes' => ['PANTS'], 'one_way' => true]);
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->crossSell->id, 'product_codes' => ['PANTS'], 'one_way' => true]);
 
     $this->delete(($this->url)($this->pants)."/{$this->crossSell->id}/{$this->shirt->id}");
 
@@ -77,11 +77,11 @@ it('gỡ liên kết từ sản phẩm thành viên không đụng nhóm một c
 });
 
 it('báo mã sản phẩm không tồn tại và bỏ qua chính nó, liên kết đã có', function () {
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'style_codes' => ['PANTS', 'KHONG-CO']])
-        ->assertSessionHasErrors(['style_codes' => 'Không tìm thấy mã sản phẩm: KHONG-CO']);
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'product_codes' => ['PANTS', 'KHONG-CO']])
+        ->assertSessionHasErrors(['product_codes' => 'Không tìm thấy mã sản phẩm: KHONG-CO']);
 
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'style_codes' => ['PANTS']]);
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'style_codes' => ['PANTS', 'SHIRT']])
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'product_codes' => ['PANTS']]);
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'product_codes' => ['PANTS', 'SHIRT']])
         ->assertSessionHas('success', 'Đã liên kết thêm 0 sản phẩm.');
     expect(linkedSlugs('ao', 'similar'))->toBe(['quan']);
 });
@@ -89,7 +89,7 @@ it('báo mã sản phẩm không tồn tại và bỏ qua chính nó, liên kế
 it('cần quyền catalog.manage', function () {
     $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff');
 
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'style_codes' => ['PANTS']])->assertForbidden();
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'product_codes' => ['PANTS']])->assertForbidden();
 });
 
 it('quản lý loại liên kết; không xoá loại đang được dùng', function () {
@@ -100,7 +100,7 @@ it('quản lý loại liên kết; không xoá loại đang được dùng', fun
     $this->post('/admin/catalog/link-types', ['code' => 'Có Dấu', 'is_active' => true, 'position' => 0, 'translations' => ['vi' => ['name' => 'X']]])
         ->assertSessionHasErrors('code');
 
-    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'style_codes' => ['PANTS']]);
+    $this->post(($this->url)($this->shirt), ['link_type_id' => $this->similar->id, 'product_codes' => ['PANTS']]);
     $this->delete("/admin/catalog/link-types/{$this->similar->id}")
         ->assertSessionHasErrors(['link_type' => 'Loại liên kết còn sản phẩm đang dùng, hãy tắt thay vì xoá.']);
     $this->delete("/admin/catalog/link-types/{$this->crossSell->id}")->assertSessionHasNoErrors();

@@ -16,7 +16,7 @@ use Modules\Catalog\Domain\VariantStatus;
  * thứ tự trục, duy nhất theo sản phẩm. Ảnh theo SKU (`gallery`).
  *
  * @property int $id
- * @property int $style_id
+ * @property int $product_id
  * @property string|null $option_key
  * @property string $sku
  * @property string|null $barcode
@@ -28,7 +28,7 @@ use Modules\Catalog\Domain\VariantStatus;
  */
 final class Variant extends Model
 {
-    protected $fillable = ['style_id', 'option_key', 'sku', 'barcode', 'status', 'weight_gram', 'meta', 'lock_version'];
+    protected $fillable = ['product_id', 'option_key', 'sku', 'barcode', 'status', 'weight_gram', 'meta', 'lock_version'];
 
     protected function casts(): array
     {
@@ -36,11 +36,11 @@ final class Variant extends Model
     }
 
     /**
-     * @return BelongsTo<Style, $this>
+     * @return BelongsTo<Product, $this>
      */
-    public function style(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(Style::class);
+        return $this->belongsTo(Product::class);
     }
 
     /**

@@ -53,7 +53,7 @@ final class ContentSeeder extends Seeder
 
     private function lookbooks(): void
     {
-        $images = DemoCatalog::byStyle();
+        $images = DemoCatalog::byProduct();
         $all = array_merge(...array_values($images ?: [[]]));
         $looks = [
             'thu-dong-2026' => ['Thu Đông 2026', 'Bộ ảnh mùa se lạnh: **len, dạ và lụa** trong tông be — navy.', 'ao', 0],

@@ -24,7 +24,7 @@ final class Payloads
         // SKU mặc định (`variants[].is_default`) — giá và tổ hợp tuỳ chọn ("Trắng ngà / M") của SKU đó.
         $variant = collect((array) ($product['variants'] ?? []))->firstWhere('is_default', true) ?? ($product['variants'][0] ?? null);
         $amount = $variant['price']['amount'] ?? $product['price']['min'] ?? null;
-        $item = self::item((string) ($variant['sku'] ?? $product['style_code'] ?? $product['id']), (string) $product['name'], $product['brand']['name'] ?? null, $amount, 1, $variant === null ? null : self::variantLabel($product, $variant));
+        $item = self::item((string) ($variant['sku'] ?? $product['product_code'] ?? $product['id']), (string) $product['name'], $product['brand']['name'] ?? null, $amount, 1, $variant === null ? null : self::variantLabel($product, $variant));
 
         return ['currency' => $amount['currency'] ?? null, 'value' => $item['price'], 'items' => [$item]];
     }
@@ -39,7 +39,7 @@ final class Payloads
         $name = $context['category']['name'] ?? $context['brand']['name'] ?? 'search';
         $items = [];
         foreach (array_slice($listing['items'], 0, self::LIST_LIMIT) as $index => $card) {
-            $items[] = [...self::item((string) ($card['style_code'] ?? $card['id']), (string) $card['name'], $card['brand']['name'] ?? null, $card['price']['min'] ?? null, 1), 'index' => $index];
+            $items[] = [...self::item((string) ($card['product_code'] ?? $card['id']), (string) $card['name'], $card['brand']['name'] ?? null, $card['price']['min'] ?? null, 1), 'index' => $index];
         }
 
         return ['item_list_name' => $name, 'items' => $items];

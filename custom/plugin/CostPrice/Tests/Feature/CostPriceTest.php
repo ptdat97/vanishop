@@ -27,8 +27,8 @@ beforeEach(function () {
         app(PluginManager::class)->enable(CostPriceServiceProvider::ID);
     });
     app()->register(CostPriceServiceProvider::class);
-    $this->style = T::product();
-    [$this->s, $this->m] = P::variants($this->style);
+    $this->product = T::product();
+    [$this->s, $this->m] = P::variants($this->product);
     P::priceList(['code' => 'base'], [$this->s->id => [300_000], $this->m->id => [300_000]]);
     $this->list = P::priceList(['code' => 'sale-1', 'type' => 'sale', 'priority' => 10], [$this->s->id => [100_000]]);
     $this->actingAs(T::staff(['admin.access', 'pricing.view', 'pricing.manage', 'cost-price.manage']), 'staff');

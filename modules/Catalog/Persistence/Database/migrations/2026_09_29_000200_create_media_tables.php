@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unique('checksum');
         });
 
-        // Gắn media vào đối tượng (category, style color, banner…) với vai trò và thứ tự.
+        // Gắn media vào đối tượng (category, product color, banner…) với vai trò và thứ tự.
         Schema::create('mediables', function (Blueprint $table) {
             $table->id();
             $table->foreignId('media_id')->constrained()->restrictOnDelete();

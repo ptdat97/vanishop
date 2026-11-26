@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Cache;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 
@@ -10,18 +10,18 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 beforeEach(function () {
     Cache::flush();
     C::store();
-    $this->style = Style::query()->sole();
-    $this->vi = url("/san-pham/{$this->style->slug}");
+    $this->product = Product::query()->sole();
+    $this->vi = url("/san-pham/{$this->product->slug}");
     $this->en = url('/en/products/silk-dress');
 });
 
-function translateStyle(Style $style): void
+function translateProduct(Product $product): void
 {
-    T::seed(fn () => $style->syncTranslations(['vi' => ['name' => 'Đầm lụa'], 'en' => ['name' => 'Silk dress', 'slug' => 'silk-dress']]));
+    T::seed(fn () => $product->syncTranslations(['vi' => ['name' => 'Đầm lụa'], 'en' => ['name' => 'Silk dress', 'slug' => 'silk-dress']]));
 }
 
 it('sản phẩm đã dịch: canonical tự trỏ, hreflang vi/en/x-default, nút chuyển ngôn ngữ trỏ URL tương ứng', function () {
-    translateStyle($this->style);
+    translateProduct($this->product);
 
     $vi = $this->get($this->vi)->assertOk()->getContent();
     expect($vi)->toContain('<link rel="canonical" href="'.$this->vi.'">')
@@ -35,7 +35,7 @@ it('sản phẩm đã dịch: canonical tự trỏ, hreflang vi/en/x-default, n�
 });
 
 it('bản tiếng Anh chưa dịch: vẫn 200, noindex,follow, canonical về bản tiếng Việt, không hreflang', function () {
-    $html = $this->get("/en/products/{$this->style->slug}")->assertOk()->getContent();
+    $html = $this->get("/en/products/{$this->product->slug}")->assertOk()->getContent();
 
     expect($html)->toContain('<meta name="robots" content="noindex,follow">')
         ->toContain('<link rel="canonical" href="'.$this->vi.'">')
@@ -57,7 +57,7 @@ it('sitemap: bản đã dịch có URL riêng + xhtml:link; bản chưa dịch k
         ->toContain('<loc>'.url('/en').'</loc>');
 
     Cache::flush();
-    translateStyle($this->style);
+    translateProduct($this->product);
     $xml = $this->get('/sitemap.xml')->getContent();
     expect($xml)->toContain('<loc>'.$this->en.'</loc>')
         ->toContain('<xhtml:link rel="alternate" hreflang="en" href="'.$this->en.'"/>')
@@ -66,7 +66,7 @@ it('sitemap: bản đã dịch có URL riêng + xhtml:link; bản chưa dịch k
 
 it('cửa hàng một ngôn ngữ (cấu hình mặc định): không hreflang, không nút chuyển ngôn ngữ, sitemap không có bản khác', function () {
     config(['vanishop.locale.supported' => [config('vanishop.locale.default')]]);
-    translateStyle($this->style);
+    translateProduct($this->product);
 
     expect($this->get($this->vi)->assertOk()->getContent())->not->toContain('hreflang=')
         ->and($this->get('/')->assertOk()->getContent())->not->toContain('hreflang=');

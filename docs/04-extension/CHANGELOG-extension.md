@@ -6,6 +6,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.89 — 2026-11-26 · Extension API 1.37.0
+
+Đổi tên Style → Product trong DB, model, contract và API ([ADR-050](../19-adr/ADR-050-product-replaces-style.md), [db-refactor G1](../20-roadmap/db-refactor.md#3-g1--đổi-tên-style--product)). Phá vỡ API cho plugin (giai đoạn dev, tăng minor). Không đổi hành vi.
+
+- Bảng: `styles` → `products`, `style_*` → `product_*` (`product_translations`, `product_options`, `product_option_values`, `product_attribute_values`, `product_link_groups`, `product_link_group_items`, `product_video`, `product_view_stats`), `category_style`/`collection_style` → `category_product`/`collection_product`. Cột `style_id` → `product_id` ở mọi bảng Core và plugin; `styles.style_code` → `products.product_code`.
+- Model `Style` → `Product` (`ProductTranslation`, `ProductOption`, `ProductOptionValue`, `ProductAttributeValue`, `ProductLinkGroup`, `ProductLinkGroupItem`), `StyleStatus` → `ProductStatus`, `StyleFactory` → `ProductFactory`, `StyleLinkService` / `StyleVideoService` / `StyleListPrices` → `ProductLinkService` / `ProductVideoService` / `ProductListPrices`. Quan hệ `Variant::style()` → `product()`.
+- Contract: `VariantDirectory::ofStyles()` / `ofStyleCode()` → `ofProducts()` / `ofProductCode()`, `$styleId`/`$styleIds` → `$productId`/`$productIds` ở mọi contract, DTO (`VariantData::$productId`, `$productCode`…) và tham số hook (`styleIds` → `productIds`).
+- Storefront API và payload ERP/import/export: `style_id`/`style_code` → `product_id`/`product_code` (schema `product.v1`, `product-card.v1` giữ `v1` vì chưa phát hành). Thuộc tính HTML `data-style-*` → `data-product-*`.
+- Setting `catalog.style_code_prefix` / `catalog.style_code_digits` → `catalog.product_code_prefix` / `catalog.product_code_digits`.
+- Migration gốc sửa tại chỗ (chạy `migrate:fresh --seed`): `variants` tạo thẳng với `option_key`, bỏ bảng `colors`/`sizes`/`style_colors` và cột `style_color_id`/`size_id`; `order_lines` tạo thẳng với `variant_options` (bỏ `color_name`/`size_code`); bỏ migration `add_variant_options_to_order_lines`.
+- **Plugin cần cập nhật**: đã sửa trong repo `vani.bundles` 1.3.0, `vani.cms` 1.7.0, `vani.hello-world` 0.4.0, `vani.promotion-rules` 0.4.0, `vani.reports` 1.4.0, `vani.scarcity-signals` 1.1.0, `vani.size-chart` 1.1.0, `vani.storefront-extras` 1.6.0, `vani.tracking-pixels` 1.1.0, `vani.wishlist` 1.5.0 (`requires.extension_api` `^1.37`). Plugin ngoài repo đổi `style_id` → `product_id` trong migration và truy vấn.
+
 ## 0.5.88 — 2026-11-25 · Extension API 1.36.0
 
 Đường dẫn Admin cấu hình trong Admin thay cho `.env` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)).

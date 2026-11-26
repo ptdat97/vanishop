@@ -15,7 +15,7 @@ final readonly class ProductViewed
     use Dispatchable;
 
     public function __construct(
-        public int $styleId,
+        public int $productId,
         public ?int $customerId,
     ) {}
 }

@@ -15,7 +15,7 @@ final readonly class ProductCreated implements ShouldDispatchAfterCommit
     use Dispatchable;
 
     public function __construct(
-        public int $styleId,
-        public string $styleCode,
+        public int $productId,
+        public string $productCode,
     ) {}
 }

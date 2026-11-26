@@ -27,17 +27,17 @@ final class StockGrid
     ) {}
 
     /**
-     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria
+     * @param  array{q?: string, product?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria
      * @return array{products: list<array<string, mixed>>, total_products: int, total_variants: int, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
      */
     public function page(array $criteria, int $page, int $perPage = 20): array
     {
         $matching = $this->matching($criteria);
-        $byStyle = [];
+        $byProduct = [];
         foreach ($matching['rows'] as $row) {
-            $byStyle[$row['style_id']][] = $row;
+            $byProduct[$row['product_id']][] = $row;
         }
-        $pageRows = array_merge([], ...array_slice(array_values($byStyle), max(0, $page - 1) * $perPage, $perPage));
+        $pageRows = array_merge([], ...array_slice(array_values($byProduct), max(0, $page - 1) * $perPage, $perPage));
 
         // Chỉ phần đang hiển thị mới đọc đủ dữ liệu (tên, SKU) và số liệu từng kho.
         $ids = array_map(fn (array $row): int => $row['id'], $pageRows);
@@ -49,10 +49,10 @@ final class StockGrid
             if ($variant === null) {
                 continue;
             }
-            $products[$row['style_code']] ??= ['style_code' => $row['style_code'], 'style_name' => $variant->styleName, 'tracked' => $variant->tracksInventory, 'sellable' => 0, 'variants' => []];
-            $products[$row['style_code']]['sellable'] += $row['sellable'];
-            $products[$row['style_code']]['variants'][] = [
-                'id' => $row['id'], 'sku' => $variant->sku, 'style_code' => $row['style_code'], 'style_name' => $variant->styleName,
+            $products[$row['product_code']] ??= ['product_code' => $row['product_code'], 'product_name' => $variant->productName, 'tracked' => $variant->tracksInventory, 'sellable' => 0, 'variants' => []];
+            $products[$row['product_code']]['sellable'] += $row['sellable'];
+            $products[$row['product_code']]['variants'][] = [
+                'id' => $row['id'], 'sku' => $variant->sku, 'product_code' => $row['product_code'], 'product_name' => $variant->productName,
                 'options' => $variant->options, 'options_label' => VariantOptionsText::label($variant->options), 'status' => $row['status'], 'sellable' => $row['sellable'], 'tracked' => $row['tracked'],
                 'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$row['id']] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $matching['locations']),
             ];
@@ -60,7 +60,7 @@ final class StockGrid
 
         return [
             'products' => array_values($products),
-            'total_products' => count($byStyle), 'total_variants' => count($matching['rows']),
+            'total_products' => count($byProduct), 'total_variants' => count($matching['rows']),
             'locations' => $matching['locations'], 'option_filters' => $matching['option_filters'],
         ];
     }
@@ -68,7 +68,7 @@ final class StockGrid
     /**
      * Id mọi variant khớp bộ lọc (chọn "tất cả kết quả" để sửa hàng loạt).
      *
-     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria
+     * @param  array{q?: string, product?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria
      * @return list<int>
      */
     public function variantIds(array $criteria): array
@@ -79,20 +79,20 @@ final class StockGrid
     /**
      * Tồn bán được (tổng ở kho giao online) theo sản phẩm — cột danh sách sản phẩm Admin (0.3.103).
      *
-     * @param  array<int, list<int>>  $variantIdsByStyle  style id => variant id
-     * @return array<int, int> style id => số bán được
+     * @param  array<int, list<int>>  $variantIdsByProduct  product id => variant id
+     * @return array<int, int> product id => số bán được
      */
-    public function sellableByStyle(array $variantIdsByStyle): array
+    public function sellableByProduct(array $variantIdsByProduct): array
     {
         $online = array_values(array_filter($this->queries->locations(), fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders));
-        $all = array_merge([], ...array_values($variantIdsByStyle));
+        $all = array_merge([], ...array_values($variantIdsByProduct));
         $levels = $all === [] ? [] : $this->queries->levels($all);
         $result = [];
-        foreach ($variantIdsByStyle as $styleId => $variantIds) {
-            $result[$styleId] = 0;
+        foreach ($variantIdsByProduct as $productId => $variantIds) {
+            $result[$productId] = 0;
             foreach ($variantIds as $variantId) {
                 foreach ($online as $location) {
-                    $result[$styleId] += max(0, $levels[$location->id.':'.$variantId]['available'] ?? 0);
+                    $result[$productId] += max(0, $levels[$location->id.':'.$variantId]['available'] ?? 0);
                 }
             }
         }
@@ -120,18 +120,18 @@ final class StockGrid
     /**
      * Mọi variant khớp (không giới hạn): khoá + số bán được, tính bằng chỉ mục của Catalog và một truy vấn gộp tồn.
      *
-     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria  `ids`: giới hạn theo bộ lọc của plugin (EP v3 X1)
-     * @return array{rows: list<array{id: int, style_id: int, style_code: string, options: array<string, string>, status: string, sellable: int, tracked: bool}>, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
+     * @param  array{q?: string, product?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria  `ids`: giới hạn theo bộ lọc của plugin (EP v3 X1)
+     * @return array{rows: list<array{id: int, product_id: int, product_code: string, options: array<string, string>, status: string, sellable: int, tracked: bool}>, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
      */
     private function matching(array $criteria): array
     {
         $only = isset($criteria['ids']) ? array_flip(array_map('intval', $criteria['ids'])) : null;
-        $style = trim((string) ($criteria['style'] ?? ''));
+        $product = trim((string) ($criteria['product'] ?? ''));
         $filter = in_array($criteria['filter'] ?? 'all', self::FILTERS, true) ? (string) ($criteria['filter'] ?? 'all') : 'all';
         $wanted = array_filter(array_map(fn ($code): string => trim((string) $code), (array) ($criteria['options'] ?? [])), fn (string $code): bool => $code !== '');
 
         $locations = $this->queries->locations();
-        $index = $this->variants->searchIndex((string) ($criteria['q'] ?? ''), $style !== '' ? $style : null);
+        $index = $this->variants->searchIndex((string) ($criteria['q'] ?? ''), $product !== '' ? $product : null);
         // Lựa chọn theo từng loại tuỳ chọn lấy từ kết quả tìm (trước khi lọc tuỳ chọn) để chỉ hiện giá trị có thật.
         $found = [];
         foreach ($index as $row) {

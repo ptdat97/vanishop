@@ -33,12 +33,12 @@ final class BulkBasePrice
     }
 
     /**
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return array{products: int, variants: int, skipped: int} skipped: biến thể chưa có giá (giảm/tăng % cần giá cũ)
      */
-    public function apply(array $styleIds, string $mode, int $value, bool $strike): array
+    public function apply(array $productIds, string $mode, int $value, bool $strike): array
     {
-        $plan = $this->plan($styleIds, $mode, $value, $strike);
+        $plan = $this->plan($productIds, $mode, $value, $strike);
         $this->lists->setPrices($this->baseList(), array_map(fn (array $row): array => array_intersect_key($row, ['variant_id' => true, 'amount' => true, 'compare_at_amount' => true]), $plan['rows']));
 
         return ['products' => $plan['products'], 'variants' => count($plan['rows']), 'skipped' => $plan['skipped']];
@@ -48,12 +48,12 @@ final class BulkBasePrice
      * Xem trước (A5): chưa ghi gì — số SKU đổi, khoảng giá cũ/mới, cảnh báo (giá vốn… qua hook `vani.pricing.bulk.warnings`),
      * vài dòng mẫu. Cùng phép tính với `apply`.
      *
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return array{products: int, variants: int, skipped: int, old: array{min: int|null, max: int|null}, new: array{min: int|null, max: int|null}, warnings: array<string, int>, samples: list<array{sku: string, old: int|null, new: int}>}
      */
-    public function preview(array $styleIds, string $mode, int $value, bool $strike): array
+    public function preview(array $productIds, string $mode, int $value, bool $strike): array
     {
-        $plan = $this->plan($styleIds, $mode, $value, $strike);
+        $plan = $this->plan($productIds, $mode, $value, $strike);
         $found = $this->variants->find(array_column($plan['rows'], 'variant_id'));
         $warnings = [];
         foreach ($plan['rows'] as $row) {
@@ -75,10 +75,10 @@ final class BulkBasePrice
     }
 
     /**
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return array{products: int, skipped: int, rows: list<array{variant_id: int, amount: int, compare_at_amount: int|null, old: int|null}>}
      */
-    private function plan(array $styleIds, string $mode, int $value, bool $strike): array
+    private function plan(array $productIds, string $mode, int $value, bool $strike): array
     {
         if (! in_array($mode, self::MODES, true)) {
             throw ValidationException::withMessages(['mode' => __('pricing::messages.bulk_mode_invalid')]);
@@ -90,7 +90,7 @@ final class BulkBasePrice
         $list = $this->baseList();
         $variantIds = [];
         $products = 0;
-        foreach ($this->variants->ofStyles($styleIds) as $variants) {
+        foreach ($this->variants->ofProducts($productIds) as $variants) {
             $products++;
             foreach ($variants as $variant) {
                 $variantIds[] = $variant->id;

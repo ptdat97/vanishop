@@ -19,11 +19,11 @@
 | [`cart_lines`](#cart_lines) | 10 |
 | [`carts`](#carts) | 13 |
 | [`categories`](#categories) | 10 |
-| [`category_style`](#category_style) | 3 |
+| [`category_product`](#category_product) | 3 |
 | [`category_translations`](#category_translations) | 8 |
-| [`collection_style`](#collection_style) | 3 |
-| [`collection_translations`](#collection_translations) | 6 |
-| [`collections`](#collections) | 6 |
+| [`collection_product`](#collection_product) | 3 |
+| [`collection_translations`](#collection_translations) | 8 |
+| [`collections`](#collections) | 8 |
 | [`customer_addresses`](#customer_addresses) | 13 |
 | [`customer_consent_events`](#customer_consent_events) | 9 |
 | [`customer_consents`](#customer_consents) | 9 |
@@ -54,7 +54,7 @@
 | [`link_type_translations`](#link_type_translations) | 4 |
 | [`link_types`](#link_types) | 6 |
 | [`locations`](#locations) | 15 |
-| [`media`](#media) | 12 |
+| [`media`](#media) | 14 |
 | [`media_folders`](#media_folders) | 4 |
 | [`mediables`](#mediables) | 9 |
 | [`migrations`](#migrations) | 3 |
@@ -68,7 +68,7 @@
 | [`order_adjustments`](#order_adjustments) | 10 |
 | [`order_events`](#order_events) | 12 |
 | [`order_lines`](#order_lines) | 22 |
-| [`orders`](#orders) | 32 |
+| [`orders`](#orders) | 33 |
 | [`password_reset_tokens`](#password_reset_tokens) | 3 |
 | [`payment_reconciliation_lines`](#payment_reconciliation_lines) | 10 |
 | [`payment_reconciliations`](#payment_reconciliations) | 7 |
@@ -79,9 +79,18 @@
 | [`price_history`](#price_history) | 11 |
 | [`price_lists`](#price_lists) | 13 |
 | [`prices`](#prices) | 8 |
+| [`product_attribute_values`](#product_attribute_values) | 6 |
+| [`product_link_group_items`](#product_link_group_items) | 4 |
+| [`product_link_groups`](#product_link_groups) | 5 |
+| [`product_option_values`](#product_option_values) | 6 |
+| [`product_options`](#product_options) | 6 |
+| [`product_translations`](#product_translations) | 9 |
+| [`product_video`](#product_video) | 3 |
+| [`product_view_stats`](#product_view_stats) | 3 |
+| [`products`](#products) | 15 |
 | [`promotion_rules`](#promotion_rules) | 6 |
-| [`promotion_usages`](#promotion_usages) | 10 |
-| [`promotions`](#promotions) | 18 |
+| [`promotion_usages`](#promotion_usages) | 11 |
+| [`promotions`](#promotions) | 21 |
 | [`pulse_aggregates`](#pulse_aggregates) | 9 |
 | [`pulse_entries`](#pulse_entries) | 6 |
 | [`pulse_values`](#pulse_values) | 6 |
@@ -98,7 +107,7 @@
 | [`settings`](#settings) | 7 |
 | [`shipment_events`](#shipment_events) | 9 |
 | [`shipment_lines`](#shipment_lines) | 7 |
-| [`shipments`](#shipments) | 20 |
+| [`shipments`](#shipments) | 22 |
 | [`slug_redirects`](#slug_redirects) | 7 |
 | [`staff_invite_tokens`](#staff_invite_tokens) | 3 |
 | [`staff_password_reset_tokens`](#staff_password_reset_tokens) | 3 |
@@ -111,15 +120,6 @@
 | [`stock_receipt_lines`](#stock_receipt_lines) | 4 |
 | [`stock_receipts`](#stock_receipts) | 12 |
 | [`stock_reservations`](#stock_reservations) | 10 |
-| [`style_attribute_values`](#style_attribute_values) | 6 |
-| [`style_link_group_items`](#style_link_group_items) | 4 |
-| [`style_link_groups`](#style_link_groups) | 5 |
-| [`style_option_values`](#style_option_values) | 6 |
-| [`style_options`](#style_options) | 6 |
-| [`style_translations`](#style_translations) | 9 |
-| [`style_video`](#style_video) | 3 |
-| [`style_view_stats`](#style_view_stats) | 3 |
-| [`styles`](#styles) | 15 |
 | [`users`](#users) | 8 |
 | [`variant_option_values`](#variant_option_values) | 3 |
 | [`variants`](#variants) | 11 |
@@ -366,17 +366,17 @@ Index: index (parent_id, position); index (path); unique (slug); PK (id)
 
 Khoá ngoại: parent_id → categories(id)
 
-## category_style
+## category_product
 
 | Cột | Kiểu | Null | Mặc định |
 |---|---|---|---|
 | `category_id` | bigint unsigned |  |  |
-| `style_id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
 | `position` | int unsigned |  | `0` |
 
-Index: index (style_id); PK (category_id, style_id)
+Index: index (product_id); PK (category_id, product_id)
 
-Khoá ngoại: category_id → categories(id) on delete cascade; style_id → styles(id) on delete cascade
+Khoá ngoại: category_id → categories(id) on delete cascade; product_id → products(id) on delete cascade
 
 ## category_translations
 
@@ -395,17 +395,17 @@ Index: unique (category_id, locale); unique (locale, slug); PK (id)
 
 Khoá ngoại: category_id → categories(id) on delete cascade
 
-## collection_style
+## collection_product
 
 | Cột | Kiểu | Null | Mặc định |
 |---|---|---|---|
 | `collection_id` | bigint unsigned |  |  |
-| `style_id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
 | `position` | int unsigned |  | `0` |
 
-Index: index (style_id); PK (collection_id, style_id)
+Index: index (product_id); PK (collection_id, product_id)
 
-Khoá ngoại: collection_id → collections(id) on delete cascade; style_id → styles(id) on delete cascade
+Khoá ngoại: collection_id → collections(id) on delete cascade; product_id → products(id) on delete cascade
 
 ## collection_translations
 
@@ -417,6 +417,8 @@ Khoá ngoại: collection_id → collections(id) on delete cascade; style_id →
 | `slug` | varchar(160) | có |  |
 | `name` | varchar(255) |  |  |
 | `description` | text | có |  |
+| `meta_title` | varchar(255) | có |  |
+| `meta_description` | varchar(512) | có |  |
 
 Index: unique (collection_id, locale); unique (locale, slug); PK (id)
 
@@ -430,6 +432,8 @@ Khoá ngoại: collection_id → collections(id) on delete cascade
 | `slug` | varchar(128) |  |  |
 | `status` | varchar(16) |  | `active` |
 | `position` | int unsigned |  | `0` |
+| `image_media_id` | bigint unsigned | có |  |
+| `lock_version` | int unsigned |  | `0` |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
@@ -969,6 +973,8 @@ Index: unique (code); PK (id)
 | `checksum` | char(64) |  |  |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
+| `focal_x` | tinyint unsigned | có |  |
+| `focal_y` | tinyint unsigned | có |  |
 
 Index: unique (checksum); index (folder); PK (id)
 
@@ -1232,8 +1238,9 @@ Khoá ngoại: order_id → orders(id) on delete cascade
 | `placed_at` | timestamp |  |  |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
+| `stage` | varchar(24) | có |  |
 
-Index: index (customer_id); index (customer_phone); unique (number); index (order_status); index (parent_order_id); index (placed_at); unique (public_id); index (source_cart_id); index (source, placed_at); index (updated_at, id); PK (id)
+Index: index (customer_id); index (customer_phone); unique (number); index (order_status); index (parent_order_id); index (placed_at); unique (public_id); index (source_cart_id); index (source, placed_at); index (stage, placed_at, id); index (updated_at, id); PK (id)
 
 Khoá ngoại: parent_order_id → orders(id)
 
@@ -1402,6 +1409,142 @@ Index: unique (price_list_id, variant_id, min_qty); index (variant_id); PK (id)
 
 Khoá ngoại: price_list_id → price_lists(id) on delete cascade; variant_id → variants(id)
 
+## product_attribute_values
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
+| `attribute_id` | bigint unsigned |  |  |
+| `attribute_value_id` | bigint unsigned | có |  |
+| `value_text` | varchar(1000) | có |  |
+| `value_bool` | tinyint(1) | có |  |
+
+Index: PK (id); index (attribute_id, attribute_value_id); index (attribute_value_id); index (product_id, attribute_id)
+
+Khoá ngoại: attribute_id → attributes(id) on delete cascade; attribute_value_id → attribute_values(id) on delete cascade; product_id → products(id) on delete cascade
+
+## product_link_group_items
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `product_link_group_id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
+| `position` | int unsigned |  | `0` |
+
+Index: PK (id); index (product_id); unique (product_link_group_id, product_id)
+
+Khoá ngoại: product_id → products(id) on delete cascade; product_link_group_id → product_link_groups(id) on delete cascade
+
+## product_link_groups
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `link_type_id` | bigint unsigned |  |  |
+| `root_product_id` | bigint unsigned | có |  |
+| `created_at` | timestamp | có |  |
+| `updated_at` | timestamp | có |  |
+
+Index: PK (id); index (link_type_id, root_product_id); index (root_product_id)
+
+Khoá ngoại: link_type_id → link_types(id); root_product_id → products(id) on delete cascade
+
+## product_option_values
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
+| `option_value_id` | bigint unsigned |  |  |
+| `position` | int unsigned |  | `0` |
+| `created_at` | timestamp | có |  |
+| `updated_at` | timestamp | có |  |
+
+Index: PK (id); index (option_value_id); unique (product_id, option_value_id)
+
+Khoá ngoại: option_value_id → option_values(id); product_id → products(id) on delete cascade
+
+## product_options
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
+| `option_type_id` | bigint unsigned |  |  |
+| `position` | tinyint unsigned |  | `0` |
+| `created_at` | timestamp | có |  |
+| `updated_at` | timestamp | có |  |
+
+Index: PK (id); index (option_type_id); unique (product_id, option_type_id)
+
+Khoá ngoại: option_type_id → option_types(id); product_id → products(id) on delete cascade
+
+## product_translations
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
+| `locale` | varchar(8) |  |  |
+| `slug` | varchar(160) | có |  |
+| `name` | varchar(255) |  |  |
+| `description` | text | có |  |
+| `care_instructions` | text | có |  |
+| `meta_title` | varchar(255) | có |  |
+| `meta_description` | varchar(512) | có |  |
+
+Index: PK (id); unique (locale, slug); unique (product_id, locale)
+
+Khoá ngoại: product_id → products(id) on delete cascade
+
+## product_video
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `product_id` | bigint unsigned |  |  |
+| `video_id` | bigint unsigned |  |  |
+| `position` | int unsigned |  | `0` |
+
+Index: PK (product_id, video_id); index (video_id)
+
+Khoá ngoại: product_id → products(id) on delete cascade; video_id → videos(id) on delete cascade
+
+## product_view_stats
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `product_id` | bigint unsigned |  |  |
+| `hour` | datetime |  |  |
+| `views` | int unsigned |  | `0` |
+
+Index: PK (product_id, hour); index (hour)
+
+## products
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `brand_id` | bigint unsigned | có |  |
+| `product_code` | varchar(64) |  |  |
+| `slug` | varchar(160) |  |  |
+| `status` | varchar(16) |  | `draft` |
+| `track_inventory` | tinyint(1) |  | `1` |
+| `published_from` | datetime | có |  |
+| `published_to` | datetime | có |  |
+| `primary_category_id` | bigint unsigned | có |  |
+| `search_text` | text |  |  |
+| `list_price_min` | bigint | có |  |
+| `meta` | json | có |  |
+| `lock_version` | int unsigned |  | `0` |
+| `created_at` | timestamp | có |  |
+| `updated_at` | timestamp | có |  |
+
+Index: PK (id); index (brand_id); index (list_price_min); index (primary_category_id); unique (product_code); unique (slug); index (status, published_from)
+
+Khoá ngoại: brand_id → brands(id); primary_category_id → categories(id) on delete set null
+
 ## promotion_rules
 
 | Cột | Kiểu | Null | Mặc định |
@@ -1431,6 +1574,7 @@ Khoá ngoại: promotion_id → promotions(id) on delete cascade
 | `status` | varchar(16) |  | `applied` |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
+| `recheck_config` | json | có |  |
 
 Index: PK (id); index (order_id); unique (promotion_id, order_id); index (voucher_id)
 
@@ -1442,6 +1586,9 @@ Khoá ngoại: promotion_id → promotions(id); voucher_id → vouchers(id)
 |---|---|---|---|
 | `id` | bigint unsigned |  |  |
 | `campaign_id` | bigint unsigned | có |  |
+| `managed_by` | varchar(64) | có |  |
+| `managed_key` | varchar(64) | có |  |
+| `managed_route` | varchar(128) | có |  |
 | `name` | varchar(255) |  |  |
 | `status` | varchar(16) |  | `active` |
 | `starts_at` | datetime | có |  |
@@ -1459,7 +1606,7 @@ Khoá ngoại: promotion_id → promotions(id); voucher_id → vouchers(id)
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: PK (id); index (campaign_id); index (status)
+Index: PK (id); index (campaign_id); unique (managed_by, managed_key); index (status)
 
 Khoá ngoại: campaign_id → campaigns(id) on delete set null
 
@@ -1753,8 +1900,10 @@ Khoá ngoại: order_line_id → order_lines(id); shipment_id → shipments(id) 
 | `lock_version` | int unsigned |  | `0` |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
+| `delivery_failed_at` | timestamp | có |  |
+| `actual_carrier_fee` | bigint unsigned | có |  |
 
-Index: PK (id); unique (carrier_code, tracking_number); index (location_id); index (order_id); unique (public_id); index (status, delivered_at); index (status)
+Index: PK (id); unique (carrier_code, tracking_number); index (location_id); index (order_id); unique (public_id); index (status, delivered_at); index (status, delivery_failed_at); index (status)
 
 Khoá ngoại: location_id → locations(id); order_id → orders(id)
 
@@ -1946,142 +2095,6 @@ Index: PK (id); index (location_id); index (reservation_key, status); index (sta
 
 Khoá ngoại: location_id → locations(id); variant_id → variants(id)
 
-## style_attribute_values
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `style_id` | bigint unsigned |  |  |
-| `attribute_id` | bigint unsigned |  |  |
-| `attribute_value_id` | bigint unsigned | có |  |
-| `value_text` | varchar(1000) | có |  |
-| `value_bool` | tinyint(1) | có |  |
-
-Index: PK (id); index (attribute_id, attribute_value_id); index (attribute_value_id); index (style_id, attribute_id)
-
-Khoá ngoại: attribute_id → attributes(id) on delete cascade; attribute_value_id → attribute_values(id) on delete cascade; style_id → styles(id) on delete cascade
-
-## style_link_group_items
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `style_link_group_id` | bigint unsigned |  |  |
-| `style_id` | bigint unsigned |  |  |
-| `position` | int unsigned |  | `0` |
-
-Index: PK (id); index (style_id); unique (style_link_group_id, style_id)
-
-Khoá ngoại: style_id → styles(id) on delete cascade; style_link_group_id → style_link_groups(id) on delete cascade
-
-## style_link_groups
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `link_type_id` | bigint unsigned |  |  |
-| `root_style_id` | bigint unsigned | có |  |
-| `created_at` | timestamp | có |  |
-| `updated_at` | timestamp | có |  |
-
-Index: PK (id); index (link_type_id, root_style_id); index (root_style_id)
-
-Khoá ngoại: link_type_id → link_types(id); root_style_id → styles(id) on delete cascade
-
-## style_option_values
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `style_id` | bigint unsigned |  |  |
-| `option_value_id` | bigint unsigned |  |  |
-| `position` | int unsigned |  | `0` |
-| `created_at` | timestamp | có |  |
-| `updated_at` | timestamp | có |  |
-
-Index: PK (id); index (option_value_id); unique (style_id, option_value_id)
-
-Khoá ngoại: option_value_id → option_values(id); style_id → styles(id) on delete cascade
-
-## style_options
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `style_id` | bigint unsigned |  |  |
-| `option_type_id` | bigint unsigned |  |  |
-| `position` | tinyint unsigned |  | `0` |
-| `created_at` | timestamp | có |  |
-| `updated_at` | timestamp | có |  |
-
-Index: PK (id); index (option_type_id); unique (style_id, option_type_id)
-
-Khoá ngoại: option_type_id → option_types(id); style_id → styles(id) on delete cascade
-
-## style_translations
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `style_id` | bigint unsigned |  |  |
-| `locale` | varchar(8) |  |  |
-| `slug` | varchar(160) | có |  |
-| `name` | varchar(255) |  |  |
-| `description` | text | có |  |
-| `care_instructions` | text | có |  |
-| `meta_title` | varchar(255) | có |  |
-| `meta_description` | varchar(512) | có |  |
-
-Index: PK (id); unique (locale, slug); unique (style_id, locale)
-
-Khoá ngoại: style_id → styles(id) on delete cascade
-
-## style_video
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `style_id` | bigint unsigned |  |  |
-| `video_id` | bigint unsigned |  |  |
-| `position` | int unsigned |  | `0` |
-
-Index: PK (style_id, video_id); index (video_id)
-
-Khoá ngoại: style_id → styles(id) on delete cascade; video_id → videos(id) on delete cascade
-
-## style_view_stats
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `style_id` | bigint unsigned |  |  |
-| `hour` | datetime |  |  |
-| `views` | int unsigned |  | `0` |
-
-Index: PK (style_id, hour); index (hour)
-
-## styles
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `brand_id` | bigint unsigned | có |  |
-| `style_code` | varchar(64) |  |  |
-| `slug` | varchar(160) |  |  |
-| `status` | varchar(16) |  | `draft` |
-| `track_inventory` | tinyint(1) |  | `1` |
-| `published_from` | datetime | có |  |
-| `published_to` | datetime | có |  |
-| `primary_category_id` | bigint unsigned | có |  |
-| `search_text` | text |  |  |
-| `list_price_min` | bigint | có |  |
-| `meta` | json | có |  |
-| `lock_version` | int unsigned |  | `0` |
-| `created_at` | timestamp | có |  |
-| `updated_at` | timestamp | có |  |
-
-Index: PK (id); index (brand_id); index (list_price_min); index (primary_category_id); unique (slug); index (status, published_from); unique (style_code)
-
-Khoá ngoại: brand_id → brands(id); primary_category_id → categories(id) on delete set null
-
 ## users
 
 | Cột | Kiểu | Null | Mặc định |
@@ -2114,7 +2127,7 @@ Khoá ngoại: option_type_id → option_types(id); option_value_id → option_v
 | Cột | Kiểu | Null | Mặc định |
 |---|---|---|---|
 | `id` | bigint unsigned |  |  |
-| `style_id` | bigint unsigned |  |  |
+| `product_id` | bigint unsigned |  |  |
 | `option_key` | varchar(64) | có |  |
 | `sku` | varchar(64) |  |  |
 | `barcode` | varchar(32) | có |  |
@@ -2125,9 +2138,9 @@ Khoá ngoại: option_type_id → option_types(id); option_value_id → option_v
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: PK (id); unique (barcode); unique (sku); unique (style_id, option_key); index (style_id, status)
+Index: PK (id); unique (barcode); unique (product_id, option_key); index (product_id, status); unique (sku)
 
-Khoá ngoại: style_id → styles(id)
+Khoá ngoại: product_id → products(id)
 
 ## videos
 

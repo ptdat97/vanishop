@@ -71,7 +71,7 @@ it('plugin bị tắt → trang trả 404, không còn card', function () {
 it('storefront: lời chào trong dữ liệu PDP (API + native) và hiện qua slot', function () {
     installHelloWorld();
     ['s' => $variant] = CheckoutTestHelpers::store();
-    $slug = $variant->style->slug;
+    $slug = $variant->product->slug;
 
     $extensions = $this->getJson("/api/storefront/v1/products/{$slug}")->assertOk()->json('data.extensions');
     expect($extensions)->toBe(['vani.hello-world' => ['greeting' => 'Xin chào từ Đầm lụa!']]);
@@ -81,26 +81,26 @@ it('storefront: lời chào trong dữ liệu PDP (API + native) và hiện qua 
 it('Admin: phần form sản phẩm lưu vào bảng riêng, cột + bộ lọc danh sách, thao tác trên đơn, tab khách', function () {
     installHelloWorld();
     ['s' => $variant] = CheckoutTestHelpers::store();
-    $style = $variant->style;
+    $product = $variant->product;
     $staff = StaffUser::factory()->withPermissions(['admin.access', 'catalog.view', 'catalog.manage', 'orders.view', 'customers.view', 'hello-world.view'])->create();
     $this->actingAs($staff, 'staff');
 
-    $this->get("/admin/catalog/products/{$style->id}/edit")->assertInertia(fn (Assert $page) => $page
+    $this->get("/admin/catalog/products/{$product->id}/edit")->assertInertia(fn (Assert $page) => $page
         ->where('extensionSections.0.plugin', 'vani.hello-world')
         ->where('extensionSections.0.fields.0.key', 'note'));
 
     $payload = fn (string $note) => [
-        'style_code' => $style->style_code, 'slug' => $style->slug, 'status' => 'active', 'lock_version' => $style->fresh()->lock_version,
-        'translations' => ['vi' => ['name' => 'Đầm lụa']], 'category_ids' => [], 'brand_id' => $style->brand_id,
+        'product_code' => $product->product_code, 'slug' => $product->slug, 'status' => 'active', 'lock_version' => $product->fresh()->lock_version,
+        'translations' => ['vi' => ['name' => 'Đầm lụa']], 'category_ids' => [], 'brand_id' => $product->brand_id,
         'extensions' => ['vani-hello-world' => ['note' => ['note' => $note]]],
     ];
-    $this->put("/admin/catalog/products/{$style->id}", $payload(str_repeat('x', 300)))->assertSessionHasErrors('extensions.vani-hello-world.note.note');
-    $this->put("/admin/catalog/products/{$style->id}", $payload('Hàng mới về'))->assertSessionHasNoErrors();
-    expect(DB::table('plg_hello_world_notes')->where('style_id', $style->id)->value('note'))->toBe('Hàng mới về');
+    $this->put("/admin/catalog/products/{$product->id}", $payload(str_repeat('x', 300)))->assertSessionHasErrors('extensions.vani-hello-world.note.note');
+    $this->put("/admin/catalog/products/{$product->id}", $payload('Hàng mới về'))->assertSessionHasNoErrors();
+    expect(DB::table('plg_hello_world_notes')->where('product_id', $product->id)->value('note'))->toBe('Hàng mới về');
 
     $this->get('/admin/catalog/products?ext[vani.hello-world:has_note]=yes')->assertInertia(fn (Assert $page) => $page
         ->has('products.data', 1)
-        ->where("extensions.values.{$style->id}", ['vani.hello-world:note' => 'Hàng mới về'])
+        ->where("extensions.values.{$product->id}", ['vani.hello-world:note' => 'Hàng mới về'])
         ->where('extensions.filters.0.key', 'vani.hello-world:has_note'));
 
     $response = $this->postJson('/api/storefront/v1/carts')->assertCreated();
@@ -147,7 +147,7 @@ it('giao dịch: lời chúc gói quà trên form thêm giỏ (native) → giỏ
     installHelloWorld();
     ['s' => $variant] = CheckoutTestHelpers::store();
 
-    $this->get("/san-pham/{$variant->style->slug}")->assertSee('name="options[vani.hello-world][message]"', false);
+    $this->get("/san-pham/{$variant->product->slug}")->assertSee('name="options[vani.hello-world][message]"', false);
     $this->post('/gio-hang', ['variant_id' => $variant->id, 'options' => ['vani.hello-world' => ['message' => str_repeat('a', 61)]]])->assertSessionHasErrors('business');
     $this->post('/gio-hang', ['variant_id' => $variant->id, 'options' => ['vani.hello-world' => ['message' => 'Chúc mừng sinh nhật!']]])->assertRedirect('/gio-hang');
     $this->get('/gio-hang')->assertSee('Chúc mừng sinh nhật!');

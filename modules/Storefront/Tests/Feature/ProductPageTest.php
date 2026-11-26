@@ -9,7 +9,7 @@ use Modules\Storefront\View\ProductPage;
 
 beforeEach(function () {
     $this->product = fn (array $overrides = []): array => [
-        'id' => 1, 'name' => 'Đầm lụa', 'style_code' => 'DAM01', 'description' => "Lụa <b>mềm</b>,\n\nmặc mát.", 'meta_title' => null, 'meta_description' => null,
+        'id' => 1, 'name' => 'Đầm lụa', 'product_code' => 'DAM01', 'description' => "Lụa <b>mềm</b>,\n\nmặc mát.", 'meta_title' => null, 'meta_description' => null,
         'image_url' => '/anh/goc.jpg', 'brand' => null, 'price' => null, 'in_stock' => true, 'breadcrumb' => [['name' => 'Nữ', 'slug' => 'nu']],
         'media' => ['gallery' => [
             ['id' => 1, 'url' => '/anh/1-600.jpg', 'srcset' => '/anh/1-300.jpg 300w, /anh/1-1200.jpg 1200w, /anh/1-600.jpg 600w', 'thumb_url' => '/anh/1-160.jpg', 'alt' => null],

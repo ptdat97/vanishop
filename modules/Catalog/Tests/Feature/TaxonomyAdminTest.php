@@ -94,8 +94,8 @@ it('tuỳ chọn biến thể (ADR-045): tạo loại (vd. Chất liệu, dropdo
 });
 
 it('không xoá loại/giá trị tuỳ chọn đang được sản phẩm dùng', function () {
-    $style = T::product();
-    [$variant] = PricingTestHelpers::variants($style, ['S']);
+    $product = T::product();
+    [$variant] = PricingTestHelpers::variants($product, ['S']);
     $color = T::seed(fn () => $variant->valueOf(OptionType::COLOR) ?? $variant->load('optionValues.type')->valueOf(OptionType::COLOR));
 
     $this->delete("/admin/catalog/option-types/{$color->option_type_id}/values/{$color->id}")->assertSessionHasErrors('option_value');

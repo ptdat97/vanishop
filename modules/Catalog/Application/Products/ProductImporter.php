@@ -15,12 +15,12 @@ use Modules\Catalog\Contracts\CatalogImporter;
 use Modules\Catalog\Contracts\Data\ImportedProduct;
 use Modules\Catalog\Contracts\Data\ProductImport;
 use Modules\Catalog\Domain\CategoryStatus;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Shared\Support\StoreLocale;
 
@@ -49,12 +49,12 @@ final class ProductImporter implements CatalogImporter
             $brandId = $import->brand === null ? null : $this->brand($import->brand)->id;
             $categoryIds = array_map(fn (array $category): int => $this->category($category)->id, $import->categories);
 
-            $style = Style::query()->withoutGlobalScopes()->where('style_code', $import->styleCode)->first();
-            $created = $style === null;
-            $style ??= $this->products->create(new ProductInput(
-                styleCode: $import->styleCode,
+            $product = Product::query()->withoutGlobalScopes()->where('product_code', $import->productCode)->first();
+            $created = $product === null;
+            $product ??= $this->products->create(new ProductInput(
+                productCode: $import->productCode,
                 slug: $import->slug,
-                status: $import->active ? StyleStatus::Active : StyleStatus::Draft,
+                status: $import->active ? ProductStatus::Active : ProductStatus::Draft,
                 translations: $import->translations,
                 categoryIds: $categoryIds,
                 primaryCategoryId: $categoryIds[0] ?? null,
@@ -66,17 +66,17 @@ final class ProductImporter implements CatalogImporter
             $sizeType = OptionType::query()->where('code', OptionType::SIZE)->firstOrFail();
             $colorIds = array_map(fn (array $data, int $position): int => $this->value($colorType, $data['code'], $position, [StoreLocale::default() => $data['name']], $data['hex'], $data['family'] ?? 'multi')->id, $import->colors, array_keys($import->colors));
             $sizeIds = array_map(fn (string $code, int $position): int => $this->value($sizeType, $code, $position, [], null, null, 'alpha')->id, $import->sizes, array_keys($import->sizes));
-            $current = $style->optionValues()->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all();
+            $current = $product->optionValues()->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all();
             $existingOf = fn (OptionType $type): array => OptionValue::query()->whereIn('id', $current)->where('option_type_id', $type->id)->pluck('id')->map(fn ($id): int => (int) $id)->all();
-            $this->options->syncAxes($style, [
+            $this->options->syncAxes($product, [
                 ['option_type_id' => $colorType->id, 'value_ids' => array_values(array_unique([...$existingOf($colorType), ...$colorIds]))],
                 ['option_type_id' => $sizeType->id, 'value_ids' => array_values(array_unique([...$existingOf($sizeType), ...$sizeIds]))],
             ]);
-            $keys = Variant::query()->where('style_id', $style->id)->pluck('option_key')->all();
+            $keys = Variant::query()->where('product_id', $product->id)->pluck('option_key')->all();
             foreach ($colorIds as $colorId) {
                 foreach ($sizeIds as $sizeId) {
                     if (! in_array(Variant::keyFor([$colorId, $sizeId]), $keys, true)) {
-                        $this->options->createVariant($style, [$colorId, $sizeId]);
+                        $this->options->createVariant($product, [$colorId, $sizeId]);
                     }
                 }
             }
@@ -87,7 +87,7 @@ final class ProductImporter implements CatalogImporter
                 if ($colorData['images'] === []) {
                     continue;
                 }
-                $first = Variant::query()->where('style_id', $style->id)
+                $first = Variant::query()->where('product_id', $product->id)
                     ->whereIn('id', DB::table('variant_option_values')->where('option_value_id', $colorIds[$index])->select('variant_id'))->orderBy('id')->first();
                 if ($first === null) {
                     continue;
@@ -97,15 +97,15 @@ final class ProductImporter implements CatalogImporter
                 }
                 if (! $first->gallery()->exists()) {
                     $files = array_map(fn (string $path): UploadedFile => new UploadedFile($path, basename($path), null, null, true), array_slice($colorData['images'], 0, VariantImages::MAX_IMAGES));
-                    $this->images->addFiles($style, $first, $files);
-                    $this->images->copyToSiblings($style, $first, $colorType->id);
+                    $this->images->addFiles($product, $first, $files);
+                    $this->images->copyToSiblings($product, $first, $colorType->id);
                     $imagesAdded += count($files);
                 }
             }
 
             return new ImportedProduct(
-                $style->id, $style->slug, $created, $imagesAdded,
-                DB::table('variants')->where('style_id', $style->id)->orderBy('id')->pluck('sku')->map(fn ($sku): string => (string) $sku)->all(),
+                $product->id, $product->slug, $created, $imagesAdded,
+                DB::table('variants')->where('product_id', $product->id)->orderBy('id')->pluck('sku')->map(fn ($sku): string => (string) $sku)->all(),
             );
         });
     }

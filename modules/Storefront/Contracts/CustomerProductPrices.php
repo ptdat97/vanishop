@@ -11,8 +11,8 @@ use Modules\Shared\Contracts\PluginApi;
 interface CustomerProductPrices
 {
     /**
-     * @param  list<int>  $styleIds  tối đa ProductCards::MAX_IDS
+     * @param  list<int>  $productIds  tối đa ProductCards::MAX_IDS
      * @return array{group_id: ?int, prices: array<int, array{amount: int, formatted: string}>}
      */
-    public function forCustomer(array $styleIds, int $customerId, string $locale): array;
+    public function forCustomer(array $productIds, int $customerId, string $locale): array;
 }

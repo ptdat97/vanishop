@@ -51,7 +51,7 @@ const props = defineProps<{
     /** '' khi sản phẩm chưa lưu (chưa có ảnh theo SKU). */
     productUrl: string;
     urls: { option_types: string; option_type_store: string; option_value_store: string };
-    styleCode: string;
+    productCode: string;
     axes: Axis[];
     optionTypes: OptionType[];
     variants: Variant[];
@@ -133,7 +133,7 @@ const imageGroups = (): Array<{ value_id: number; media_ids: number[] }> => imag
     .map((valueId) => ({ value_id: valueId, media_ids: valueImages[valueId] }));
 
 // Mã sản phẩm đổi (thường khi thêm mới): SKU tự sinh chưa lưu đổi theo tiền tố mới; SKU đã sửa tay hoặc đã lưu giữ nguyên.
-watch(() => props.styleCode, (next, previous) => {
+watch(() => props.productCode, (next, previous) => {
     const from = `${previous}-`.toUpperCase();
     Object.values(drafts).forEach((draft) => {
         if (draft.variantId === null && draft.sku.startsWith(from)) draft.sku = `${next}-`.toUpperCase() + draft.sku.slice(from.length);
@@ -152,7 +152,7 @@ const combos = computed<number[][]>(() => activeAxes.value.length === 0
 const comboLabel = (values: number[]): string => values.map(valueName).join(' / ');
 const draftOf = (values: number[]): Draft | undefined => drafts[comboKey(values)];
 
-const autoSku = (values: number[]): string => [props.styleCode, ...values.map((id) => valueById.value.get(id)?.code ?? id)].join('-').toUpperCase();
+const autoSku = (values: number[]): string => [props.productCode, ...values.map((id) => valueById.value.get(id)?.code ?? id)].join('-').toUpperCase();
 
 function toggle(values: number[], force?: boolean): void {
     const existing = draftOf(values);

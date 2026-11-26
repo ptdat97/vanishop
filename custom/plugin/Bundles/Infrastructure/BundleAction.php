@@ -56,7 +56,7 @@ final class BundleAction implements ContextualPromotionAction
         foreach (array_keys($remaining) as $key) {
             $line = $context->line($key);
             if ($line !== null) {
-                $lines[$key] = ['style_id' => $line->styleId, 'quantity' => $line->quantity, 'unit_price' => $line->unitPrice->amount];
+                $lines[$key] = ['product_id' => $line->productId, 'quantity' => $line->quantity, 'unit_price' => $line->unitPrice->amount];
             }
         }
 

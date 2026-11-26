@@ -61,7 +61,7 @@ beforeEach(function () {
 it('action theo ngữ cảnh nhận số lượng dòng cả khi đánh giá lẫn khi kiểm tra lại', function () {
     $id = $this->managed->sync('vani.test', 'k1', new ManagedPromotion('Theo đơn vị', true, 'per_unit_test', []));
     $context = fn (int $quantity) => new PromotionContext(null, 'VND', [
-        new PromotionLine($this->s->id, $this->brand->id, $this->s->style_id, $quantity, Money::vnd(300_000), Money::vnd(300_000 * $quantity)),
+        new PromotionLine($this->s->id, $this->brand->id, $this->s->product_id, $quantity, Money::vnd(300_000), Money::vnd(300_000 * $quantity)),
     ], [], now()->getTimestamp());
 
     expect(app(PromotionEngine::class)->evaluate($context(3))->discountByLine())->toBe([$this->s->id => 30_000])

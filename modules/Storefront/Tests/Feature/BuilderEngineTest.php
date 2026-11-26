@@ -30,14 +30,14 @@ it('trang khác thêm nội dung bằng code tại slot; đầu trang danh sách
     $category = T::seed(function (): Category {
         $category = Category::factory()->create(['slug' => 'dam-lua']);
         $category->syncTranslations(['vi' => ['name' => 'Đầm lụa', 'description' => 'Lụa tơ tằm mát nhẹ.']]);
-        $this->sku->style->categories()->attach($category);
+        $this->sku->product->categories()->attach($category);
 
         return $category;
     });
     $hooks = app(HookManager::class);
     $hooks->onSlot('vani.storefront.pdp.after_details', fn () => new HtmlString('<p>CAM-KET-PDP</p>'));
 
-    $this->get(route('storefront.product', $this->sku->style->slug))->assertOk()->assertSee('CAM-KET-PDP', false);
+    $this->get(route('storefront.product', $this->sku->product->slug))->assertOk()->assertSee('CAM-KET-PDP', false);
     $this->get('/danh-muc/dam-lua')->assertOk()
         ->assertSeeInOrder(['data-category-banner', 'Đầm lụa', 'Lụa tơ tằm mát nhẹ.', 'data-vani-listing'], false);
 

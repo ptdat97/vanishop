@@ -57,9 +57,9 @@ it('vị trí theo cấu hình; trang sản phẩm chỉ hiện ngưỡng chung 
     $this->post('/gio-hang', ['variant_id' => $this->s->id]);
     $this->get('/gio-hang')->assertDontSee('data-vani-free-shipping', false);
 
-    $this->get('/san-pham/'.$this->s->style->slug)->assertDontSee('data-vani-free-shipping', false);
+    $this->get('/san-pham/'.$this->s->product->slug)->assertDontSee('data-vani-free-shipping', false);
     ($this->set)('progress_on_pdp', true);
-    $this->get('/san-pham/'.$this->s->style->slug)->assertSee('Miễn phí vận chuyển cho đơn từ 500.000 ₫');
+    $this->get('/san-pham/'.$this->s->product->slug)->assertSee('Miễn phí vận chuyển cho đơn từ 500.000 ₫');
 });
 
 it('cấu hình: thông báo phải có {amount}, màu đúng #rrggbb', function () {

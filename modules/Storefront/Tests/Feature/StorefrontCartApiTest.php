@@ -9,8 +9,8 @@ require_once __DIR__.'/../../../Inventory/Tests/Feature/InventoryTestHelpers.php
 
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
-    $this->style = T::product($this->brand->id, ['name' => 'Đầm lụa', 'slug' => 'dam-lua']);
-    [$this->s, $this->m] = P::variants($this->style);
+    $this->product = T::product($this->brand->id, ['name' => 'Đầm lụa', 'slug' => 'dam-lua']);
+    [$this->s, $this->m] = P::variants($this->product);
     P::priceList(['code' => 'base'], [$this->s->id => [590_000], $this->m->id => [590_000, 690_000]]);
     $warehouse = I::location();
     I::stock($warehouse, $this->s->id, 10);

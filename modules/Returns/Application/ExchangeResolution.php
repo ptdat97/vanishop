@@ -44,7 +44,7 @@ final class ExchangeResolution
      * theo giá hiện tại, bù trừ với số tiền khách đã trả cho các món trả của nhóm này — khách bù phần thiếu (COD trên đơn
      * thay thế) hoặc được hoàn phần thừa.
      *
-     * @return array{lines: list<array{return_line_id: int, variant_id: int, sku: string, quantity: int, unit_amount: int, credit: int, same_style: bool}>, payable: int, refund: int}
+     * @return array{lines: list<array{return_line_id: int, variant_id: int, sku: string, quantity: int, unit_amount: int, credit: int, same_product: bool}>, payable: int, refund: int}
      */
     public function exchangeQuote(int $returnId): array
     {
@@ -52,7 +52,7 @@ final class ExchangeResolution
         $orderLines = collect($this->orders->lines($return->order_id))->keyBy('id');
         $variants = $this->variants->find(array_values(array_unique([...$return->lines->pluck('variant_id')->all(), ...$return->lines->pluck('exchange_variant_id')->filter()->all()])));
 
-        $other = $return->lines->filter(fn (ReturnLine $line): bool => ($variants[$line->exchange_variant_id]->styleId ?? null) !== ($variants[$line->variant_id]->styleId ?? -1));
+        $other = $return->lines->filter(fn (ReturnLine $line): bool => ($variants[$line->exchange_variant_id]->productId ?? null) !== ($variants[$line->variant_id]->productId ?? -1));
         $prices = $other->isEmpty() ? [] : $this->prices->forVariants($other->pluck('exchange_variant_id')->unique()->values()->all(), new PricingContext(now()->getTimestamp()));
 
         $values = [];
@@ -61,8 +61,8 @@ final class ExchangeResolution
             $variant = $variants[$line->exchange_variant_id] ?? throw ReturnRejected::exchangeInvalid('variant');
             $same = $other->doesntContain('id', $line->id);
             $unit = $same ? (int) ($orderLines[$line->order_line_id]->unitAmount ?? 0) : ($prices[$line->exchange_variant_id]->amount->amount ?? throw ReturnRejected::exchangeUnavailable(__('returns::messages.exchange_invalid.variant')));
-            $values[$line->id] = ['quantity' => (int) $line->quantity, 'unit_amount' => $unit, 'same_style' => $same, 'paid' => (int) $line->refund_amount];
-            $result[$line->id] = ['return_line_id' => $line->id, 'variant_id' => $variant->id, 'sku' => $variant->sku, 'quantity' => $line->quantity, 'unit_amount' => $unit, 'credit' => 0, 'same_style' => $same];
+            $values[$line->id] = ['quantity' => (int) $line->quantity, 'unit_amount' => $unit, 'same_product' => $same, 'paid' => (int) $line->refund_amount];
+            $result[$line->id] = ['return_line_id' => $line->id, 'variant_id' => $variant->id, 'sku' => $variant->sku, 'quantity' => $line->quantity, 'unit_amount' => $unit, 'credit' => 0, 'same_product' => $same];
         }
         $quote = ExchangeValuation::quote($values);
         foreach ($quote['credits'] as $lineId => $credit) {
@@ -88,7 +88,7 @@ final class ExchangeResolution
         $variants = $this->variants->find(array_values(array_unique([...array_values($exchanges), ...$orderLines->only(array_keys($lines))->pluck('variantId')->all()])));
         foreach ($exchanges as $lineId => $variantId) {
             $original = $variants[$orderLines[$lineId]->variantId ?? 0] ?? null;
-            if ($original === null || ($variants[$variantId] ?? null)?->styleId !== $original->styleId) {
+            if ($original === null || ($variants[$variantId] ?? null)?->productId !== $original->productId) {
                 throw ReturnRejected::notEligible('exchange_order');
             }
         }

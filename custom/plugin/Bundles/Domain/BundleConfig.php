@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Plugin\Bundles\Domain;
 
 /**
- * Cấu hình rule/action của khuyến mãi combo, lưu trong khuyến mãi của Core: `items` = {style id: số lượng mỗi bộ}
+ * Cấu hình rule/action của khuyến mãi combo, lưu trong khuyến mãi của Core: `items` = {product id: số lượng mỗi bộ}
  * (từ 2 đến MAX_ITEMS món), action thêm `basis_points` (1%–90%). Đánh giá giỏ không cần đọc bảng của plugin.
  */
 final class BundleConfig
@@ -22,7 +22,7 @@ final class BundleConfig
 
     /**
      * @param  array<string, mixed>  $config
-     * @return array<int, int>|null style id => số lượng; null = không hợp lệ
+     * @return array<int, int>|null product id => số lượng; null = không hợp lệ
      */
     public static function requirement(array $config): ?array
     {
@@ -31,11 +31,11 @@ final class BundleConfig
             return null;
         }
         $requirement = [];
-        foreach ($items as $styleId => $quantity) {
-            if (! is_int($styleId) || $styleId < 1 || ! is_int($quantity) || $quantity < 1 || $quantity > self::MAX_QUANTITY) {
+        foreach ($items as $productId => $quantity) {
+            if (! is_int($productId) || $productId < 1 || ! is_int($quantity) || $quantity < 1 || $quantity > self::MAX_QUANTITY) {
                 return null;
             }
-            $requirement[$styleId] = $quantity;
+            $requirement[$productId] = $quantity;
         }
 
         return $requirement;

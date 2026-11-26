@@ -20,8 +20,8 @@ require_once __DIR__.'/PricingTestHelpers.php';
 
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
-    $this->style = T::product($this->brand->id, ['style_code' => 'LM-SH01']);
-    [$this->s, $this->m] = P::variants($this->style);
+    $this->product = T::product($this->brand->id, ['product_code' => 'LM-SH01']);
+    [$this->s, $this->m] = P::variants($this->product);
     $this->actingAs(T::staff(['admin.access', 'pricing.view', 'pricing.manage']), 'staff');
     $this->base = '/admin/pricing/price-lists';
 });
@@ -96,7 +96,7 @@ it('từ chối giá gốc không lớn hơn giá bán, số âm và biến th�
 });
 
 it('trang làm việc: mọi SKU đang có trong bảng giá, tìm theo tên/mã/SKU, giá niêm yết, % giảm, cảnh báo; tóm tắt cả bảng', function () {
-    $other = T::product($this->brand->id, ['style_code' => 'LM-DR02']);
+    $other = T::product($this->brand->id, ['product_code' => 'LM-DR02']);
     [$dress] = P::variants($other, ['S']);
     P::priceList(['code' => 'base'], [$this->s->id => [500_000], $this->m->id => [500_000], $dress->id => [800_000]]);
     $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10, 'starts_at' => now()->addDay()], [$this->s->id => [350_000], $this->m->id => [0], $dress->id => [800_000]]);
@@ -114,10 +114,10 @@ it('trang làm việc: mọi SKU đang có trong bảng giá, tìm theo tên/mã
 it('thêm sản phẩm: tìm theo tên/mã, xem trước giảm 30% (làm tròn 1.000đ), áp dụng ghi lịch sử giá; SKU chưa có giá niêm yết bị bỏ qua', function () {
     P::priceList(['code' => 'base'], [$this->s->id => [499_000]]);
     $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10], []);
-    $rule = ['scope' => 'styles', 'style_ids' => [$this->style->id], 'mode' => 'percent', 'value' => 30, 'round_to' => 1000];
+    $rule = ['scope' => 'products', 'product_ids' => [$this->product->id], 'mode' => 'percent', 'value' => 30, 'round_to' => 1000];
 
     $this->getJson("{$this->base}/{$sale->id}/candidates?q=lm-sh")->assertOk()
-        ->assertJsonPath('data.0.id', $this->style->id)->assertJsonPath('data.0.code', 'LM-SH01')->assertJsonPath('data.0.meta', 'niêm yết 499.000 ₫')
+        ->assertJsonPath('data.0.id', $this->product->id)->assertJsonPath('data.0.code', 'LM-SH01')->assertJsonPath('data.0.meta', 'niêm yết 499.000 ₫')
         ->assertJsonPath('data.0.variants.0.id', $this->s->id)->assertJsonPath('data.0.variants.0.sku', $this->s->sku)
         ->assertJsonPath('data.0.variants.0.status', 'active')->assertJsonPath('data.0.variants.0.meta', 'niêm yết 499.000 ₫')
         ->assertJsonPath('data.0.variants.1.meta', null);
@@ -197,10 +197,10 @@ it('áp giá: phạm vi vượt mức mỗi lần thì báo số SKU để thu h
 it('áp giá hàng loạt: quyền sửa giá và dữ liệu hợp lệ', function () {
     $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale'], []);
 
-    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'styles', 'style_ids' => [$this->style->id], 'mode' => 'percent', 'value' => 120, 'round_to' => 1000])->assertSessionHasErrors('value');
+    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'products', 'product_ids' => [$this->product->id], 'mode' => 'percent', 'value' => 120, 'round_to' => 1000])->assertSessionHasErrors('value');
     $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'variants', 'mode' => 'percent', 'value' => 10, 'round_to' => 500])->assertSessionHasErrors(['variant_ids', 'round_to']);
     $this->actingAs(T::staff(['admin.access', 'pricing.view']), 'staff');
-    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'styles', 'style_ids' => [$this->style->id], 'mode' => 'percent', 'value' => 10, 'round_to' => 1000])->assertForbidden();
+    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'products', 'product_ids' => [$this->product->id], 'mode' => 'percent', 'value' => 10, 'round_to' => 1000])->assertForbidden();
     $this->getJson("{$this->base}/{$sale->id}/candidates?q=LM")->assertForbidden();
     $this->post("{$this->base}/{$sale->id}/remove", ['variant_ids' => [$this->s->id]])->assertForbidden();
 });
@@ -220,7 +220,7 @@ it('sửa nhanh giá niêm yết cho mọi size mà không đổi bảng giá kh
     ]);
     $sale = P::priceList(['code' => 'sale', 'type' => 'sale'], [$this->s->id => [500_000]]);
 
-    $this->put(route('admin.pricing.base-prices.style', ['styleId' => $this->style->id]), ['amount' => 550_000])
+    $this->put(route('admin.pricing.base-prices.product', ['productId' => $this->product->id]), ['amount' => 550_000])
         ->assertSessionHasNoErrors()
         ->assertSessionHas('success');
 
@@ -245,14 +245,14 @@ it('hiển thị giá hiện tại và URL sửa nhanh trên danh sách sản ph
     $this->actingAs($staff, 'staff')->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page
         ->component('Catalog::Products/Index')
         ->where('canManagePrices', true)
-        ->where("extensions.editValues.{$this->style->id}.price", 590_000)
-        ->where("extensions.urls.{$this->style->id}.price", route('admin.pricing.base-prices.style', ['styleId' => $this->style->id]))
-        ->where("extensions.urls.{$this->style->id}.stock", route('admin.inventory.stock.index', ['style' => $this->style->style_code])));
+        ->where("extensions.editValues.{$this->product->id}.price", 590_000)
+        ->where("extensions.urls.{$this->product->id}.price", route('admin.pricing.base-prices.product', ['productId' => $this->product->id]))
+        ->where("extensions.urls.{$this->product->id}.stock", route('admin.inventory.stock.index', ['product' => $this->product->product_code])));
 });
 
 it('từ chối giá nhanh không hợp lệ mà không thay đổi giá đã lưu', function () {
     P::priceList(['code' => 'base'], [$this->s->id => [590_000]]);
-    $url = route('admin.pricing.base-prices.style', ['styleId' => $this->style->id]);
+    $url = route('admin.pricing.base-prices.product', ['productId' => $this->product->id]);
 
     $this->put($url, ['amount' => 0])->assertSessionHasErrors('amount');
     expect(Price::query()->where('variant_id', $this->s->id)->value('amount'))->toBe(590_000);
@@ -260,7 +260,7 @@ it('từ chối giá nhanh không hợp lệ mà không thay đổi giá đã l�
 
 it('ngăn người chỉ có quyền xem sửa giá nhanh', function () {
     P::priceList(['code' => 'base'], [$this->s->id => [590_000]]);
-    $url = route('admin.pricing.base-prices.style', ['styleId' => $this->style->id]);
+    $url = route('admin.pricing.base-prices.product', ['productId' => $this->product->id]);
     $viewer = T::staff(['admin.access', 'pricing.view']);
     $this->actingAs($viewer, 'staff')->put($url, ['amount' => 550_000])->assertForbidden();
 
@@ -269,7 +269,7 @@ it('ngăn người chỉ có quyền xem sửa giá nhanh', function () {
 
 it('trả về 404 khi sửa giá cho sản phẩm không tồn tại', function () {
     $this->actingAs(T::staff(['admin.access', 'pricing.manage']), 'staff')
-        ->put(route('admin.pricing.base-prices.style', ['styleId' => 999_999]), ['amount' => 550_000])
+        ->put(route('admin.pricing.base-prices.product', ['productId' => 999_999]), ['amount' => 550_000])
         ->assertNotFound();
 
     expect(PriceList::query()->where('code', 'base')->exists())->toBeFalse();
@@ -323,20 +323,20 @@ it('danh sách sản phẩm chỉ cho chọn bảng sale hoặc thành viên và
     expect(array_column($action['fields'][0]['options'], 'value'))->toBe([(string) $member->id, (string) $sale->id])
         ->and($action['preview_url'])->toBe(route('admin.pricing.price-lists.bulk-from-products.preview'));
     $legacy = route('admin.pricing.price-lists.add-products');
-    $this->post($legacy, ['ids' => [$this->style->id], 'price_list_id' => $sale->id])->assertRedirect("{$this->base}/{$sale->id}/prices?add={$this->style->id}");
-    $this->post($legacy, ['ids' => [$this->style->id], 'price_list_id' => $main->id])->assertSessionHasErrors('price_list_id');
-    $this->get("{$this->base}/{$sale->id}/prices?add={$this->style->id},x,0")->assertInertia(fn (Assert $page) => $page->where('addStyleIds', [$this->style->id]));
+    $this->post($legacy, ['ids' => [$this->product->id], 'price_list_id' => $sale->id])->assertRedirect("{$this->base}/{$sale->id}/prices?add={$this->product->id}");
+    $this->post($legacy, ['ids' => [$this->product->id], 'price_list_id' => $main->id])->assertSessionHasErrors('price_list_id');
+    $this->get("{$this->base}/{$sale->id}/prices?add={$this->product->id},x,0")->assertInertia(fn (Assert $page) => $page->where('addProductIds', [$this->product->id]));
 });
 
 it('xem trước rồi áp giá ngay tại danh sách sản phẩm chỉ ghi bảng và SKU đã chọn', function () {
-    $outside = P::variants(T::product($this->brand->id, ['style_code' => 'LM-OTHER']), ['S'])[0];
+    $outside = P::variants(T::product($this->brand->id, ['product_code' => 'LM-OTHER']), ['S'])[0];
     $base = P::priceList(['code' => 'base'], [$this->s->id => [499_000], $outside->id => [300_000]]);
     $sale = P::priceList(['type' => 'sale'], [$this->s->id => [450_000], $outside->id => [275_000]]);
     $member = P::priceList(['type' => 'member'], [$this->s->id => [420_000]]);
     $url = "{$this->base}/bulk-from-products";
     $payload = [
-        'ids' => [$this->style->id], 'price_list_id' => $sale->id, 'mode' => 'percent', 'value' => 30, 'round_to' => 1000,
-        'scope' => 'all', 'style_ids' => [$outside->style_id],
+        'ids' => [$this->product->id], 'price_list_id' => $sale->id, 'mode' => 'percent', 'value' => 30, 'round_to' => 1000,
+        'scope' => 'all', 'product_ids' => [$outside->product_id],
     ];
 
     $this->postJson("{$url}/preview", $payload)->assertOk()
@@ -363,10 +363,10 @@ it('áp giá từ sản phẩm xác thực quyền, bảng đích và giá trị
     $base = P::priceList(['code' => 'base'], [$this->s->id => [300_000]]);
     $sale = P::priceList(['type' => 'sale'], []);
     $url = "{$this->base}/bulk-from-products";
-    $payload = ['ids' => [$this->style->id], 'price_list_id' => $sale->id, 'mode' => 'percent', 'value' => 10, 'round_to' => 1000];
+    $payload = ['ids' => [$this->product->id], 'price_list_id' => $sale->id, 'mode' => 'percent', 'value' => 10, 'round_to' => 1000];
 
     $this->postJson("{$url}/preview", [...$payload, 'price_list_id' => $base->id])->assertUnprocessable()->assertJsonValidationErrors('price_list_id');
-    $this->post($url, [...$payload, 'ids' => [], 'value' => 101])->assertSessionHasErrors(['style_ids', 'value']);
+    $this->post($url, [...$payload, 'ids' => [], 'value' => 101])->assertSessionHasErrors(['product_ids', 'value']);
     $this->actingAs(T::staff(['admin.access', 'catalog.view', 'pricing.view']), 'staff');
     $this->postJson("{$url}/preview", $payload)->assertForbidden();
     $this->post($url, $payload)->assertForbidden();
@@ -376,7 +376,7 @@ it('áp giá từ sản phẩm xác thực quyền, bảng đích và giá trị
 it('gửi lại áp giá từ danh sách sản phẩm giữ giá gạch và không ghi lịch sử trùng', function () {
     $sale = P::priceList(['type' => 'sale'], [$this->s->id => [280_000, 320_000]]);
     $url = "{$this->base}/bulk-from-products";
-    $payload = ['ids' => [$this->style->id], 'price_list_id' => $sale->id, 'mode' => 'fixed', 'value' => 250_000, 'round_to' => 0];
+    $payload = ['ids' => [$this->product->id], 'price_list_id' => $sale->id, 'mode' => 'fixed', 'value' => 250_000, 'round_to' => 0];
     $history = fn () => PriceHistory::query()->where('price_list_id', $sale->id);
 
     $this->post($url, $payload)->assertSessionHas('success', 'Đã cập nhật giá 2 SKU.');

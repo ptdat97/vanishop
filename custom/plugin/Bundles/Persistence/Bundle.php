@@ -56,10 +56,10 @@ final class Bundle extends Model
     }
 
     /**
-     * @return array<int, int> style id => số lượng mỗi bộ
+     * @return array<int, int> product id => số lượng mỗi bộ
      */
     public function requirement(): array
     {
-        return $this->items->mapWithKeys(fn (BundleItem $item): array => [$item->style_id => $item->quantity])->all();
+        return $this->items->mapWithKeys(fn (BundleItem $item): array => [$item->product_id => $item->quantity])->all();
     }
 }

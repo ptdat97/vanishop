@@ -28,7 +28,7 @@ return new class extends Migration
         Schema::create('plg_size_chart_assignments', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('chart_id')->constrained('plg_size_charts')->cascadeOnDelete();
-            $table->string('target_type', 16);           // product (style) | category | brand
+            $table->string('target_type', 16);           // product | category | brand
             $table->unsignedBigInteger('target_id');
             $table->timestamps();
 

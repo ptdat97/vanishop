@@ -44,7 +44,7 @@ final class VariantStockFields implements VariantFieldProvider
         return 'inventory.adjust';
     }
 
-    public function values(int $styleId, array $variantIds): array
+    public function values(int $productId, array $variantIds): array
     {
         $location = $this->location();
         if ($location === null) {
@@ -55,7 +55,7 @@ final class VariantStockFields implements VariantFieldProvider
             ->map(fn ($onHand): array => ['on_hand' => (int) $onHand])->all();
     }
 
-    public function save(int $styleId, array $values): array
+    public function save(int $productId, array $values): array
     {
         $location = $this->location();
         if ($location === null) {

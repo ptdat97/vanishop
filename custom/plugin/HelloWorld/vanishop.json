@@ -1,11 +1,11 @@
 {
     "id": "vani.hello-world",
     "name": { "vi": "Plugin mẫu Hello World", "en": "Hello World sample plugin" },
-    "version": "0.3.1",
+    "version": "0.4.0",
     "kind": "feature",
     "provider": "Plugin\\HelloWorld\\HelloWorldServiceProvider",
     "requires": {
-        "extension_api": "^1.0",
+        "extension_api": "^1.37",
         "plugins": {}
     },
     "conflicts": [],
@@ -13,6 +13,6 @@
     "author": "VaniShop Team",
     "data": {
         "owned": ["plg_hello_world_notes"],
-        "references": { "plg_hello_world_notes.style_id": "styles.id" }
+        "references": { "plg_hello_world_notes.product_id": "products.id" }
     }
 }

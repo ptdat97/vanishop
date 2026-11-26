@@ -31,8 +31,8 @@ final readonly class PublishWindow
     /**
      * Sản phẩm hiển thị trên storefront khi đang active và nằm trong khung giờ.
      */
-    public static function isVisible(StyleStatus $status, self $window, DateTimeInterface $now): bool
+    public static function isVisible(ProductStatus $status, self $window, DateTimeInterface $now): bool
     {
-        return $status === StyleStatus::Active && $window->contains($now);
+        return $status === ProductStatus::Active && $window->contains($now);
     }
 }

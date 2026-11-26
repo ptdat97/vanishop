@@ -23,7 +23,7 @@ it('sizes theo bố cục: cột cố định px khi màn hình rộng hơn vùn
 it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã lưu) + sizes theo lưới; ảnh nhỏ không có bản thu nhỏ thì chỉ src', function () {
     Storage::fake('public');
     ['brand' => $brand, 's' => $variant] = C::store();
-    $product = $variant->style;
+    $product = $variant->product;
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($product, $variant, [
         UploadedFile::fake()->image('lon.jpg', 1000, 1333),
     ]));
@@ -52,7 +52,7 @@ it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã
 it('ảnh nhỏ hơn mọi bề rộng cấu hình: không có srcset', function () {
     Storage::fake('public');
     ['brand' => $brand, 's' => $variant] = C::store();
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->style, $variant, [
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->product, $variant, [
         UploadedFile::fake()->image('nho.jpg', 120, 160),
     ]));
 
@@ -63,12 +63,12 @@ it('sản phẩm chưa có ảnh: thẻ sản phẩm dùng ảnh thay thế đã
     Storage::fake('public');
     ['brand' => $brand, 's' => $variant] = C::store();
     [$other] = PricingTestHelpers::variants(CatalogTestHelpers::product($brand->id, ['name' => 'Áo chưa ảnh']), ['M']);
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->style, $variant, [
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->product, $variant, [
         UploadedFile::fake()->image('mau.jpg', 600, 800),
     ]));
     $media = $variant->gallery()->with('media')->first()->media;
 
-    $this->getJson('/api/storefront/v1/products?ids='.$other->style_id)->assertJsonPath('data.0.image_url', null);
+    $this->getJson('/api/storefront/v1/products?ids='.$other->product_id)->assertJsonPath('data.0.image_url', null);
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Settings::class)->set('core', 'storefront.placeholder_image', $media->id));
-    $this->getJson('/api/storefront/v1/products?ids='.$other->style_id)->assertJsonPath('data.0.image_url', $media->url(400));
+    $this->getJson('/api/storefront/v1/products?ids='.$other->product_id)->assertJsonPath('data.0.image_url', $media->url(400));
 });

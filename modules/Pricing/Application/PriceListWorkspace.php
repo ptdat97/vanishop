@@ -138,7 +138,7 @@ final class PriceListWorkspace
             }
         }
         // Đếm sản phẩm bằng một truy vấn nhẹ của Catalog (không dựng VariantData; không join bảng của Catalog — R11).
-        $products = count(array_unique($this->variants->styleIdsOf(array_keys($prices))));
+        $products = count(array_unique($this->variants->productIdsOf(array_keys($prices))));
 
         return ['products' => $products, 'variants' => count($prices), 'warnings' => $warnings];
     }
@@ -157,24 +157,24 @@ final class PriceListWorkspace
             return [];
         }
         $allowed = $only === null ? null : array_flip($only);
-        $byStyle = [];
+        $byProduct = [];
         foreach ($this->variants->searchIndex($text) as $row) {
             if ($allowed !== null && ! isset($allowed[$row['id']])) {
                 continue;
             }
-            if (! isset($byStyle[$row['style_id']]) && count($byStyle) === 30) {
+            if (! isset($byProduct[$row['product_id']]) && count($byProduct) === 30) {
                 break;
             }
-            $byStyle[$row['style_id']][] = $row['id'];
+            $byProduct[$row['product_id']][] = $row['id'];
         }
-        $ids = array_merge([], ...array_values($byStyle));
+        $ids = array_merge([], ...array_values($byProduct));
         $found = $this->variants->find($ids);
         $base = $this->baseAmounts($ids);
         $inList = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $ids)->pluck('amount', 'variant_id')->map(fn ($amount): int => (int) $amount)->all();
         $money = fn (int $amount): string => $this->money->formatAmount($amount, (string) $list->currency_code);
 
         $result = [];
-        foreach ($byStyle as $styleId => $variantIds) {
+        foreach ($byProduct as $productId => $variantIds) {
             $first = $found[$variantIds[0]] ?? null;
             $amounts = array_values(array_filter(array_map(fn (int $id): ?int => $base[$id] ?? null, $variantIds), fn (?int $amount): bool => $amount !== null));
             $already = count(array_filter($variantIds, fn (int $id): bool => isset($inList[$id])));
@@ -183,7 +183,7 @@ final class PriceListWorkspace
                 $already > 0 ? "{$already}/".count($variantIds).__('pricing::texts.price_list_workspace.skus_already_list') : null,
             ]);
             $result[] = [
-                'id' => (int) $styleId, 'code' => (string) $first?->styleCode, 'name' => (string) $first?->styleName, 'meta' => implode(' · ', $meta),
+                'id' => (int) $productId, 'code' => (string) $first?->productCode, 'name' => (string) $first?->productName, 'meta' => implode(' · ', $meta),
                 'variants' => array_values(array_filter(array_map(function (int $id) use ($found, $base, $inList, $money): ?array {
                     $variant = $found[$id] ?? null;
                     if ($variant === null) {
@@ -205,13 +205,13 @@ final class PriceListWorkspace
     /**
      * SKU của các sản phẩm đã chọn (mọi biến thể, cả ngừng bán).
      *
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return list<int>
      */
-    public function variantIdsOfStyles(array $styleIds): array
+    public function variantIdsOfProducts(array $productIds): array
     {
         $ids = [];
-        foreach ($this->variants->ofStyles($styleIds) as $variants) {
+        foreach ($this->variants->ofProducts($productIds) as $variants) {
             foreach ($variants as $variant) {
                 $ids[] = $variant->id;
             }
@@ -240,7 +240,7 @@ final class PriceListWorkspace
         foreach (array_slice($computed, 0, self::PREVIEW_ROWS, true) as $variantId => $row) {
             $variant = $found[$variantId] ?? null;
             $rows[] = [
-                'variant_id' => $variantId, 'name' => (string) $variant?->styleName, 'sku' => (string) $variant?->sku,
+                'variant_id' => $variantId, 'name' => (string) $variant?->productName, 'sku' => (string) $variant?->sku,
                 'variant_label' => $variant === null ? '' : VariantOptionsText::label($variant->options),
                 ...$row,
             ];
@@ -307,7 +307,7 @@ final class PriceListWorkspace
             $price = $prices->get($id);
             $amount = $price?->amount === null ? null : (int) $price->amount;
             $rows[] = [
-                'variant_id' => $id, 'style_code' => (string) $variant?->styleCode, 'name' => (string) $variant?->styleName, 'sku' => (string) $variant?->sku,
+                'variant_id' => $id, 'product_code' => (string) $variant?->productCode, 'name' => (string) $variant?->productName, 'sku' => (string) $variant?->sku,
                 'variant_label' => $variant === null ? '' : VariantOptionsText::label($variant->options), 'status' => (string) $variant?->status,
                 'list_amount' => $base[$id] ?? null, 'amount' => $amount, 'compare_at_amount' => $price?->compare_at_amount === null ? null : (int) $price->compare_at_amount,
                 'percent' => $list->type === PriceListType::Base ? null : BulkPriceRule::discountPercent($base[$id] ?? null, $amount),

@@ -68,7 +68,7 @@
             const response = await fetch(guest.dataset.wishlistGuest, {
                 method: 'POST', credentials: 'same-origin', signal: request.signal,
                 headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': session.csrf_token },
-                body: JSON.stringify({ style_ids: [...ids].reverse() }),
+                body: JSON.stringify({ product_ids: [...ids].reverse() }),
             });
             if (!response.ok) throw new Error(String(response.status));
             const html = await response.text();
@@ -92,7 +92,7 @@
         }
         const local = readLocal();
         const load = local.length
-            ? call('POST', config.mergeUrl, { style_ids: local }).then((data) => {
+            ? call('POST', config.mergeUrl, { product_ids: local }).then((data) => {
                   if (data) writeLocal([]);
                   return data;
               })
@@ -110,15 +110,15 @@
         event.preventDefault();
         event.stopPropagation();
         if (!session) return;
-        const styleId = Number(button.closest('[data-vani-wishlist]').dataset.vaniWishlist);
+        const productId = Number(button.closest('[data-vani-wishlist]').dataset.vaniWishlist);
         if (!session.signed_in) {
-            ids.has(styleId) ? ids.delete(styleId) : ids.size < MAX && ids.add(styleId);
+            ids.has(productId) ? ids.delete(productId) : ids.size < MAX && ids.add(productId);
             writeLocal([...ids]);
             render();
             loadGuest();
             return;
         }
-        (ids.has(styleId) ? call('DELETE', `${config.itemsUrl}/${styleId}`) : call('POST', config.itemsUrl, { style_id: styleId }))
+        (ids.has(productId) ? call('DELETE', `${config.itemsUrl}/${productId}`) : call('POST', config.itemsUrl, { product_id: productId }))
             .then((data) => {
                 if (!data) return;
                 ids = new Set((data.ids || []).map(Number));

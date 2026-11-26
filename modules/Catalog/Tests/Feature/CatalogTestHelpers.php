@@ -8,9 +8,9 @@ use Closure;
 use Modules\Catalog\Application\Products\ProductInput;
 use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Application\Products\ProductService;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -35,12 +35,12 @@ final class CatalogTestHelpers
      *
      * @param  array<string, mixed>  $overrides
      */
-    public static function product(?int $brandId = null, array $overrides = []): Style
+    public static function product(?int $brandId = null, array $overrides = []): Product
     {
         $input = new ProductInput(
-            styleCode: $overrides['style_code'] ?? strtoupper(fake()->unique()->bothify('ST##??')),
+            productCode: $overrides['product_code'] ?? strtoupper(fake()->unique()->bothify('ST##??')),
             slug: $overrides['slug'] ?? fake()->unique()->slug(3),
-            status: StyleStatus::from($overrides['status'] ?? 'active'),
+            status: ProductStatus::from($overrides['status'] ?? 'active'),
             translations: $overrides['translations'] ?? ['vi' => ['name' => $overrides['name'] ?? 'Sản phẩm '.fake()->word()]],
             publishedFrom: $overrides['published_from'] ?? null,
             publishedTo: $overrides['published_to'] ?? null,
@@ -56,12 +56,12 @@ final class CatalogTestHelpers
     /**
      * Thêm giá trị tuỳ chọn vào trục của sản phẩm (ADR-045): giữ trục và giá trị đang có, loại mới thêm thành trục cuối.
      */
-    public static function optionValues(Style $style, OptionValue ...$values): void
+    public static function optionValues(Product $product, OptionValue ...$values): void
     {
-        self::seed(function () use ($style, $values): void {
+        self::seed(function () use ($product, $values): void {
             $axes = [];
-            foreach ($style->options()->get() as $axis) {
-                $axes[$axis->option_type_id] = $style->optionValues()->whereHas('value', fn ($query) => $query->where('option_type_id', $axis->option_type_id))
+            foreach ($product->options()->get() as $axis) {
+                $axes[$axis->option_type_id] = $product->optionValues()->whereHas('value', fn ($query) => $query->where('option_type_id', $axis->option_type_id))
                     ->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all();
             }
             foreach ($values as $value) {
@@ -71,7 +71,7 @@ final class CatalogTestHelpers
             foreach ($axes as $typeId => $valueIds) {
                 $payload[] = ['option_type_id' => (int) $typeId, 'value_ids' => array_values(array_unique($valueIds))];
             }
-            app(ProductOptions::class)->syncAxes($style, $payload);
+            app(ProductOptions::class)->syncAxes($product, $payload);
         });
     }
 

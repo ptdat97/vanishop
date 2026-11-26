@@ -3,7 +3,7 @@
 use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Tenancy\Contracts\Settings;
@@ -29,7 +29,7 @@ it('trang Thêm sản phẩm mở được, chọn "Có biến thể" mở đư�
         ->assertSee('Sửa: LM-NEW-01')
         ->assertNoJavaScriptErrors();
 
-    expect(T::seed(fn () => Style::query()->where('style_code', 'LM-NEW-01')->exists()))->toBeTrue();
+    expect(T::seed(fn () => Product::query()->where('product_code', 'LM-NEW-01')->exists()))->toBeTrue();
 });
 
 it('mặc định là sản phẩm đơn: dòng SKU không màu / size, nút Thêm ảnh ở cột Ảnh mở Thư viện ảnh', function () {
@@ -88,10 +88,10 @@ it('Thiết lập biến thể khi thêm mới: chọn màu → có ô Ảnh the
 
 it('sản phẩm đơn đã lưu: Chuyển sang có biến thể → chọn màu, SKU hiện có thành một ô, Lưu', function () {
     $color = T::seed(fn () => OptionValue::factory()->color()->create(['code' => 'IVR']));
-    $style = T::product(T::seed(fn () => Brand::factory()->create())->id, ['style_code' => 'LM-CVT-01']);
-    $variantId = T::seed(fn () => app(ProductOptions::class)->createVariant($style, [], ['sku' => 'LM-CVT-01'])->id);
+    $product = T::product(T::seed(fn () => Brand::factory()->create())->id, ['product_code' => 'LM-CVT-01']);
+    $variantId = T::seed(fn () => app(ProductOptions::class)->createVariant($product, [], ['sku' => 'LM-CVT-01'])->id);
 
-    $page = visit("/admin/catalog/products/{$style->id}/edit")->assertPresent('[data-single-variant]');
+    $page = visit("/admin/catalog/products/{$product->id}/edit")->assertPresent('[data-single-variant]');
     $page->click('[data-convert-to-variants]')->assertSee('Biến thể —')
         ->click('[aria-label="Thêm trục"]')->click('[role="option"] >> text=Màu')
         ->click('[aria-label="Thêm giá trị Màu"]')->click('[role="option"] >> text=IVR')
@@ -109,12 +109,12 @@ it('sản phẩm đơn đã lưu: Chuyển sang có biến thể → chọn màu
 it('có biến thể: Chuyển về sản phẩm đơn — chọn SKU giữ lại, Lưu: chỉ còn SKU giữ lại, không màu / size', function () {
     $ivory = T::seed(fn () => OptionValue::factory()->color()->create(['code' => 'IVR']));
     $black = T::seed(fn () => OptionValue::factory()->color()->create(['code' => 'BLK']));
-    $style = T::product(T::seed(fn () => Brand::factory()->create())->id, ['style_code' => 'LM-CLP-01']);
-    T::optionValues($style, $ivory, $black);
-    $kept = T::seed(fn () => app(ProductOptions::class)->createVariant($style, [$ivory->id], ['sku' => 'LM-CLP-01-IVR'])->id);
-    T::seed(fn () => app(ProductOptions::class)->createVariant($style, [$black->id], ['sku' => 'LM-CLP-01-BLK']));
+    $product = T::product(T::seed(fn () => Brand::factory()->create())->id, ['product_code' => 'LM-CLP-01']);
+    T::optionValues($product, $ivory, $black);
+    $kept = T::seed(fn () => app(ProductOptions::class)->createVariant($product, [$ivory->id], ['sku' => 'LM-CLP-01-IVR'])->id);
+    T::seed(fn () => app(ProductOptions::class)->createVariant($product, [$black->id], ['sku' => 'LM-CLP-01-BLK']));
 
-    $page = visit("/admin/catalog/products/{$style->id}/edit");
+    $page = visit("/admin/catalog/products/{$product->id}/edit");
     $page->click('[data-collapse-to-single] summary')
         ->click('[aria-label="SKU giữ lại"]')->click('[role="option"] >> text=LM-CLP-01-IVR')
         ->press('Chuyển')
@@ -124,5 +124,5 @@ it('có biến thể: Chuyển về sản phẩm đơn — chọn SKU giữ lạ
         ->assertVisible('[data-single-variant]')
         ->assertNoJavaScriptErrors();
 
-    expect(T::seed(fn () => Variant::query()->where('style_id', $style->id)->pluck('id')->all()))->toBe([$kept]);
+    expect(T::seed(fn () => Variant::query()->where('product_id', $product->id)->pluck('id')->all()))->toBe([$kept]);
 });

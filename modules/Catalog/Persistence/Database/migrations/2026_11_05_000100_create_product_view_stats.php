@@ -12,17 +12,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('style_view_stats', function (Blueprint $table): void {
-            $table->unsignedBigInteger('style_id');
+        Schema::create('product_view_stats', function (Blueprint $table): void {
+            $table->unsignedBigInteger('product_id');
             $table->dateTime('hour');
             $table->unsignedInteger('views')->default(0);
-            $table->primary(['style_id', 'hour']);
+            $table->primary(['product_id', 'hour']);
             $table->index('hour');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('style_view_stats');
+        Schema::dropIfExists('product_view_stats');
     }
 };

@@ -61,10 +61,10 @@ final class ProductCollection extends Model
     }
 
     /**
-     * @return BelongsToMany<Style, $this>
+     * @return BelongsToMany<Product, $this>
      */
-    public function styles(): BelongsToMany
+    public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Style::class, 'collection_style', 'collection_id', 'style_id')->withPivot('position')->orderByPivot('position');
+        return $this->belongsToMany(Product::class, 'collection_product', 'collection_id', 'product_id')->withPivot('position')->orderByPivot('position');
     }
 }

@@ -46,7 +46,7 @@ return [
     'color_already_added' => 'The product already has this color.',
     'too_many_images' => 'At most :max images per color.',
     'image_order_invalid' => 'Invalid image order.',
-    'style_codes_not_found' => 'Style codes not found: :codes',
+    'product_codes_not_found' => 'Product codes not found: :codes',
     'size_not_found' => 'Some sizes do not exist.',
     'variants_need_colors' => 'Add at least one color before generating variants.',
     'sku_taken' => 'SKU :sku already exists.',

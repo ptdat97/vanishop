@@ -1,6 +1,6 @@
 # Kế hoạch refactor DB: đổi Style → Product, read model cho listing, chuẩn bị scale
 
-> Trạng thái: **Designed** (2026-11-26). Owner đã duyệt: đổi `style_code` → `product_code`, đổi toàn bộ tiền tố `style` → `product`, thêm read model `product_listing` / `product_facet_values`. Chưa có code nào được viết theo tài liệu này; khi làm xong từng giai đoạn thì cập nhật [status](../00-overview/status.md) và tài liệu liên quan.
+> Trạng thái: **In Progress** (2026-11-26). Owner đã duyệt: đổi `style_code` → `product_code`, đổi toàn bộ tiền tố `style` → `product`, thêm read model `product_listing` / `product_facet_values`. **G1 xong** (Core 0.5.89, [ADR-050](../19-adr/ADR-050-product-replaces-style.md)); G0 đo sau G1 vì đổi tên không ảnh hưởng hiệu năng (seeder quy mô viết một lần với tên bảng mới). Khi làm xong từng giai đoạn thì cập nhật [status](../00-overview/status.md) và tài liệu liên quan.
 >
 > Liên quan: [database](../07-database/database.md) (quy ước giữ nguyên), [catalog-pricing](../03-domains/catalog-pricing.md), [ADR-045](../19-adr/ADR-045-flexible-variant-options.md) (biến thể linh hoạt — lý do chữ "style" không còn đúng), [ADR-048](../19-adr/ADR-048-extension-api-version.md) (version API cho plugin).
 
@@ -26,7 +26,7 @@
 | Giai đoạn | Nội dung | Phụ thuộc |
 |---|---|---|
 | **G0** | Môi trường Mac + đo hiện trạng | — |
-| **G1** | Đổi tên Style → Product (một nhánh, không trộn logic) | G0 |
+| **G1** ✅ | Đổi tên Style → Product (một nhánh, không trộn logic) | G0 |
 | **G2** | Sửa điểm nghẽn: FULLTEXT, `filter_token`, read model, index | G1 |
 | **G3** | Bảng lớn: retention/archive, đếm lượt xem qua Redis, keyset, read replica | G2 |
 

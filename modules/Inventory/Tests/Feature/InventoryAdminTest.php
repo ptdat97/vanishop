@@ -21,8 +21,8 @@ require_once __DIR__.'/InventoryTestHelpers.php';
 
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
-    $this->style = T::product($this->brand->id, ['style_code' => 'LM-DR01']);
-    [$this->s, $this->m] = P::variants($this->style);
+    $this->product = T::product($this->brand->id, ['product_code' => 'LM-DR01']);
+    [$this->s, $this->m] = P::variants($this->product);
     $this->hn = I::location(['code' => 'WH-HN', 'priority' => 10]);
     $this->erp = I::location(['code' => 'ST-ERP', 'stock_authority' => 'erp']);
     $this->stockUrl = '/admin/inventory/stock';
@@ -37,7 +37,7 @@ it('lưới tồn: variant × location, ATS = tồn − giữ − an toàn', fun
     I::stock($this->hn, $this->s->id, 10, 2);
     $this->actingAs(T::staff(['admin.access', 'inventory.view']), 'staff');
 
-    $this->get("{$this->stockUrl}?style=LM-DR01&per_page=50")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Inventory::Stock/Index')
+    $this->get("{$this->stockUrl}?product=LM-DR01&per_page=50")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Inventory::Stock/Index')
         ->where('pagination.per_page', 50)
         ->has('locations', 2)
         ->where('locations.0.code', 'WH-HN')
@@ -106,7 +106,7 @@ it('variant/location không tồn tại trả 404', function () {
 it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, phân trang; sản phẩm mở lưới tồn theo mã', function () {
     config(['vanishop.inventory.low_stock_threshold' => 3]);
     I::stock($this->hn, $this->s->id, 2);
-    $other = T::product($this->brand->id, ['style_code' => 'LM-TS02', 'name' => 'Áo thun']);
+    $other = T::product($this->brand->id, ['product_code' => 'LM-TS02', 'name' => 'Áo thun']);
     [$otherS] = P::variants($other, ['S']);
     I::stock($this->hn, $otherS->id, 20);
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'catalog.view', 'catalog.manage']), 'staff');
@@ -117,7 +117,7 @@ it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, ph
         ->and($skus('?q='.$this->m->sku))->toBe([$this->m->sku])
         ->and($skus('?filter=out'))->toBe([$this->m->sku])
         ->and($skus('?filter=low'))->toBe([$this->s->sku])
-        ->and($skus('?style=LM-DR01'))->toHaveCount(2)
+        ->and($skus('?product=LM-DR01'))->toHaveCount(2)
         ->and($skus('?q=LM-DR01&opt[size]='.T::seed(fn () => $this->m->valueOf('size')?->code)))->toBe([$this->m->sku]);
     // Lọc theo loại tuỳ chọn (ADR-045): lựa chọn chỉ gồm giá trị có trong kết quả tìm; nhãn SKU là tổ hợp giá trị.
     $props = $this->get("{$this->stockUrl}?q=LM-DR01")->viewData('page')['props'];
@@ -125,10 +125,10 @@ it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, ph
         ->and(collect($props['optionFilters'])->firstWhere('code', 'size')['values'])->toHaveCount(2)
         ->and($props['products'][0]['variants'][0]['options_label'])->toContain(' / ');
 
-    $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page->where('stockUrl', fn (string $url) => str_ends_with($url, '/admin/inventory/stock?style=LM-DR01')));
+    $this->get("/admin/catalog/products/{$this->product->id}/edit")->assertInertia(fn (Assert $page) => $page->where('stockUrl', fn (string $url) => str_ends_with($url, '/admin/inventory/stock?product=LM-DR01')));
     $this->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page->where(
-        "extensions.urls.{$this->style->id}.stock",
-        route('admin.inventory.stock.index', ['style' => $this->style->style_code]),
+        "extensions.urls.{$this->product->id}.stock",
+        route('admin.inventory.stock.index', ['product' => $this->product->product_code]),
     ));
 });
 
@@ -193,7 +193,7 @@ it('cửa hàng chưa có kho: trang tồn cảnh báo, nút tạo Kho chính; l
 
 it('sửa hàng loạt tại một kho: SKU đã chọn, cả sản phẩm hoặc mọi kết quả lọc; trừ quá tồn thì bỏ qua SKU đó', function () {
     I::stock($this->hn, $this->s->id, 5);
-    $other = T::product($this->brand->id, ['style_code' => 'LM-TS02', 'name' => 'Áo thun']);
+    $other = T::product($this->brand->id, ['product_code' => 'LM-TS02', 'name' => 'Áo thun']);
     [$otherS, $otherM] = P::variants($other);
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust']), 'staff');
     $bulk = fn (array $data) => $this->post("{$this->stockUrl}/bulk", ['location_id' => $this->hn->id, ...$data]);
@@ -245,8 +245,8 @@ it('danh sách sản phẩm: cửa hàng một kho sửa tồn ngay trong ô (t�
     // Cửa hàng SME: chỉ còn Kho chính.
     T::seed(fn () => $this->erp->delete());
     I::stock($this->hn, $this->s->id, 4);
-    $styleId = $this->s->style_id;
-    $stockEdit = fn (): mixed => $this->get('/admin/catalog/products')->assertOk()->viewData('page')['props']['extensions']['editValues'][$styleId]['stock'] ?? null;
+    $productId = $this->s->product_id;
+    $stockEdit = fn (): mixed => $this->get('/admin/catalog/products')->assertOk()->viewData('page')['props']['extensions']['editValues'][$productId]['stock'] ?? null;
 
     // Chỉ xem tồn: không có dữ liệu sửa.
     $this->actingAs(T::staff(['admin.access', 'catalog.view', 'inventory.view']), 'staff');
@@ -277,14 +277,14 @@ it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn 
     $colors = collect(range(1, 4))->map(fn (int $i): int => DB::table('option_values')->insertGetId(['option_type_id' => $colorType, 'code' => "BIG-C{$i}", 'family' => 'black', 'position' => $i, 'created_at' => $now, 'updated_at' => $now]))->all();
     $sizes = collect(range(1, 5))->map(fn (int $i): int => DB::table('option_values')->insertGetId(['option_type_id' => $sizeType, 'group' => 'big', 'code' => "B{$i}", 'position' => $i, 'created_at' => $now, 'updated_at' => $now]))->all();
     $variants = [];
-    for ($style = 1; $style <= 300; $style++) {
-        $styleId = DB::table('styles')->insertGetId(['brand_id' => $this->brand->id, 'style_code' => sprintf('BIG-%04d', $style), 'slug' => "big-{$style}", 'status' => 'active', 'search_text' => "mau lon {$style}", 'created_at' => $now, 'updated_at' => $now]);
-        DB::table('style_translations')->insert(['style_id' => $styleId, 'locale' => 'vi', 'name' => sprintf('Mẫu lớn %04d', $style)]);
-        DB::table('style_options')->insert([['style_id' => $styleId, 'option_type_id' => $colorType, 'position' => 0], ['style_id' => $styleId, 'option_type_id' => $sizeType, 'position' => 1]]);
-        DB::table('style_option_values')->insert(array_map(fn (int $valueId): array => ['style_id' => $styleId, 'option_value_id' => $valueId, 'position' => $valueId], [...$colors, ...$sizes]));
+    for ($product = 1; $product <= 300; $product++) {
+        $productId = DB::table('products')->insertGetId(['brand_id' => $this->brand->id, 'product_code' => sprintf('BIG-%04d', $product), 'slug' => "big-{$product}", 'status' => 'active', 'search_text' => "mau lon {$product}", 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('product_translations')->insert(['product_id' => $productId, 'locale' => 'vi', 'name' => sprintf('Mẫu lớn %04d', $product)]);
+        DB::table('product_options')->insert([['product_id' => $productId, 'option_type_id' => $colorType, 'position' => 0], ['product_id' => $productId, 'option_type_id' => $sizeType, 'position' => 1]]);
+        DB::table('product_option_values')->insert(array_map(fn (int $valueId): array => ['product_id' => $productId, 'option_value_id' => $valueId, 'position' => $valueId], [...$colors, ...$sizes]));
         foreach ($colors as $colorId) {
             foreach ($sizes as $sizeId) {
-                $variants[] = ['style_id' => $styleId, 'option_key' => "{$colorId}-{$sizeId}", 'sku' => "BIG-{$style}-{$colorId}-{$sizeId}", 'status' => 'active', 'created_at' => $now, 'updated_at' => $now];
+                $variants[] = ['product_id' => $productId, 'option_key' => "{$colorId}-{$sizeId}", 'sku' => "BIG-{$product}-{$colorId}-{$sizeId}", 'status' => 'active', 'created_at' => $now, 'updated_at' => $now];
             }
         }
     }
@@ -311,7 +311,7 @@ it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn 
     DB::disableQueryLog();
 
     expect($page['pagination'])->toMatchArray(['total' => 301, 'variants' => $total])
-        ->and(collect($page['products'])->pluck('style_code')->all())->toHaveCount(1) // trang cuối: 301 mẫu, 20 mẫu/trang
+        ->and(collect($page['products'])->pluck('product_code')->all())->toHaveCount(1) // trang cuối: 301 mẫu, 20 mẫu/trang
         ->and($queries)->toBeLessThan(40)
         ->and(app(StockGrid::class)->attentionCounts()['out'])->toBe($total - 1)
         ->and(app(StockGrid::class)->variantIds(['filter' => 'out']))->toHaveCount($total - 1)
@@ -344,23 +344,23 @@ it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn 
 
 it('sản phẩm không theo dõi tồn: lưới tồn có nhãn riêng, không vào lọc hết hàng/sắp hết và "Việc cần làm"; danh sách sản phẩm ghi "Không theo dõi tồn", không sửa tồn trong ô', function () {
     T::seed(fn () => $this->erp->delete());
-    $made = T::product($this->brand->id, ['style_code' => 'LM-MTO', 'name' => 'Đầm đặt may']);
+    $made = T::product($this->brand->id, ['product_code' => 'LM-MTO', 'name' => 'Đầm đặt may']);
     [$madeS] = P::variants($made, ['S']);
-    DB::table('styles')->where('id', $made->id)->update(['track_inventory' => false]);
+    DB::table('products')->where('id', $made->id)->update(['track_inventory' => false]);
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust', 'catalog.view']), 'staff');
     $products = fn (string $query): array => $this->get("{$this->stockUrl}{$query}")->assertOk()->viewData('page')['props']['products'];
     $skus = fn (string $query): array => collect($products($query))->flatMap(fn (array $product) => $product['variants'])->pluck('sku')->all();
 
-    $row = collect($products('?style=LM-MTO'))->sole();
+    $row = collect($products('?product=LM-MTO'))->sole();
     expect($row['tracked'])->toBeFalse()->and($row['variants'][0]['tracked'])->toBeFalse()
         ->and($skus('?filter=out'))->toBe([$this->s->sku, $this->m->sku])
         ->and(app(StockGrid::class)->attentionCounts()['out'])->toBe(2);
 
     $extensions = $this->get('/admin/catalog/products')->assertOk()->viewData('page')['props']['extensions'];
     expect($extensions['values'][$made->id]['stock'])->toBe('Không theo dõi tồn')
-        ->and($extensions['values'][$this->style->id]['stock'])->toBe('Hết hàng')
+        ->and($extensions['values'][$this->product->id]['stock'])->toBe('Hết hàng')
         ->and($extensions['editValues'][$made->id]['stock'] ?? null)->toBeNull()
-        ->and($extensions['editValues'][$this->style->id]['stock'])->not->toBeNull();
+        ->and($extensions['editValues'][$this->product->id]['stock'])->not->toBeNull();
 });
 
 it('tồn an toàn lớn hơn tồn (cột UNSIGNED trên MySQL): số bán được không lỗi tràn số, biến thể đó không bán được', function () {

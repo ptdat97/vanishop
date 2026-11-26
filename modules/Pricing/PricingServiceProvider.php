@@ -65,7 +65,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
-        Hook::onSlot('vani.admin.product.list_columns', fn (array $styleIds): ?array => $this->app->make(ProductListPrices::class)->column($styleIds));
+        Hook::onSlot('vani.admin.product.list_columns', fn (array $productIds): ?array => $this->app->make(ProductListPrices::class)->column($productIds));
         Hook::onSlot('vani.admin.product.bulk_actions', fn (): array => $this->app->make(ProductListPrices::class)->bulkActions());
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'pricing.strategy', 'pricing::texts.pricing_service_provider.how_selling_price_chosen', 'select', (string) config('vanishop.pricing.strategy', 'price_list_priority'),

@@ -15,8 +15,8 @@ namespace Plugin\Bundles\Domain;
 final class BundleMath
 {
     /**
-     * @param  array<int, array{style_id: int, quantity: int}>  $lines  khoá dòng => sản phẩm + số lượng
-     * @param  array<int, int>  $requirement  style id => số lượng mỗi bộ
+     * @param  array<int, array{product_id: int, quantity: int}>  $lines  khoá dòng => sản phẩm + số lượng
+     * @param  array<int, int>  $requirement  product id => số lượng mỗi bộ
      */
     public static function sets(array $lines, array $requirement): int
     {
@@ -25,18 +25,18 @@ final class BundleMath
         }
         $owned = [];
         foreach ($lines as $line) {
-            $owned[$line['style_id']] = ($owned[$line['style_id']] ?? 0) + max(0, $line['quantity']);
+            $owned[$line['product_id']] = ($owned[$line['product_id']] ?? 0) + max(0, $line['quantity']);
         }
         $sets = PHP_INT_MAX;
-        foreach ($requirement as $styleId => $need) {
-            $sets = min($sets, intdiv($owned[$styleId] ?? 0, max(1, $need)));
+        foreach ($requirement as $productId => $need) {
+            $sets = min($sets, intdiv($owned[$productId] ?? 0, max(1, $need)));
         }
 
         return $sets;
     }
 
     /**
-     * @param  array<int, array{style_id: int, quantity: int, unit_price: int}>  $lines  khoá dòng => dòng (đơn giá: minor unit)
+     * @param  array<int, array{product_id: int, quantity: int, unit_price: int}>  $lines  khoá dòng => dòng (đơn giá: minor unit)
      * @param  array<int, int>  $requirement
      * @return array<int, int> khoá dòng => số tiền giảm (> 0)
      */
@@ -48,8 +48,8 @@ final class BundleMath
         }
 
         $discounts = [];
-        foreach ($requirement as $styleId => $need) {
-            $candidates = array_filter($lines, fn (array $line): bool => $line['style_id'] === $styleId && $line['quantity'] > 0);
+        foreach ($requirement as $productId => $need) {
+            $candidates = array_filter($lines, fn (array $line): bool => $line['product_id'] === $productId && $line['quantity'] > 0);
             uksort($candidates, fn (int $a, int $b): int => [$candidates[$a]['unit_price'], $a] <=> [$candidates[$b]['unit_price'], $b]);
             $units = $need * $sets;
             foreach ($candidates as $key => $line) {

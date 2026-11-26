@@ -8,8 +8,8 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Application\Builder\BuilderEngine;
@@ -99,11 +99,11 @@ final class StorefrontSeeder extends Seeder
      */
     public function mobileMenu(): array
     {
-        $covers = DemoCatalog::byStyle();
+        $covers = DemoCatalog::byProduct();
         $used = [];
         // Ảnh đầu tiên chưa dùng của các sản phẩm thoả điều kiện — mỗi ô một ảnh khác nhau.
         $cover = function (callable $scope) use ($covers, &$used): ?int {
-            $codes = $scope(Style::query()->where('style_code', 'like', 'VS-%')->where('status', 'active'))->orderBy('id')->pluck('style_code');
+            $codes = $scope(Product::query()->where('product_code', 'like', 'VS-%')->where('status', 'active'))->orderBy('id')->pluck('product_code');
             foreach ($codes as $code) {
                 foreach ($covers[$code] ?? [] as $mediaId) {
                     if (! isset($used[$mediaId])) {
@@ -124,10 +124,10 @@ final class StorefrontSeeder extends Seeder
         $categoryId = fn (string $slug): ?int => ($id = Category::query()->where('slug', $slug)->value('id')) === null ? null : (int) $id;
         $categoryItem = fn (string $slug, ?string $badge = null): ?array => ($id = $categoryId($slug)) === null ? null
             : $item(['type' => 'category', 'value' => (string) $id], null, [], $cover(fn ($query) => $query->where('primary_category_id', $id)) ?? $anyCover(), $badge);
-        $productItem = fn (Style $style): array => $item(['type' => 'product', 'value' => (string) $style->id], null, [], $cover(fn ($query) => $query->whereKey($style->id)));
+        $productItem = fn (Product $product): array => $item(['type' => 'product', 'value' => (string) $product->id], null, [], $cover(fn ($query) => $query->whereKey($product->id)));
 
         $clothing = array_values(array_filter(array_map(fn (string $slug): ?array => $categoryItem($slug), array_keys(CatalogSeeder::CATEGORIES))));
-        $newest = Style::query()->where('style_code', 'like', 'VS-%')->where('status', 'active')->latest('id')->limit(6)->get()->map($productItem)->all();
+        $newest = Product::query()->where('product_code', 'like', 'VS-%')->where('status', 'active')->latest('id')->limit(6)->get()->map($productItem)->all();
         $collections = ProductCollection::query()->orderBy('position')->get()
             ->map(fn (ProductCollection $collection): array => $item(['type' => 'collection', 'value' => (string) $collection->id], null, [],
                 $cover(fn ($query) => $query->whereHas('collections', fn ($inner) => $inner->whereKey($collection->id))) ?? $anyCover()))->all();

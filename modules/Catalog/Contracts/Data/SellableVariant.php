@@ -16,7 +16,7 @@ final readonly class SellableVariant
     public function __construct(
         public int $id,
         public ?int $brandId,
-        public int $styleId,
+        public int $productId,
         public string $sku,
         public string $slug,
         public string $name,

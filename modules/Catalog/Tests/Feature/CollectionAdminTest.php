@@ -5,8 +5,8 @@ use Modules\Catalog\Contracts\CollectionDirectory;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Persistence\Models\Mediable;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
@@ -15,47 +15,47 @@ beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
     $this->other = Brand::factory()->create();
     $this->actingAs(T::staff(), 'staff');
-    T::product($this->brand->id, ['style_code' => 'LM01']);
-    T::product($this->brand->id, ['style_code' => 'LM02']);
-    T::product($this->other->id, ['style_code' => 'UX01']);
+    T::product($this->brand->id, ['product_code' => 'LM01']);
+    T::product($this->brand->id, ['product_code' => 'LM02']);
+    T::product($this->other->id, ['product_code' => 'UX01']);
 });
 
 function collectionPayload(string $codes): array
 {
-    return ['slug' => 'he-2026', 'status' => 'active', 'position' => 0, 'translations' => ['vi' => ['name' => 'Hè 2026']], 'style_codes' => $codes];
+    return ['slug' => 'he-2026', 'status' => 'active', 'position' => 0, 'translations' => ['vi' => ['name' => 'Hè 2026']], 'product_codes' => $codes];
 }
 
 it('tạo bộ sưu tập theo danh sách mã, giữ thứ tự', function () {
     $this->post('/admin/catalog/collections', collectionPayload("LM02\nLM01"))->assertSessionHasNoErrors();
 
     $collection = T::seed(fn () => ProductCollection::query()->sole());
-    expect(T::seed(fn () => $collection->styles()->pluck('style_code')->all()))->toBe(['LM02', 'LM01']);
+    expect(T::seed(fn () => $collection->products()->pluck('product_code')->all()))->toBe(['LM02', 'LM01']);
 
     $this->get("/admin/catalog/collections/{$collection->id}/edit")
-        ->assertInertia(fn (Assert $page) => $page->component('Catalog::Collections/Form')->where('collection.style_codes', "LM02\nLM01"));
+        ->assertInertia(fn (Assert $page) => $page->component('Catalog::Collections/Form')->where('collection.product_codes', "LM02\nLM01"));
 });
 
 it('báo mã sản phẩm không tồn tại; sản phẩm của brand khác vẫn thêm được (một catalog chung)', function () {
     $this->post('/admin/catalog/collections', collectionPayload('LM01, UX01, KHONGCO'))
-        ->assertSessionHasErrors(['style_codes' => __('catalog::messages.style_codes_not_found', ['codes' => 'KHONGCO'])]);
+        ->assertSessionHasErrors(['product_codes' => __('catalog::messages.product_codes_not_found', ['codes' => 'KHONGCO'])]);
     $this->post('/admin/catalog/collections', collectionPayload('LM01, UX01'))->assertSessionHasNoErrors();
 });
 
-it('CollectionDirectory trả slug bộ sưu tập đang hiển thị theo style', function () {
+it('CollectionDirectory trả slug bộ sưu tập đang hiển thị theo product', function () {
     $this->post('/admin/catalog/collections', collectionPayload('LM01'))->assertSessionHasNoErrors();
     $this->post('/admin/catalog/collections', array_replace(collectionPayload('LM01'), ['slug' => 'sale-2026', 'status' => 'hidden']))->assertSessionHasNoErrors();
 
-    $lm01 = T::seed(fn () => Style::where('style_code', 'LM01')->value('id'));
-    $ux01 = T::seed(fn () => Style::where('style_code', 'UX01')->value('id'));
-    expect(app(CollectionDirectory::class)->slugsForStyles([$lm01, $ux01]))->toBe([$lm01 => ['he-2026']])
-        ->and(app(CollectionDirectory::class)->slugsForStyles([]))->toBe([]);
+    $lm01 = T::seed(fn () => Product::where('product_code', 'LM01')->value('id'));
+    $ux01 = T::seed(fn () => Product::where('product_code', 'UX01')->value('id'));
+    expect(app(CollectionDirectory::class)->slugsForProducts([$lm01, $ux01]))->toBe([$lm01 => ['he-2026']])
+        ->and(app(CollectionDirectory::class)->slugsForProducts([]))->toBe([]);
 });
 
 it('danh sách bộ sưu tập', function () {
     $this->post('/admin/catalog/collections', collectionPayload('LM01'));
 
     $this->get('/admin/catalog/collections')
-        ->assertInertia(fn (Assert $page) => $page->component('Catalog::Collections/Index')->where('collections.0.styles_count', 1));
+        ->assertInertia(fn (Assert $page) => $page->component('Catalog::Collections/Index')->where('collections.0.products_count', 1));
 });
 
 it('cùng khuôn với danh mục: ảnh bìa từ Thư viện ảnh, SEO theo ngôn ngữ, chống ghi đè khi hai người cùng sửa', function () {

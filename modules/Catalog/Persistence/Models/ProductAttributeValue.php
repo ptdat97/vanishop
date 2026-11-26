@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property int $style_id
+ * @property int $product_id
  * @property int $attribute_id
  * @property int|null $attribute_value_id
  * @property string|null $value_text
@@ -16,11 +16,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property Attribute $attribute
  * @property AttributeValue|null $value
  */
-final class StyleAttributeValue extends Model
+final class ProductAttributeValue extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['style_id', 'attribute_id', 'attribute_value_id', 'value_text', 'value_bool'];
+    protected $fillable = ['product_id', 'attribute_id', 'attribute_value_id', 'value_text', 'value_bool'];
 
     protected function casts(): array
     {

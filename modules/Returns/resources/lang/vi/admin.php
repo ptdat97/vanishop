@@ -121,7 +121,7 @@ return [
         'return_shipping_fee' => '· phí ship trả',
         'return_shipping_fee_2' => 'Phí ship trả hàng',
         'return_tracking_number_sent_customer' => 'Mã vận đơn khách gửi về:',
-        'same_style_no_price_difference' => '(cùng mẫu — không tính chênh)',
+        'same_product_no_price_difference' => '(cùng mẫu — không tính chênh)',
         'shipping_fee' => '· Phí giao:',
         'value_returned' => 'Giá trị đã trả',
     ],

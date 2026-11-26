@@ -13,20 +13,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Domain\PublishWindow;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Persistence\Concerns\HasLocalizedSlug;
 use Modules\Catalog\Persistence\Concerns\RecordsSlugRedirects;
-use Modules\Catalog\Persistence\Database\Factories\StyleFactory;
+use Modules\Catalog\Persistence\Database\Factories\ProductFactory;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
 /**
- * Style = sản phẩm khách nhìn thấy (một trang PDP). Biến thể: 1–3 trục tuỳ chọn (StyleOption) và SKU theo tổ hợp (Variant, ADR-045).
+ * Product = sản phẩm khách nhìn thấy (một trang PDP). Biến thể: 1–3 trục tuỳ chọn (ProductOption) và SKU theo tổ hợp (Variant, ADR-045).
  *
  * @property int $id
  * @property int|null $brand_id
- * @property string $style_code
+ * @property string $product_code
  * @property string $slug
- * @property StyleStatus $status
+ * @property ProductStatus $status
  * @property Carbon|null $published_from
  * @property Carbon|null $published_to
  * @property int|null $primary_category_id
@@ -36,9 +36,9 @@ use Modules\Shared\Persistence\Concerns\HasTranslations;
  * @property int $lock_version
  * @property bool $track_inventory
  */
-final class Style extends Model
+final class Product extends Model
 {
-    /** @use HasFactory<StyleFactory> */
+    /** @use HasFactory<ProductFactory> */
     use HasFactory;
 
     use HasLocalizedSlug;
@@ -48,12 +48,12 @@ final class Style extends Model
     /** Loại bản ghi trong `slug_redirects` (đổi slug → link cũ chuyển hướng 301). */
     public const SLUG_SUBJECT = CatalogReader::SLUG_PRODUCT;
 
-    protected $fillable = ['brand_id', 'style_code', 'slug', 'status', 'published_from', 'published_to', 'primary_category_id', 'search_text', 'meta', 'lock_version', 'track_inventory'];
+    protected $fillable = ['brand_id', 'product_code', 'slug', 'status', 'published_from', 'published_to', 'primary_category_id', 'search_text', 'meta', 'lock_version', 'track_inventory'];
 
     protected function casts(): array
     {
         return [
-            'status' => StyleStatus::class,
+            'status' => ProductStatus::class,
             'track_inventory' => 'boolean',
             'published_from' => 'datetime',
             'published_to' => 'datetime',
@@ -65,7 +65,7 @@ final class Style extends Model
 
     protected function translationModel(): string
     {
-        return StyleTranslation::class;
+        return ProductTranslation::class;
     }
 
     public function translatableFields(): array
@@ -92,21 +92,21 @@ final class Style extends Model
     /**
      * Trục biến thể của sản phẩm theo thứ tự (1–3, ADR-045).
      *
-     * @return HasMany<StyleOption, $this>
+     * @return HasMany<ProductOption, $this>
      */
     public function options(): HasMany
     {
-        return $this->hasMany(StyleOption::class)->orderBy('position')->orderBy('id');
+        return $this->hasMany(ProductOption::class)->orderBy('position')->orderBy('id');
     }
 
     /**
      * Giá trị tuỳ chọn sản phẩm dùng, theo thứ tự riêng của sản phẩm.
      *
-     * @return HasMany<StyleOptionValue, $this>
+     * @return HasMany<ProductOptionValue, $this>
      */
     public function optionValues(): HasMany
     {
-        return $this->hasMany(StyleOptionValue::class)->orderBy('position')->orderBy('id');
+        return $this->hasMany(ProductOptionValue::class)->orderBy('position')->orderBy('id');
     }
 
     /**
@@ -134,11 +134,11 @@ final class Style extends Model
     }
 
     /**
-     * @return HasMany<StyleAttributeValue, $this>
+     * @return HasMany<ProductAttributeValue, $this>
      */
     public function attributeValues(): HasMany
     {
-        return $this->hasMany(StyleAttributeValue::class);
+        return $this->hasMany(ProductAttributeValue::class);
     }
 
     /**
@@ -146,7 +146,7 @@ final class Style extends Model
      */
     public function collections(): BelongsToMany
     {
-        return $this->belongsToMany(ProductCollection::class, 'collection_style', 'style_id', 'collection_id')->withPivot('position');
+        return $this->belongsToMany(ProductCollection::class, 'collection_product', 'product_id', 'collection_id')->withPivot('position');
     }
 
     /**
@@ -157,8 +157,8 @@ final class Style extends Model
         return $this->belongsToMany(Video::class)->withPivot('position')->orderByPivot('position')->orderBy('videos.id');
     }
 
-    protected static function newFactory(): StyleFactory
+    protected static function newFactory(): ProductFactory
     {
-        return StyleFactory::new();
+        return ProductFactory::new();
     }
 }

@@ -56,7 +56,7 @@ Cùng hệ thống, nhìn theo **nhóm nghiệp vụ** thay vì theo vòng — d
    ┌───────────────── Commerce Core (vòng 1) ──────────────┐
    │  Catalog          Commerce              Khung dùng chung│
    │  Brand            Pricing · Promotion    Notification  │
-   │  Style/Variant    Customer · Cart        Integration   │
+   │  Product/Variant  Customer · Cart        Integration   │
    │  Category         Checkout · Order       Storefront    │
    │  Collection       Payment · Inventory                  │
    │  Attribute/Media  Fulfillment · Returns                │
@@ -69,7 +69,7 @@ Cùng hệ thống, nhìn theo **nhóm nghiệp vụ** thay vì theo vòng — d
 
 | Nhóm | Module/capability | Ghi chú |
 |---|---|---|
-| Catalog | `Catalog` | Brand ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)), Style → Style Color → Variant, danh mục, bộ sưu tập, thuộc tính, media |
+| Catalog | `Catalog` | Brand ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)), Product → trục tuỳ chọn → Variant, danh mục, bộ sưu tập, thuộc tính, media |
 | Commerce | `Pricing`, `Promotion`, `Customer`, `Cart`, `Checkout`, `Ordering`, `Payment`, `Inventory`, `Fulfillment`, `Returns` | Primitive + bất biến của luồng bán |
 | Khung dùng chung | `Notification`, `Integration`, `Storefront` | Thuộc Core (vòng 1), **không** thuộc nền tảng: Notification/Integration biết về đơn hàng (mẫu `order_placed`, payload `vanishop.order.v1`), đặt ở vòng 0 sẽ vi phạm R29 |
 | CMS / nội dung | Plugin `vani.cms` (**Implemented**) | Sở hữu trang, bài viết, chuyên mục, banner và nội dung thêm; dùng extension points của Storefront |

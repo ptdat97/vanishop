@@ -82,17 +82,17 @@ final class AccountOrderController
      */
     /**
      * Giá riêng của khách đăng nhập (JS của theme gọi bằng phiên cùng nguồn — ADR-044; thay `/_vani/gia`):
-     * `?variant_ids[]=` → giá thành viên theo variant (chỉ khi nhóm khách có giá thấp hơn); `?style_ids[]=` → khoảng giá chung
+     * `?variant_ids[]=` → giá thành viên theo variant (chỉ khi nhóm khách có giá thấp hơn); `?product_ids[]=` → khoảng giá chung
      * theo sản phẩm khi cửa hàng ẩn giá với khách chưa đăng nhập (trang cache CDN luôn là bản ẩn giá). Không cache.
      */
     public function prices(Request $request, MemberPrices $prices, PriceVisibility $visibility, ProductViews $products): JsonResponse
     {
         $data = $request->validate([
             'variant_ids' => ['nullable', 'array', 'max:200'], 'variant_ids.*' => ['integer', 'min:1'],
-            'style_ids' => ['nullable', 'array', 'max:100'], 'style_ids.*' => ['integer', 'min:1'],
+            'product_ids' => ['nullable', 'array', 'max:100'], 'product_ids.*' => ['integer', 'min:1'],
         ]);
         $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
-        $styleIds = array_values(array_map('intval', $data['style_ids'] ?? []));
+        $productIds = array_values(array_map('intval', $data['product_ids'] ?? []));
 
         $memberPrices = $prices->for((int) $customer->id, array_values(array_map('intval', $data['variant_ids'] ?? [])));
 
@@ -100,7 +100,7 @@ final class AccountOrderController
         return response()->json(['data' => [
             ...$memberPrices,
             'prices' => (object) $memberPrices['prices'],
-            'products' => (object) ($visibility->membersOnly() && $styleIds !== [] ? $products->priceRanges($styleIds, App::getLocale()) : []),
+            'products' => (object) ($visibility->membersOnly() && $productIds !== [] ? $products->priceRanges($productIds, App::getLocale()) : []),
         ]])->header('Cache-Control', 'private, no-store');
     }
 }

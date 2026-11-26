@@ -15,7 +15,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 type ProductOption = { value: string; label: string };
-type Item = { style_id: number; label: string; quantity: number };
+type Item = { product_id: number; label: string; quantity: number };
 
 /** Form combo: sản phẩm + số lượng mỗi món, % giảm khi mua đủ bộ, lịch chạy, ảnh. */
 const props = defineProps<{
@@ -60,17 +60,17 @@ function suggestSlug(): void {
 async function searchProducts(term: string): Promise<ProductOption[]> {
     const { data } = await getJson<{ data: ProductOption[] }>(props.bundleUrls.products, { q: term });
 
-    return data.filter((product) => !form.items.some((item) => String(item.style_id) === product.value));
+    return data.filter((product) => !form.items.some((item) => String(item.product_id) === product.value));
 }
 
 function addProduct(product: ProductOption): void {
-    if (form.items.length < props.limits.max_items && !form.items.some((item) => String(item.style_id) === product.value)) {
-        form.items.push({ style_id: Number(product.value), label: product.label, quantity: 1 });
+    if (form.items.length < props.limits.max_items && !form.items.some((item) => String(item.product_id) === product.value)) {
+        form.items.push({ product_id: Number(product.value), label: product.label, quantity: 1 });
     }
 }
 
 function submit(): void {
-    form.transform((data) => ({ ...data, items: data.items.map((item) => ({ style_id: item.style_id, quantity: item.quantity })) }));
+    form.transform((data) => ({ ...data, items: data.items.map((item) => ({ product_id: item.product_id, quantity: item.quantity })) }));
     save(props.bundle ? 'put' : 'post', props.bundleUrls.save);
 }
 
@@ -115,7 +115,7 @@ async function destroy(): Promise<void> {
                 <section class="rounded-lg border border-slate-200 bg-white p-5" data-bundle-items>
                     <h2 class="mb-1 font-medium">{{ t('vani-bundles::admin.form.items') }}</h2>
                     <p class="mb-3 text-sm text-slate-500">{{ t('vani-bundles::admin.form.items_hint', { min: limits.min_items, max: limits.max_items }) }}</p>
-                    <Sortable v-model="form.items" v-slot="{ item, index, handle }" :disabled="!can.manage" list-class="mb-3 space-y-2" item-class="flex flex-wrap items-center gap-2" :item-key="(item) => item.style_id" :item-label="(item) => item.label">
+                    <Sortable v-model="form.items" v-slot="{ item, index, handle }" :disabled="!can.manage" list-class="mb-3 space-y-2" item-class="flex flex-wrap items-center gap-2" :item-key="(item) => item.product_id" :item-label="(item) => item.label">
                         <SortHandle v-if="can.manage" v-bind="handle" />
                         <span class="min-w-0 flex-1 truncate text-sm">{{ item.label }}</span>
                         <label class="flex items-center gap-1 text-sm text-slate-500">
@@ -123,7 +123,7 @@ async function destroy(): Promise<void> {
                             <input v-model.number="item.quantity" type="number" min="1" :max="limits.max_quantity" :class="[inputClass, 'w-20']" :aria-label="t('vani-bundles::admin.form.quantity_for', { name: item.label })" />
                         </label>
                         <button v-if="can.manage" type="button" :class="dangerButton" :aria-label="t('vani-bundles::admin.form.remove')" @click="form.items.splice(index, 1)">×</button>
-                        <p v-if="errors[`items.${index}.style_id`] || errors[`items.${index}.quantity`]" class="w-full text-sm text-red-600">{{ errors[`items.${index}.style_id`] ?? errors[`items.${index}.quantity`] }}</p>
+                        <p v-if="errors[`items.${index}.product_id`] || errors[`items.${index}.quantity`]" class="w-full text-sm text-red-600">{{ errors[`items.${index}.product_id`] ?? errors[`items.${index}.quantity`] }}</p>
                     </Sortable>
                     <Combobox
                         v-if="can.manage && form.items.length < limits.max_items"

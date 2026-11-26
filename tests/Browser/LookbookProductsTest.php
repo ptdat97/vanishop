@@ -14,7 +14,7 @@ require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.
 it('Admin tìm và gắn sản phẩm vào ảnh, khách mở trang sản phẩm bằng bàn phím', function () {
     Storage::fake('public');
     ['s' => $variant] = C::store();
-    $product = $variant->style;
+    $product = $variant->product;
     $lookbook = T::seed(function () {
         app(PluginManager::class)->install(LookbookServiceProvider::ID);
         app(PluginManager::class)->enable(LookbookServiceProvider::ID);
@@ -30,8 +30,8 @@ it('Admin tìm và gắn sản phẩm vào ảnh, khách mở trang sản phẩm
     $this->actingAs(T::staff(['admin.access', 'lookbook.view', 'lookbook.manage', 'media.view']), 'staff');
 
     $admin = visit("/admin/plugins/vani-lookbook/{$lookbook->id}")
-        ->type('input[aria-label="Thêm sản phẩm vào ảnh 1"]', $product->style_code)
-        ->click('[role="option"] >> text='.$product->style_code)
+        ->type('input[aria-label="Thêm sản phẩm vào ảnh 1"]', $product->product_code)
+        ->click('[role="option"] >> text='.$product->product_code)
         ->press('Lưu')
         ->waitForText('Đã lưu')
         ->assertNoJavaScriptErrors();

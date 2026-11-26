@@ -63,7 +63,7 @@ final class OrderSeeder extends Seeder
             return;
         }
 
-        $variantIds = Variant::query()->whereHas('style', fn ($query) => $query->where('style_code', 'like', 'VS-%')->where('status', 'active'))->orderBy('id')->pluck('id')->all();
+        $variantIds = Variant::query()->whereHas('product', fn ($query) => $query->where('product_code', 'like', 'VS-%')->where('status', 'active'))->orderBy('id')->pluck('id')->all();
 
         foreach (self::ORDERS as $index => [$customer, $lines, $payment, $stage, $daysAgo]) {
             [$name, $phone, $email, $street] = self::CUSTOMERS[$customer];

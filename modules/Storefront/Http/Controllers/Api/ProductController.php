@@ -16,7 +16,7 @@ final class ProductController
 {
     public function index(ProductListRequest $request, ProductViews $products): JsonResponse
     {
-        $ids = $request->styleIds();
+        $ids = $request->productIds();
         if ($ids !== null) {
             $items = $products->forIds($ids, App::getLocale());
 

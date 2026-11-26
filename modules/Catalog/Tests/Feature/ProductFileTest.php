@@ -7,7 +7,7 @@ use Modules\Catalog\Application\Products\ProductFile;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
@@ -23,7 +23,7 @@ require_once __DIR__.'/../../../Pricing/Tests/Feature/PricingTestHelpers.php';
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'pricing.view', 'pricing.manage']), 'staff');
     [$this->brand, $this->dresses] = T::seed(fn () => [Brand::factory()->create(['name' => 'Lumière']), Category::factory()->create(['slug' => 'dam'])]);
-    $this->dress = T::product($this->brand->id, ['style_code' => 'DAM01', 'name' => 'Đầm lụa', 'category_ids' => [$this->dresses->id], 'primary_category_id' => $this->dresses->id]);
+    $this->dress = T::product($this->brand->id, ['product_code' => 'DAM01', 'name' => 'Đầm lụa', 'category_ids' => [$this->dresses->id], 'primary_category_id' => $this->dresses->id]);
     $this->variants = P::variants($this->dress, ['S', 'M']);
     P::priceList(['code' => 'base'], [$this->variants[0]->id => [500_000], $this->variants[1]->id => [500_000]]);
     $this->csv = function (array $rows): UploadedFile {
@@ -61,7 +61,7 @@ it('xuất file: số truy vấn không tăng theo số sản phẩm (không N+1
     };
     $one = $count();
     foreach (['AO01', 'AO02', 'AO03'] as $code) {
-        P::variants(T::product($this->brand->id, ['style_code' => $code, 'category_ids' => [$this->dresses->id]]), ['S', 'M']);
+        P::variants(T::product($this->brand->id, ['product_code' => $code, 'category_ids' => [$this->dresses->id]]), ['S', 'M']);
     }
     DB::flushQueryLog();
 
@@ -86,7 +86,7 @@ it('file lớn (quá 200 sản phẩm ghi được): chạy nền theo lô 100 s
     expect($run['finished'])->toBeTrue()
         ->and($run['counts'])->toBe(['created' => 205, 'updated' => 0, 'failed_rows' => 0])
         ->and($run['errors'])->toHaveCount(1)
-        ->and(T::seed(fn () => Style::query()->where('style_code', 'like', 'IMP%')->count()))->toBe(205);
+        ->and(T::seed(fn () => Product::query()->where('product_code', 'like', 'IMP%')->count()))->toBe(205);
 
     $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff');
     $this->getJson(route('admin.catalog.products.import.runs.show', $query['import_run']))->assertForbidden();
@@ -137,8 +137,8 @@ it('tạo sản phẩm mới có trục Màu × Size: giá trị chưa có thì 
         ->and($preview['preview']['products'][0]['notes'])->toContain('Sẽ tạo thương hiệu "Urban X".')->toContain('Sẽ tạo giá trị "Xanh rêu" cho "Màu".');
     $this->post($preview['urls']['apply'])->assertSessionHas('success', 'Đã tạo 1 và cập nhật 0 sản phẩm.');
 
-    $shirt = Style::query()->where('style_code', 'AO01')->sole();
-    $variants = Variant::query()->where('style_id', $shirt->id)->orderBy('id')->get();
+    $shirt = Product::query()->where('product_code', 'AO01')->sole();
+    $variants = Variant::query()->where('product_id', $shirt->id)->orderBy('id')->get();
     expect($shirt)->status->value->toBe('draft')->primary_category_id->toBe($this->dresses->id)
         ->and($shirt->brand?->name)->toBe('Urban X')
         ->and($variants)->toHaveCount(2)
@@ -168,7 +168,7 @@ it('lỗi theo sản phẩm: danh mục, trạng thái, SKU của sản phẩm k
         ->and($errors['X4'])->toBe(['Sản phẩm mới cần tên sản phẩm.']);
 
     $this->post($props['urls']['apply']);
-    expect(Style::query()->whereIn('style_code', ['X1', 'X2', 'X3', 'X4'])->count())->toBe(0)
+    expect(Product::query()->whereIn('product_code', ['X1', 'X2', 'X3', 'X4'])->count())->toBe(0)
         ->and(Variant::query()->where('sku', 'TUI-X5')->exists())->toBeTrue();
 });
 

@@ -335,7 +335,7 @@ final class ReturnService implements Returns
     }
 
     /**
-     * @return array{lines: list<array{return_line_id: int, variant_id: int, sku: string, quantity: int, unit_amount: int, credit: int, same_style: bool}>, payable: int, refund: int}
+     * @return array{lines: list<array{return_line_id: int, variant_id: int, sku: string, quantity: int, unit_amount: int, credit: int, same_product: bool}>, payable: int, refund: int}
      */
     public function exchangeQuote(int $returnId): array
     {

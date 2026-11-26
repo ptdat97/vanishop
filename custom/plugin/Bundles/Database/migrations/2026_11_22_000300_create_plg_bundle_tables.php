@@ -9,7 +9,7 @@ use Modules\Promotion\Contracts\ManagedPromotions;
 use Plugin\Bundles\BundlesServiceProvider;
 
 /*
- * vani.bundles: combo = danh sách sản phẩm (style) + số lượng mỗi món, giảm theo % khi mua đủ bộ. Ảnh và sản phẩm là id
+ * vani.bundles: combo = danh sách sản phẩm + số lượng mỗi món, giảm theo % khi mua đủ bộ. Ảnh và sản phẩm là id
  * của Core, không khoá ngoại sang bảng Core (ADR-027); sản phẩm đã ẩn hoặc xoá thì combo không hiện ở storefront.
  */
 return new class extends Migration
@@ -33,11 +33,11 @@ return new class extends Migration
         Schema::create('plg_bundle_items', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('bundle_id')->constrained('plg_bundles')->cascadeOnDelete();
-            $table->unsignedBigInteger('style_id');
+            $table->unsignedBigInteger('product_id');
             $table->unsignedSmallInteger('quantity')->default(1);
             $table->unsignedInteger('position')->default(0);
-            $table->unique(['bundle_id', 'style_id']);
-            $table->index('style_id');
+            $table->unique(['bundle_id', 'product_id']);
+            $table->index('product_id');
         });
     }
 

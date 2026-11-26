@@ -18,8 +18,8 @@ final class ProductViewController
 {
     public function __invoke(Request $request, ProductViewStatistics $views): Response
     {
-        $styleId = (int) $request->input('style_id');
-        if ($styleId > 0) {
+        $productId = (int) $request->input('product_id');
+        if ($productId > 0) {
             $viewerId = $request->input('viewer_id');
             $viewer = match (true) {
                 $request->hasSession() && is_string($viewerId) && preg_match('/\A[a-f0-9]{32}\z/', $viewerId) === 1 => 'browser:'.$viewerId,
@@ -27,7 +27,7 @@ final class ProductViewController
                 default => (string) $request->ip().'|'.$request->userAgent(),
             };
             $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
-            $views->record($styleId, $viewer, $customer === null ? null : (int) $customer->id);
+            $views->record($productId, $viewer, $customer === null ? null : (int) $customer->id);
         }
 
         return response()->noContent()->header('Cache-Control', 'private, no-store');

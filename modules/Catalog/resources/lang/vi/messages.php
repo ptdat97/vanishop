@@ -46,7 +46,7 @@ return [
     'color_already_added' => 'Sản phẩm đã có màu này.',
     'too_many_images' => 'Mỗi màu tối đa :max ảnh.',
     'image_order_invalid' => 'Thứ tự ảnh không hợp lệ.',
-    'style_codes_not_found' => 'Không tìm thấy mã sản phẩm: :codes',
+    'product_codes_not_found' => 'Không tìm thấy mã sản phẩm: :codes',
     'size_not_found' => 'Có size không tồn tại.',
     'variants_need_colors' => 'Thêm ít nhất một màu cho sản phẩm trước khi tạo biến thể.',
     'sku_taken' => 'SKU :sku đã tồn tại.',

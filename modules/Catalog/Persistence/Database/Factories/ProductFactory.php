@@ -6,16 +6,16 @@ namespace Modules\Catalog\Persistence\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 
 /**
- * Tạo style tối giản (không qua ProductService).
+ * Tạo product tối giản (không qua ProductService).
  *
- * @extends Factory<Style>
+ * @extends Factory<Product>
  */
-final class StyleFactory extends Factory
+final class ProductFactory extends Factory
 {
-    protected $model = Style::class;
+    protected $model = Product::class;
 
     public function definition(): array
     {
@@ -23,7 +23,7 @@ final class StyleFactory extends Factory
 
         return [
             'brand_id' => null,
-            'style_code' => $code,
+            'product_code' => $code,
             'slug' => Str::slug($code),
             'status' => 'active',
             'search_text' => Str::lower($code),

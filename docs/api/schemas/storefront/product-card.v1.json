@@ -5,7 +5,7 @@
     "required": [
         "id",
         "slug",
-        "style_code",
+        "product_code",
         "name",
         "brand",
         "image_url",
@@ -27,7 +27,7 @@
                 "type": "string"
             }
         },
-        "style_code": {
+        "product_code": {
             "type": "string"
         },
         "name": {
@@ -198,5 +198,5 @@
         }
     },
     "title": "Thẻ sản phẩm",
-    "description": "Một sản phẩm (style) trong danh sách. Plugin có thể thêm `extensions.<plugin id>`."
+    "description": "Một sản phẩm trong danh sách. Plugin có thể thêm `extensions.<plugin id>`."
 }

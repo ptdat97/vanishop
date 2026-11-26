@@ -15,7 +15,7 @@ require_once __DIR__.'/../../modules/Customer/Tests/Feature/CustomerTestHelpers.
 
 beforeEach(function () {
     ['s' => $this->s] = C::store();
-    $this->buyNow = fn () => visit("/san-pham/{$this->s->style->slug}?sku={$this->s->sku}")->on()->mobile()
+    $this->buyNow = fn () => visit("/san-pham/{$this->s->product->slug}?sku={$this->s->sku}")->on()->mobile()
         ->click('Mua ngay')
         ->assertPathIs('/thanh-toan');
 });
@@ -135,7 +135,7 @@ it('khách đăng nhập chọn địa chỉ đã lưu: điền người nhận,
     $page = visit('/tai-khoan/dang-nhap')->on()->mobile()
         ->fill('email', $customer->email)->fill('password', H::PASSWORD)->click('form[data-vani-login] button[type="submit"]')->wait(1)
         ->assertPathIs('/tai-khoan')
-        ->navigate("/san-pham/{$this->s->style->slug}?sku={$this->s->sku}")
+        ->navigate("/san-pham/{$this->s->product->slug}?sku={$this->s->sku}")
         ->click('Mua ngay')
         ->assertPathIs('/thanh-toan');
     $page->assertValue('#contact\\.full_name', 'Người nhận Nhà')

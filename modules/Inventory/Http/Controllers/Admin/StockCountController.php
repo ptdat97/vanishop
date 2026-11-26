@@ -83,7 +83,7 @@ final class StockCountController
 
                 return [...$line,
                     'sku' => $variant->sku ?? "#{$line['variant_id']}",
-                    'name' => $variant === null ? '' : trim($variant->styleName.' '.VariantOptionsText::label($variant->options)),
+                    'name' => $variant === null ? '' : trim($variant->productName.' '.VariantOptionsText::label($variant->options)),
                     'applied_delta' => $applied === null ? null : (int) ($applied[$line['variant_id']] ?? 0),
                 ];
             }, $preview),

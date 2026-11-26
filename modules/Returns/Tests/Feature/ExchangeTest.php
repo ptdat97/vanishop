@@ -82,7 +82,7 @@ it('cùng mẫu đổi size: chỉ tạo đơn thay thế SAU khi nhận hàng t
     ($this->receive)($return);
     expect(Order::query()->count())->toBe(1);
 
-    $this->get("{$this->admin}/{$return->id}")->assertInertia(fn ($page) => $page->where('exchangeQuote.payable', 0)->where('exchangeQuote.refund', 0)->where('exchangeQuote.lines.0.same_style', true));
+    $this->get("{$this->admin}/{$return->id}")->assertInertia(fn ($page) => $page->where('exchangeQuote.payable', 0)->where('exchangeQuote.refund', 0)->where('exchangeQuote.lines.0.same_product', true));
     $this->post("{$this->admin}/{$return->id}/resolve", [])->assertSessionHasNoErrors();
 
     $replacement = Order::query()->where('parent_order_id', $order->id)->sole();

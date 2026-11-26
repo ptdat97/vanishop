@@ -43,11 +43,11 @@ final class LinkType extends Model
     }
 
     /**
-     * @return HasMany<StyleLinkGroup, $this>
+     * @return HasMany<ProductLinkGroup, $this>
      */
     public function groups(): HasMany
     {
-        return $this->hasMany(StyleLinkGroup::class);
+        return $this->hasMany(ProductLinkGroup::class);
     }
 
     protected static function newFactory(): LinkTypeFactory

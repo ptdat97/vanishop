@@ -58,7 +58,7 @@ Implementation là plugin: `vani.erp-odoo` (`OdooConnector`), `vani.erp-sap` (`S
 
 | Đối tượng | Khoá mapping | Bảng |
 |---|---|---|
-| Product/Style | `style_code` ↔ mã mẫu ERP | `external_references` |
+| Product | `product_code` ↔ mã mẫu ERP | `external_references` |
 | SKU/Variant | `sku` (khuyến nghị dùng chung một mã) | `external_references` |
 | Customer | `customer.public_id` ↔ mã KH ERP (khách lẻ có thể gộp thành một mã "khách lẻ online") | `external_references` |
 | Order | `order.number` ↔ số chứng từ ERP | `external_references` |

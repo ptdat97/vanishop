@@ -25,7 +25,7 @@ it('trang bộ sưu tập: phần đầu mặc định (tên, mô tả, ảnh b�
             'vi' => ['name' => 'Mùa hè', 'description' => 'Vải mát cho ngày nắng.', 'meta_title' => 'Mùa hè rực rỡ'],
             'en' => ['name' => 'Summer', 'slug' => 'summer'],
         ]);
-        $collection->styles()->attach($sku->style_id);
+        $collection->products()->attach($sku->product_id);
 
         return $collection;
     });
@@ -33,9 +33,9 @@ it('trang bộ sưu tập: phần đầu mặc định (tên, mô tả, ảnh b�
     $this->get('/tim-kiem')->assertOk()->assertSee('data-vani-product="'.$other->slug.'"', false);
     $this->get('/bo-suu-tap/mua-he')->assertOk()
         ->assertSee('<title>Mùa hè rực rỡ', false)
-        ->assertSeeInOrder(['data-collection-banner', 'Mùa hè', 'Vải mát cho ngày nắng.', '-w', 'data-vani-listing', 'data-vani-product="'.$sku->style->slug.'"'], false)
+        ->assertSeeInOrder(['data-collection-banner', 'Mùa hè', 'Vải mát cho ngày nắng.', '-w', 'data-vani-listing', 'data-vani-product="'.$sku->product->slug.'"'], false)
         ->assertDontSee('data-vani-product="'.$other->slug.'"', false);
-    $this->get('/bo-suu-tap/mua-he?collection=khong-co')->assertOk()->assertSee('data-vani-product="'.$sku->style->slug.'"', false);
+    $this->get('/bo-suu-tap/mua-he?collection=khong-co')->assertOk()->assertSee('data-vani-product="'.$sku->product->slug.'"', false);
     $this->get('/en/collections/mua-he?sort=price_asc')->assertRedirect('/en/collections/summer?sort=price_asc')->assertStatus(301);
     $this->get('/en/collections/summer')->assertOk()->assertSee('Summer');
     $this->get('/sitemap.xml')->assertOk()->assertSee('/bo-suu-tap/mua-he')->assertSee('/en/collections/summer');

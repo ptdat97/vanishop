@@ -52,7 +52,7 @@ final class PriceListFile
                 continue;
             }
             $price = $prices->get($id);
-            $rows[] = [$variant->sku, $variant->styleName, VariantOptionsText::label($variant->options), $base[$id] ?? null, $price?->amount, $price?->compare_at_amount];
+            $rows[] = [$variant->sku, $variant->productName, VariantOptionsText::label($variant->options), $base[$id] ?? null, $price?->amount, $price?->compare_at_amount];
         }
 
         return $rows;

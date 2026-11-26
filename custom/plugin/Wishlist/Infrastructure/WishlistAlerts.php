@@ -41,24 +41,24 @@ final class WishlistAlerts
      */
     public function variantsChanged(array $variantIds): void
     {
-        $styleIds = array_values(array_unique(array_map(fn ($variant): int => $variant->styleId, $this->variants->find($variantIds))));
-        $items = $styleIds === [] ? collect() : WishlistItem::query()->whereIn('style_id', $styleIds)->get();
+        $productIds = array_values(array_unique(array_map(fn ($variant): int => $variant->productId, $this->variants->find($variantIds))));
+        $items = $productIds === [] ? collect() : WishlistItem::query()->whereIn('product_id', $productIds)->get();
         if ($items->isEmpty()) {
             return;
         }
 
-        $cards = $this->wishlists->cardsFor($styleIds, StoreLocale::default());
+        $cards = $this->wishlists->cardsFor($productIds, StoreLocale::default());
         $notifyStock = (bool) $this->settings->get(WishlistServiceProvider::ID, 'notify_back_in_stock', false);
         $notifyPrice = (bool) $this->settings->get(WishlistServiceProvider::ID, 'notify_price_drop', false);
 
         foreach ($items->groupBy('customer_id') as $customerId => $customerItems) {
-            $snapshot = $this->wishlists->pricesFor((int) $customerId, $customerItems->pluck('style_id')->all());
+            $snapshot = $this->wishlists->pricesFor((int) $customerId, $customerItems->pluck('product_id')->all());
             foreach ($customerItems as $item) {
-                $card = $cards[$item->style_id] ?? null;
+                $card = $cards[$item->product_id] ?? null;
                 if ($card === null) {
                     continue;
                 }
-                $price = $snapshot['prices'][$item->style_id] ?? null;
+                $price = $snapshot['prices'][$item->product_id] ?? null;
                 $inStock = (bool) ($card['in_stock'] ?? false);
 
                 if ($inStock && ! $item->in_stock && $notifyStock && $this->cooledDown($item->notified_stock_at)) {
@@ -99,7 +99,7 @@ final class WishlistAlerts
 
         $this->notifier->notify(new NotificationRequest(
             type: $type,
-            key: "{$type}:{$item->customer_id}:{$item->style_id}:".now()->format('Ymd'),
+            key: "{$type}:{$item->customer_id}:{$item->product_id}:".now()->format('Ymd'),
             recipient: new Recipient(phone: $customer->phone, email: $customer->email, name: $customer->fullName, customerId: $customer->id, locale: $locale),
             variables: [
                 'customer_name' => $customer->fullName,

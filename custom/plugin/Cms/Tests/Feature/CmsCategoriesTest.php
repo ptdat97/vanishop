@@ -65,7 +65,7 @@ it('storefront: /tin-tuc/{chuyên mục} liệt kê bài của chuyên mục; tr
 
 it('gắn sản phẩm vào bài: tối đa 12, giữ thứ tự; mẫu ẩn bị bỏ khi hiển thị; Admin tìm sản phẩm đang bán', function () {
     ['s' => $variant, 'brand' => $brand] = C::store();
-    $product = $variant->style;
+    $product = $variant->product;
     $hidden = CatalogTestHelpers::product($brand->id, ['status' => 'draft']);
     $post = ($this->post)();
 

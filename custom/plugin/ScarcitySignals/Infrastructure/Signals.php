@@ -13,7 +13,7 @@ use Plugin\ScarcitySignals\ScarcitySignalsServiceProvider;
 /**
  * Số liệu khan hiếm — chỉ số thật, không có hệ số, sàn hay chế độ bịa số:
  * - **còn lại**: số bán được online (ATS) của từng variant, chỉ lộ ra khi 0 < ATS ≤ ngưỡng;
- * - **đã bán**: số lượng của đơn đã thu tiền hoặc đã rời kho trong N ngày (`OrderStatistics::confirmedQuantitiesByStyle`),
+ * - **đã bán**: số lượng của đơn đã thu tiền hoặc đã rời kho trong N ngày (`OrderStatistics::confirmedQuantitiesByProduct`),
  *   tính một lần mỗi giờ cho mọi sản phẩm (cache), giấu khi dưới mức tối thiểu.
  */
 final class Signals
@@ -100,13 +100,13 @@ final class Signals
      *
      * @return array{count: int, days: int}|null
      */
-    public function sold(int $styleId): ?array
+    public function sold(int $productId): ?array
     {
         if (! (bool) $this->setting('show_sold_count', true)) {
             return null;
         }
         $days = $this->windowDays();
-        $count = $this->soldCounts($days)[$styleId] ?? 0;
+        $count = $this->soldCounts($days)[$productId] ?? 0;
 
         return $count >= self::clamp((int) $this->setting('sold_min_to_show', 3), 1, 1000) ? ['count' => $count, 'days' => $days] : null;
     }
@@ -145,7 +145,7 @@ final class Signals
     {
         $to = new DateTimeImmutable;
 
-        return $this->statistics->confirmedQuantitiesByStyle($to->modify("-{$days} days"), $to);
+        return $this->statistics->confirmedQuantitiesByProduct($to->modify("-{$days} days"), $to);
     }
 
     private static function clamp(int $value, int $min, int $max): int

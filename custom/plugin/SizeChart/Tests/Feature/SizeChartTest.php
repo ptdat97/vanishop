@@ -15,7 +15,7 @@ require_once __DIR__.'/../../../../../modules/Checkout/Tests/Feature/CheckoutTes
 
 beforeEach(function () {
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
-    $this->style = $this->s->style;
+    $this->product = $this->s->product;
     app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
         app(PluginManager::class)->install(SizeChartServiceProvider::ID);
         app(PluginManager::class)->enable(SizeChartServiceProvider::ID);
@@ -27,7 +27,7 @@ beforeEach(function () {
         'blocks' => [['type' => 'table', 'rows' => [['Size', 'Ngực'], ['S', '80'], ['M', '84']]]],
         'advisor_enabled' => false, 'advisor_rules' => [], 'is_default' => false, 'active' => true, ...$overrides,
     ]));
-    $this->extension = fn () => $this->getJson('/api/storefront/v1/products/'.$this->style->slug)->assertOk()->json('data.extensions')['vani.size-chart'] ?? null;
+    $this->extension = fn () => $this->getJson('/api/storefront/v1/products/'.$this->product->slug)->assertOk()->json('data.extensions')['vani.size-chart'] ?? null;
 });
 
 it('chọn bảng theo ưu tiên: sản phẩm → danh mục chính (kế thừa danh mục cha) → thương hiệu → mặc định; bảng tắt bị bỏ qua', function () {
@@ -36,7 +36,7 @@ it('chọn bảng theo ưu tiên: sản phẩm → danh mục chính (kế thừ
 
         return [$women, Category::factory()->childOf($women)->create(['slug' => 'dam'])];
     });
-    T::seed(fn () => $this->style->update(['primary_category_id' => $dresses->id]));
+    T::seed(fn () => $this->product->update(['primary_category_id' => $dresses->id]));
     $default = ($this->chart)('Mặc định', ['is_default' => true]);
     $brandChart = ($this->chart)('Theo thương hiệu');
     $womenChart = ($this->chart)('Đồ nữ');
@@ -47,7 +47,7 @@ it('chọn bảng theo ưu tiên: sản phẩm → danh mục chính (kế thừ
     expect(($this->extension)()['name'])->toBe('Theo thương hiệu');
     T::seed(fn () => $this->charts->assign('category', $women->id, $womenChart->id));
     expect(($this->extension)()['name'])->toBe('Đồ nữ'); // danh mục cha của danh mục chính
-    T::seed(fn () => $this->charts->assign('product', $this->style->id, $productChart->id));
+    T::seed(fn () => $this->charts->assign('product', $this->product->id, $productChart->id));
     expect(($this->extension)()['name'])->toBe('Đồ nữ'); // bảng gán sản phẩm đang tắt
 
     T::seed(fn () => SizeChart::query()->update(['active' => false]));
@@ -63,7 +63,7 @@ it('đổi đơn vị: số trong ô (trừ hàng/cột tiêu đề) theo tỉ l
     ($this->chart)('B', ['is_default' => true]);
     expect(SizeChart::query()->where('is_default', true)->pluck('names')->all())->toBe([['vi' => 'B']]);
 
-    T::seed(fn () => $this->charts->assign('product', $this->style->id, SizeChart::query()->get()->first(fn ($chart) => $chart->names['vi'] === 'A')->id));
+    T::seed(fn () => $this->charts->assign('product', $this->product->id, SizeChart::query()->get()->first(fn ($chart) => $chart->names['vi'] === 'A')->id));
     expect(($this->extension)()['blocks'][0])->toMatchArray(['rows' => [['Size', 'Ngực'], ['S', '80'], ['M', '84']], 'converted' => [['Size', 'Ngực'], ['S', '31.5'], ['M', '33.1']]]);
 });
 
@@ -76,7 +76,7 @@ it('luật gợi ý không hợp lệ bị loại khi lưu; khối văn bản kh
 
     expect($chart->advisor_rules)->toHaveCount(1)->and($chart->advisor_rules[0])->toMatchArray(['size' => 'S', 'note' => 'Ôm']);
 
-    $html = $this->get('/san-pham/'.$this->style->slug)->assertOk()->getContent();
+    $html = $this->get('/san-pham/'.$this->product->slug)->assertOk()->getContent();
     expect($html)->toContain('data-vani-size-chart')->toContain('<strong>Đo vòng ngực</strong>')->toContain('Tìm size của tôi')
         ->not->toContain('<script>alert(1)')->not->toContain('javascript:alert');
 });
@@ -96,7 +96,7 @@ it('Admin: tạo, sửa (xung đột lock_version), xoá bỏ mọi gán; gán b
     $this->get('/admin/plugins/vani-size-chart')->assertInertia(fn (Assert $page) => $page->component('SizeChart::Index')->where('charts.0.name', 'Váy nữ'));
 
     // Gán ở form sản phẩm (lựa chọn đọc lúc mở form).
-    $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page
+    $this->get("/admin/catalog/products/{$this->product->id}/edit")->assertInertia(fn (Assert $page) => $page
         ->where('extensionSections', fn ($sections) => collect($sections)->firstWhere('plugin', 'vani.size-chart')['fields'][0]['options'] === [(string) $chart->id => 'Váy nữ']));
     $category = T::seed(fn () => Category::factory()->create(['slug' => 'ao']));
     $this->put("/admin/catalog/categories/{$category->id}", ['slug' => 'ao', 'parent_id' => null, 'status' => 'active', 'position' => 0, 'lock_version' => $category->fresh()->lock_version,

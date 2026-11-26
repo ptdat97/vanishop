@@ -12,8 +12,8 @@ namespace Modules\Returns\Domain;
 final class ExchangeValuation
 {
     /**
-     * @param  array<int, array{quantity: int, unit_amount: int, same_style: bool, paid: int}>  $lines  dòng trả => giá trị
-     *                                                                                                  (`unit_amount`: đơn giá đã mua nếu cùng mẫu, giá hiện tại nếu khác mẫu; `paid`: tiền khách đã trả cho món trả)
+     * @param  array<int, array{quantity: int, unit_amount: int, same_product: bool, paid: int}>  $lines  dòng trả => giá trị
+     *                                                                                                    (`unit_amount`: đơn giá đã mua nếu cùng mẫu, giá hiện tại nếu khác mẫu; `paid`: tiền khách đã trả cho món trả)
      * @return array{credits: array<int, int>, payable: int, refund: int}
      */
     public static function quote(array $lines): array
@@ -22,7 +22,7 @@ final class ExchangeValuation
         $subtotals = [];
         $paid = 0;
         foreach ($lines as $lineId => $line) {
-            if ($line['same_style']) {
+            if ($line['same_product']) {
                 $credits[$lineId] = $line['unit_amount'] * $line['quantity'];
             } else {
                 $credits[$lineId] = 0;

@@ -82,9 +82,9 @@ it('hàng thật ở mọi kho trước, suất đặt trước sau; hàng về 
 });
 
 it('không áp cho sản phẩm không theo dõi tồn, không có kho bù tồn hoặc policy lỗi', function () {
-    T::seed(fn () => DB::table('styles')->where('id', $this->s->style_id)->update(['track_inventory' => false]));
+    T::seed(fn () => DB::table('products')->where('id', $this->s->product_id)->update(['track_inventory' => false]));
     expect(app(Backorders::class)->status([$this->s->id]))->toBe([]);
-    T::seed(fn () => DB::table('styles')->where('id', $this->s->style_id)->update(['track_inventory' => true]));
+    T::seed(fn () => DB::table('products')->where('id', $this->s->product_id)->update(['track_inventory' => true]));
 
     T::seed(fn () => $this->hn->update(['ships_online_orders' => false]));
     expect(($this->ats)()[$this->s->id])->toBe(0)

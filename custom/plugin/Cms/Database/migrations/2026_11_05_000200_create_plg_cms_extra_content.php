@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('plg_cms_product_extras', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('style_id')->unique();
+            $table->unsignedBigInteger('product_id')->unique();
             $table->json('highlights')->nullable();
             $table->boolean('hide_promo_box')->default(false);
             $table->timestamps();

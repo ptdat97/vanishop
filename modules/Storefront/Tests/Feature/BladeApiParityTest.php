@@ -17,12 +17,12 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 beforeEach(function () {
     C::autoConfirmCod();
     ['s' => $this->s, 'm' => $this->m] = C::store();
-    $this->style = $this->s->style;
+    $this->product = $this->s->product;
     // Giá sale có giá gạch cho size M → khoảng giá, giá gạch, % giảm khác 0.
     P::priceList(['code' => 'sale-parity', 'type' => 'sale', 'priority' => 10], [$this->m->id => [150_000, 200_000]]);
     $this->category = T::seed(fn () => Category::factory()->create(['slug' => 'dam-parity']));
     $this->category->syncTranslations(['vi' => ['name' => 'Đầm']]);
-    $this->style->categories()->sync([$this->category->id]);
+    $this->product->categories()->sync([$this->category->id]);
     $this->api = '/api/storefront/v1';
 });
 
@@ -60,8 +60,8 @@ function markedAmount(string $html, string $name, string $scope = ''): ?int
 }
 
 it('trang sản phẩm ↔ GET /products/{slug}: khoảng giá, giá gạch, % giảm, còn hàng', function () {
-    $html = $this->get("/san-pham/{$this->style->slug}")->assertOk()->getContent();
-    $api = $this->getJson("{$this->api}/products/{$this->style->slug}")->assertOk()->json('data');
+    $html = $this->get("/san-pham/{$this->product->slug}")->assertOk()->getContent();
+    $api = $this->getJson("{$this->api}/products/{$this->product->slug}")->assertOk()->json('data');
     $scope = '//*[@data-product-price]';
 
     expect(markedAmount($html, 'price.min', $scope))->toBe($api['price']['min']['amount'])

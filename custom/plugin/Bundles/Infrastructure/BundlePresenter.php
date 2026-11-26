@@ -45,11 +45,11 @@ final class BundlePresenter
      *
      * @return list<array<string, mixed>>
      */
-    public function forStyle(int $styleId, string $locale): array
+    public function forProduct(int $productId, string $locale): array
     {
         $result = [];
         $this->running()
-            ->whereHas('items', fn ($query) => $query->where('style_id', $styleId))
+            ->whereHas('items', fn ($query) => $query->where('product_id', $productId))
             ->chunk(self::PER_PRODUCT, function (Collection $bundles) use (&$result, $locale): bool {
                 array_push($result, ...$this->present($bundles->all(), $locale));
 
@@ -97,12 +97,12 @@ final class BundlePresenter
     {
         $now = now()->getTimestamp();
         $bundles = array_values(array_filter($bundles, fn (Bundle $bundle): bool => $bundle->isRunningAt($now)));
-        $styleIds = array_values(array_unique(array_merge(...array_map(fn (Bundle $bundle): array => array_keys($bundle->requirement()), $bundles))));
-        if ($styleIds === []) {
+        $productIds = array_values(array_unique(array_merge(...array_map(fn (Bundle $bundle): array => array_keys($bundle->requirement()), $bundles))));
+        if ($productIds === []) {
             return [];
         }
-        $cards = array_column($this->cards->forIds($styleIds, $locale), null, 'id');
-        $variants = $this->variants->ofStyles($styleIds);
+        $cards = array_column($this->cards->forIds($productIds, $locale), null, 'id');
+        $variants = $this->variants->ofProducts($productIds);
         $variantIds = array_merge(...array_map(fn (array $list): array => array_column($list, 'id'), array_values($variants)));
         $prices = $variantIds === [] ? [] : $this->prices->forVariants($variantIds, new PricingContext($now));
         $stock = $prices === [] ? [] : $this->availability->forVariants(array_keys($prices));
@@ -137,15 +137,15 @@ final class BundlePresenter
         $priceLines = [];
         $currency = null;
         $priceHidden = false;
-        foreach ($requirement as $styleId => $quantity) {
-            $card = $cards[$styleId] ?? null;
+        foreach ($requirement as $productId => $quantity) {
+            $card = $cards[$productId] ?? null;
             if ($card === null) {
                 return null;
             }
             $priceHidden = $priceHidden || ! empty($card['price_hidden']);
             $options = [];
             $minimum = null;
-            foreach ($variants[$styleId] ?? [] as $variant) {
+            foreach ($variants[$productId] ?? [] as $variant) {
                 $price = $prices[$variant->id]->amount ?? null;
                 if ($variant->status !== 'active' || $price === null) {
                     continue;
@@ -165,7 +165,7 @@ final class BundlePresenter
             }
             $availableIds = array_column(array_filter($options, fn (array $option): bool => $option['available']), 'id');
             if ($minimum !== null) {
-                $priceLines[$styleId] = ['style_id' => $styleId, 'quantity' => $quantity, 'unit_price' => $minimum->amount];
+                $priceLines[$productId] = ['product_id' => $productId, 'quantity' => $quantity, 'unit_price' => $minimum->amount];
                 $currency = $minimum->currency;
             }
             $items[] = [

@@ -18,12 +18,12 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
     ['brand' => $brand, 's' => $this->pinkS, 'm' => $this->pinkM, 'location' => $this->location] = C::store();
-    $style = $this->pinkS->style;
+    $product = $this->pinkS->product;
     // Màu thứ hai hết hàng: không được chọn sẵn, size bị khoá.
-    [$this->navyS] = P::variants($style, ['S']);
+    [$this->navyS] = P::variants($product, ['S']);
     I::stock($this->location, $this->navyS->id, 0);
     P::priceList(['code' => 'navy'], [$this->navyS->id => [300_000]]); // có giá — bị khoá vì hết hàng
-    $this->slug = T::seed(fn () => $style->slugFor('vi'));
+    $this->slug = T::seed(fn () => $product->slugFor('vi'));
     $this->pink = T::seed(fn () => $this->pinkS->valueOf('color')?->code);
     $this->navy = T::seed(fn () => $this->navyS->valueOf('color')?->code);
 });
@@ -65,22 +65,22 @@ it('link ?sku=<mã SKU>: chọn sẵn màu và size của SKU đó; SKU hết h�
 });
 
 it('một trục (chỉ size): chọn thẳng SKU, SKU mặc định chọn sẵn, không có nhóm phụ', function () {
-    $style = T::product(null, ['name' => 'Tất cổ ngắn']);
+    $product = T::product(null, ['name' => 'Tất cổ ngắn']);
     $sizes = T::seed(fn () => [OptionValue::factory()->size()->create(['code' => 'F1']), OptionValue::factory()->size()->create(['code' => 'F2'])]);
-    T::optionValues($style, ...$sizes);
-    [$first, $second] = T::seed(fn () => array_map(fn (OptionValue $size) => app(ProductOptions::class)->createVariant($style, [$size->id]), $sizes));
+    T::optionValues($product, ...$sizes);
+    [$first, $second] = T::seed(fn () => array_map(fn (OptionValue $size) => app(ProductOptions::class)->createVariant($product, [$size->id]), $sizes));
     P::priceList(['code' => 'socks'], [$first->id => [50_000], $second->id => [50_000]]);
     I::stock($this->location, $first->id, 5);
     I::stock($this->location, $second->id, 5);
 
-    $html = $this->get('/san-pham/'.T::seed(fn () => $style->slugFor('vi')))->assertOk()->getContent();
+    $html = $this->get('/san-pham/'.T::seed(fn () => $product->slugFor('vi')))->assertOk()->getContent();
     expect($html)->toMatch('/name="variant_id" value="'.$first->id.'"[^>]*data-option-value="F1"[^>]*checked/')
         ->and($html)->not->toContain('<fieldset data-option-group')
         ->and($html)->not->toContain('name="axis[');
 });
 
 it('ba trục, trục đầu kiểu danh sách thả xuống: nhóm SKU nhãn theo hai trục còn lại', function () {
-    $style = T::product(null, ['name' => 'Giày da']);
+    $product = T::product(null, ['name' => 'Giày da']);
     [$material, $leather, $color, $size] = T::seed(function () {
         $material = OptionType::factory()->create(['code' => 'material', 'display_type' => 'dropdown']);
         $material->syncTranslations(['vi' => ['name' => 'Chất liệu']]);
@@ -89,12 +89,12 @@ it('ba trục, trục đầu kiểu danh sách thả xuống: nhóm SKU nhãn th
 
         return [$material, $leather, OptionValue::factory()->color()->create(['code' => 'BRN']), OptionValue::factory()->size()->create(['code' => '42'])];
     });
-    T::optionValues($style, $leather, $color, $size);
-    $variant = T::seed(fn () => app(ProductOptions::class)->createVariant($style, [$leather->id, $color->id, $size->id]));
+    T::optionValues($product, $leather, $color, $size);
+    $variant = T::seed(fn () => app(ProductOptions::class)->createVariant($product, [$leather->id, $color->id, $size->id]));
     P::priceList(['code' => 'shoes'], [$variant->id => [900_000]]);
     I::stock($this->location, $variant->id, 2);
 
-    $html = $this->get('/san-pham/'.T::seed(fn () => $style->slugFor('vi')))->assertOk()->getContent();
+    $html = $this->get('/san-pham/'.T::seed(fn () => $product->slugFor('vi')))->assertOk()->getContent();
     expect($html)->toContain('<select name="axis[material]"')
         ->and($html)->toMatch('/<option value="LEATHER" data-primary data-option-value="LEATHER"[^>]*selected/')
         ->and($html)->toContain('<fieldset data-option-group="LEATHER"')

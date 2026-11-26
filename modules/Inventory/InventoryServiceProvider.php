@@ -95,7 +95,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(StockDashboardTasks::class)());
-        Hook::onSlot('vani.admin.product.list_columns', fn (array $styleIds): ?array => $this->app->make(ProductListStock::class)->column($styleIds));
+        Hook::onSlot('vani.admin.product.list_columns', fn (array $productIds): ?array => $this->app->make(ProductListStock::class)->column($productIds));
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'inventory.strategy', 'inventory::texts.inventory_service_provider.sellable_quantity_calculation_ats', 'select', (string) config('vanishop.inventory.strategy', 'standard'),
             optionsFromTag: InventoryStrategy::TAG, help: 'inventory::texts.inventory_service_provider.strategy_only_reduce_ats_compared',

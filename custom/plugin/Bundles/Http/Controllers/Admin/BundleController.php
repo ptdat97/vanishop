@@ -117,8 +117,8 @@ final class BundleController
     private function form(?Bundle $bundle): Response
     {
         $locale = StoreLocale::default();
-        $styleIds = $bundle?->items->pluck('style_id')->all() ?? [];
-        $visible = $this->catalog->visible('product', $styleIds, $locale);
+        $productIds = $bundle?->items->pluck('product_id')->all() ?? [];
+        $visible = $this->catalog->visible('product', $productIds, $locale);
 
         return Inertia::render('Bundles::Form', [
             'bundle' => $bundle === null ? null : [
@@ -133,8 +133,8 @@ final class BundleController
                 'ends_at' => StoreClock::toInput($bundle->ends_at),
                 'position' => $bundle->position,
                 'items' => $bundle->items->map(fn (BundleItem $item): array => [
-                    'style_id' => $item->style_id,
-                    'label' => $visible[$item->style_id]['name'] ?? $this->hiddenLabel($item->style_id),
+                    'product_id' => $item->product_id,
+                    'label' => $visible[$item->product_id]['name'] ?? $this->hiddenLabel($item->product_id),
                     'quantity' => $item->quantity,
                 ])->all(),
             ],
@@ -150,13 +150,13 @@ final class BundleController
         ]);
     }
 
-    private function hiddenLabel(int $styleId): string
+    private function hiddenLabel(int $productId): string
     {
-        return '#'.$styleId.__('vani-bundles::texts.hidden');
+        return '#'.$productId.__('vani-bundles::texts.hidden');
     }
 
     /**
-     * @return array{slug: string, name: string, description: ?string, image_media_id: ?int, discount_percent: int, active: bool, starts_at: ?Carbon, ends_at: ?Carbon, position: int, items: list<array{style_id: int, quantity: int}>}
+     * @return array{slug: string, name: string, description: ?string, image_media_id: ?int, discount_percent: int, active: bool, starts_at: ?Carbon, ends_at: ?Carbon, position: int, items: list<array{product_id: int, quantity: int}>}
      */
     private function validated(Request $request, ?Bundle $bundle = null): array
     {
@@ -171,10 +171,10 @@ final class BundleController
             'ends_at' => ['nullable', 'date_format:'.StoreClock::INPUT_FORMAT],
             'position' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'items' => ['required', 'array', 'list', 'min:'.BundleConfig::MIN_ITEMS, 'max:'.BundleConfig::MAX_ITEMS],
-            'items.*' => ['required', 'array:style_id,quantity'],
-            'items.*.style_id' => ['required', 'integer', 'min:1', 'distinct'],
+            'items.*' => ['required', 'array:product_id,quantity'],
+            'items.*.product_id' => ['required', 'integer', 'min:1', 'distinct'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:'.BundleConfig::MAX_QUANTITY],
-        ], ['items.min' => __('vani-bundles::texts.min_items', ['count' => BundleConfig::MIN_ITEMS]), 'items.*.style_id.distinct' => __('vani-bundles::texts.distinct_items')]);
+        ], ['items.min' => __('vani-bundles::texts.min_items', ['count' => BundleConfig::MIN_ITEMS]), 'items.*.product_id.distinct' => __('vani-bundles::texts.distinct_items')]);
 
         $imageId = isset($data['image_media_id']) ? (int) $data['image_media_id'] : null;
         if ($imageId !== null) {
@@ -184,10 +184,10 @@ final class BundleController
             }
         }
 
-        $known = $this->variants->ofStyles(array_map(fn (array $item): int => (int) $item['style_id'], $data['items']));
+        $known = $this->variants->ofProducts(array_map(fn (array $item): int => (int) $item['product_id'], $data['items']));
         foreach (array_values($data['items']) as $index => $item) {
-            if (! isset($known[(int) $item['style_id']])) {
-                throw ValidationException::withMessages(["items.{$index}.style_id" => __('vani-bundles::texts.unknown_product')]);
+            if (! isset($known[(int) $item['product_id']])) {
+                throw ValidationException::withMessages(["items.{$index}.product_id" => __('vani-bundles::texts.unknown_product')]);
             }
         }
 
@@ -201,7 +201,7 @@ final class BundleController
             'starts_at' => empty($data['starts_at']) ? null : StoreClock::fromInput((string) $data['starts_at']),
             'ends_at' => empty($data['ends_at']) ? null : StoreClock::fromInput((string) $data['ends_at']),
             'position' => (int) ($data['position'] ?? 0),
-            'items' => array_map(fn (array $item): array => ['style_id' => (int) $item['style_id'], 'quantity' => (int) $item['quantity']], array_values($data['items'])),
+            'items' => array_map(fn (array $item): array => ['product_id' => (int) $item['product_id'], 'quantity' => (int) $item['quantity']], array_values($data['items'])),
         ];
     }
 }

@@ -20,25 +20,25 @@ use Modules\Catalog\Application\Products\ProductBulkEditor;
 use Modules\Catalog\Application\Products\ProductDuplicator;
 use Modules\Catalog\Application\Products\ProductFile;
 use Modules\Catalog\Application\Products\ProductIdentifiers;
+use Modules\Catalog\Application\Products\ProductLinkService;
 use Modules\Catalog\Application\Products\ProductService;
-use Modules\Catalog\Application\Products\StyleLinkService;
 use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Application\Products\VariantMatrix;
 use Modules\Catalog\Application\Products\VariantOptions;
 use Modules\Catalog\Application\Products\VideoDrivers;
 use Modules\Catalog\Contracts\Data\DefaultWeight;
 use Modules\Catalog\Contracts\ProductViewStatistics;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Http\Requests\Admin\ProductRequest;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\LinkType;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
-use Modules\Catalog\Persistence\Models\StyleOption;
-use Modules\Catalog\Persistence\Models\StyleOptionValue;
+use Modules\Catalog\Persistence\Models\ProductOption;
+use Modules\Catalog\Persistence\Models\ProductOptionValue;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Contracts\AdminScreen;
@@ -67,9 +67,9 @@ final class ProductController
 
         $perPage = (int) ($request->validate(['per_page' => ['sometimes', 'integer', Rule::in([30, 50, 100])]])['per_page'] ?? 30);
         ['search' => $search, 'status' => $status, 'taxonomy' => $taxonomy, 'plugin_ids' => $pluginIds] = $this->listFilters($request, $screen);
-        $sort = ListSort::fromRequest($request, ['style_code' => 'style_code', 'status' => 'status']);
+        $sort = ListSort::fromRequest($request, ['product_code' => 'product_code', 'status' => 'status']);
 
-        $styles = $this->queries->products($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $taxonomy, $pluginIds, $sort, $perPage);
+        $products = $this->queries->products($search, is_string($status) ? ProductStatus::tryFrom($status) : null, $taxonomy, $pluginIds, $sort, $perPage);
         $options = [
             'categories' => $this->categoryOptions($tree->tree()),
             'brands' => $this->queries->brands()->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
@@ -77,8 +77,8 @@ final class ProductController
         ];
 
         // Lượt xem 30 ngày (§3.5-2), một truy vấn cho cả trang; dữ liệu còn thiếu (A4) vài truy vấn cho cả trang.
-        $viewCounts = $views->counts($styles->getCollection()->pluck('id')->all());
-        $missing = $this->queries->missingData($styles->getCollection()->pluck('id')->map(fn ($id): int => (int) $id)->all());
+        $viewCounts = $views->counts($products->getCollection()->pluck('id')->all());
+        $missing = $this->queries->missingData($products->getCollection()->pluck('id')->map(fn ($id): int => (int) $id)->all());
 
         return Inertia::render('Catalog::Products/Index', [
             'nav' => CatalogNavigation::all(),
@@ -90,29 +90,29 @@ final class ProductController
             'importRunUrl' => is_string($request->query('import_run')) && preg_match('/^[0-9a-z-]{36}$/', (string) $request->query('import_run')) === 1 && Gate::allows('catalog.manage')
                 ? route('admin.catalog.products.import.runs.show', (string) $request->query('import_run')) : null,
             'products' => [
-                'data' => $styles->getCollection()->map(fn (Style $style): array => [
-                    'views' => $viewCounts[$style->id] ?? 0,
-                    'missing' => array_map(fn (string $key): string => __(AdminQueries::MISSING[$key]), $missing[$style->id] ?? []),
-                    'id' => $style->id,
-                    'style_code' => $style->style_code,
-                    'name' => $style->translate('name'),
-                    'status' => $style->status->value,
-                    'brand' => $style->brand?->name,
-                    'skus' => $style->variants->count(),
-                    'image_url' => $style->variants->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(160),
+                'data' => $products->getCollection()->map(fn (Product $product): array => [
+                    'views' => $viewCounts[$product->id] ?? 0,
+                    'missing' => array_map(fn (string $key): string => __(AdminQueries::MISSING[$key]), $missing[$product->id] ?? []),
+                    'id' => $product->id,
+                    'product_code' => $product->product_code,
+                    'name' => $product->translate('name'),
+                    'status' => $product->status->value,
+                    'brand' => $product->brand?->name,
+                    'skus' => $product->variants->count(),
+                    'image_url' => $product->variants->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(160),
                 ])->all(),
-                'current' => $styles->currentPage(),
-                'last' => $styles->lastPage(),
-                'from' => $styles->firstItem(),
-                'to' => $styles->lastItem(),
-                'total' => $styles->total(),
-                'per_page' => $styles->perPage(),
+                'current' => $products->currentPage(),
+                'last' => $products->lastPage(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem(),
+                'total' => $products->total(),
+                'per_page' => $products->perPage(),
             ],
             'canManage' => Gate::allows('catalog.manage'),
             'canManagePrices' => Gate::allows('pricing.manage'),
             'fileUrls' => ['export' => route('admin.catalog.products.export'), 'import' => route('admin.catalog.products.import')],
             'extensions' => [
-                ...$this->columns($screen, $styles->getCollection()->pluck('id')->all()),
+                ...$this->columns($screen, $products->getCollection()->pluck('id')->all()),
                 'filters' => $screen->filters('product'),
                 'filterValues' => (array) $request->query('ext', []),
                 'actions' => $this->bulkActions($screen, $options),
@@ -128,7 +128,7 @@ final class ProductController
     {
         Gate::authorize('catalog.view');
         ['search' => $search, 'status' => $status, 'taxonomy' => $taxonomy, 'plugin_ids' => $pluginIds] = $this->listFilters($request, $screen);
-        $result = $this->queries->productIds($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $taxonomy, $pluginIds, self::BULK_MAX);
+        $result = $this->queries->productIds($search, is_string($status) ? ProductStatus::tryFrom($status) : null, $taxonomy, $pluginIds, self::BULK_MAX);
 
         return response()->json(['ids' => $result['ids'], 'total' => $result['total'], 'capped' => $result['total'] > self::BULK_MAX]);
     }
@@ -179,14 +179,14 @@ final class ProductController
         $urls = [];
         foreach (array_filter(Hook::slot('vani.admin.product.list_columns', $ids)) as $column) {
             $result['columns'][] = ['key' => $column['key'], 'label' => $column['label']];
-            foreach ($column['values'] as $styleId => $text) {
-                $result['values'][$styleId][$column['key']] = $text;
+            foreach ($column['values'] as $productId => $text) {
+                $result['values'][$productId][$column['key']] = $text;
             }
-            foreach ($column['edit_values'] ?? [] as $styleId => $value) {
-                $editValues[$styleId][$column['key']] = $value;
+            foreach ($column['edit_values'] ?? [] as $productId => $value) {
+                $editValues[$productId][$column['key']] = $value;
             }
-            foreach ($column['urls'] ?? [] as $styleId => $url) {
-                $urls[$styleId][$column['key']] = $url;
+            foreach ($column['urls'] ?? [] as $productId => $url) {
+                $urls[$productId][$column['key']] = $url;
             }
         }
 
@@ -273,9 +273,9 @@ final class ProductController
         Gate::authorize('catalog.manage');
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:'.self::BULK_MAX], 'ids.*' => ['integer', 'min:1'],
-            'status' => ['required', Rule::enum(StyleStatus::class)],
+            'status' => ['required', Rule::enum(ProductStatus::class)],
         ]);
-        $status = StyleStatus::from($data['status']);
+        $status = ProductStatus::from($data['status']);
         $changed = 0;
         foreach (array_unique(array_map('intval', $data['ids'])) as $id) {
             $changed += $this->queries->productExists($id) && $products->changeStatus($id, $status) ? 1 : 0;
@@ -287,16 +287,16 @@ final class ProductController
     /**
      * Nhân bản thành bản nháp (stabilization A4) rồi mở trang sửa bản mới.
      */
-    public function duplicate(Request $request, Style $product, ProductDuplicator $duplicator): RedirectResponse
+    public function duplicate(Request $request, Product $product, ProductDuplicator $duplicator): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         $data = $request->validate([
-            'style_code' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/', Rule::unique('styles', 'style_code')],
+            'product_code' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/', Rule::unique('products', 'product_code')],
             'name' => ['required', 'string', 'max:255'],
         ]);
-        $copy = $duplicator->duplicate($product, $data['style_code'], trim($data['name']));
+        $copy = $duplicator->duplicate($product, $data['product_code'], trim($data['name']));
 
-        return redirect()->route('admin.catalog.products.edit', $copy)->with('success', __('catalog::messages.duplicated', ['code' => $copy->style_code]));
+        return redirect()->route('admin.catalog.products.edit', $copy)->with('success', __('catalog::messages.duplicated', ['code' => $copy->product_code]));
     }
 
     /**
@@ -396,43 +396,43 @@ final class ProductController
         $request->validate($screen->validationRules('product'));
         $fieldErrors = [];
         // `function … use (&…)` cả hai tầng: arrow fn chụp biến theo giá trị nên lỗi cột không ra được ngoài.
-        $style = $this->orFormError(function () use ($screen, $products, $request, $matrix, $images, &$fieldErrors): Style {
-            return $screen->saving('product', (array) $request->input('extensions', []), function () use ($products, $request, $matrix, $images, &$fieldErrors): Style {
-                $style = $products->create($request->toInput());
-                $fieldErrors = $this->saveVariants($style, $request, $matrix);
-                $this->attachInitialImages($style, $request, $images);
+        $product = $this->orFormError(function () use ($screen, $products, $request, $matrix, $images, &$fieldErrors): Product {
+            return $screen->saving('product', (array) $request->input('extensions', []), function () use ($products, $request, $matrix, $images, &$fieldErrors): Product {
+                $product = $products->create($request->toInput());
+                $fieldErrors = $this->saveVariants($product, $request, $matrix);
+                $this->attachInitialImages($product, $request, $images);
 
-                return $style;
-            }, fn ($style): int => $style->id);
+                return $product;
+            }, fn ($product): int => $product->id);
         });
 
-        return $this->withFieldErrors(redirect()->route('admin.catalog.products.edit', ['product' => $style->id])->with('success', __('catalog::messages.saved')), $fieldErrors);
+        return $this->withFieldErrors(redirect()->route('admin.catalog.products.edit', ['product' => $product->id])->with('success', __('catalog::messages.saved')), $fieldErrors);
     }
 
-    public function edit(Style $product, CategoryTreeQuery $tree): Response
+    public function edit(Product $product, CategoryTreeQuery $tree): Response
     {
         Gate::authorize('catalog.manage');
 
         return $this->form($product->load(['translations', 'categories:id', 'attributeValues', 'options.type', 'optionValues', 'variants.gallery.media', ...VariantOptions::relations('variants.'), 'videos']), $tree);
     }
 
-    public function update(Style $product, ProductRequest $request, ProductService $products, AdminScreen $screen, VariantMatrix $matrix): RedirectResponse
+    public function update(Product $product, ProductRequest $request, ProductService $products, AdminScreen $screen, VariantMatrix $matrix): RedirectResponse
     {
         $request->validate($screen->validationRules('product'));
         $fieldErrors = [];
         $this->orFormError(function () use ($screen, $product, $products, $request, $matrix, &$fieldErrors): void {
-            $screen->saving('product', (array) $request->input('extensions', []), function () use ($product, $products, $request, $matrix, &$fieldErrors): Style {
-                $style = $products->update($product, $request->toInput(), (int) $request->validated('lock_version'));
+            $screen->saving('product', (array) $request->input('extensions', []), function () use ($product, $products, $request, $matrix, &$fieldErrors): Product {
+                $product = $products->update($product, $request->toInput(), (int) $request->validated('lock_version'));
                 $fieldErrors = $this->saveVariants($product, $request, $matrix);
 
-                return $style;
+                return $product;
             }, fn (): int => $product->id);
         });
 
         return $this->withFieldErrors(back()->with('success', __('catalog::messages.saved')), $fieldErrors);
     }
 
-    public function destroy(Style $product, ProductService $products): RedirectResponse
+    public function destroy(Product $product, ProductService $products): RedirectResponse
     {
         Gate::authorize('catalog.manage');
 
@@ -447,7 +447,7 @@ final class ProductController
      * - ảnh chung (`media_ids`) → SKU còn lại (màu chưa có ảnh riêng).
      * Có ảnh mà không có SKU nhận → báo lỗi thay vì bỏ ảnh im lặng.
      */
-    private function attachInitialImages(Style $style, ProductRequest $request, VariantImages $images): void
+    private function attachInitialImages(Product $product, ProductRequest $request, VariantImages $images): void
     {
         /** @var list<array{value_id: int|string, media_ids: list<int|string>}> $groups */
         $groups = (array) $request->validated('variants.images', []);
@@ -456,14 +456,14 @@ final class ProductController
             return;
         }
 
-        $variants = $style->variants()->with('optionValues:id')->get();
+        $variants = $product->variants()->with('optionValues:id')->get();
         $covered = [];
         foreach ($groups as $index => $group) {
             $variantIds = $variants->filter(fn (Variant $variant): bool => $variant->optionValues->contains('id', (int) $group['value_id']))->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
             if ($variantIds === []) {
                 throw ValidationException::withMessages(["variants.images.{$index}" => __('catalog::messages.images_need_variant')]);
             }
-            $images->attachToVariants($style, $variantIds, array_map('intval', $group['media_ids']));
+            $images->attachToVariants($product, $variantIds, array_map('intval', $group['media_ids']));
             array_push($covered, ...$variantIds);
         }
 
@@ -475,7 +475,7 @@ final class ProductController
         }
         $rest = $variants->pluck('id')->map(fn (mixed $id): int => (int) $id)->reject(fn (int $id): bool => in_array($id, $covered, true))->values()->all();
         if ($rest !== []) {
-            $images->attachToVariants($style, $rest, $general);
+            $images->attachToVariants($product, $rest, $general);
         }
     }
 
@@ -485,14 +485,14 @@ final class ProductController
      *
      * @return array<int, string> lỗi của cột góp vào theo SKU (phần Catalog vẫn lưu)
      */
-    private function saveVariants(Style $style, Request $request, VariantMatrix $matrix): array
+    private function saveVariants(Product $product, Request $request, VariantMatrix $matrix): array
     {
         $input = $request->input('variants');
         if (! is_array($input)) {
             return [];
         }
 
-        return $matrix->save($style, $input, fn (string $permission): bool => Gate::allows($permission))['field_errors'];
+        return $matrix->save($product, $input, fn (string $permission): bool => Gate::allows($permission))['field_errors'];
     }
 
     /**
@@ -506,7 +506,7 @@ final class ProductController
         ));
     }
 
-    private function form(?Style $style, CategoryTreeQuery $tree): Response
+    private function form(?Product $product, CategoryTreeQuery $tree): Response
     {
         $attributes = $this->queries->attributes();
         $linkTypes = $this->queries->linkTypes();
@@ -522,16 +522,16 @@ final class ProductController
             // Ma trận biến thể (variant-matrix §3, ADR-045): trục của sản phẩm (1–3 loại tuỳ chọn + giá trị theo thứ tự), danh mục
             // loại tuỳ chọn để chọn trục, cột do module/plugin góp + giá trị theo SKU.
             'variantMatrix' => [
-                ...app(VariantMatrix::class)->columns($style, fn (string $permission): bool => Gate::allows($permission)),
+                ...app(VariantMatrix::class)->columns($product, fn (string $permission): bool => Gate::allows($permission)),
                 // SKU đã phát sinh (đơn, giỏ, giữ hàng, tồn, bảng giá, đổi trả): quyết định chuyển về sản phẩm đơn được hay không.
-                'used' => $style === null ? [] : app(VariantMatrix::class)->usedVariantIds($style->variants->pluck('id')->map(fn (mixed $id): int => (int) $id)->all()),
+                'used' => $product === null ? [] : app(VariantMatrix::class)->usedVariantIds($product->variants->pluck('id')->map(fn (mixed $id): int => (int) $id)->all()),
                 // Sản phẩm mới: sẵn trục Màu + Size (chỉ cần chọn giá trị; bỏ trục nếu không cần).
-                'axes' => $style === null
+                'axes' => $product === null
                     ? $optionTypes->whereIn('code', [OptionType::COLOR, OptionType::SIZE])->sortBy(fn (OptionType $type): int => $type->code === OptionType::COLOR ? 0 : 1)
                         ->map(fn (OptionType $type): array => ['option_type_id' => $type->id, 'value_ids' => []])->values()->all()
-                    : $style->options->map(fn (StyleOption $axis): array => [
+                    : $product->options->map(fn (ProductOption $axis): array => [
                         'option_type_id' => $axis->option_type_id,
-                        'value_ids' => $style->optionValues->filter(fn (StyleOptionValue $row): bool => $optionValueTypes[$row->option_value_id] === $axis->option_type_id)->pluck('option_value_id')->values()->all(),
+                        'value_ids' => $product->optionValues->filter(fn (ProductOptionValue $row): bool => $optionValueTypes[$row->option_value_id] === $axis->option_type_id)->pluck('option_value_id')->values()->all(),
                     ])->values()->all(),
                 'optionTypes' => $optionTypes->map(fn (OptionType $type): array => [
                     'id' => $type->id, 'code' => $type->code, 'name' => $type->translate('name') ?? $type->code, 'display_type' => $type->display_type->value,
@@ -546,24 +546,24 @@ final class ProductController
             ],
             // Dữ liệu còn thiếu (A4) — danh sách chỉ hiện icon, chi tiết ở đây.
             // Thêm mới: mã gợi ý (ô để trống thì server dùng mã này lúc lưu).
-            'suggestedStyleCode' => $style === null ? ProductIdentifiers::suggestStyleCode(app(Settings::class)) : null,
-            'missing' => $style === null ? [] : array_map(fn (string $key): string => __(AdminQueries::MISSING[$key]), $this->queries->missingData([$style->id])[$style->id] ?? []),
-            'product' => $style === null ? null : [
-                'id' => $style->id,
-                'style_code' => $style->style_code,
-                'slug' => $style->slug,
-                'status' => $style->status->value,
-                'published_from' => $style->published_from?->format('Y-m-d\TH:i'),
-                'published_to' => $style->published_to?->format('Y-m-d\TH:i'),
-                'track_inventory' => $style->track_inventory,
-                'lock_version' => $style->lock_version,
-                'category_ids' => $style->categories->pluck('id')->all(),
-                'primary_category_id' => $style->primary_category_id,
-                'brand_id' => $style->brand_id,
-                'translations' => $style->translationsByLocale(),
-                'attributes' => $this->attributeFormValues($style, $attributes),
+            'suggestedProductCode' => $product === null ? ProductIdentifiers::suggestProductCode(app(Settings::class)) : null,
+            'missing' => $product === null ? [] : array_map(fn (string $key): string => __(AdminQueries::MISSING[$key]), $this->queries->missingData([$product->id])[$product->id] ?? []),
+            'product' => $product === null ? null : [
+                'id' => $product->id,
+                'product_code' => $product->product_code,
+                'slug' => $product->slug,
+                'status' => $product->status->value,
+                'published_from' => $product->published_from?->format('Y-m-d\TH:i'),
+                'published_to' => $product->published_to?->format('Y-m-d\TH:i'),
+                'track_inventory' => $product->track_inventory,
+                'lock_version' => $product->lock_version,
+                'category_ids' => $product->categories->pluck('id')->all(),
+                'primary_category_id' => $product->primary_category_id,
+                'brand_id' => $product->brand_id,
+                'translations' => $product->translationsByLocale(),
+                'attributes' => $this->attributeFormValues($product, $attributes),
                 // SKU: giá trị theo thứ tự trục (id), ảnh của chính SKU (ADR-045).
-                'variants' => $style->variants
+                'variants' => $product->variants
                     ->sortBy(fn (Variant $variant): string => VariantOptions::sortKey($variant))
                     ->map(fn (Variant $variant): array => [
                         'id' => $variant->id,
@@ -575,9 +575,9 @@ final class ProductController
                         'label' => implode(' / ', array_map(fn (OptionValue $value): string => $value->label(), VariantOptions::ordered($variant))),
                         'images' => $variant->gallery->map(fn ($image): array => ['id' => $image->id, 'url' => $image->media->url(400)])->all(),
                     ])->values()->all(),
-                'links' => $this->linkFormValues($style, $linkTypes),
+                'links' => $this->linkFormValues($product, $linkTypes),
                 // Driver đã tắt/gỡ: vẫn liệt kê để gỡ được, storefront không hiện.
-                'videos' => $style->videos->map(fn (Video $video): array => [
+                'videos' => $product->videos->map(fn (Video $video): array => [
                     'id' => $video->id,
                     'driver' => $video->driver,
                     'reference' => $video->reference,
@@ -589,9 +589,9 @@ final class ProductController
             ],
             'linkTypes' => $linkTypes->map(fn (LinkType $type): array => ['id' => $type->id, 'label' => $type->translate('name') ?? $type->code, 'is_active' => $type->is_active])->all(),
             'videoDrivers' => array_values(array_map(fn ($driver): array => ['code' => $driver->code(), 'label' => $driver->label(), 'hint' => $driver->inputHint()], $videoDrivers->all())),
-            'extensionSections' => app(AdminScreen::class)->formSections('product', $style?->id),
+            'extensionSections' => app(AdminScreen::class)->formSections('product', $product?->id),
             // Lưới tồn kho lọc theo sản phẩm (module Inventory — link theo tên route, Catalog không phụ thuộc Inventory).
-            'stockUrl' => $style !== null && Route::has('admin.inventory.stock.index') && Gate::allows('inventory.view') ? route('admin.inventory.stock.index', ['style' => $style->style_code]) : null,
+            'stockUrl' => $product !== null && Route::has('admin.inventory.stock.index') && Gate::allows('inventory.view') ? route('admin.inventory.stock.index', ['product' => $product->product_code]) : null,
             'categories' => $this->categoryOptions($tree->tree()),
             'brands' => $this->queries->brands()->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
             // Khối Thuộc tính luôn hiện (kể cả khi chưa có thuộc tính): tạo nhanh tại form, link tới trang quản lý.
@@ -604,7 +604,7 @@ final class ProductController
                 'input_type' => $attribute->input_type->value,
                 'values' => $attribute->values->map(fn ($value): array => ['id' => $value->id, 'label' => $value->translate('label')])->all(),
             ])->all(),
-            'statuses' => array_column(StyleStatus::cases(), 'value'),
+            'statuses' => array_column(ProductStatus::cases(), 'value'),
         ]);
     }
 
@@ -612,9 +612,9 @@ final class ProductController
      * @param  Collection<int, Attribute>  $attributes
      * @return array<int, mixed>
      */
-    private function attributeFormValues(Style $style, $attributes): array
+    private function attributeFormValues(Product $product, $attributes): array
     {
-        $rows = $style->attributeValues->groupBy('attribute_id');
+        $rows = $product->attributeValues->groupBy('attribute_id');
         $values = [];
         foreach ($attributes as $attribute) {
             $group = $rows->get($attribute->id);
@@ -633,19 +633,19 @@ final class ProductController
      * Sản phẩm liên kết mà sản phẩm này nhìn thấy, theo loại.
      *
      * @param  Collection<int, LinkType>  $linkTypes
-     * @return list<array{type_id: int, name: string, products: list<array{id: int, style_code: string, name: string|null}>}>
+     * @return list<array{type_id: int, name: string, products: list<array{id: int, product_code: string, name: string|null}>}>
      */
-    private function linkFormValues(Style $style, Collection $linkTypes): array
+    private function linkFormValues(Product $product, Collection $linkTypes): array
     {
-        $linked = app(StyleLinkService::class)->linkedStyleIds($style->id);
-        $styles = $this->queries->productsByIds(array_merge([], ...array_values($linked)));
+        $linked = app(ProductLinkService::class)->linkedProductIds($product->id);
+        $products = $this->queries->productsByIds(array_merge([], ...array_values($linked)));
 
         return $linkTypes->filter(fn (LinkType $type): bool => isset($linked[$type->id]))
             ->map(fn (LinkType $type): array => [
                 'type_id' => $type->id,
                 'name' => $type->translate('name') ?? $type->code,
-                'products' => array_values(array_filter(array_map(fn (int $id): ?array => $styles->has($id)
-                    ? ['id' => $id, 'style_code' => $styles[$id]->style_code, 'name' => $styles[$id]->translate('name')] : null, $linked[$type->id]))),
+                'products' => array_values(array_filter(array_map(fn (int $id): ?array => $products->has($id)
+                    ? ['id' => $id, 'product_code' => $products[$id]->product_code, 'name' => $products[$id]->translate('name')] : null, $linked[$type->id]))),
             ])->values()->all();
     }
 

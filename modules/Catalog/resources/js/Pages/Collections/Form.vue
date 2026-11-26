@@ -32,8 +32,8 @@ const props = defineProps<{
         image_media_id: number | null;
         lock_version: number;
         translations: Translations<Fields>;
-        style_codes: string;
-        styles_count: number;
+        product_codes: string;
+        products_count: number;
     };
     extensionSections: ExtensionSection[];
     extensionLinks: ExtensionLink[];
@@ -52,7 +52,7 @@ const { form, save } = useAdminForm({
     image_media_id: props.collection?.image_media_id ?? null,
     lock_version: props.collection?.lock_version ?? null,
     translations: translationsFor(locales, emptyTranslation, props.collection?.translations),
-    style_codes: props.collection?.style_codes ?? '',
+    product_codes: props.collection?.product_codes ?? '',
     extensions: initialExtensionValues(props.extensionSections),
 }, { lockVersion: () => props.collection?.lock_version });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
@@ -92,10 +92,10 @@ async function destroy(): Promise<void> {
             </FormField>
         </div>
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
-            <FormField :label="t('catalog::admin.collections.product_codes')" :hint="t('catalog::admin.collections.product_codes_hint')" :error="errors.style_codes">
-                <textarea v-model="form.style_codes" :class="inputClass" class="font-mono" rows="8" />
+            <FormField :label="t('catalog::admin.collections.product_codes')" :hint="t('catalog::admin.collections.product_codes_hint')" :error="errors.product_codes">
+                <textarea v-model="form.product_codes" :class="inputClass" class="font-mono" rows="8" />
             </FormField>
-            <p v-if="collection" class="text-xs text-slate-500">{{ t('catalog::admin.taxonomy.products_count', { count: collection.styles_count }) }}</p>
+            <p v-if="collection" class="text-xs text-slate-500">{{ t('catalog::admin.taxonomy.products_count', { count: collection.products_count }) }}</p>
         </div>
         <SeoFields v-model:title="form.translations[locale].meta_title" v-model:description="form.translations[locale].meta_description" :title-error="errors[`translations.${locale}.meta_title`]" :description-error="errors[`translations.${locale}.meta_description`]" />
         <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />

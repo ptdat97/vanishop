@@ -11,8 +11,8 @@ use Illuminate\Validation\Rule;
 use Modules\Catalog\Application\Products\ProductIdentifiers;
 use Modules\Catalog\Application\Products\ProductInput;
 use Modules\Catalog\Application\Products\VariantImages;
-use Modules\Catalog\Domain\StyleStatus;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Domain\ProductStatus;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -27,18 +27,18 @@ final class ProductRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $style = $this->route('product');
-        $styleId = $style instanceof Style ? $style->id : null;
-        $code = strtoupper(trim((string) $this->input('style_code')));
-        if ($code === '' && $styleId === null) {
-            $code = ProductIdentifiers::suggestStyleCode($this->container->make(Settings::class));
+        $product = $this->route('product');
+        $productId = $product instanceof Product ? $product->id : null;
+        $code = strtoupper(trim((string) $this->input('product_code')));
+        if ($code === '' && $productId === null) {
+            $code = ProductIdentifiers::suggestProductCode($this->container->make(Settings::class));
         }
         $slug = Str::slug((string) $this->input('slug'));
         $categoryIds = array_values(array_filter((array) $this->input('category_ids', []), 'is_numeric'));
 
         $this->merge([
-            'style_code' => $code,
-            'slug' => $slug !== '' ? $slug : ProductIdentifiers::uniqueSlug((string) $this->input('translations.'.StoreLocale::default().'.name'), $code, $styleId),
+            'product_code' => $code,
+            'slug' => $slug !== '' ? $slug : ProductIdentifiers::uniqueSlug((string) $this->input('translations.'.StoreLocale::default().'.name'), $code, $productId),
             'primary_category_id' => $this->input('primary_category_id') ?? (count($categoryIds) === 1 ? (int) $categoryIds[0] : null),
         ]);
     }
@@ -48,17 +48,17 @@ final class ProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        $style = $this->route('product');
-        $ignore = $style instanceof Style ? $style->id : null;
+        $product = $this->route('product');
+        $ignore = $product instanceof Product ? $product->id : null;
 
         return [
-            'style_code' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/', Rule::unique('styles', 'style_code')->ignore($ignore)],
-            'slug' => ['required', 'string', 'max:160', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('styles', 'slug')->ignore($ignore)],
-            'status' => ['required', Rule::enum(StyleStatus::class)],
+            'product_code' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/', Rule::unique('products', 'product_code')->ignore($ignore)],
+            'slug' => ['required', 'string', 'max:160', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('products', 'slug')->ignore($ignore)],
+            'status' => ['required', Rule::enum(ProductStatus::class)],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'published_from' => ['nullable', 'date'],
             'published_to' => ['nullable', 'date'],
-            'lock_version' => [$style instanceof Style ? 'required' : 'nullable', 'integer', 'min:0'],
+            'lock_version' => [$product instanceof Product ? 'required' : 'nullable', 'integer', 'min:0'],
             'category_ids' => ['array', 'max:20'],
             'category_ids.*' => ['integer', 'distinct'],
             'primary_category_id' => ['nullable', 'integer'],
@@ -78,7 +78,7 @@ final class ProductRequest extends FormRequest
             'variants.images.*.value_id' => ['required', 'integer', 'distinct'],
             'variants.images.*.media_ids' => ['required', 'array', 'min:1', 'max:'.VariantImages::MAX_IMAGES],
             'variants.images.*.media_ids.*' => ['integer', 'distinct'],
-            ...$this->localizedSlugRules('styles', 'style_translations', 'style_id', $ignore),
+            ...$this->localizedSlugRules('products', 'product_translations', 'product_id', $ignore),
         ];
     }
 
@@ -90,9 +90,9 @@ final class ProductRequest extends FormRequest
         );
 
         return new ProductInput(
-            styleCode: (string) $this->validated('style_code'),
+            productCode: (string) $this->validated('product_code'),
             slug: (string) $this->validated('slug'),
-            status: StyleStatus::from((string) $this->validated('status')),
+            status: ProductStatus::from((string) $this->validated('status')),
             translations: $this->normalizeLocalizedSlugs($translations),
             publishedFrom: $this->dateTimeInput('published_from'),
             publishedTo: $this->dateTimeInput('published_to'),

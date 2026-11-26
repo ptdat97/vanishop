@@ -20,11 +20,11 @@ import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import type { InventoryLabels } from '../../labels';
 
 type Level = { on_hand: number; reserved: number; safety_stock: number; available: number };
-type Variant = { id: number; sku: string; style_code: string; style_name: string; options_label: string; status: string; sellable: number; tracked: boolean; levels: Level[] };
-type Product = { style_code: string; style_name: string; tracked: boolean; sellable: number; variants: Variant[] };
+type Variant = { id: number; sku: string; product_code: string; product_name: string; options_label: string; status: string; sellable: number; tracked: boolean; levels: Level[] };
+type Product = { product_code: string; product_name: string; tracked: boolean; sellable: number; variants: Variant[] };
 type Row = Variant & { first: boolean; product: Product; index: number };
 type StockLocation = { id: number; code: string; name: string; external: boolean; online: boolean };
-type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; options: Record<string, string>; ext?: Record<string, string> };
+type Criteria = { q: string; product: string; filter: 'all' | 'out' | 'low'; options: Record<string, string>; ext?: Record<string, string> };
 type OptionFilter = { code: string; name: string; values: string[] };
 
 /**
@@ -127,7 +127,7 @@ const list = useListQuery(() => props.urls.base);
 function params(overrides: Partial<Criteria> & { page?: number; per_page?: number } = {}): Record<string, string | number | Record<string, string> | undefined> {
     const merged = { ...criteria, ...overrides };
     return {
-        q: merged.q.trim() || undefined, style: merged.style || undefined, filter: merged.filter === 'all' ? undefined : merged.filter,
+        q: merged.q.trim() || undefined, product: merged.product || undefined, filter: merged.filter === 'all' ? undefined : merged.filter,
         opt: Object.fromEntries(Object.entries(merged.options).filter(([, code]) => code !== '')),
         ext: Object.fromEntries(Object.entries(ext).filter(([, value]) => value !== '')), page: overrides.page && overrides.page > 1 ? overrides.page : undefined,
         per_page: overrides.per_page ?? props.pagination.per_page,
@@ -142,7 +142,7 @@ async function visit(query: Record<string, string | number | Record<string, stri
 }
 
 function find(): void {
-    void visit(params({ style: '' }));
+    void visit(params({ product: '' }));
 }
 
 function changePageSize(perPage: number): void {
@@ -150,7 +150,7 @@ function changePageSize(perPage: number): void {
 }
 
 function clearFilters(): void {
-    Object.assign(criteria, { q: '', style: '', filter: 'all', options: {} });
+    Object.assign(criteria, { q: '', product: '', filter: 'all', options: {} });
     Object.keys(ext).forEach((key) => (ext[key] = ''));
     void visit({});
 }
@@ -363,8 +363,8 @@ onBeforeUnmount(() => runTimer && clearTimeout(runTimer));
         />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="primaryButton">{{ t('inventory::admin.stock_index.filter') }}</button>
-        <button v-if="query.q || query.style || query.filter !== 'all' || hasOptionFilter" type="button" :class="secondaryButton" @click="clearFilters">{{ t('inventory::admin.stock_index.clear_filter') }}</button>
-        <span v-if="query.style" class="text-sm text-slate-600">{{ t('inventory::admin.stock_index.viewing_code_style', { style: query.style }) }}</span>
+        <button v-if="query.q || query.product || query.filter !== 'all' || hasOptionFilter" type="button" :class="secondaryButton" @click="clearFilters">{{ t('inventory::admin.stock_index.clear_filter') }}</button>
+        <span v-if="query.product" class="text-sm text-slate-600">{{ t('inventory::admin.stock_index.viewing_code_product', { product: query.product }) }}</span>
     </form>
 
     <div v-if="canAdjust && (selected.length || allMatching)" class="sticky top-0 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm shadow" data-stock-bulkbar>
@@ -400,11 +400,11 @@ onBeforeUnmount(() => runTimer && clearTimeout(runTimer));
             <template #cell-product="{ row }">
                 <div v-if="row.first" class="mb-1 flex items-center gap-2">
                     <input
-                        v-if="canAdjust" type="checkbox" :checked="productSelected(row.product)" :aria-label="t('inventory::admin.stock_index.select_all_style_name', { style_name: row.product.style_name })"
+                        v-if="canAdjust" type="checkbox" :checked="productSelected(row.product)" :aria-label="t('inventory::admin.stock_index.select_all_product_name', { product_name: row.product.product_name })"
                         @change="toggle(productIds(row.product), ($event.target as HTMLInputElement).checked)"
                     />
-                    <span class="font-medium">{{ row.product.style_name }}</span>
-                    <span class="text-xs text-slate-500">{{ row.product.style_code }} · {{ row.product.variants.length }} SKU<template v-if="row.product.tracked"> {{ t('inventory::admin.stock_index.sellable_sellable', { sellable: row.product.sellable }) }}</template></span>
+                    <span class="font-medium">{{ row.product.product_name }}</span>
+                    <span class="text-xs text-slate-500">{{ row.product.product_code }} · {{ row.product.variants.length }} SKU<template v-if="row.product.tracked"> {{ t('inventory::admin.stock_index.sellable_sellable', { sellable: row.product.sellable }) }}</template></span>
                     <span v-if="!row.product.tracked" class="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700" :title="t('inventory::admin.stock_index.product_always_sellable_stock_backfills')" data-untracked>{{ t('inventory::admin.stock_index.stock_not_tracked') }}</span>
                 </div>
                 <div class="font-mono text-xs text-slate-600">{{ row.sku }}<template v-if="row.options_label"> · {{ row.options_label }}</template><span v-if="row.status !== 'active'"> {{ t('inventory::admin.stock_index.discontinued') }}</span></div>

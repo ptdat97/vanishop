@@ -14,7 +14,7 @@ require_once __DIR__.'/PricingTestHelpers.php';
 
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'pricing.view']), 'staff');
-    [$this->s, $this->m] = P::variants(T::product(null, ['style_code' => 'DAM01']));
+    [$this->s, $this->m] = P::variants(T::product(null, ['product_code' => 'DAM01']));
     P::priceList(['code' => 'base'], [$this->s->id => [300_000]]);
     $this->overview = fn (): array => $this->get('/admin/pricing/price-lists')->assertOk()->viewData('page')['props']['overview'];
 });
@@ -35,7 +35,7 @@ it('SKU đang bán chưa có giá niêm yết: số lượng + mẫu có link s�
     $this->get('/admin/pricing/price-lists')->assertInertia(fn (Assert $page) => $page
         ->where('overview.missing_base.count', 1)
         ->where('overview.missing_base.samples.0.sku', $this->m->sku)
-        ->where('overview.missing_base.samples.0.url', url("/admin/catalog/products/{$this->m->style_id}/edit")));
+        ->where('overview.missing_base.samples.0.url', url("/admin/catalog/products/{$this->m->product_id}/edit")));
 });
 
 it('cảnh báo của plugin trên giá đang chạy (vd. dưới giá vốn) được đếm theo nhãn', function () {

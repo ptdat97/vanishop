@@ -45,7 +45,7 @@ final class StockController
 
     /**
      * Lưới tồn: sản phẩm × kho (tìm theo tên/mã/SKU, lọc theo giá trị tuỳ chọn `opt[<loại>]`, hết hàng / sắp hết), sửa số trong ô, chọn nhiều để sửa
-     * hàng loạt. `?style=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
+     * hàng loạt. `?product=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
      */
     public function index(Request $request, StockGrid $grid, Extensions $extensions, LowStockThreshold $lowStock, AdminScreen $screen): Response
     {
@@ -146,14 +146,14 @@ final class StockController
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array{q: string, style: string, filter: string, options: array<string, string>, ext: array<array-key, string>}
+     * @return array{q: string, product: string, filter: string, options: array<string, string>, ext: array<array-key, string>}
      */
     private function criteria(array $input): array
     {
         $filter = (string) ($input['filter'] ?? 'all');
 
         return [
-            'q' => trim((string) ($input['q'] ?? '')), 'style' => trim((string) ($input['style'] ?? '')),
+            'q' => trim((string) ($input['q'] ?? '')), 'product' => trim((string) ($input['product'] ?? '')),
             'filter' => in_array($filter, StockGrid::FILTERS, true) ? $filter : 'all',
             'options' => array_filter(array_map(fn ($code): string => trim(is_scalar($code) ? (string) $code : ''), array_slice((array) ($input['opt'] ?? $input['options'] ?? []), 0, 3, true)), fn (string $code): bool => $code !== '' && mb_strlen($code) <= 32),
             // Bộ lọc của plugin (EP v3 X1): `plugin:key` => giá trị.
@@ -311,8 +311,8 @@ final class StockController
         abort_if($variant === null, 404);
 
         return Inertia::render('Inventory::Stock/Movements', [
-            'backUrl' => route('admin.inventory.stock.index', ['style' => $variant->styleCode]),
-            'variant' => ['sku' => $variant->sku, 'style_code' => $variant->styleCode],
+            'backUrl' => route('admin.inventory.stock.index', ['product' => $variant->productCode]),
+            'variant' => ['sku' => $variant->sku, 'product_code' => $variant->productCode],
             'movements' => $queries->movements($variantId),
         ]);
     }

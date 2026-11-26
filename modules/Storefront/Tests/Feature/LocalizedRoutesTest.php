@@ -1,6 +1,6 @@
 <?php
 
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Shared\Support\LocalizedUrls;
@@ -9,12 +9,12 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
     ['brand' => $this->brand] = C::store();
-    $this->style = Style::query()->sole();
+    $this->product = Product::query()->sole();
 });
 
 it('URL tiếng Việt giữ nguyên; tiếng Anh dưới /en với đường dẫn tiếng Anh', function () {
-    expect(LocalizedUrls::route('storefront.product', $this->style->slug, 'vi'))->toBe(url("/san-pham/{$this->style->slug}"))
-        ->and(LocalizedUrls::route('storefront.product', $this->style->slug, 'en'))->toBe(url("/en/products/{$this->style->slug}"))
+    expect(LocalizedUrls::route('storefront.product', $this->product->slug, 'vi'))->toBe(url("/san-pham/{$this->product->slug}"))
+        ->and(LocalizedUrls::route('storefront.product', $this->product->slug, 'en'))->toBe(url("/en/products/{$this->product->slug}"))
         ->and(LocalizedUrls::route('storefront.account.addresses.edit', 5, 'en'))->toBe(url('/en/account/addresses/5/edit'))
         ->and(LocalizedUrls::route('storefront.home', [], 'en'))->toBe(url('/en'))
         // Route chỉ có ở ngôn ngữ mặc định → URL mặc định.
@@ -26,13 +26,13 @@ it('ngôn ngữ lấy từ URL, không theo header; link trong trang theo ngôn 
     $html = $this->get('/en', ['X-Vani-Locale' => 'vi'])->assertOk()->getContent();
     expect($html)->toContain('<html lang="en"')
         ->toContain(url('/en/brands'))
-        ->toContain(url("/en/products/{$this->style->slug}"))
-        ->not->toContain(url("/san-pham/{$this->style->slug}"));
+        ->toContain(url("/en/products/{$this->product->slug}"))
+        ->not->toContain(url("/san-pham/{$this->product->slug}"));
 
     $vi = $this->get('/', ['X-Vani-Locale' => 'en'])->assertOk()->getContent();
-    expect($vi)->toContain('<html lang="vi"')->toContain(url("/san-pham/{$this->style->slug}"));
+    expect($vi)->toContain('<html lang="vi"')->toContain(url("/san-pham/{$this->product->slug}"));
 
-    $this->get("/en/products/{$this->style->slug}")->assertOk()->assertSee('<html lang="en"', false);
+    $this->get("/en/products/{$this->product->slug}")->assertOk()->assertSee('<html lang="en"', false);
     $this->get("/en/brands/{$this->brand->slug}")->assertOk();
     $this->get('/en/search?q=lua')->assertOk();
     $this->get('/en/cart')->assertOk()->assertSee('<html lang="en"', false);
@@ -55,5 +55,5 @@ it('giao diện theme theo ngôn ngữ trang: /en tiếng Anh, / tiếng Việt'
         ->toContain('Loading');
 
     $this->get('/gio-hang')->assertOk()->assertSee('Giỏ hàng trống.')->assertDontSee('Your cart is empty.');
-    $this->get("/en/products/{$this->style->slug}")->assertSee('Add to cart');
+    $this->get("/en/products/{$this->product->slug}")->assertSee('Add to cart');
 });

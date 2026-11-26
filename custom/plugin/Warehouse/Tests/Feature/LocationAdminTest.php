@@ -22,8 +22,8 @@ beforeEach(function () {
     });
     app()->register(WarehouseServiceProvider::class);
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
-    $this->style = T::product($this->brand->id, ['style_code' => 'LM-DR01']);
-    [$this->s, $this->m] = P::variants($this->style);
+    $this->product = T::product($this->brand->id, ['product_code' => 'LM-DR01']);
+    [$this->s, $this->m] = P::variants($this->product);
     $this->hn = I::location(['code' => 'WH-HN', 'priority' => 10]);
     $this->erp = I::location(['code' => 'ST-ERP', 'stock_authority' => 'erp']);
     $this->stockUrl = '/admin/inventory/stock';

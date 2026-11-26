@@ -172,7 +172,7 @@ return [
         'title' => 'tiêu đề',
         'slug' => 'đường dẫn (slug)',
         'code' => 'mã',
-        'style_code' => 'mã sản phẩm',
+        'product_code' => 'mã sản phẩm',
         'sku' => 'SKU',
         'barcode' => 'mã vạch',
         'description' => 'mô tả',

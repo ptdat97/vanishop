@@ -32,7 +32,7 @@ beforeEach(function () {
     });
     app()->register(PreorderServiceProvider::class);
     ['s' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store(stock: 0);
-    $this->style = $this->s->style;
+    $this->product = $this->s->product;
     $this->place = function (): Order {
         $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();
         $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
@@ -66,9 +66,9 @@ it('SKU hết hàng có hàng đang về: bán được tới % đang về; tran
     T::seed(fn () => app(Settings::class)->set(PreorderServiceProvider::ID, 'share_percent', 50));
     expect(($this->ats)())->toBe(5);
 
-    $extension = $this->getJson('/api/storefront/v1/products/'.$this->style->slug)->assertOk()->json('data.extensions')[PreorderServiceProvider::ID] ?? null;
+    $extension = $this->getJson('/api/storefront/v1/products/'.$this->product->slug)->assertOk()->json('data.extensions')[PreorderServiceProvider::ID] ?? null;
     expect($extension)->toBe(['variants' => [(string) $this->s->id => '2026-11-30']])
-        ->and($this->get('/san-pham/'.$this->style->slug)->assertOk()->getContent())->toContain('data-preorder')->toContain('Đặt trước — dự kiến có hàng __D__');
+        ->and($this->get('/san-pham/'.$this->product->slug)->assertOk()->getContent())->toContain('data-preorder')->toContain('Đặt trước — dự kiến có hàng __D__');
 
     T::seed(fn () => app(Settings::class)->set(PreorderServiceProvider::ID, 'share_percent', 0));
     expect(($this->ats)())->toBe(0);

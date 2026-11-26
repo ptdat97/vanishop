@@ -63,18 +63,18 @@ it('bộ ảnh đi kèm: 56 ảnh đã thu về ≤ 1600px → 25 sản phẩm',
 it('DemoSeeder dựng cả cửa hàng (catalog có ảnh, kho, nội dung, trang chủ, menu, đơn nhiều trạng thái); chạy lại không trùng', function () {
     $this->seed(DemoSeeder::class);
 
-    $style = DB::table('styles')->where('style_code', 'VS-VNQ6582')->first();
+    $product = DB::table('products')->where('product_code', 'VS-VNQ6582')->first();
     $counts = fn (): array => [
-        'styles' => DB::table('styles')->count(), 'media' => DB::table('mediables')->where('role', 'gallery')->count(),
+        'products' => DB::table('products')->count(), 'media' => DB::table('mediables')->where('role', 'gallery')->count(),
         'locations' => DB::table('locations')->count(), 'orders' => DB::table('orders')->count(), 'posts' => DB::table('plg_cms_posts')->count(),
         'lookbooks' => DB::table('plg_lookbooks')->count(), 'collections' => DB::table('collections')->count(), 'promotions' => DB::table('promotions')->count(),
     ];
 
     // Catalog: danh mục con của "Nữ" theo tên + "Hàng mới về", ảnh, giá, sale, bộ sưu tập, tồn ở kho online + cửa hàng.
-    expect($style)->not->toBeNull()
-        ->and(DB::table('categories')->where('id', $style->primary_category_id)->value('slug'))->toBe('ao') // nhóm ảnh thứ hai → "Áo sơ mi lụa cổ đức"
-        ->and(DB::table('category_style')->where('style_id', $style->id)->count())->toBe(2)
-        ->and(DB::table('variants')->where('style_id', $style->id)->count())->toBe(3)
+    expect($product)->not->toBeNull()
+        ->and(DB::table('categories')->where('id', $product->primary_category_id)->value('slug'))->toBe('ao') // nhóm ảnh thứ hai → "Áo sơ mi lụa cổ đức"
+        ->and(DB::table('category_product')->where('product_id', $product->id)->count())->toBe(2)
+        ->and(DB::table('variants')->where('product_id', $product->id)->count())->toBe(3)
         ->and(DB::table('media')->max('width'))->toBeLessThanOrEqual(1600)
         ->and(DB::table('prices')->join('price_lists', 'price_lists.id', '=', 'prices.price_list_id')->where('price_lists.type', 'base')->count())->toBe(6)
         ->and(DB::table('locations')->pluck('code')->sort()->values()->all())->toBe(['CH-Q1', 'KHO-CHINH'])
@@ -104,7 +104,7 @@ it('DemoSeeder dựng cả cửa hàng (catalog có ảnh, kho, nội dung, tran
     // Storefront hiển thị được.
     $this->get('/')->assertOk()->assertSee('Hàng mới về');
     $this->get('/danh-muc/dam')->assertOk()->assertSee('data-vani-cms-category-banner', false);
-    $this->get('/san-pham/'.$style->slug)->assertOk();
+    $this->get('/san-pham/'.$product->slug)->assertOk();
     $this->get('/bo-suu-tap/thu-dong-2026')->assertOk()
         ->assertSeeInOrder(['data-collection-banner', 'Thu Đông 2026', 'Len, dạ và lụa cho mùa se lạnh.', 'data-vani-listing'], false);
     $this->get(route('storefront.brands'))->assertOk();

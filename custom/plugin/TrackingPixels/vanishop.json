@@ -4,11 +4,11 @@
         "vi": "Theo dõi quảng cáo (Meta, GA4, GTM)",
         "en": "Ad tracking (Meta, GA4, GTM)"
     },
-    "version": "1.0.4",
+    "version": "1.1.0",
     "kind": "feature",
     "provider": "Plugin\\TrackingPixels\\TrackingPixelsServiceProvider",
     "requires": {
-        "extension_api": "^1.0",
+        "extension_api": "^1.37",
         "plugins": {}
     },
     "conflicts": [],

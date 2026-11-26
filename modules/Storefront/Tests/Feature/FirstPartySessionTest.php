@@ -66,8 +66,8 @@ it('ghi bằng phiên cùng nguồn: Sec-Fetch-Site same-origin là bằng chứ
     $this->postJson('/api/storefront/v1/me/addresses', $address('Cty'), [...$oldBrowser, 'X-CSRF-TOKEN' => 'sai'])->assertStatus(419);
     $this->postJson('/api/storefront/v1/me/addresses', $address('Cty'), [...$oldBrowser, 'X-CSRF-TOKEN' => app('session.store')->token()])->assertCreated();
 
-    $styleId = (int) DB::table('styles')->value('id');
-    $this->postJson('/api/storefront/v1/products/views', ['style_id' => $styleId], $oldBrowser)->assertNoContent();
+    $productId = (int) DB::table('products')->value('id');
+    $this->postJson('/api/storefront/v1/products/views', ['product_id' => $productId], $oldBrowser)->assertNoContent();
 });
 
 it('có Authorization thì không dùng phiên web: token sai → 401 dù trình duyệt đang đăng nhập', function () {

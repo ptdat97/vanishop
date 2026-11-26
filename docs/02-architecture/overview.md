@@ -147,10 +147,10 @@ sequenceDiagram
 
 ### Đo NFR lần 1 (2026-10-09)
 
-Đo trên máy dev (`php artisan serve`, PHP 8.4, MySQL local, dữ liệu `DemoSeeder`: 4 style / 18 variant / 30 giá), ApacheBench, header `X-Vani-Channel: web-lumiere` (lần đo trước slice 12; từ slice 12 không cần header kênh). Chạy lại bằng:
+Đo trên máy dev (`php artisan serve`, PHP 8.4, MySQL local, dữ liệu `DemoSeeder`: 4 sản phẩm / 18 variant / 30 giá), ApacheBench, header `X-Vani-Channel: web-lumiere` (lần đo trước slice 12; từ slice 12 không cần header kênh). Chạy lại bằng:
 
 ```bash
-php artisan migrate:fresh --force && php artisan vani:install --no-migrate && php artisan db:seed --class=DemoSeeder   # DemoSeeder từ 2026-11-05: 25 style có ảnh
+php artisan migrate:fresh --force && php artisan vani:install --no-migrate && php artisan db:seed --class=DemoSeeder   # DemoSeeder từ 2026-11-05: 25 sản phẩm có ảnh
 php artisan serve --port=8899 &
 ./scripts/bench/storefront-nfr.sh          # exit 0 = đạt, exit 1 = không đạt
 ```
@@ -172,7 +172,7 @@ Cách đọc số liệu:
 
 ### Đo NFR lần 2 (2026-10-08) và kịch bản load test
 
-Đo latency trên dev qua Herd (nginx + PHP-FPM, `APP_DEBUG=true`, MySQL local, 29 style / 94 variant), **không có CDN** — mỗi request đều render ở origin, nên đây là trường hợp xấu hơn "cache nóng". `./scripts/load/smoke-pages.sh` (ab, c=10; trang 200 request, API 60 request):
+Đo latency trên dev qua Herd (nginx + PHP-FPM, `APP_DEBUG=true`, MySQL local, 29 sản phẩm / 94 variant), **không có CDN** — mỗi request đều render ở origin, nên đây là trường hợp xấu hơn "cache nóng". `./scripts/load/smoke-pages.sh` (ab, c=10; trang 200 request, API 60 request):
 
 | Endpoint | P50 | **P95** | Throughput | Kết quả |
 |---|---|---|---|---|

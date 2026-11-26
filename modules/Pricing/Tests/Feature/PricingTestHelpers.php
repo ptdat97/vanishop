@@ -6,7 +6,7 @@ namespace Modules\Pricing\Tests\Feature;
 
 use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Pricing\Persistence\Models\PriceList;
@@ -16,23 +16,23 @@ require_once __DIR__.'/../../../Catalog/Tests/Feature/CatalogTestHelpers.php';
 final class PricingTestHelpers
 {
     /**
-     * Style có n variant (1 màu × n size).
+     * Product có n variant (1 màu × n size).
      *
      * @param  list<string>  $sizes
      * @return list<Variant>
      */
-    public static function variants(Style $style, array $sizes = ['S', 'M']): array
+    public static function variants(Product $product, array $sizes = ['S', 'M']): array
     {
-        return T::seed(function () use ($style, $sizes) {
+        return T::seed(function () use ($product, $sizes) {
             // ADR-045: trục Màu × Size; mỗi lần gọi thêm một màu mới cho sản phẩm và các size (mã duy nhất).
             $color = OptionValue::factory()->color()->create();
             $sizeValues = [];
             foreach ($sizes as $index => $code) {
                 $sizeValues[] = OptionValue::factory()->size()->create(['code' => $code.fake()->unique()->numberBetween(1, 99999), 'position' => $index]);
             }
-            T::optionValues($style, $color, ...$sizeValues);
+            T::optionValues($product, $color, ...$sizeValues);
 
-            return array_map(fn (OptionValue $size): Variant => app(ProductOptions::class)->createVariant($style, [$color->id, $size->id], ['sku' => $style->style_code.'-'.$size->code]), $sizeValues);
+            return array_map(fn (OptionValue $size): Variant => app(ProductOptions::class)->createVariant($product, [$color->id, $size->id], ['sku' => $product->product_code.'-'.$size->code]), $sizeValues);
         });
     }
 

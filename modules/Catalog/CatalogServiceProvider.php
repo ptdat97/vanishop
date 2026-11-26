@@ -21,8 +21,8 @@ use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
 use Modules\Catalog\Application\Products\ProductIdentifiers;
 use Modules\Catalog\Application\Products\ProductImporter;
+use Modules\Catalog\Application\Products\ProductListPrices;
 use Modules\Catalog\Application\Products\ProductViewCounter;
-use Modules\Catalog\Application\Products\StyleListPrices;
 use Modules\Catalog\Application\StorefrontCatalog;
 use Modules\Catalog\Console\MediaCacheCommand;
 use Modules\Catalog\Contracts\CatalogImporter;
@@ -83,7 +83,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(ProductViewStatistics::class, ProductViewCounter::class);
         $this->app->bind(CatalogImporter::class, ProductImporter::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
-        $this->app->bind(ListPrices::class, StyleListPrices::class);
+        $this->app->bind(ListPrices::class, ProductListPrices::class);
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
         $this->app->bind(CollectionPages::class, EloquentCollectionPages::class);
         $this->app->bind(CatalogLookup::class, EloquentCatalogLookup::class);
@@ -126,12 +126,12 @@ final class CatalogServiceProvider extends ModuleServiceProvider
             help: 'catalog::texts.catalog_service_provider.default_weight_gram_help', rules: ['min:1', 'max:50000'], group: SettingGroup::Inventory,
         ));
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', ProductIdentifiers::PREFIX_SETTING, 'catalog::texts.catalog_service_provider.style_code_prefix', 'string',
-            help: 'catalog::texts.catalog_service_provider.style_code_prefix_help', rules: ['max:20', 'regex:/^[A-Za-z0-9._-]*$/'], group: SettingGroup::Store,
+            'core', ProductIdentifiers::PREFIX_SETTING, 'catalog::texts.catalog_service_provider.product_code_prefix', 'string',
+            help: 'catalog::texts.catalog_service_provider.product_code_prefix_help', rules: ['max:20', 'regex:/^[A-Za-z0-9._-]*$/'], group: SettingGroup::Store,
         ));
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', ProductIdentifiers::DIGITS_SETTING, 'catalog::texts.catalog_service_provider.style_code_digits', 'int', 4,
-            help: 'catalog::texts.catalog_service_provider.style_code_digits_help', rules: ['min:1', 'max:10'], group: SettingGroup::Store,
+            'core', ProductIdentifiers::DIGITS_SETTING, 'catalog::texts.catalog_service_provider.product_code_digits', 'int', 4,
+            help: 'catalog::texts.catalog_service_provider.product_code_digits_help', rules: ['min:1', 'max:10'], group: SettingGroup::Store,
         ));
 
         if (! $this->app->routesAreCached()) {

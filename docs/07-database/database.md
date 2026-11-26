@@ -2,7 +2,7 @@
 
 > Cột, kiểu, index, khoá ngoại thực tế của từng bảng: [schema.generated.md](schema.generated.md) (sinh bởi `php artisan vani:docs:schema`). Lệnh `php artisan vani:docs:schema --check` hiện báo lệch trong môi trường đang mở; chỉ cập nhật snapshot từ một MySQL tạm đã migrate theo migrations hiện tại, không dùng DB có dữ liệu cần giữ.
 
-> Trạng thái: **Partially Implemented**. Migrations nằm trong 18 module Core và trong plugin sở hữu dữ liệu; không còn module/bảng tenant Brand hay Channel. Brand là thuộc tính Catalog (`styles.brand_id`) và snapshot trên dòng đơn (`order_lines.brand_id`), không phải phạm vi dữ liệu ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Quyết định DB: [ADR-016](../19-adr/ADR-016-mysql.md); tình trạng capability: [status](../00-overview/status.md).
+> Trạng thái: **Partially Implemented**. Migrations nằm trong 18 module Core và trong plugin sở hữu dữ liệu; không còn module/bảng tenant Brand hay Channel. Brand là thuộc tính Catalog (`products.brand_id`) và snapshot trên dòng đơn (`order_lines.brand_id`), không phải phạm vi dữ liệu ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Quyết định DB: [ADR-016](../19-adr/ADR-016-mysql.md); tình trạng capability: [status](../00-overview/status.md).
 
 ## 1. Quy ước
 
@@ -17,10 +17,10 @@
 | Thời gian | `DATETIME(6)` lưu **UTC** cho bảng sự kiện/ledger; `DATETIME` cho còn lại; không dùng `TIMESTAMP` |
 | Enum | `VARCHAR` + PHP backed enum (không dùng ENUM của MySQL) |
 | JSON | Cột `json` cho snapshot, payload, cấu hình, `meta`; cần lọc thì tạo generated column + index |
-| Soft delete | Core dùng cho Catalog (`styles`); plugin tự quy định cho dữ liệu mình sở hữu. **Không** cho order, payment, ledger. Customer dùng **ẩn danh hoá** thay cho xoá |
-| Optimistic lock | Cột `lock_version INT` trên aggregate được sửa qua Admin: `styles`, `price_lists`, `promotions`, `orders`, `shipments`, `payments`, `locations` |
+| Soft delete | Core dùng cho Catalog (`products`); plugin tự quy định cho dữ liệu mình sở hữu. **Không** cho order, payment, ledger. Customer dùng **ẩn danh hoá** thay cho xoá |
+| Optimistic lock | Cột `lock_version INT` trên aggregate được sửa qua Admin: `products`, `price_lists`, `promotions`, `orders`, `shipments`, `payments`, `locations` |
 | Pessimistic lock | `SELECT … FOR UPDATE` cho `stock_levels`, `vouchers`, `number_sequences`, `carts` (khi checkout), `payments` (khi IPN/refund) |
-| Phạm vi | Không có cột phạm vi brand/kênh: mọi dữ liệu thuộc một cửa hàng. `brand_id` chỉ xuất hiện như **thuộc tính catalog** (`styles.brand_id`) và snapshot (`order_lines.brand_id`) |
+| Phạm vi | Không có cột phạm vi brand/kênh: mọi dữ liệu thuộc một cửa hàng. `brand_id` chỉ xuất hiện như **thuộc tính catalog** (`products.brand_id`) và snapshot (`order_lines.brand_id`) |
 | Append-only | `stock_movements`, `order_events`, `payment_transactions`, `audit_logs`, `price_history`, `customer_consent_events`, `shipment_events`, `integration_logs`, `integration_events` |
 
 ## 2. Invariant: DB enforce hay App enforce
@@ -51,9 +51,10 @@ Nguyên tắc: invariant **đơn bản ghi** (unique, not null, check) do DB enf
 
 ```mermaid
 erDiagram
-    BRANDS |o--o{ STYLES : brand_of
-    STYLES ||--o{ STYLE_COLORS : has
-    STYLE_COLORS ||--o{ VARIANTS : has
+    BRANDS |o--o{ PRODUCTS : brand_of
+    PRODUCTS ||--o{ PRODUCT_OPTIONS : axes
+    PRODUCTS ||--o{ VARIANTS : has
+    VARIANTS ||--o{ VARIANT_OPTION_VALUES : combines
     PRICE_LISTS ||--o{ PRICES : contains
     VARIANTS ||--o{ PRICES : priced
     LOCATIONS ||--o{ STOCK_LEVELS : holds
@@ -83,7 +84,7 @@ erDiagram
 | Tenancy (cửa hàng) | `legal_entities` (một bản ghi: pháp nhân vận hành), `settings(key, value json, is_encrypted)` (một cấp; theme tokens là một setting) |
 | Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id)`, `audit_logs` |
 | Extension | `plugins(id VARCHAR PK = plugin id, version, status, installed_at, last_error)` (bật/tắt toàn cửa hàng) |
-| Catalog | `brands`, `styles(brand_id NULL, meta json)`, `style_translations`, `option_types`, `option_values` (+ bản dịch), `style_options`, `style_option_values`, `variants(option_key, meta json)`, `variant_option_values` (ADR-045 — biến thể theo loại tuỳ chọn dùng chung, 1–3 trục), `attributes`, `attribute_values`, `style_attribute_values`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
+| Catalog | `brands`, `products(brand_id NULL, meta json)`, `product_translations`, `option_types`, `option_values` (+ bản dịch), `product_options`, `product_option_values`, `variants(option_key, meta json)`, `variant_option_values` (ADR-045 — biến thể theo loại tuỳ chọn dùng chung, 1–3 trục), `attributes`, `attribute_values`, `product_attribute_values`, `size_charts`, `categories`, `category_translations`, `category_product`, `collections`, `collection_rules`, `collection_product`, `media` |
 | Pricing | `price_lists`, `prices`, `price_history` |
 | Inventory | `locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `inventory_reconciliations`, `inventory_reconciliation_lines`; chuyển kho thuộc plugin `vani.warehouse` (`plg_warehouse_*`) |
 | Customer | `customers(customer_group_id, meta json)`, `customer_consents`, `customer_consent_events`, `customer_addresses`, `customer_otps`, `customer_tokens`, `customer_groups`, `customer_tags` |

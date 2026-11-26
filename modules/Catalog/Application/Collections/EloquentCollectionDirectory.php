@@ -9,22 +9,22 @@ use Modules\Catalog\Persistence\Models\ProductCollection;
 
 final class EloquentCollectionDirectory implements CollectionDirectory
 {
-    public function slugsForStyles(array $styleIds): array
+    public function slugsForProducts(array $productIds): array
     {
-        $styleIds = array_values(array_unique(array_map('intval', $styleIds)));
-        if ($styleIds === []) {
+        $productIds = array_values(array_unique(array_map('intval', $productIds)));
+        if ($productIds === []) {
             return [];
         }
 
         $rows = ProductCollection::query()
-            ->join('collection_style', 'collection_style.collection_id', '=', 'collections.id')
+            ->join('collection_product', 'collection_product.collection_id', '=', 'collections.id')
             ->where('collections.status', 'active')
-            ->whereIn('collection_style.style_id', $styleIds)
-            ->get(['collection_style.style_id', 'collections.slug']);
+            ->whereIn('collection_product.product_id', $productIds)
+            ->get(['collection_product.product_id', 'collections.slug']);
 
         $collections = [];
         foreach ($rows as $row) {
-            $collections[(int) $row->getAttribute('style_id')][] = (string) $row->slug;
+            $collections[(int) $row->getAttribute('product_id')][] = (string) $row->slug;
         }
 
         ksort($collections);

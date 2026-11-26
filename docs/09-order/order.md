@@ -63,7 +63,7 @@ Nhân viên huỷ bớt số lượng một số dòng (vd. hết hàng một si
   - **Trần**: tổng thu hồi ≤ tiền phần vừa huỷ → tổng đơn sau huỷ không bao giờ vượt tổng trước đó (khách không trả nhiều hơn số đã đồng ý). Tiền hoàn/giảm thu hộ COD = phần chênh **ròng** (`OrderLinesCancelled::$amount`).
   - Không bao giờ tăng giảm giá; khuyến mãi không kiểm tra lại được (đã xoá, plugin rule tắt) giữ nguyên.
   - Mọi lần huỷ một phần: `promotion_usages.discount_amount` và ngân sách đã dùng giảm về đúng giảm giá còn trên đơn (`PromotionEngine::adjustUsage`).
-  - Cần chi tiết giảm giá theo khuyến mãi trên dòng (`order_lines.meta.promotions`, `style_id`) — ghi từ 0.3.31; đơn đặt trước đó không thu hồi được (giữ ưu đãi).
+  - Cần chi tiết giảm giá theo khuyến mãi trên dòng (`order_lines.meta.promotions`, `product_id`) — ghi từ 0.3.31; đơn đặt trước đó không thu hồi được (giữ ưu đãi).
   - Phí giao giữ nguyên trong mọi trường hợp (kể cả miễn phí giao theo ngưỡng).
 
 ### 2.2 Tầng giá trên đơn (Implemented, 0.3.37)

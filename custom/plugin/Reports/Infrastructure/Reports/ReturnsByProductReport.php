@@ -58,7 +58,7 @@ final class ReturnsByProductReport implements ReportProvider
         }
         $unknown = array_values(array_diff(array_column($returned, 'variant_id'), array_keys($names)));
         foreach ($this->variants->find($unknown) as $id => $variant) {
-            $names[$id] = [$variant->sku, $variant->styleName];
+            $names[$id] = [$variant->sku, $variant->productName];
         }
         $soldTotal = array_sum($sold);
         $returnedTotal = array_sum(array_column($returned, 'quantity'));

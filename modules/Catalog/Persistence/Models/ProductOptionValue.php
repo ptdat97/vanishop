@@ -11,18 +11,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Giá trị tuỳ chọn mà sản phẩm dùng, theo thứ tự riêng của sản phẩm (vd. màu nào hiện trước).
  *
  * @property int $id
- * @property int $style_id
+ * @property int $product_id
  * @property int $option_value_id
  * @property int $position
  * @property OptionValue $value
  */
-final class StyleOptionValue extends Model
+final class ProductOptionValue extends Model
 {
-    protected $fillable = ['style_id', 'option_value_id', 'position'];
+    protected $fillable = ['product_id', 'option_value_id', 'position'];
 
     protected function casts(): array
     {
-        return ['style_id' => 'integer', 'option_value_id' => 'integer', 'position' => 'integer'];
+        return ['product_id' => 'integer', 'option_value_id' => 'integer', 'position' => 'integer'];
     }
 
     /**

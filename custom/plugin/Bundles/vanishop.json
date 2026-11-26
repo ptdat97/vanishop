@@ -8,11 +8,11 @@
         "vi": "Bán theo bộ: chọn các sản phẩm và số lượng, giảm theo % khi khách mua đủ bộ. Khung \"Mua trọn bộ\" ở trang sản phẩm, block Combo cho Builder.",
         "en": "Sell products as a set: pick products and quantities, discount by percent when the full set is bought. \"Buy the set\" box on product pages, Bundle block for the Builder."
     },
-    "version": "1.2.0",
+    "version": "1.3.0",
     "kind": "promotion",
     "provider": "Plugin\\Bundles\\BundlesServiceProvider",
     "requires": {
-        "extension_api": "^1.36",
+        "extension_api": "^1.37",
         "plugins": {}
     },
     "conflicts": [],
@@ -21,6 +21,6 @@
     "assets": "public",
     "data": {
         "owned": ["plg_bundles", "plg_bundle_items"],
-        "references": { "plg_bundles.image_media_id": "media.id", "plg_bundle_items.style_id": "styles.id" }
+        "references": { "plg_bundles.image_media_id": "media.id", "plg_bundle_items.product_id": "products.id" }
     }
 }

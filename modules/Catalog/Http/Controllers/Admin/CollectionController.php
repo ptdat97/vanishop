@@ -38,7 +38,7 @@ final class CollectionController
                 'name' => $collection->translate('name'),
                 'status' => $collection->status,
                 'image_url' => $collection->image_media_id === null ? null : $images->get($collection->image_media_id)?->url(200),
-                'styles_count' => (int) $collection->getAttribute('styles_count'),
+                'products_count' => (int) $collection->getAttribute('products_count'),
             ])->all(),
             'canManage' => Gate::allows('catalog.manage'),
         ]);
@@ -55,7 +55,7 @@ final class CollectionController
     {
         $request->validate($screen->validationRules('collection'));
         $collection = $this->orFormError(fn () => $screen->saving('collection', (array) $request->input('extensions', []),
-            fn () => $collections->save($request->toData(), $request->styleCodes()), fn (ProductCollection $collection): int => $collection->id));
+            fn () => $collections->save($request->toData(), $request->productCodes()), fn (ProductCollection $collection): int => $collection->id));
 
         return redirect()->route('admin.catalog.collections.edit', ['collection' => $collection->id])->with('success', __('catalog::messages.saved'));
     }
@@ -64,14 +64,14 @@ final class CollectionController
     {
         Gate::authorize('catalog.manage');
 
-        return $this->form($collection->load(['translations', 'styles']), $screen);
+        return $this->form($collection->load(['translations', 'products']), $screen);
     }
 
     public function update(ProductCollection $collection, CollectionRequest $request, CollectionService $collections, AdminScreen $screen): RedirectResponse
     {
         $request->validate($screen->validationRules('collection'));
         $this->orFormError(fn () => $screen->saving('collection', (array) $request->input('extensions', []),
-            fn () => $collections->save($request->toData(), $request->styleCodes(), $collection, (int) $request->validated('lock_version')), fn (): int => $collection->id));
+            fn () => $collections->save($request->toData(), $request->productCodes(), $collection, (int) $request->validated('lock_version')), fn (): int => $collection->id));
 
         return back()->with('success', __('catalog::messages.saved'));
     }
@@ -97,8 +97,8 @@ final class CollectionController
                 'image_media_id' => $collection->image_media_id,
                 'lock_version' => $collection->lock_version,
                 'translations' => $collection->translationsByLocale(),
-                'style_codes' => $collection->styles->pluck('style_code')->implode("\n"),
-                'styles_count' => $collection->styles->count(),
+                'product_codes' => $collection->products->pluck('product_code')->implode("\n"),
+                'products_count' => $collection->products->count(),
             ],
             'extensionSections' => $screen->formSections('collection', $collection?->id),
             'extensionLinks' => $collection === null ? [] : $screen->links('collection', $collection->id),

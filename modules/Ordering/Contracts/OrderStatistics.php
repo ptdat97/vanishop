@@ -52,23 +52,23 @@ interface OrderStatistics
     public function cancellations(DateTimeImmutable $from, DateTimeImmutable $to): array;
 
     /**
-     * Sản phẩm (style) bán chạy theo **số lượng** trong khoảng (0.3.43): đơn không huỷ, số lượng dòng sau huỷ một phần (`quantity` đã trừ phần huỷ), không tính
-     * đơn thay thế khi đổi hàng; hàng trả lại không trừ; dòng không có id style (đơn cũ) bị bỏ. Số lượng giảm dần, cùng số lượng thì id nhỏ trước. Tối đa 100.
+     * Sản phẩm bán chạy theo **số lượng** trong khoảng (0.3.43): đơn không huỷ, số lượng dòng sau huỷ một phần (`quantity` đã trừ phần huỷ), không tính
+     * đơn thay thế khi đổi hàng; hàng trả lại không trừ; dòng không có id product (đơn cũ) bị bỏ. Số lượng giảm dần, cùng số lượng thì id nhỏ trước. Tối đa 100.
      *
-     * @return list<array{style_id: int, quantity: int}>
+     * @return list<array{product_id: int, quantity: int}>
      */
-    public function topStyles(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array;
+    public function topProducts(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array;
 
     /**
-     * Số lượng đã bán **chắc chắn** theo style trong khoảng (0.3.85 — "đã bán N" công khai trên storefront): như
-     * `topStyles` (không huỷ, sau huỷ một phần, không tính đơn thay thế) nhưng chỉ đơn đã thu tiền (`authorized`, `paid`,
+     * Số lượng đã bán **chắc chắn** theo product trong khoảng (0.3.85 — "đã bán N" công khai trên storefront): như
+     * `topProducts` (không huỷ, sau huỷ một phần, không tính đơn thay thế) nhưng chỉ đơn đã thu tiền (`authorized`, `paid`,
      * `partially_refunded`, `cod_collected`) hoặc đã rời kho (`partially_shipped`, `shipped`, `delivered`). Đơn COD vừa đặt,
      * đơn online chưa trả, đơn hoàn tiền toàn bộ không tính — để con số không bơm được bằng đơn đặt rồi bỏ.
      *
-     * @param  list<int>|null  $styleIds  null = mọi style
-     * @return array<int, int> style id => số lượng (> 0)
+     * @param  list<int>|null  $productIds  null = mọi product
+     * @return array<int, int> product id => số lượng (> 0)
      */
-    public function confirmedQuantitiesByStyle(DateTimeImmutable $from, DateTimeImmutable $to, ?array $styleIds = null): array;
+    public function confirmedQuantitiesByProduct(DateTimeImmutable $from, DateTimeImmutable $to, ?array $productIds = null): array;
 
     /**
      * Số đơn hiện tại theo trạng thái đơn (`order_status`) — dùng cho "đơn cần xử lý".

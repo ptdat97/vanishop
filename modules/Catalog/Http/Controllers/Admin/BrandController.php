@@ -39,7 +39,7 @@ final class BrandController
                 'name' => $brand->name,
                 'status' => $brand->status,
                 'image_url' => $brand->logo_media_id === null ? null : $logos->get($brand->logo_media_id)?->url(200),
-                'styles_count' => (int) $brand->getAttribute('styles_count'),
+                'products_count' => (int) $brand->getAttribute('products_count'),
             ])->all(),
             'canManage' => Gate::allows('catalog.manage'),
         ]);
@@ -100,7 +100,7 @@ final class BrandController
                 'status' => $brand->status,
                 'position' => $brand->position,
                 'lock_version' => $brand->lock_version,
-                'styles_count' => $brand->styles()->count(),
+                'products_count' => $brand->products()->count(),
             ],
             'extensionSections' => $screen->formSections('brand', $brand?->id),
             'extensionLinks' => $brand === null ? [] : $screen->links('brand', $brand->id),

@@ -4,11 +4,11 @@
         "vi": "Bảng size và gợi ý size",
         "en": "Size chart and size advisor"
     },
-    "version": "1.0.7",
+    "version": "1.1.0",
     "kind": "feature",
     "provider": "Plugin\\SizeChart\\SizeChartServiceProvider",
     "requires": {
-        "extension_api": "^1.0",
+        "extension_api": "^1.37",
         "plugins": {}
     },
     "conflicts": [],

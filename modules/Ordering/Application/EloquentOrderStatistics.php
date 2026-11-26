@@ -182,43 +182,43 @@ final class EloquentOrderStatistics implements OrderStatistics
         return $counts;
     }
 
-    public function topStyles(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
+    public function topProducts(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
     {
         $this->guardRange($from, $to);
 
-        // Id style nằm trong `order_lines.meta` (chụp lúc đặt); dòng cũ không có thì không tính.
+        // Id product nằm trong `order_lines.meta` (chụp lúc đặt); dòng cũ không có thì không tính.
         return $this->lines($from, $to)
-            ->whereNotNull('order_lines.meta->style_id')
+            ->whereNotNull('order_lines.meta->product_id')
             ->where('orders.source', '!=', 'exchange')
-            ->select(['order_lines.meta->style_id as style_id', DB::raw('sum(order_lines.quantity) as sold')])
-            ->groupBy('order_lines.meta->style_id')
+            ->select(['order_lines.meta->product_id as product_id', DB::raw('sum(order_lines.quantity) as sold')])
+            ->groupBy('order_lines.meta->product_id')
             ->havingRaw('sum(order_lines.quantity) > 0')
-            ->orderByDesc('sold')->orderByRaw('cast(style_id as signed)')
+            ->orderByDesc('sold')->orderByRaw('cast(product_id as signed)')
             ->limit(max(1, min($limit, 100)))
             ->get()
-            ->map(fn (object $row): array => ['style_id' => (int) $row->style_id, 'quantity' => (int) $row->sold])
+            ->map(fn (object $row): array => ['product_id' => (int) $row->product_id, 'quantity' => (int) $row->sold])
             ->all();
     }
 
-    public function confirmedQuantitiesByStyle(DateTimeImmutable $from, DateTimeImmutable $to, ?array $styleIds = null): array
+    public function confirmedQuantitiesByProduct(DateTimeImmutable $from, DateTimeImmutable $to, ?array $productIds = null): array
     {
         $this->guardRange($from, $to);
-        if ($styleIds === []) {
+        if ($productIds === []) {
             return [];
         }
 
         return $this->lines($from, $to)
-            ->whereNotNull('order_lines.meta->style_id')
+            ->whereNotNull('order_lines.meta->product_id')
             ->where('orders.source', '!=', 'exchange')
             ->where(fn (Builder $query) => $query
                 ->whereIn('orders.payment_status', self::CONFIRMED_PAYMENT)
                 ->orWhereIn('orders.fulfillment_status', self::CONFIRMED_FULFILLMENT))
-            ->when($styleIds !== null, fn (Builder $query) => $query->whereIn('order_lines.meta->style_id', array_map('intval', (array) $styleIds)))
-            ->select(['order_lines.meta->style_id as style_id', DB::raw('sum(order_lines.quantity) as sold')])
-            ->groupBy('order_lines.meta->style_id')
+            ->when($productIds !== null, fn (Builder $query) => $query->whereIn('order_lines.meta->product_id', array_map('intval', (array) $productIds)))
+            ->select(['order_lines.meta->product_id as product_id', DB::raw('sum(order_lines.quantity) as sold')])
+            ->groupBy('order_lines.meta->product_id')
             ->havingRaw('sum(order_lines.quantity) > 0')
             ->get()
-            ->mapWithKeys(fn (object $row): array => [(int) $row->style_id => (int) $row->sold])
+            ->mapWithKeys(fn (object $row): array => [(int) $row->product_id => (int) $row->sold])
             ->all();
     }
 

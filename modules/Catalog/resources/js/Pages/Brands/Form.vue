@@ -33,7 +33,7 @@ const props = defineProps<{
         status: 'active' | 'hidden';
         position: number;
         lock_version: number;
-        styles_count: number;
+        products_count: number;
     };
     extensionSections: ExtensionSection[];
     extensionLinks: ExtensionLink[];
@@ -80,8 +80,8 @@ async function destroy(): Promise<void> {
         :back-url="baseUrl"
         :links="extensionLinks"
         :processing="form.processing"
-        :can-delete="brand !== null && brand.styles_count === 0"
-        :delete-hint="brand !== null && brand.styles_count > 0 ? t('catalog::admin.brands.in_use') : null"
+        :can-delete="brand !== null && brand.products_count === 0"
+        :delete-hint="brand !== null && brand.products_count > 0 ? t('catalog::admin.brands.in_use') : null"
         @submit="submit"
         @delete="destroy"
     >
@@ -93,7 +93,7 @@ async function destroy(): Promise<void> {
             <FormField :label="t('catalog::admin.taxonomy.description')" :error="errors.description">
                 <textarea v-model="form.description" :class="inputClass" rows="4" />
             </FormField>
-            <p v-if="brand" class="text-xs text-slate-500">{{ t('catalog::admin.taxonomy.products_count', { count: brand.styles_count }) }}</p>
+            <p v-if="brand" class="text-xs text-slate-500">{{ t('catalog::admin.taxonomy.products_count', { count: brand.products_count }) }}</p>
         </div>
         <SeoFields v-model:title="form.meta_title" v-model:description="form.meta_description" :title-error="errors.meta_title" :description-error="errors.meta_description" />
         <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />

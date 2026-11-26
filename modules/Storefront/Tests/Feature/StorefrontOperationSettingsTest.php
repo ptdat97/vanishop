@@ -29,7 +29,7 @@ describe('bảo trì', function () {
     });
 
     it('trang storefront (kể cả trang cache được) và Storefront API trả 503 + Retry-After, không cache', function (string $path) {
-        $path = str_replace('{product}', '/san-pham/'.$this->s->style->slug, $path);
+        $path = str_replace('{product}', '/san-pham/'.$this->s->product->slug, $path);
 
         $this->get($path)->assertStatus(503)
             ->assertHeader('Retry-After', '600')
@@ -138,7 +138,7 @@ describe('khách vãng lai', function () {
 describe('ẩn giá với khách chưa đăng nhập', function () {
     beforeEach(function () {
         $this->settings->set('core', 'storefront.price_visibility', 'members');
-        $this->product = '/san-pham/'.$this->s->style->slug;
+        $this->product = '/san-pham/'.$this->s->product->slug;
         $this->signIn = function (): void {
             $this->post('/tai-khoan/dang-nhap', ['email' => H::account('0912345678')->email, 'password' => H::PASSWORD]);
         };
@@ -151,7 +151,7 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
         $this->get($path)->assertOk()
             ->assertHeader('Cache-Control', 'max-age=0, public, s-maxage=300, stale-while-revalidate=600')
             ->assertSee('Đăng nhập để xem giá')
-            ->assertSee('data-vani-price-for="'.$this->s->style->id.'"', false)
+            ->assertSee('data-vani-price-for="'.$this->s->product->id.'"', false)
             ->assertDontSee('200.000')->assertDontSee('300.000')
             ->assertDontSee('"offers"', false);
     })->with(['sản phẩm' => '{product}', 'thương hiệu' => '/thuong-hieu/lumiere', 'tìm kiếm' => '/tim-kiem?q=dam']);
@@ -159,19 +159,19 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
     it('HTML cache CDN vẫn là bản ẩn giá khi khách đã đăng nhập; giá điền sau qua GET /me/prices (phiên cùng nguồn)', function () {
         config(['vanishop.storefront.page_cache.enabled' => true]);
         $guest = $this->get($this->product)->getContent();
-        $styleId = $this->s->style->id;
-        $this->getJson("/api/storefront/v1/me/prices?style_ids[]={$styleId}", ['Sec-Fetch-Site' => 'same-origin'])->assertUnauthorized();
+        $productId = $this->s->product->id;
+        $this->getJson("/api/storefront/v1/me/prices?product_ids[]={$productId}", ['Sec-Fetch-Site' => 'same-origin'])->assertUnauthorized();
 
         ($this->signIn)();
         expect($this->get($this->product)->getContent())->toBe($guest);
         $this->getJson('/_vani/phien')->assertJsonPath('prices_url', route('api.storefront.v1.me.prices'));
-        $this->getJson("/api/storefront/v1/me/prices?style_ids[]={$styleId}", ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertHeader('Cache-Control', 'no-store, private')
-            ->assertJsonPath("data.products.{$styleId}.min.amount", 200_000)
-            ->assertJsonPath("data.products.{$styleId}.max.amount", 300_000);
+        $this->getJson("/api/storefront/v1/me/prices?product_ids[]={$productId}", ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+            ->assertJsonPath("data.products.{$productId}.min.amount", 200_000)
+            ->assertJsonPath("data.products.{$productId}.max.amount", 300_000);
     });
 
     it('Storefront API: khách chưa đăng nhập nhận price null + price_hidden; khách có Bearer thấy giá', function () {
-        $slug = $this->s->style->slug;
+        $slug = $this->s->product->slug;
         $this->getJson("/api/storefront/v1/products/{$slug}")->assertOk()
             ->assertJsonPath('data.price', null)->assertJsonPath('data.price_hidden', true)
             ->assertJsonPath('data.variants.0.price', null);
@@ -218,6 +218,6 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
         $this->settings->forget('core', 'storefront.price_visibility');
 
         $this->get($this->product)->assertOk()->assertSee('200.000')->assertSee('"offers"', false)->assertDontSee('Đăng nhập để xem giá');
-        $this->getJson('/api/storefront/v1/products/'.$this->s->style->slug)->assertJsonPath('data.price_hidden', false);
+        $this->getJson('/api/storefront/v1/products/'.$this->s->product->slug)->assertJsonPath('data.price_hidden', false);
     });
 });

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /** @var list<string> */
-    private const TABLES = ['style_translations', 'category_translations', 'collection_translations'];
+    private const TABLES = ['product_translations', 'category_translations', 'collection_translations'];
 
     public function up(): void
     {

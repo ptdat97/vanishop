@@ -7,12 +7,12 @@ namespace Modules\Catalog\Application\Products;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 
@@ -31,10 +31,10 @@ final class ProductBulkEditor
     ) {}
 
     /**
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return int số sản phẩm đã đổi
      */
-    public function apply(array $styleIds, string $action, ?int $targetId): int
+    public function apply(array $productIds, string $action, ?int $targetId): int
     {
         $change = match ($action) {
             'category_add' => $this->addCategory($this->category($targetId)),
@@ -46,18 +46,18 @@ final class ProductBulkEditor
         };
 
         $changed = 0;
-        foreach (array_values(array_unique($styleIds)) as $styleId) {
-            $changed += DB::transaction(function () use ($styleId, $change, $action, $targetId): int {
-                $style = Style::query()->whereKey($styleId)->lockForUpdate()->first();
-                if ($style === null || ! $change($style)) {
+        foreach (array_values(array_unique($productIds)) as $productId) {
+            $changed += DB::transaction(function () use ($productId, $change, $action, $targetId): int {
+                $product = Product::query()->whereKey($productId)->lockForUpdate()->first();
+                if ($product === null || ! $change($product)) {
                     return 0;
                 }
-                $style->lock_version++;
-                $style->save();
+                $product->lock_version++;
+                $product->save();
 
-                Hook::action('vani.product.after_save', $style->id);
-                $this->audit->record('catalog.product.bulk_edited', 'style', $style->id, ['style_code' => $style->style_code, 'action' => $action, 'target_id' => $targetId]);
-                event(new ProductUpdated($style->id, $style->style_code));
+                Hook::action('vani.product.after_save', $product->id);
+                $this->audit->record('catalog.product.bulk_edited', 'product', $product->id, ['product_code' => $product->product_code, 'action' => $action, 'target_id' => $targetId]);
+                event(new ProductUpdated($product->id, $product->product_code));
 
                 return 1;
             });
@@ -69,20 +69,20 @@ final class ProductBulkEditor
     /**
      * Xoá các sản phẩm nháp đã chọn; sản phẩm đã mở bán/ngừng bán bỏ qua (giữ lịch sử — dùng "Ngừng bán").
      *
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return array{deleted: int, skipped: int}
      */
-    public function deleteDrafts(array $styleIds): array
+    public function deleteDrafts(array $productIds): array
     {
         $deleted = 0;
         $skipped = 0;
-        foreach (Style::query()->whereKey(array_values(array_unique($styleIds)))->get() as $style) {
-            if ($style->status !== StyleStatus::Draft) {
+        foreach (Product::query()->whereKey(array_values(array_unique($productIds)))->get() as $product) {
+            if ($product->status !== ProductStatus::Draft) {
                 $skipped++;
 
                 continue;
             }
-            $this->products->deleteDraft($style);
+            $this->products->deleteDraft($product);
             $deleted++;
         }
 
@@ -90,33 +90,33 @@ final class ProductBulkEditor
     }
 
     /**
-     * @return Closure(Style): bool
+     * @return Closure(Product): bool
      */
     private function addCategory(Category $category): Closure
     {
-        return function (Style $style) use ($category): bool {
-            if ($style->categories()->whereKey($category->id)->exists()) {
+        return function (Product $product) use ($category): bool {
+            if ($product->categories()->whereKey($category->id)->exists()) {
                 return false;
             }
-            $style->categories()->attach($category->id, ['position' => 0]);
-            $style->primary_category_id ??= $category->id;
+            $product->categories()->attach($category->id, ['position' => 0]);
+            $product->primary_category_id ??= $category->id;
 
             return true;
         };
     }
 
     /**
-     * @return Closure(Style): bool
+     * @return Closure(Product): bool
      */
     private function removeCategory(Category $category): Closure
     {
-        return function (Style $style) use ($category): bool {
-            if ($style->categories()->detach($category->id) === 0) {
+        return function (Product $product) use ($category): bool {
+            if ($product->categories()->detach($category->id) === 0) {
                 return false;
             }
-            if ($style->primary_category_id === $category->id) {
-                $next = $style->categories()->orderBy('categories.id')->value('categories.id');
-                $style->primary_category_id = $next === null ? null : (int) $next;
+            if ($product->primary_category_id === $category->id) {
+                $next = $product->categories()->orderBy('categories.id')->value('categories.id');
+                $product->primary_category_id = $next === null ? null : (int) $next;
             }
 
             return true;
@@ -124,42 +124,42 @@ final class ProductBulkEditor
     }
 
     /**
-     * @return Closure(Style): bool
+     * @return Closure(Product): bool
      */
     private function setBrand(?Brand $brand): Closure
     {
-        return function (Style $style) use ($brand): bool {
-            if ($style->brand_id === $brand?->id) {
+        return function (Product $product) use ($brand): bool {
+            if ($product->brand_id === $brand?->id) {
                 return false;
             }
-            $style->brand_id = $brand?->id;
+            $product->brand_id = $brand?->id;
 
             return true;
         };
     }
 
     /**
-     * @return Closure(Style): bool
+     * @return Closure(Product): bool
      */
     private function addToCollection(ProductCollection $collection): Closure
     {
-        return function (Style $style) use ($collection): bool {
-            if ($style->collections()->whereKey($collection->id)->exists()) {
+        return function (Product $product) use ($collection): bool {
+            if ($product->collections()->whereKey($collection->id)->exists()) {
                 return false;
             }
-            $position = (int) DB::table('collection_style')->where('collection_id', $collection->id)->max('position') + 1;
-            $style->collections()->attach($collection->id, ['position' => $position]);
+            $position = (int) DB::table('collection_product')->where('collection_id', $collection->id)->max('position') + 1;
+            $product->collections()->attach($collection->id, ['position' => $position]);
 
             return true;
         };
     }
 
     /**
-     * @return Closure(Style): bool
+     * @return Closure(Product): bool
      */
     private function removeFromCollection(ProductCollection $collection): Closure
     {
-        return fn (Style $style): bool => $style->collections()->detach($collection->id) > 0;
+        return fn (Product $product): bool => $product->collections()->detach($collection->id) > 0;
     }
 
     private function category(?int $id): Category

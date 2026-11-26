@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Http\Requests\Admin\ProductImagesRequest;
 use Modules\Catalog\Persistence\Models\Mediable;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 
 /**
@@ -18,7 +18,7 @@ use Modules\Catalog\Persistence\Models\Variant;
  */
 final class ProductVariantImageController
 {
-    public function store(Style $product, Variant $variant, ProductImagesRequest $request, VariantImages $images): RedirectResponse
+    public function store(Product $product, Variant $variant, ProductImagesRequest $request, VariantImages $images): RedirectResponse
     {
         $this->ensureBelongs($product, $variant);
         $images->addFiles($product, $variant, array_values($request->file('images', [])));
@@ -26,7 +26,7 @@ final class ProductVariantImageController
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function attach(Style $product, Variant $variant, Request $request, VariantImages $images): RedirectResponse
+    public function attach(Product $product, Variant $variant, Request $request, VariantImages $images): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         $this->ensureBelongs($product, $variant);
@@ -37,7 +37,7 @@ final class ProductVariantImageController
     }
 
     /** Gán một bộ ảnh của Thư viện ảnh cho nhiều SKU cùng lúc (vd. mọi size của hai màu). */
-    public function assign(Style $product, Request $request, VariantImages $images): RedirectResponse
+    public function assign(Product $product, Request $request, VariantImages $images): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         $data = $request->validate([
@@ -49,7 +49,7 @@ final class ProductVariantImageController
         return back()->with('success', __('catalog::messages.images_assigned', ['count' => $count]));
     }
 
-    public function reorder(Style $product, Variant $variant, Request $request, VariantImages $images): RedirectResponse
+    public function reorder(Product $product, Variant $variant, Request $request, VariantImages $images): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         $this->ensureBelongs($product, $variant);
@@ -60,7 +60,7 @@ final class ProductVariantImageController
     }
 
     /** Áp bộ ảnh của SKU này cho mọi SKU cùng giá trị ở một trục (vd. mọi size cùng màu). */
-    public function copy(Style $product, Variant $variant, Request $request, VariantImages $images): RedirectResponse
+    public function copy(Product $product, Variant $variant, Request $request, VariantImages $images): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         $this->ensureBelongs($product, $variant);
@@ -70,7 +70,7 @@ final class ProductVariantImageController
         return back()->with('success', __('catalog::messages.images_copied', ['count' => $count]));
     }
 
-    public function destroy(Style $product, Variant $variant, Mediable $image, VariantImages $images): RedirectResponse
+    public function destroy(Product $product, Variant $variant, Mediable $image, VariantImages $images): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         $this->ensureBelongs($product, $variant);
@@ -80,8 +80,8 @@ final class ProductVariantImageController
         return back()->with('success', __('catalog::messages.deleted'));
     }
 
-    private function ensureBelongs(Style $product, Variant $variant): void
+    private function ensureBelongs(Product $product, Variant $variant): void
     {
-        abort_unless($variant->style_id === $product->id, 404);
+        abort_unless($variant->product_id === $product->id, 404);
     }
 }

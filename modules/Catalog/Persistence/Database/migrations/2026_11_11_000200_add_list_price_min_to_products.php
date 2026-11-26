@@ -13,7 +13,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('styles', function (Blueprint $table): void {
+        Schema::table('products', function (Blueprint $table): void {
             $table->bigInteger('list_price_min')->nullable()->after('search_text');
             $table->index('list_price_min');
         });
@@ -21,7 +21,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('styles', function (Blueprint $table): void {
+        Schema::table('products', function (Blueprint $table): void {
             $table->dropIndex(['list_price_min']);
             $table->dropColumn('list_price_min');
         });

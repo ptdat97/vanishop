@@ -32,7 +32,7 @@ final class PriceOverview
      * @return array{
      *     running: list<array{id: int, name: string, ends_at: string|null, ending_soon: bool, prices: int}>,
      *     upcoming: list<array{id: int, name: string, starts_at: string|null, prices: int}>,
-     *     missing_base: array{count: int, samples: list<array{sku: string, product: string, style_id: int}>},
+     *     missing_base: array{count: int, samples: list<array{sku: string, product: string, product_id: int}>},
      *     warnings: array{checked: int, capped: bool, labels: array<string, int>, samples: list<array{sku: string, list: string, label: string}>}
      * }
      */
@@ -54,7 +54,7 @@ final class PriceOverview
     }
 
     /**
-     * @return array{count: int, samples: list<array{sku: string, product: string, style_id: int}>}
+     * @return array{count: int, samples: list<array{sku: string, product: string, product_id: int}>}
      */
     private function missingBase(): array
     {
@@ -66,7 +66,7 @@ final class PriceOverview
 
         return [
             'count' => count($missing),
-            'samples' => array_values(array_map(fn ($variant): array => ['sku' => $variant->sku, 'product' => $variant->styleName, 'style_id' => $variant->styleId], $found)),
+            'samples' => array_values(array_map(fn ($variant): array => ['sku' => $variant->sku, 'product' => $variant->productName, 'product_id' => $variant->productId], $found)),
         ];
     }
 

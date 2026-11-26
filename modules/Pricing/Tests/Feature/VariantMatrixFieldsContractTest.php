@@ -14,7 +14,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 $product = function (): array {
     ['s' => $s, 'm' => $m] = C::store();
 
-    return [$s->style_id, [$s->id, $m->id]];
+    return [$s->product_id, [$s->id, $m->id]];
 };
 
 VariantFieldProviderContract::define('pricing (giá niêm yết)', fn () => app(VariantPriceFields::class), $product);

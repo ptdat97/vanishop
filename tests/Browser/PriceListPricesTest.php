@@ -13,8 +13,8 @@ require_once __DIR__.'/../../modules/Pricing/Tests/Feature/PricingTestHelpers.ph
 
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'pricing.view', 'pricing.manage']), 'staff');
-    $this->style = T::product();
-    [$this->s, $this->m] = P::variants($this->style);
+    $this->product = T::product();
+    [$this->s, $this->m] = P::variants($this->product);
     P::priceList(['code' => 'base'], [$this->s->id => [299_000], $this->m->id => [299_000]]);
     $this->list = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10], []);
 });
@@ -27,8 +27,8 @@ it('thêm sản phẩm → giảm 30% → xem trước → áp dụng: giá vào
     $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices");
 
     $page->click('[data-add-products]')
-        ->type('input[aria-label="Tìm sản phẩm"]', $this->style->style_code)
-        ->click("[data-product=\"{$this->style->style_code}\"]")
+        ->type('input[aria-label="Tìm sản phẩm"]', $this->product->product_code)
+        ->click("[data-product=\"{$this->product->product_code}\"]")
         ->click('[data-continue]')
         ->type('input[aria-label="Giảm %"]', '30')
         ->click('[data-preview]')->assertSee('2 SKU đổi giá')
@@ -39,7 +39,7 @@ it('thêm sản phẩm → giảm 30% → xem trước → áp dụng: giá vào
 });
 
 it('đến từ danh sách sản phẩm ("Đưa vào bảng giá…"): hộp thoại cách tính mở sẵn, giảm 20% → áp dụng', function () {
-    $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices?add={$this->style->id}");
+    $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices?add={$this->product->id}");
 
     $page->assertSee('Đưa 1 sản phẩm vào')
         ->type('input[aria-label="Giảm %"]', '20')
@@ -87,12 +87,12 @@ it('SkuPicker: mặc định hiện sản phẩm; mở rộng để chọn từn
     $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices");
 
     $page->click('[data-add-products]')
-        ->type('input[aria-label="Tìm sản phẩm"]', $this->style->style_code)
-        ->assertSee($this->style->style_code)->assertDontSee($this->s->sku)
-        ->click("[data-expand=\"{$this->style->style_code}\"]")->assertSee($this->s->sku)->assertSee($this->m->sku)
+        ->type('input[aria-label="Tìm sản phẩm"]', $this->product->product_code)
+        ->assertSee($this->product->product_code)->assertDontSee($this->s->sku)
+        ->click("[data-expand=\"{$this->product->product_code}\"]")->assertSee($this->s->sku)->assertSee($this->m->sku)
         ->click("[data-sku=\"{$this->m->sku}\"]")->assertSee('Đã chọn 1 SKU')
-        ->clear('input[aria-label="Tìm sản phẩm"]')->type('input[aria-label="Tìm sản phẩm"]', $other->style_code)
-        ->click("[data-product=\"{$other->style_code}\"]")->assertSee('Đã chọn 3 SKU')
+        ->clear('input[aria-label="Tìm sản phẩm"]')->type('input[aria-label="Tìm sản phẩm"]', $other->product_code)
+        ->click("[data-product=\"{$other->product_code}\"]")->assertSee('Đã chọn 3 SKU')
         ->click('[data-continue]')
         ->click('label:has-text("Đồng giá")')->type('input[aria-label="Đồng giá"]', '99000')
         ->click('[data-preview]')->assertSee('3 SKU đổi giá')
@@ -106,8 +106,8 @@ it('SkuPicker: mặc định hiện sản phẩm; mở rộng để chọn từn
 it('đóng hộp thêm SKU còn thay đổi thì hỏi lại và giữ lựa chọn nếu ở lại', function () {
     $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices")
         ->click('[data-add-products]')
-        ->type('input[aria-label="Tìm sản phẩm"]', $this->style->style_code)
-        ->click("[data-product=\"{$this->style->style_code}\"]")
+        ->type('input[aria-label="Tìm sản phẩm"]', $this->product->product_code)
+        ->click("[data-product=\"{$this->product->product_code}\"]")
         ->keys('[role="dialog"]', 'Escape')
         ->assertSee('Đóng khi còn thay đổi chưa lưu?');
 

@@ -1,4 +1,4 @@
-VaniShop 0.5.88
+VaniShop 0.5.89
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -99,11 +99,11 @@ interface Modules\Catalog\Contracts\CatalogReader
   brands(): array
   brand(string $slug): ?array
   searchProducts(Modules\Catalog\Contracts\Data\ProductFilters $filters, string $locale): array
-  productsByIds(array $styleIds, string $locale, int $now): array
+  productsByIds(array $productIds, string $locale, int $now): array
   productDetail(string $slug, string $locale, int $now): ?array
   sellableVariants(array $variantIds, string $locale, int $now): array
 interface Modules\Catalog\Contracts\CollectionDirectory
-  slugsForStyles(array $styleIds): array
+  slugsForProducts(array $productIds): array
 interface Modules\Catalog\Contracts\CollectionPages
   published(string $slug, string $locale): ?array
   editable(int $id, string $locale): ?array
@@ -118,21 +118,21 @@ class Modules\Catalog\Contracts\Data\ImageSize
   key(): string
   toArray(): array
 class Modules\Catalog\Contracts\Data\ImportedProduct
-  __construct(int $styleId, string $slug, bool $created, int $imagesAdded, array $skus)
+  __construct(int $productId, string $slug, bool $created, int $imagesAdded, array $skus)
 class Modules\Catalog\Contracts\Data\MediaData
   __construct(int $id, string $name, ?int $width, ?int $height, string $url, array $variants, string $mimeType = 'image/jpeg')
   isVideo(): bool
   urlFor(?int $width = NULL): string
   srcset(): string
 class Modules\Catalog\Contracts\Data\ProductDraft
-  __construct(?int $brandId, ?int $styleId, string $styleCode, string $slug, string $status, array $translations, array $categoryIds, array $attributes)
+  __construct(?int $brandId, ?int $productId, string $productCode, string $slug, string $status, array $translations, array $categoryIds, array $attributes)
 class Modules\Catalog\Contracts\Data\ProductFilters
   __construct(int $now, string $text = '', ?string $categorySlug = NULL, ?string $collectionSlug = NULL, array $attributes = array (
 ), string $sort = 'newest', int $page = 1, int $perPage = 24, array $brandSlugs = array (
 ), ?int $priceMin = NULL, ?int $priceMax = NULL, array $options = array (
 ))
 class Modules\Catalog\Contracts\Data\ProductImport
-  __construct(string $styleCode, string $slug, array $translations, ?array $brand, array $categories, array $colors, array $sizes, bool $active = true, bool $replaceImages = false)
+  __construct(string $productCode, string $slug, array $translations, ?array $brand, array $categories, array $colors, array $sizes, bool $active = true, bool $replaceImages = false)
 class Modules\Catalog\Contracts\Data\ProductSearchQuery
   const SORT_NEWEST = 'newest'
   const SORT_CODE = 'code'
@@ -151,7 +151,7 @@ class Modules\Catalog\Contracts\Data\ProductSearchQuery
   offset(): int
   limit(): int
 class Modules\Catalog\Contracts\Data\ProductSearchResult
-  __construct(array $styleIds, int $total, array $facets = array (
+  __construct(array $productIds, int $total, array $facets = array (
   'attribute_values' => 
   array (
   ),
@@ -163,10 +163,10 @@ class Modules\Catalog\Contracts\Data\ProductSearchResult
   ),
 ))
 class Modules\Catalog\Contracts\Data\SellableVariant
-  __construct(int $id, ?int $brandId, int $styleId, string $sku, string $slug, string $name, ?string $imageUrl, ?string $brandName = NULL, ?int $weightGram = NULL, array $options = array (
+  __construct(int $id, ?int $brandId, int $productId, string $sku, string $slug, string $name, ?string $imageUrl, ?string $brandName = NULL, ?int $weightGram = NULL, array $options = array (
 ))
 class Modules\Catalog\Contracts\Data\VariantData
-  __construct(int $id, ?int $brandId, int $styleId, string $styleCode, string $styleName, string $sku, string $status, array $options = array (
+  __construct(int $id, ?int $brandId, int $productId, string $productCode, string $productName, string $sku, string $status, array $options = array (
 ), bool $tracksInventory = true)
 class Modules\Catalog\Contracts\Data\VariantOptionsText
   static label(array $options): string
@@ -184,7 +184,7 @@ interface Modules\Catalog\Contracts\ImageSizeProvider
   const TAG = 'vani.catalog.image_sizes'
   sizes(): array
 interface Modules\Catalog\Contracts\ListPrices
-  setMinimums(array $minimumByStyle): void
+  setMinimums(array $minimumByProduct): void
 interface Modules\Catalog\Contracts\MediaDirectory
   find(array $ids): array
   syncUsages(string $ownerType, int $ownerId, string $role, array $mediaIds): void
@@ -196,18 +196,18 @@ interface Modules\Catalog\Contracts\MediaUrls
   srcset(?int $mediaId, ?string $group = NULL): string
   productRatio(): ?array
 interface Modules\Catalog\Contracts\ProductViewStatistics
-  record(int $styleId, string $viewer, ?int $customerId): bool
-  counts(array $styleIds, int $days = 30): array
+  record(int $productId, string $viewer, ?int $customerId): bool
+  counts(array $productIds, int $days = 30): array
   top(int $days = 30, int $limit = 10): array
 interface Modules\Catalog\Contracts\VariantDirectory
-  ofStyleCode(string $styleCode): array
+  ofProductCode(string $productCode): array
   find(array $variantIds): array
-  ofStyles(array $styleIds): array
+  ofProducts(array $productIds): array
   findBySkus(array $skus): array
   search(string $text, int $limit = 2000): array
-  searchIndex(string $text = '', ?string $styleCode = NULL): array
+  searchIndex(string $text = '', ?string $productCode = NULL): array
   untrackedInventory(array $variantIds): array
-  styleIdsOf(array $variantIds): array
+  productIdsOf(array $variantIds): array
   optionTypes(): array
 interface Modules\Catalog\Contracts\VariantFieldProvider
   const TAG = 'vani.catalog.variant_fields'
@@ -215,8 +215,8 @@ interface Modules\Catalog\Contracts\VariantFieldProvider
   label(): string
   fields(): array
   permission(): ?string
-  values(int $styleId, array $variantIds): array
-  save(int $styleId, array $values): array
+  values(int $productId, array $variantIds): array
+  save(int $productId, array $values): array
   storefront(array $variantIds): array
 interface Modules\Catalog\Contracts\VariantUsage
   const TAG = 'vani.catalog.variant_usage'
@@ -233,37 +233,37 @@ interface Modules\Catalog\Contracts\VideoDriver
   embedUrl(string $reference): ?string
   thumbnail(string $reference): ?Modules\Catalog\Contracts\Data\VideoThumbnail
 class Modules\Catalog\Events\ProductArchived
-  __construct(int $styleId, string $styleCode)
+  __construct(int $productId, string $productCode)
   static dispatch(...$arguments)
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
 class Modules\Catalog\Events\ProductCreated
-  __construct(int $styleId, string $styleCode)
+  __construct(int $productId, string $productCode)
   static dispatch(...$arguments)
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
 class Modules\Catalog\Events\ProductDuplicated
-  __construct(int $sourceStyleId, int $styleId, array $variantIds)
+  __construct(int $sourceProductId, int $productId, array $variantIds)
   static dispatch(...$arguments)
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
 class Modules\Catalog\Events\ProductUpdated
-  __construct(int $styleId, string $styleCode)
+  __construct(int $productId, string $productCode)
   static dispatch(...$arguments)
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
 class Modules\Catalog\Events\ProductViewed
-  __construct(int $styleId, ?int $customerId)
+  __construct(int $productId, ?int $customerId)
   static dispatch(...$arguments)
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
 class Modules\Catalog\Events\VariantCreated
-  __construct(int $variantId, int $styleId, string $sku)
+  __construct(int $variantId, int $productId, string $sku)
   static dispatch(...$arguments)
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
@@ -316,7 +316,7 @@ class Modules\Checkout\Contracts\Data\TotalsContext
   missingWeight(): bool
   linesTotal(): Modules\Shared\Domain\Money\Money
 class Modules\Checkout\Contracts\Data\TotalsLine
-  __construct(int $key, int $variantId, ?int $brandId, int $styleId, string $sku, string $name, array $variantOptions, ?string $imageUrl, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, Modules\Shared\Domain\Money\Money $subtotal, Modules\Shared\Domain\Money\Money $discount, int $taxRateBp = 0, ?Modules\Shared\Domain\Money\Money $tax = NULL, ?string $brandName = NULL, array $options = array (
+  __construct(int $key, int $variantId, ?int $brandId, int $productId, string $sku, string $name, array $variantOptions, ?string $imageUrl, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, Modules\Shared\Domain\Money\Money $subtotal, Modules\Shared\Domain\Money\Money $discount, int $taxRateBp = 0, ?Modules\Shared\Domain\Money\Money $tax = NULL, ?string $brandName = NULL, array $options = array (
 ), ?string $priceListCode = NULL, ?int $weightGram = NULL)
   weight(): Modules\Shared\Domain\Weight\Weight
   total(): Modules\Shared\Domain\Money\Money
@@ -1022,7 +1022,7 @@ class Modules\Ordering\Contracts\Data\OrderLineData
 ), int $unitAmount = 0)
 class Modules\Ordering\Contracts\Data\OrderLineDraft
   __construct(int $variantId, string $sku, string $productName, array $variantOptions, ?string $imageUrl, int $quantity, int $unitAmount, ?int $compareAtAmount, int $subtotalAmount, int $discountAmount, int $totalAmount, int $taxRateBp, int $taxAmount, ?int $brandId = NULL, ?string $brandName = NULL, array $options = array (
-), ?int $styleId = NULL, array $promotions = array (
+), ?int $productId = NULL, array $promotions = array (
 ), ?string $priceListCode = NULL)
 class Modules\Ordering\Contracts\Data\OrderPermissions
   const EXPORT = 'orders.export'
@@ -1117,8 +1117,8 @@ interface Modules\Ordering\Contracts\OrderStatistics
   breakdown(Modules\Ordering\Contracts\Data\SalesDimension $dimension, DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
   variantSales(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array
   cancellations(DateTimeImmutable $from, DateTimeImmutable $to): array
-  topStyles(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
-  confirmedQuantitiesByStyle(DateTimeImmutable $from, DateTimeImmutable $to, ?array $styleIds = NULL): array
+  topProducts(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
+  confirmedQuantitiesByProduct(DateTimeImmutable $from, DateTimeImmutable $to, ?array $productIds = NULL): array
   countByStatus(): array
   summarize(array $orderIds): Modules\Ordering\Contracts\Data\SalesTotals
   orderIdsWithPriceLists(array $priceListCodes): array
@@ -1413,7 +1413,7 @@ class Modules\Promotion\Contracts\Data\PromotionContext
   subtotal(): Modules\Shared\Domain\Money\Money
   line(int $key): ?Modules\Promotion\Contracts\Data\PromotionLine
 class Modules\Promotion\Contracts\Data\PromotionLine
-  __construct(int $key, ?int $brandId, int $styleId, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, Modules\Shared\Domain\Money\Money $subtotal, ?int $variantId = NULL)
+  __construct(int $key, ?int $brandId, int $productId, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, Modules\Shared\Domain\Money\Money $subtotal, ?int $variantId = NULL)
 class Modules\Promotion\Contracts\Data\PromotionResult
   __construct(array $applied, array $rejectedVouchers)
   discountByLine(): array
@@ -1570,7 +1570,7 @@ class Modules\Shared\Support\StoreLocale
   static options(): array
   static isSupported(string $locale): bool
 interface Modules\Storefront\Contracts\CustomerProductPrices
-  forCustomer(array $styleIds, int $customerId, string $locale): array
+  forCustomer(array $productIds, int $customerId, string $locale): array
 interface Modules\Storefront\Contracts\CustomerSignIn
   signIn(Illuminate\Http\Request $request, string $token, int $customerId): string
 class Modules\Storefront\Contracts\Data\LinkTarget
@@ -1607,7 +1607,7 @@ interface Modules\Storefront\Contracts\PageSeo
   noindex(): void
 interface Modules\Storefront\Contracts\ProductCards
   const MAX_IDS = 60
-  forIds(array $styleIds, string $locale): array
+  forIds(array $productIds, string $locale): array
 class Modules\Storefront\Contracts\PublicPageExpiry
   static limit(Illuminate\Http\Request $request, DateTimeInterface $at): void
   static timestamp(Illuminate\Http\Request $request): ?int

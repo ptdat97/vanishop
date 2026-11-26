@@ -19,9 +19,9 @@ final readonly class VariantData
     public function __construct(
         public int $id,
         public ?int $brandId,
-        public int $styleId,
-        public string $styleCode,
-        public string $styleName,
+        public int $productId,
+        public string $productCode,
+        public string $productName,
         public string $sku,
         public string $status,
         public array $options = [],

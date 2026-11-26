@@ -13,7 +13,7 @@
     "paths": {
         "/ids": {
             "get": {
-                "summary": "Style id trong danh sách (wishlist.js tô nút tim)",
+                "summary": "Product id trong danh sách (wishlist.js tô nút tim)",
                 "responses": {
                     "200": {
                         "description": "Id.",
@@ -127,7 +127,7 @@
                 ]
             }
         },
-        "/items/{style}": {
+        "/items/{product}": {
             "delete": {
                 "summary": "Bỏ sản phẩm",
                 "responses": {

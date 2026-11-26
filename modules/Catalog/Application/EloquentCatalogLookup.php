@@ -10,8 +10,8 @@ use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 final class EloquentCatalogLookup implements CatalogLookup
@@ -62,17 +62,17 @@ final class EloquentCatalogLookup implements CatalogLookup
                 ->when($tokens !== [], fn (Builder $builder) => $builder->where(fn (Builder $where) => $where->where('name', 'like', '%'.addcslashes(trim($query), '%_\\').'%')->orWhere('code', 'like', '%'.addcslashes(trim($query), '%_\\').'%')))
                 ->orderBy('name')->limit($limit)->get()
                 ->map(fn (Brand $brand): array => ['id' => $brand->id, 'name' => $brand->name, 'visible' => $brand->status === Brand::ACTIVE])->all(),
-            'product' => Style::query()->with('translations')
+            'product' => Product::query()->with('translations')
                 ->when($tokens !== [], function (Builder $builder) use ($tokens): void {
                     foreach ($tokens as $token) {
                         $builder->where('search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
                     }
                 })
                 ->orderByDesc('updated_at')->limit($limit)->get()
-                ->map(fn (Style $style): array => [
-                    'id' => $style->id,
-                    'name' => trim(($style->translate('name', $locale) ?? '').' · '.$style->style_code, ' ·'),
-                    'visible' => PublishWindow::isVisible($style->status, $style->publishWindow(), new \DateTimeImmutable),
+                ->map(fn (Product $product): array => [
+                    'id' => $product->id,
+                    'name' => trim(($product->translate('name', $locale) ?? '').' · '.$product->product_code, ' ·'),
+                    'visible' => PublishWindow::isVisible($product->status, $product->publishWindow(), new \DateTimeImmutable),
                 ])->all(),
         };
     }
@@ -108,9 +108,9 @@ final class EloquentCatalogLookup implements CatalogLookup
     {
         $now = new \DateTimeImmutable;
 
-        return Style::query()->with('translations')->whereIn('id', $ids)->get()
-            ->filter(fn (Style $style): bool => PublishWindow::isVisible($style->status, $style->publishWindow(), $now))
-            ->map(fn (Style $style): array => ['id' => $style->id, 'slug' => $style->slugFor($locale), 'name' => (string) $style->translate('name', $locale)])
+        return Product::query()->with('translations')->whereIn('id', $ids)->get()
+            ->filter(fn (Product $product): bool => PublishWindow::isVisible($product->status, $product->publishWindow(), $now))
+            ->map(fn (Product $product): array => ['id' => $product->id, 'slug' => $product->slugFor($locale), 'name' => (string) $product->translate('name', $locale)])
             ->values()->all();
     }
 

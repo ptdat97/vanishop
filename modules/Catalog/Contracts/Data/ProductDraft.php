@@ -16,8 +16,8 @@ final readonly class ProductDraft
      */
     public function __construct(
         public ?int $brandId,
-        public ?int $styleId,
-        public string $styleCode,
+        public ?int $productId,
+        public string $productCode,
         public string $slug,
         public string $status,
         public array $translations,

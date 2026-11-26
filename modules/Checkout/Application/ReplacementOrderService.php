@@ -73,7 +73,7 @@ final class ReplacementOrderService implements ReplacementOrders
             $variant = $variants[$line->variantId];
             $subtotal = Money::of($line->unitAmount * $line->quantity, $currency);
             $lines[] = new TotalsLine(
-                key: $index + 1, variantId: $variant->id, brandId: $variant->brandId, styleId: $variant->styleId, sku: $variant->sku, name: $variant->name,
+                key: $index + 1, variantId: $variant->id, brandId: $variant->brandId, productId: $variant->productId, sku: $variant->sku, name: $variant->name,
                 variantOptions: $variant->options, imageUrl: $variant->imageUrl, quantity: $line->quantity,
                 unitPrice: Money::of($line->unitAmount, $currency), compareAt: null, subtotal: $subtotal,
                 discount: Money::of(min(max(0, $line->creditAmount), $subtotal->amount), $currency), brandName: $variant->brandName, weightGram: $variant->weightGram,
@@ -113,7 +113,7 @@ final class ReplacementOrderService implements ReplacementOrders
             lines: array_map(fn (TotalsLine $line): OrderLineDraft => new OrderLineDraft(
                 $line->variantId, $line->sku, $line->name, $line->variantOptions, $line->imageUrl, $line->quantity,
                 $line->unitPrice->amount, null, $line->subtotal->amount, $line->discount->amount, $line->total()->amount,
-                $line->taxRateBp, $line->tax->amount ?? 0, $line->brandId, $line->brandName, [], $line->styleId,
+                $line->taxRateBp, $line->tax->amount ?? 0, $line->brandId, $line->brandName, [], $line->productId,
             ), $lines),
             adjustments: $credit > 0 ? [new OrderAdjustmentDraft('exchange_credit', 'core', $request->reference, __('checkout::texts.replacement_order_service.compensation_returned_goods_reference', ['reference' => $request->reference]), -$credit, ['parent_order_id' => $parent->id])] : [],
             subtotalAmount: $sum(fn (TotalsLine $line): int => $line->subtotal->amount),

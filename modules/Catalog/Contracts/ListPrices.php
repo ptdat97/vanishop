@@ -15,7 +15,7 @@ interface ListPrices
     /**
      * Ghi giá niêm yết thấp nhất theo sản phẩm. Idempotent; sản phẩm đổi giá được cập nhật vào chỉ mục tìm kiếm.
      *
-     * @param  array<int, int|null>  $minimumByStyle  style id => số tiền (đơn vị nhỏ nhất), null = sản phẩm chưa có giá
+     * @param  array<int, int|null>  $minimumByProduct  product id => số tiền (đơn vị nhỏ nhất), null = sản phẩm chưa có giá
      */
-    public function setMinimums(array $minimumByStyle): void;
+    public function setMinimums(array $minimumByProduct): void;
 }

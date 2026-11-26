@@ -14,13 +14,13 @@ use Illuminate\Support\Str;
 use Modules\Catalog\Application\Taxonomy\OptionTypeService;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
 use Modules\Catalog\Contracts\VariantFieldProvider;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
@@ -56,7 +56,7 @@ final class ProductFile
 
     /** Cột của Catalog: khoá => [tiêu đề khi xuất, các tiêu đề nhận khi nhập (đã bỏ dấu, chữ thường)]. */
     private const COLUMNS = [
-        'code' => ['Mã sản phẩm', ['ma san pham', 'ma', 'style code', 'style_code']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'code' => ['Mã sản phẩm', ['ma san pham', 'ma', 'product code', 'product_code']], // i18n-ignore: tiêu đề cột file (định dạng file)
         'name' => ['Tên sản phẩm', ['ten san pham', 'ten', 'name']], // i18n-ignore: tiêu đề cột file (định dạng file)
         'status' => ['Trạng thái', ['trang thai', 'status']], // i18n-ignore: tiêu đề cột file (định dạng file)
         'brand' => ['Thương hiệu', ['thuong hieu', 'brand']], // i18n-ignore: tiêu đề cột file (định dạng file)
@@ -73,7 +73,7 @@ final class ProductFile
         'weight' => ['Khối lượng (g)', ['khoi luong (g)', 'khoi luong', 'weight', 'weight (g)']], // i18n-ignore: tiêu đề cột file (định dạng file)
     ];
 
-    /** @var array{styles?: array<string, Style>, sku_owners?: array<string, int>, barcodes?: array<string, list<int>>, lookups?: array<string, mixed>} */
+    /** @var array{products?: array<string, Product>, sku_owners?: array<string, int>, barcodes?: array<string, list<int>>, lookups?: array<string, mixed>} */
     private array $memo = [];
 
     public function __construct(
@@ -88,28 +88,28 @@ final class ProductFile
     /**
      * File xuất: tiêu đề + mỗi SKU một dòng (sản phẩm chưa có SKU: một dòng không SKU).
      *
-     * @param  list<int>|null  $styleIds  null = mọi sản phẩm
+     * @param  list<int>|null  $productIds  null = mọi sản phẩm
      * @return list<list<string|int|null>>
      */
-    public function export(?array $styleIds = null): array
+    public function export(?array $productIds = null): array
     {
         $fields = $this->fieldColumns();
         $rows = [[...array_map(fn (array $column): string => $column[0], array_values(self::COLUMNS)), ...array_column($fields, 'header')]];
         $statusLabels = (array) __('catalog::labels.product_status');
 
-        Style::query()->withoutGlobalScopes()->with(['translations', 'brand', 'categories', 'options', ...VariantOptions::relations('variants.')])
-            ->when($styleIds !== null, fn ($query) => $query->whereKey($styleIds))
-            ->orderBy('style_code')
-            ->chunk(200, function (Collection $styles) use (&$rows, $fields, $statusLabels): void {
+        Product::query()->withoutGlobalScopes()->with(['translations', 'brand', 'categories', 'options', ...VariantOptions::relations('variants.')])
+            ->when($productIds !== null, fn ($query) => $query->whereKey($productIds))
+            ->orderBy('product_code')
+            ->chunk(200, function (Collection $products) use (&$rows, $fields, $statusLabels): void {
                 $types = OptionType::query()->with('translations')->get()->keyBy('id');
                 // Cột của module/plugin: một lần cho cả lô (không N+1 theo sản phẩm).
-                $values = $this->fieldValues($fields, 0, $styles->flatMap(fn (Style $style) => $style->variants->pluck('id'))->map(fn ($id): int => (int) $id)->all());
-                foreach ($styles as $style) {
-                    /** @var Style $style */
-                    $variants = $style->variants->sortBy(fn (Variant $variant): string => VariantOptions::sortKey($variant))->values();
+                $values = $this->fieldValues($fields, 0, $products->flatMap(fn (Product $product) => $product->variants->pluck('id'))->map(fn ($id): int => (int) $id)->all());
+                foreach ($products as $product) {
+                    /** @var Product $product */
+                    $variants = $product->variants->sortBy(fn (Variant $variant): string => VariantOptions::sortKey($variant))->values();
                     $base = [
-                        $style->style_code, $style->translate('name'), $statusLabels[$style->status->value] ?? $style->status->value, $style->brand?->name,
-                        $style->categories->pluck('slug')->implode(' | '), $style->translate('description'),
+                        $product->product_code, $product->translate('name'), $statusLabels[$product->status->value] ?? $product->status->value, $product->brand?->name,
+                        $product->categories->pluck('slug')->implode(' | '), $product->translate('description'),
                     ];
                     foreach ($variants->isEmpty() ? [null] : $variants as $variant) {
                         $options = [];
@@ -279,7 +279,7 @@ final class ProductFile
                 $plans[] = $this->planProduct($group, $skusInFile);
             }
         }
-        $this->memo['styles'] = [];
+        $this->memo['products'] = [];
 
         return $plans;
     }
@@ -294,17 +294,17 @@ final class ProductFile
         $code = $group['code'];
         $first = $group['rows'][0]['cell'];
         $errors = $notes = [];
-        $style = $this->memo['styles'][$code] ?? null;
+        $product = $this->memo['products'][$code] ?? null;
         $plan = [
-            'code' => $code, 'lines' => array_column($group['rows'], 'line'), 'action' => $style === null ? 'create' : 'update', 'style_id' => $style?->id,
+            'code' => $code, 'lines' => array_column($group['rows'], 'line'), 'action' => $product === null ? 'create' : 'update', 'product_id' => $product?->id,
             'name' => $first('name') ?: null, 'description' => $first('description') ?: null, 'status' => null, 'brand' => null, 'category_ids' => null,
             'axes' => [], 'variants' => [], 'new_skus' => 0, 'updated_skus' => 0,
         ];
 
-        if ($style === null && ! preg_match('/^[A-Z0-9][A-Z0-9._-]{0,63}$/', $code)) {
+        if ($product === null && ! preg_match('/^[A-Z0-9][A-Z0-9._-]{0,63}$/', $code)) {
             $errors[] = __('catalog::messages.import_code_invalid');
         }
-        if ($style === null && $plan['name'] === null) {
+        if ($product === null && $plan['name'] === null) {
             $errors[] = __('catalog::messages.import_name_required');
         }
         if (($status = $first('status')) !== '') {
@@ -338,14 +338,14 @@ final class ProductFile
             $type === null ? $errors[] = __('catalog::messages.import_option_type_missing', ['name' => $name]) : $types[$index] = $type;
         }
         $typeIds = array_map(fn (OptionType $type): int => $type->id, array_values($types));
-        $currentTypes = $style?->options->pluck('option_type_id')->map(fn ($id): int => (int) $id)->all() ?? [];
-        if ($style !== null && $style->variants->isNotEmpty() && $typeIds !== [] && $currentTypes !== [] && array_diff($currentTypes, $typeIds) + array_diff($typeIds, $currentTypes) !== []) {
+        $currentTypes = $product?->options->pluck('option_type_id')->map(fn ($id): int => (int) $id)->all() ?? [];
+        if ($product !== null && $product->variants->isNotEmpty() && $typeIds !== [] && $currentTypes !== [] && array_diff($currentTypes, $typeIds) + array_diff($typeIds, $currentTypes) !== []) {
             $errors[] = __('catalog::messages.import_axes_locked');
         }
         $plan['axes'] = $typeIds;
 
-        $existingByKey = $style?->variants->keyBy('option_key') ?? collect();
-        $existingBySku = $style?->variants->keyBy('sku') ?? collect();
+        $existingByKey = $product?->variants->keyBy('option_key') ?? collect();
+        $existingBySku = $product?->variants->keyBy('sku') ?? collect();
         foreach ($group['rows'] as $row) {
             $cell = $row['cell'];
             $line = $row['line'];
@@ -366,7 +366,7 @@ final class ProductFile
                     $notes[] = __('catalog::messages.import_value_new', ['type' => $type->translate('name') ?? $type->code, 'value' => $label]);
                 }
             }
-            if ($types === [] && $style !== null && $currentTypes !== []) {
+            if ($types === [] && $product !== null && $currentTypes !== []) {
                 $errors[] = __('catalog::messages.import_values_required', ['line' => $line]);
             }
 
@@ -380,7 +380,7 @@ final class ProductFile
             $existing ??= $sku !== '' ? $existingBySku->get($sku) : null;
             if ($sku !== '') {
                 $owner = $this->memo['sku_owners'][$sku] ?? null;
-                if (($owner !== null && (int) $owner !== $style?->id) || (isset($skusInFile[$sku]) && $skusInFile[$sku] !== $code)) {
+                if (($owner !== null && (int) $owner !== $product?->id) || (isset($skusInFile[$sku]) && $skusInFile[$sku] !== $code)) {
                     $errors[] = __('catalog::messages.import_sku_taken', ['line' => $line, 'sku' => $sku]);
                 }
                 $skusInFile[$sku] = $code;
@@ -418,26 +418,26 @@ final class ProductFile
     {
         $variantIds = DB::transaction(function () use ($plan): array {
             $brandId = $plan['brand'] === null ? null : $this->brand($plan['brand'])->id;
-            $style = $plan['style_id'] === null ? null : Style::query()->withoutGlobalScopes()->findOrFail($plan['style_id']);
-            if ($style === null) {
+            $product = $plan['product_id'] === null ? null : Product::query()->withoutGlobalScopes()->findOrFail($plan['product_id']);
+            if ($product === null) {
                 $locale = StoreLocale::default();
-                $style = $this->products->create(new ProductInput(
-                    styleCode: $plan['code'], slug: ProductIdentifiers::uniqueSlug((string) $plan['name'], $plan['code']), status: $plan['status'] ?? StyleStatus::Draft,
+                $product = $this->products->create(new ProductInput(
+                    productCode: $plan['code'], slug: ProductIdentifiers::uniqueSlug((string) $plan['name'], $plan['code']), status: $plan['status'] ?? ProductStatus::Draft,
                     translations: [$locale => ['name' => $plan['name'], 'description' => $plan['description']]],
                     categoryIds: $plan['category_ids'] ?? [], primaryCategoryId: ($plan['category_ids'] ?? [])[0] ?? null, brandId: $brandId,
                 ));
             } elseif ($plan['name'] !== null || $plan['description'] !== null || $plan['status'] !== null || $plan['brand'] !== null || $plan['category_ids'] !== null) {
-                $current = $this->products->inputFor($style);
+                $current = $this->products->inputFor($product);
                 $translations = $current->translations;
                 $locale = StoreLocale::default();
                 $translations[$locale] = array_replace($translations[$locale] ?? [], array_filter(['name' => $plan['name'], 'description' => $plan['description']], fn ($value): bool => $value !== null));
                 $categoryIds = $plan['category_ids'] ?? $current->categoryIds;
-                $style = $this->products->update($style, new ProductInput(
-                    styleCode: $current->styleCode, slug: $current->slug, status: $plan['status'] ?? $current->status, translations: $translations,
+                $product = $this->products->update($product, new ProductInput(
+                    productCode: $current->productCode, slug: $current->slug, status: $plan['status'] ?? $current->status, translations: $translations,
                     publishedFrom: $current->publishedFrom, publishedTo: $current->publishedTo, categoryIds: $categoryIds,
                     primaryCategoryId: in_array($current->primaryCategoryId, $categoryIds, true) ? $current->primaryCategoryId : ($categoryIds[0] ?? null),
                     attributes: $current->attributes, brandId: $plan['brand'] === null ? $current->brandId : $brandId, trackInventory: $current->trackInventory,
-                ), $style->lock_version);
+                ), $product->lock_version);
             }
 
             // Giá trị tuỳ chọn mới → tạo; trục = trục hiện có + giá trị trong file (giữ thứ tự loại của file).
@@ -448,16 +448,16 @@ final class ProductFile
                         $variants[$index]['values'][$position]['id'] ??= $this->value($value['type_id'], $value['label'])->id;
                     }
                 }
-                $style->load('optionValues');
-                $current = $style->optionValues->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all();
+                $product->load('optionValues');
+                $current = $product->optionValues->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all();
                 $typeOf = OptionValue::query()->whereIn('id', $current)->pluck('option_type_id', 'id');
-                $this->options->syncAxes($style, array_map(fn (int $typeId): array => [
+                $this->options->syncAxes($product, array_map(fn (int $typeId): array => [
                     'option_type_id' => $typeId,
                     'value_ids' => array_values(array_unique([
                         ...array_values(array_filter($current, fn (int $id): bool => (int) $typeOf->get($id) === $typeId)),
                         ...array_merge([], ...array_map(fn (array $variant): array => array_column(array_filter($variant['values'], fn (array $value): bool => $value['type_id'] === $typeId), 'id'), $variants)),
                     ])),
-                ], $plan['axes']), fromSingle: $style->options()->doesntExist() && $style->variants()->count() === 1);
+                ], $plan['axes']), fromSingle: $product->options()->doesntExist() && $product->variants()->count() === 1);
             }
 
             $ids = [];
@@ -467,7 +467,7 @@ final class ProductFile
                 $data = array_filter(['sku' => $variant['sku'], 'barcode' => $variant['barcode'], 'weight_gram' => $variant['weight'] === '' ? null : (int) $variant['weight']], fn ($value): bool => $value !== null && $value !== '');
                 $model = $variant['variant_id'] === null ? null : Variant::query()->find($variant['variant_id']);
                 if ($model === null) {
-                    $model = $this->options->createVariant($style, $valueIds, $data);
+                    $model = $this->options->createVariant($product, $valueIds, $data);
                 } elseif ($model->fill($data)->isDirty()) {
                     $model->save();
                     $updated = true;
@@ -475,10 +475,10 @@ final class ProductFile
                 $ids[$variant['line']] = $model->id;
             }
             if ($updated) {
-                event(new ProductUpdated($style->id, $style->style_code));
+                event(new ProductUpdated($product->id, $product->product_code));
             }
 
-            return ['style_id' => $style->id, 'ids' => $ids];
+            return ['product_id' => $product->id, 'ids' => $ids];
         });
 
         $errors = [];
@@ -492,7 +492,7 @@ final class ProductFile
             if ($values === []) {
                 continue;
             }
-            $failed = $this->extensions->call($provider, fn (): array => $provider->save($variantIds['style_id'], $values), [0 => __('catalog::messages.variant_field_failed', ['label' => $provider->label()])], 'catalog.product_file.save');
+            $failed = $this->extensions->call($provider, fn (): array => $provider->save($variantIds['product_id'], $values), [0 => __('catalog::messages.variant_field_failed', ['label' => $provider->label()])], 'catalog.product_file.save');
             foreach ((array) $failed as $message) {
                 $errors[] = (string) $message;
             }
@@ -537,7 +537,7 @@ final class ProductFile
      * @param  list<int>  $variantIds
      * @return array<int, array<string, array<string, scalar|null>>> variant id => provider => field => giá trị
      */
-    private function fieldValues(array $fields, int $styleId, array $variantIds): array
+    private function fieldValues(array $fields, int $productId, array $variantIds): array
     {
         $result = [];
         if ($variantIds === []) {
@@ -547,7 +547,7 @@ final class ProductFile
             if (! in_array($code, array_column($fields, 'provider'), true)) {
                 continue;
             }
-            foreach ($this->extensions->call($provider, fn (): array => $provider->values($styleId, $variantIds), [], 'catalog.product_file.values') as $variantId => $values) {
+            foreach ($this->extensions->call($provider, fn (): array => $provider->values($productId, $variantIds), [], 'catalog.product_file.values') as $variantId => $values) {
                 $result[(int) $variantId][$code] = $values;
             }
         }
@@ -571,14 +571,14 @@ final class ProductFile
     }
 
     /** Trạng thái theo mã, nhãn Admin hoặc cách gọi quen của nhân viên ("Ngừng bán", "Mở bán"). */
-    private function status(string $value): ?StyleStatus
+    private function status(string $value): ?ProductStatus
     {
         $normalized = Str::lower(Str::ascii($value));
-        $aliases = ['ngung ban' => StyleStatus::Archived, 'mo ban' => StyleStatus::Active];
+        $aliases = ['ngung ban' => ProductStatus::Archived, 'mo ban' => ProductStatus::Active];
         if (isset($aliases[$normalized])) {
             return $aliases[$normalized];
         }
-        foreach (StyleStatus::cases() as $status) {
+        foreach (ProductStatus::cases() as $status) {
             if ($normalized === $status->value || $normalized === Str::lower(Str::ascii((string) __("catalog::labels.product_status.{$status->value}")))) {
                 return $status;
             }
@@ -611,15 +611,15 @@ final class ProductFile
      */
     private function preload(array $codes, array $cells): void
     {
-        $this->memo = ['styles' => [], 'sku_owners' => [], 'barcodes' => [], 'lookups' => $this->memo['lookups'] ?? []];
+        $this->memo = ['products' => [], 'sku_owners' => [], 'barcodes' => [], 'lookups' => $this->memo['lookups'] ?? []];
         foreach (array_chunk($codes, 1000) as $chunk) {
-            foreach (Style::query()->withoutGlobalScopes()->with(['options', 'variants.optionValues'])->whereIn('style_code', $chunk)->get() as $style) {
-                $this->memo['styles'][$style->style_code] = $style;
+            foreach (Product::query()->withoutGlobalScopes()->with(['options', 'variants.optionValues'])->whereIn('product_code', $chunk)->get() as $product) {
+                $this->memo['products'][$product->product_code] = $product;
             }
         }
         $skus = array_values(array_unique(array_filter(array_map(fn (Closure $cell): string => Str::upper($cell('sku')), $cells))));
         foreach (array_chunk($skus, 1000) as $chunk) {
-            $this->memo['sku_owners'] += Variant::query()->whereIn('sku', $chunk)->pluck('style_id', 'sku')->map(fn ($id): int => (int) $id)->all();
+            $this->memo['sku_owners'] += Variant::query()->whereIn('sku', $chunk)->pluck('product_id', 'sku')->map(fn ($id): int => (int) $id)->all();
         }
         $barcodes = array_values(array_unique(array_filter(array_map(fn (Closure $cell): string => $cell('barcode'), $cells))));
         foreach (array_chunk($barcodes, 1000) as $chunk) {

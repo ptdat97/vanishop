@@ -328,9 +328,9 @@
                         "multipart/form-data": {
                             "schema": {
                                 "type": "object",
-                                "required": ["style_id"],
+                                "required": ["product_id"],
                                 "properties": {
-                                    "style_id": {"type": "integer", "minimum": 1},
+                                    "product_id": {"type": "integer", "minimum": 1},
                                     "viewer_id": {"type": "string", "pattern": "^[a-f0-9]{32}$"}
                                 }
                             }

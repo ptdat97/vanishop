@@ -26,10 +26,10 @@ final class Video extends Model
     }
 
     /**
-     * @return BelongsToMany<Style, $this>
+     * @return BelongsToMany<Product, $this>
      */
-    public function styles(): BelongsToMany
+    public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Style::class)->withPivot('position');
+        return $this->belongsToMany(Product::class)->withPivot('position');
     }
 }

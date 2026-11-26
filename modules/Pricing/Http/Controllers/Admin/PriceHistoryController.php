@@ -54,7 +54,7 @@ final class PriceHistoryController
                         'id' => $row->id,
                         'at' => StoreClock::format($row->created_at),
                         'sku' => $variant->sku ?? "#{$row->variant_id}",
-                        'product' => $variant === null ? null : trim($variant->styleName.' '.VariantOptionsText::label($variant->options)),
+                        'product' => $variant === null ? null : trim($variant->productName.' '.VariantOptionsText::label($variant->options)),
                         'price_list' => $lists->get($row->price_list_id)?->name,
                         'old' => $format($row->old_amount, $currency),
                         'new' => $format($row->new_amount, $currency),

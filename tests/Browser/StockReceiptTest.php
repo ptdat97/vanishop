@@ -15,7 +15,7 @@ require_once __DIR__.'/../../modules/Pricing/Tests/Feature/PricingTestHelpers.ph
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust']), 'staff');
     $this->location = I::location(['code' => 'KHO-CHINH']);
-    [$this->s, $this->m] = P::variants(T::product(null, ['style_code' => 'DAM01']));
+    [$this->s, $this->m] = P::variants(T::product(null, ['product_code' => 'DAM01']));
 });
 
 it('quét SKU hai lần → số lượng 2; "SKU 5" → 5; Lưu và nhập kho → tồn tăng đúng', function () {

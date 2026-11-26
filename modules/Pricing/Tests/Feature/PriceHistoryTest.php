@@ -14,8 +14,8 @@ beforeEach(function () {
     $this->staff = T::staff(['admin.access', 'catalog.view', 'pricing.view', 'pricing.manage']);
     $this->staff->update(['name' => 'Lan CSKH']);
     $this->actingAs($this->staff, 'staff');
-    $this->dress = T::product(null, ['style_code' => 'DAM01', 'name' => 'Đầm lụa']);
-    $this->shirt = T::product(null, ['style_code' => 'AO01', 'name' => 'Áo thun']);
+    $this->dress = T::product(null, ['product_code' => 'DAM01', 'name' => 'Đầm lụa']);
+    $this->shirt = T::product(null, ['product_code' => 'AO01', 'name' => 'Áo thun']);
     [$this->s] = P::variants($this->dress, ['S']);
     [$this->a] = P::variants($this->shirt, ['M']);
     P::priceList(['code' => 'base'], []);

@@ -15,16 +15,16 @@ use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Domain\OptionDisplayType;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\AttributeValue;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\SlugRedirect;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Support\StoreLocale;
 
 /**
@@ -109,9 +109,9 @@ final class StorefrontCatalog implements CatalogReader
         return $brand === null ? null : vani_filter('vani.service.catalog.brand', [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description], $slug);
     }
 
-    public function productsByIds(array $styleIds, string $locale, int $now): array
+    public function productsByIds(array $productIds, string $locale, int $now): array
     {
-        return vani_filter('vani.service.catalog.products_by_ids', $this->products->byIds($styleIds, $locale, $now), $locale);
+        return vani_filter('vani.service.catalog.products_by_ids', $this->products->byIds($productIds, $locale, $now), $locale);
     }
 
     public function slugRedirect(string $subject, string $slug, string $locale): ?string
@@ -119,7 +119,7 @@ final class StorefrontCatalog implements CatalogReader
         // Slug riêng của bản dịch ở ngôn ngữ đang xem trước, rồi slug gốc (L44).
         $redirect = SlugRedirect::query()->where('subject', $subject)->where('slug', $slug)->whereIn('locale', [$locale, ''])->orderByDesc('locale')->first();
         $model = match ($redirect?->subject) {
-            Style::SLUG_SUBJECT => Style::query()->with('translations')->find($redirect->subject_id),
+            Product::SLUG_SUBJECT => Product::query()->with('translations')->find($redirect->subject_id),
             Category::SLUG_SUBJECT => Category::query()->with('translations')->find($redirect->subject_id),
             Brand::SLUG_SUBJECT => Brand::query()->find($redirect->subject_id),
             default => null,
@@ -127,21 +127,21 @@ final class StorefrontCatalog implements CatalogReader
 
         return match (true) {
             $model instanceof Brand => (string) $model->slug,
-            $model instanceof Style, $model instanceof Category => $model->slugFor($locale),
+            $model instanceof Product, $model instanceof Category => $model->slugFor($locale),
             default => null,
         };
     }
 
     public function discontinuedProduct(string $slug, string $locale): ?array
     {
-        $style = Style::query()->with('translations')->whereLocalizedSlug($slug, $locale)->where('status', StyleStatus::Archived->value)->orderByDesc('id')->first();
-        if ($style === null) {
+        $product = Product::query()->with('translations')->whereLocalizedSlug($slug, $locale)->where('status', ProductStatus::Archived->value)->orderByDesc('id')->first();
+        if ($product === null) {
             return null;
         }
-        $categoryId = $style->primary_category_id ?? $style->categories()->orderBy('categories.id')->value('categories.id');
+        $categoryId = $product->primary_category_id ?? $product->categories()->orderBy('categories.id')->value('categories.id');
         $category = $categoryId === null ? null : Category::query()->with('translations')->where('status', 'active')->find($categoryId);
 
-        return ['name' => (string) $style->translate('name', $locale), 'category_slug' => $category?->slugFor($locale)];
+        return ['name' => (string) $product->translate('name', $locale), 'category_slug' => $category?->slugFor($locale)];
     }
 
     public function productDetail(string $slug, string $locale, int $now): ?array

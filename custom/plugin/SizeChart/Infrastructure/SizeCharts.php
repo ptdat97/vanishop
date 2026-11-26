@@ -105,9 +105,9 @@ final class SizeCharts
      *
      * @param  list<int>  $categoryPath  id danh mục từ gốc tới danh mục chính
      */
-    public function resolve(int $styleId, array $categoryPath, ?int $brandId): ?SizeChart
+    public function resolve(int $productId, array $categoryPath, ?int $brandId): ?SizeChart
     {
-        $candidates = [['product', $styleId], ...array_map(fn (int $id): array => ['category', $id], array_reverse($categoryPath))];
+        $candidates = [['product', $productId], ...array_map(fn (int $id): array => ['category', $id], array_reverse($categoryPath))];
         if ($brandId !== null) {
             $candidates[] = ['brand', $brandId];
         }

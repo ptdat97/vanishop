@@ -8,7 +8,7 @@ Hai con số trên trang sản phẩm giúp khách quyết định mua: **còn b
 
 **Không có chế độ bịa số** — ràng buộc thiết kế:
 - Số còn lại = số bán được online (ATS, `Inventory\Contracts\AvailabilityReader`) — cùng số Checkout dùng để giữ hàng; không hệ số, không sàn, không làm tròn.
-- Số đã bán = số lượng của đơn **đã thu tiền hoặc đã rời kho** (`OrderStatistics::confirmedQuantitiesByStyle`). COD vừa đặt / đơn online chưa trả không tính (nếu tính, ai cũng bơm được bằng đơn đặt rồi bỏ); đơn huỷ, hoàn tiền toàn bộ, đơn thay thế khi đổi hàng không tính.
+- Số đã bán = số lượng của đơn **đã thu tiền hoặc đã rời kho** (`OrderStatistics::confirmedQuantitiesByProduct`). COD vừa đặt / đơn online chưa trả không tính (nếu tính, ai cũng bơm được bằng đơn đặt rồi bỏ); đơn huỷ, hoàn tiền toàn bộ, đơn thay thế khi đổi hàng không tính.
 - Không có "N người đang xem" (không đo được từ dữ liệu thật).
 - "Chỉ hiện khi đã bán từ" (mặc định 3) là **giấu** số không thuyết phục ("Đã bán 1" là bằng chứng ngược), không phải làm đẹp số.
 
@@ -42,7 +42,7 @@ Hai con số trên trang sản phẩm giúp khách quyết định mua: **còn b
 
 ## 5. Extension point
 
-`StorefrontEnricher` (`product`, `product_card`), slot `vani.storefront.pdp.add_to_cart_fields`, `vani.storefront.pdp.after_price`, `vani.storefront.plp.card_badges`, `AvailabilityReader`, `OrderStatistics::confirmedQuantitiesByStyle` (0.3.85), manifest `assets`.
+`StorefrontEnricher` (`product`, `product_card`), slot `vani.storefront.pdp.add_to_cart_fields`, `vani.storefront.pdp.after_price`, `vani.storefront.plp.card_badges`, `AvailabilityReader`, `OrderStatistics::confirmedQuantitiesByProduct` (0.3.85), manifest `assets`.
 
 ## 6. Tiêu chí chấp nhận
 

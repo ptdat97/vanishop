@@ -7,9 +7,9 @@ namespace Modules\Catalog\Application\Products;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
-use Modules\Catalog\Persistence\Models\StyleOption;
-use Modules\Catalog\Persistence\Models\StyleOptionValue;
+use Modules\Catalog\Persistence\Models\Product;
+use Modules\Catalog\Persistence\Models\ProductOption;
+use Modules\Catalog\Persistence\Models\ProductOptionValue;
 use Modules\Catalog\Persistence\Models\Variant;
 
 /**
@@ -25,12 +25,12 @@ final class VariantOptions
     public static function relations(string $prefix = ''): array
     {
         return array_map(fn (string $relation): string => $prefix.$relation, [
-            'optionValues.type.translations', 'optionValues.translations', 'style.options.type', 'style.optionValues',
+            'optionValues.type.translations', 'optionValues.translations', 'product.options.type', 'product.optionValues',
         ]);
     }
 
     /**
-     * Nạp sẵn mọi thứ các hàm dưới đây cần cho một lô SKU, **dùng chung** model giữa các SKU: style (kèm bản dịch, trục,
+     * Nạp sẵn mọi thứ các hàm dưới đây cần cho một lô SKU, **dùng chung** model giữa các SKU: product (kèm bản dịch, trục,
      * vị trí giá trị) mỗi sản phẩm một lần, giá trị tuỳ chọn (kèm loại, bản dịch) mỗi giá trị một lần. Thay cho
      * `with(relations())` ở đường đọc nhiều SKU: eager load quan hệ nhiều-nhiều dựng một bản sao giá trị (và loại, bản dịch)
      * cho từng SKU — 3.000 SKU × 2 trục ≈ 30.000 model, phần lớn thời gian của danh sách sản phẩm/tồn/bảng giá Admin.
@@ -43,7 +43,7 @@ final class VariantOptions
             return;
         }
 
-        $variants->load(['style.translations', 'style.options.type', 'style.optionValues']);
+        $variants->load(['product.translations', 'product.options.type', 'product.optionValues']);
         $rows = DB::table('variant_option_values')->whereIn('variant_id', $variants->modelKeys())->get(['variant_id', 'option_value_id']);
         $values = OptionValue::query()->with(['type.translations', 'translations'])
             ->whereKey($rows->pluck('option_value_id')->unique()->values()->all())->get()->keyBy('id');
@@ -65,15 +65,15 @@ final class VariantOptions
     {
         $byType = $variant->optionValues->keyBy(fn (OptionValue $value): int => $value->option_type_id);
 
-        return array_values(array_filter($variant->style->options->map(fn (StyleOption $axis): ?OptionValue => $byType->get($axis->option_type_id))->all()));
+        return array_values(array_filter($variant->product->options->map(fn (ProductOption $axis): ?OptionValue => $byType->get($axis->option_type_id))->all()));
     }
 
     /** Khoá sắp xếp SKU trong sản phẩm: vị trí giá trị (theo thứ tự riêng của sản phẩm) của từng trục. */
     public static function sortKey(Variant $variant): string
     {
-        $positions = $variant->style->optionValues->mapWithKeys(fn (StyleOptionValue $row): array => [$row->option_value_id => $row->position]);
+        $positions = $variant->product->optionValues->mapWithKeys(fn (ProductOptionValue $row): array => [$row->option_value_id => $row->position]);
 
-        return sprintf('%010d-', $variant->style_id).implode('-', array_map(fn (OptionValue $value): string => sprintf('%05d', $positions[$value->id] ?? 99999), self::ordered($variant)));
+        return sprintf('%010d-', $variant->product_id).implode('-', array_map(fn (OptionValue $value): string => sprintf('%05d', $positions[$value->id] ?? 99999), self::ordered($variant)));
     }
 
     /**
@@ -102,8 +102,8 @@ final class VariantOptions
      *
      * @return list<int> id loại tuỳ chọn theo thứ tự trục
      */
-    public static function axisTypeIds(Style $style): array
+    public static function axisTypeIds(Product $product): array
     {
-        return $style->options->map(fn (StyleOption $axis): int => $axis->option_type_id)->values()->all();
+        return $product->options->map(fn (ProductOption $axis): int => $axis->option_type_id)->values()->all();
     }
 }

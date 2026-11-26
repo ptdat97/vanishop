@@ -48,7 +48,7 @@ final class PromotionClawback
             $order->customer_id,
             $currency,
             $active->map(fn (OrderLine $line): PromotionLine => new PromotionLine(
-                $line->id, $line->brand_id, (int) ($line->meta['style_id'] ?? 0), $line->quantity, Money::of($line->unit_amount, $currency), Money::of($line->subtotal_amount, $currency), $line->variant_id,
+                $line->id, $line->brand_id, (int) ($line->meta['product_id'] ?? 0), $line->quantity, Money::of($line->unit_amount, $currency), Money::of($line->subtotal_amount, $currency), $line->variant_id,
             ))->values()->all(),
             [],
             $order->placed_at->getTimestamp(),

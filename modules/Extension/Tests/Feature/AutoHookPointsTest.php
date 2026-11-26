@@ -12,7 +12,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
     ['s' => $this->s] = C::store();
-    $this->slug = $this->s->style->slug;
+    $this->slug = $this->s->product->slug;
 });
 
 it('helper ngắn: vani_filter/vani_add_filter dùng ở mọi nơi, không cần khai báo số tham số; hook phải được khai báo', function () {

@@ -6,7 +6,7 @@ use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Storefront\Application\Seo\StoreShare;
@@ -21,7 +21,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
     ['brand' => $this->brand, 's' => $this->s] = C::store();
-    $this->product = $this->s->style;
+    $this->product = $this->s->product;
     $this->category = T::seed(fn () => Category::factory()->create(['slug' => 'dam']));
     $this->category->syncTranslations(['vi' => ['name' => 'Đầm', 'description' => '<p>Đầm lụa   mềm, <b>mát</b> cho mùa hè.</p>']]);
     $this->product->categories()->sync([$this->category->id]);
@@ -117,7 +117,7 @@ it('L44: sản phẩm ngừng bán (kể cả link slug cũ) → 410, noindex, g
             ->assertSee('href="'.url('/danh-muc/dam').'"', false);
     }
     $this->get('/san-pham/chua-tung-co')->assertNotFound();
-    expect(Style::query()->count())->toBe(2)->and(Brand::query()->count())->toBe(1);
+    expect(Product::query()->count())->toBe(2)->and(Brand::query()->count())->toBe(1);
 });
 
 it('L44: slug riêng của bản dịch đổi → link cũ của ngôn ngữ đó 301 sang slug mới', function () {

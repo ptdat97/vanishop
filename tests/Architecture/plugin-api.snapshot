@@ -1,4 +1,4 @@
-Extension API 1.36.0
+Extension API 1.37.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -33,11 +33,11 @@ interface Modules\Catalog\Contracts\CatalogReader
   brands(): array
   brand(string $slug): ?array
   searchProducts(Modules\Catalog\Contracts\Data\ProductFilters $filters, string $locale): array
-  productsByIds(array $styleIds, string $locale, int $now): array
+  productsByIds(array $productIds, string $locale, int $now): array
   productDetail(string $slug, string $locale, int $now): ?array
   sellableVariants(array $variantIds, string $locale, int $now): array
 interface Modules\Catalog\Contracts\CollectionDirectory
-  slugsForStyles(array $styleIds): array
+  slugsForProducts(array $productIds): array
 class Modules\Catalog\Contracts\Data\ImageSize
   const MIN = 16
   const MAX = 4000
@@ -72,7 +72,7 @@ class Modules\Catalog\Contracts\Data\ProductSearchQuery
   offset(): int
   limit(): int
 class Modules\Catalog\Contracts\Data\VariantData
-  __construct(int $id, ?int $brandId, int $styleId, string $styleCode, string $styleName, string $sku, string $status, array $options = array (
+  __construct(int $id, ?int $brandId, int $productId, string $productCode, string $productName, string $sku, string $status, array $options = array (
 ), bool $tracksInventory = true)
 class Modules\Catalog\Contracts\Data\VideoThumbnail
   __construct(string $url, ?int $width = NULL, ?int $height = NULL)
@@ -96,14 +96,14 @@ interface Modules\Catalog\Contracts\MediaUrls
   srcset(?int $mediaId, ?string $group = NULL): string
   productRatio(): ?array
 interface Modules\Catalog\Contracts\VariantDirectory
-  ofStyleCode(string $styleCode): array
+  ofProductCode(string $productCode): array
   find(array $variantIds): array
-  ofStyles(array $styleIds): array
+  ofProducts(array $productIds): array
   findBySkus(array $skus): array
   search(string $text, int $limit = 2000): array
-  searchIndex(string $text = '', ?string $styleCode = NULL): array
+  searchIndex(string $text = '', ?string $productCode = NULL): array
   untrackedInventory(array $variantIds): array
-  styleIdsOf(array $variantIds): array
+  productIdsOf(array $variantIds): array
   optionTypes(): array
 interface Modules\Catalog\Contracts\VariantFieldProvider
   const TAG = 'vani.catalog.variant_fields'
@@ -111,8 +111,8 @@ interface Modules\Catalog\Contracts\VariantFieldProvider
   label(): string
   fields(): array
   permission(): ?string
-  values(int $styleId, array $variantIds): array
-  save(int $styleId, array $values): array
+  values(int $productId, array $variantIds): array
+  save(int $productId, array $values): array
   storefront(array $variantIds): array
 interface Modules\Catalog\Contracts\VariantUsage
   const TAG = 'vani.catalog.variant_usage'
@@ -639,8 +639,8 @@ interface Modules\Ordering\Contracts\OrderStatistics
   breakdown(Modules\Ordering\Contracts\Data\SalesDimension $dimension, DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
   variantSales(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array
   cancellations(DateTimeImmutable $from, DateTimeImmutable $to): array
-  topStyles(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
-  confirmedQuantitiesByStyle(DateTimeImmutable $from, DateTimeImmutable $to, ?array $styleIds = NULL): array
+  topProducts(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
+  confirmedQuantitiesByProduct(DateTimeImmutable $from, DateTimeImmutable $to, ?array $productIds = NULL): array
   countByStatus(): array
   summarize(array $orderIds): Modules\Ordering\Contracts\Data\SalesTotals
   orderIdsWithPriceLists(array $priceListCodes): array
@@ -835,7 +835,7 @@ class Modules\Promotion\Contracts\Data\PromotionContext
   subtotal(): Modules\Shared\Domain\Money\Money
   line(int $key): ?Modules\Promotion\Contracts\Data\PromotionLine
 class Modules\Promotion\Contracts\Data\PromotionLine
-  __construct(int $key, ?int $brandId, int $styleId, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, Modules\Shared\Domain\Money\Money $subtotal, ?int $variantId = NULL)
+  __construct(int $key, ?int $brandId, int $productId, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, Modules\Shared\Domain\Money\Money $subtotal, ?int $variantId = NULL)
 class Modules\Promotion\Contracts\Data\PromotionResult
   __construct(array $applied, array $rejectedVouchers)
   discountByLine(): array
@@ -928,7 +928,7 @@ class Modules\Shared\Support\StoreLocale
   static options(): array
   static isSupported(string $locale): bool
 interface Modules\Storefront\Contracts\CustomerProductPrices
-  forCustomer(array $styleIds, int $customerId, string $locale): array
+  forCustomer(array $productIds, int $customerId, string $locale): array
 interface Modules\Storefront\Contracts\CustomerSignIn [experimental]
   signIn(Illuminate\Http\Request $request, string $token, int $customerId): string
 class Modules\Storefront\Contracts\Data\LinkTarget
@@ -956,7 +956,7 @@ interface Modules\Storefront\Contracts\PageSeo
   noindex(): void
 interface Modules\Storefront\Contracts\ProductCards
   const MAX_IDS = 60
-  forIds(array $styleIds, string $locale): array
+  forIds(array $productIds, string $locale): array
 class Modules\Storefront\Contracts\PublicPageExpiry
   static limit(Illuminate\Http\Request $request, DateTimeInterface $at): void
   static timestamp(Illuminate\Http\Request $request): ?int
@@ -1043,7 +1043,7 @@ hook vani.admin.order.sidebar slot(order: Modules\Ordering\Contracts\Data\OrderD
 hook vani.admin.order.timeline slot(order: Modules\Ordering\Contracts\Data\OrderDetail)
 hook vani.admin.page.* filter(props: array<string, mixed>, component: string) [experimental]
 hook vani.admin.product.bulk_actions slot()
-hook vani.admin.product.list_columns slot(styleIds: list<int>)
+hook vani.admin.product.list_columns slot(productIds: list<int>)
 hook vani.api.storefront.* filter(body: array<string, mixed>, request: Illuminate\Http\Request) [experimental]
 hook vani.cart.validate_line validate(draft: Modules\Cart\Contracts\Data\CartLineDraft)
 hook vani.catalog.listing.query filter(query: Modules\Catalog\Contracts\Data\ProductSearchQuery)
@@ -1063,7 +1063,7 @@ hook vani.order.cancellation_reasons filter(reasons: array<string, string>, buil
 hook vani.payment.before_refund validate(payment: Modules\Payment\Contracts\Data\PaymentView, amount: Modules\Shared\Domain\Money\Money, reason: string)
 hook vani.pricing.bulk.warnings filter(warnings: array, variantId: int, listAmount: ?int, amount: int, priceList: string)
 hook vani.pricing.unit_costs filter(costs: array<int, int>, variantIds: list<int>)
-hook vani.product.after_save action(styleId: int)
+hook vani.product.after_save action(productId: int)
 hook vani.product.before_save validate(draft: Modules\Catalog\Contracts\Data\ProductDraft)
 hook vani.returns.before_approve validate(return: Modules\Returns\Contracts\Data\ReturnView)
 hook vani.service.catalog.brand filter(brand: array<string, mixed>, slug: string)

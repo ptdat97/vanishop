@@ -29,22 +29,22 @@ return new class extends Migration
             $table->unique(['link_type_id', 'locale']);
         });
 
-        // root_style_id = null: nhóm hai chiều (mọi thành viên thấy nhau); khác null: một chiều (chỉ style gốc thấy các thành viên).
-        Schema::create('style_link_groups', function (Blueprint $table) {
+        // root_product_id = null: nhóm hai chiều (mọi thành viên thấy nhau); khác null: một chiều (chỉ product gốc thấy các thành viên).
+        Schema::create('product_link_groups', function (Blueprint $table) {
             $table->id();
             $table->foreignId('link_type_id')->constrained()->restrictOnDelete();
-            $table->foreignId('root_style_id')->nullable()->constrained('styles')->cascadeOnDelete();
+            $table->foreignId('root_product_id')->nullable()->constrained('products')->cascadeOnDelete();
             $table->timestamps();
-            $table->index(['link_type_id', 'root_style_id']);
+            $table->index(['link_type_id', 'root_product_id']);
         });
 
-        Schema::create('style_link_group_items', function (Blueprint $table) {
+        Schema::create('product_link_group_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('style_link_group_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('style_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_link_group_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('position')->default(0);
-            $table->unique(['style_link_group_id', 'style_id']);
-            $table->index('style_id');
+            $table->unique(['product_link_group_id', 'product_id']);
+            $table->index('product_id');
         });
 
         // Video ở nền tảng ngoài (YouTube…), driver do plugin cung cấp (VideoDriver). Dùng lại được cho nhiều sản phẩm.
@@ -58,18 +58,18 @@ return new class extends Migration
             $table->unique(['driver', 'reference']);
         });
 
-        Schema::create('style_video', function (Blueprint $table) {
-            $table->foreignId('style_id')->constrained()->cascadeOnDelete();
+        Schema::create('product_video', function (Blueprint $table) {
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('video_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('position')->default(0);
-            $table->primary(['style_id', 'video_id']);
+            $table->primary(['product_id', 'video_id']);
             $table->index('video_id');
         });
     }
 
     public function down(): void
     {
-        foreach (['style_video', 'videos', 'style_link_group_items', 'style_link_groups', 'link_type_translations', 'link_types'] as $table) {
+        foreach (['product_video', 'videos', 'product_link_group_items', 'product_link_groups', 'link_type_translations', 'link_types'] as $table) {
             Schema::dropIfExists($table);
         }
     }

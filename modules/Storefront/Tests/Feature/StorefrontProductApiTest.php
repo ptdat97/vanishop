@@ -5,8 +5,8 @@ use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\OptionValue;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers;
@@ -87,9 +87,9 @@ it('lọc theo loại tuỳ chọn (màu theo nhóm màu của SKU đang bán) v
     // Màu chưa có SKU không tính khi lọc.
     $this->getJson('/api/storefront/v1/products?opt[color]=black', $this->headers)->assertJsonPath('meta.total', 0);
     $size = T::seed(fn () => OptionValue::factory()->size()->create(['code' => 'F']));
-    foreach ([[$this->silkDress, $this->black], [$this->linenShirt, $this->white]] as [$style, $color]) {
-        T::optionValues($style, $size);
-        T::seed(fn () => app(ProductOptions::class)->createVariant($style, [$color->id, $size->id]));
+    foreach ([[$this->silkDress, $this->black], [$this->linenShirt, $this->white]] as [$product, $color]) {
+        T::optionValues($product, $size);
+        T::seed(fn () => app(ProductOptions::class)->createVariant($product, [$color->id, $size->id]));
     }
 
     $response = $this->getJson('/api/storefront/v1/products?opt[color]=black', $this->headers)->assertJsonPath('meta.total', 1);
@@ -111,7 +111,7 @@ it('lọc theo loại tuỳ chọn (màu theo nhóm màu của SKU đang bán) v
 it('lọc theo bộ sưu tập và phân trang', function () {
     T::seed(function () {
         $collection = ProductCollection::query()->create(['slug' => 'he-2026', 'status' => 'active']);
-        $collection->styles()->attach($this->linenShirt->id);
+        $collection->products()->attach($this->linenShirt->id);
     });
 
     $this->getJson('/api/storefront/v1/products?collection=he-2026', $this->headers)->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.slug', 'ao-linen');
@@ -217,7 +217,7 @@ it('mô hình options/variants: mọi SKU (cả ngừng bán, giá/trạng thái
 });
 
 it('thẻ sản phẩm theo id: giữ thứ tự, bỏ sản phẩm không hiển thị/trùng, cùng dạng lưới; giới hạn 30 id', function () {
-    $draft = T::seed(fn () => Style::query()->where('status', 'draft')->value('id'));
+    $draft = T::seed(fn () => Product::query()->where('status', 'draft')->value('id'));
     $ids = implode(',', [$this->linenShirt->id, $draft, 999999, $this->silkDress->id, $this->linenShirt->id]);
 
     $response = $this->getJson("/api/storefront/v1/products?ids={$ids}&brand=urbanx")->assertOk();

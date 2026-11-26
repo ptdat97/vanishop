@@ -18,10 +18,10 @@ use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\LinkType;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
-use Modules\Catalog\Persistence\Models\StyleAttributeValue;
-use Modules\Catalog\Persistence\Models\StyleOption;
-use Modules\Catalog\Persistence\Models\StyleOptionValue;
+use Modules\Catalog\Persistence\Models\Product;
+use Modules\Catalog\Persistence\Models\ProductAttributeValue;
+use Modules\Catalog\Persistence\Models\ProductOption;
+use Modules\Catalog\Persistence\Models\ProductOptionValue;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Facades\Hook;
@@ -35,7 +35,7 @@ final class StorefrontProductQuery
 {
     public function __construct(
         private readonly ProductSearch $search,
-        private readonly StyleLinkService $links,
+        private readonly ProductLinkService $links,
         private readonly VideoDrivers $videos,
         private readonly Settings $settings,
     ) {}
@@ -48,17 +48,17 @@ final class StorefrontProductQuery
         $filtered = Hook::filter('vani.catalog.listing.query', $query);
         $result = $this->search->search($filtered instanceof ProductSearchQuery ? $filtered : $query);
 
-        $styles = Style::query()
+        $products = Product::query()
             ->with(self::summaryRelations())
-            ->whereIn('id', $result->styleIds)
+            ->whereIn('id', $result->productIds)
             ->get()
             ->keyBy('id');
 
         $items = [];
-        foreach ($result->styleIds as $id) {
-            $style = $styles->get($id);
-            if ($style !== null) {
-                $items[] = $this->summary($style, $locale);
+        foreach ($result->productIds as $id) {
+            $product = $products->get($id);
+            if ($product !== null) {
+                $items[] = $this->summary($product, $locale);
             }
         }
 
@@ -66,27 +66,27 @@ final class StorefrontProductQuery
     }
 
     /**
-     * Sản phẩm đang hiển thị theo id style, giữ thứ tự `$styleIds`; id trùng/không hiển thị bị bỏ.
+     * Sản phẩm đang hiển thị theo id product, giữ thứ tự `$productIds`; id trùng/không hiển thị bị bỏ.
      *
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return list<array<string, mixed>>
      */
-    public function byIds(array $styleIds, string $locale, int $now): array
+    public function byIds(array $productIds, string $locale, int $now): array
     {
-        $ids = array_values(array_unique(array_filter($styleIds, fn (int $id): bool => $id > 0)));
+        $ids = array_values(array_unique(array_filter($productIds, fn (int $id): bool => $id > 0)));
         if ($ids === []) {
             return [];
         }
 
         $at = new \DateTimeImmutable("@{$now}");
-        $styles = Style::query()->with(self::summaryRelations())->whereIn('id', $ids)->get()
-            ->filter(fn (Style $style): bool => PublishWindow::isVisible($style->status, $style->publishWindow(), $at))
+        $products = Product::query()->with(self::summaryRelations())->whereIn('id', $ids)->get()
+            ->filter(fn (Product $product): bool => PublishWindow::isVisible($product->status, $product->publishWindow(), $at))
             ->keyBy('id');
 
         $items = [];
         foreach ($ids as $id) {
-            if ($styles->has($id)) {
-                $items[] = $this->summary($styles->get($id), $locale);
+            if ($products->has($id)) {
+                $items[] = $this->summary($products->get($id), $locale);
             }
         }
 
@@ -98,49 +98,49 @@ final class StorefrontProductQuery
      */
     public function detail(string $slug, string $locale, int $now): ?array
     {
-        $style = Style::query()
+        $product = Product::query()
             ->with(['translations', 'brand', 'options.type.translations', 'optionValues.value.translations', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations', 'videos',
                 // Mọi SKU (cả ngừng bán) cho `variants`; thẻ và tổng hợp chỉ tính SKU đang bán.
                 'variants' => fn ($query) => $query->with(['optionValues', 'gallery.media'])])
             ->whereLocalizedSlug($slug, $locale)
             ->first();
 
-        if ($style === null || ! PublishWindow::isVisible($style->status, $style->publishWindow(), new \DateTimeImmutable("@{$now}"))) {
+        if ($product === null || ! PublishWindow::isVisible($product->status, $product->publishWindow(), new \DateTimeImmutable("@{$now}"))) {
             return null;
         }
 
         return [
             // Swatch của thẻ (`colors`) thay bằng trục chọn `options` ở trang chi tiết.
-            ...array_diff_key($this->summary($style, $locale), ['colors' => true]),
-            'description' => $style->translate('description', $locale),
-            'care_instructions' => $style->translate('care_instructions', $locale),
-            'meta_title' => $style->translate('meta_title', $locale),
-            'meta_description' => $style->translate('meta_description', $locale),
+            ...array_diff_key($this->summary($product, $locale), ['colors' => true]),
+            'description' => $product->translate('description', $locale),
+            'care_instructions' => $product->translate('care_instructions', $locale),
+            'meta_title' => $product->translate('meta_title', $locale),
+            'meta_description' => $product->translate('meta_description', $locale),
             // Slug theo từng ngôn ngữ (ADR-038): URL tương ứng của cùng sản phẩm, hreflang.
-            'slugs' => $style->slugs(),
-            'breadcrumb' => $this->breadcrumb($style->primaryCategory, $locale),
-            'attributes' => $this->attributes($style->attributeValues, $locale),
-            ...$this->variantModel($style, $locale),
-            'videos' => array_values(array_filter($style->videos->map(fn (Video $video): ?array => $this->videos->view($video))->all())),
-            'links' => $this->links($style, $locale),
+            'slugs' => $product->slugs(),
+            'breadcrumb' => $this->breadcrumb($product->primaryCategory, $locale),
+            'attributes' => $this->attributes($product->attributeValues, $locale),
+            ...$this->variantModel($product, $locale),
+            'videos' => array_values(array_filter($product->videos->map(fn (Video $video): ?array => $this->videos->view($video))->all())),
+            'links' => $this->links($product, $locale),
         ];
     }
 
     /**
-     * Sản phẩm liên kết theo loại đang bật, theo thứ tự loại; chỉ có id style — tầng ghép lọc sản phẩm không hiển thị
+     * Sản phẩm liên kết theo loại đang bật, theo thứ tự loại; chỉ có id product — tầng ghép lọc sản phẩm không hiển thị
      * và dựng thẻ sản phẩm (giá, tồn) bằng `productsByIds`.
      *
-     * @return list<array{code: string, name: string|null, style_ids: list<int>}>
+     * @return list<array{code: string, name: string|null, product_ids: list<int>}>
      */
-    private function links(Style $style, string $locale): array
+    private function links(Product $product, string $locale): array
     {
-        $linked = $this->links->linkedStyleIds($style->id);
+        $linked = $this->links->linkedProductIds($product->id);
         if ($linked === []) {
             return [];
         }
 
         return LinkType::query()->with('translations')->whereKey(array_keys($linked))->where('is_active', true)->orderBy('position')->orderBy('id')->get()
-            ->map(fn (LinkType $type): array => ['code' => $type->code, 'name' => $type->translate('name', $locale), 'style_ids' => $linked[$type->id]])
+            ->map(fn (LinkType $type): array => ['code' => $type->code, 'name' => $type->translate('name', $locale), 'product_ids' => $linked[$type->id]])
             ->values()
             ->all();
     }
@@ -155,20 +155,20 @@ final class StorefrontProductQuery
         $defaultWeight = DefaultWeight::grams($this->settings);
 
         return Variant::query()
-            ->with(['style.translations', 'style.brand', 'gallery.media', ...VariantOptions::relations()])
+            ->with(['product.translations', 'product.brand', 'gallery.media', ...VariantOptions::relations()])
             ->whereIn('id', $variantIds)
             ->where('status', VariantStatus::Active)
             ->get()
-            ->filter(fn (Variant $variant): bool => PublishWindow::isVisible($variant->style->status, $variant->style->publishWindow(), $at))
+            ->filter(fn (Variant $variant): bool => PublishWindow::isVisible($variant->product->status, $variant->product->publishWindow(), $at))
             ->mapWithKeys(fn (Variant $variant): array => [$variant->id => new SellableVariant(
                 id: $variant->id,
-                brandId: $variant->style->brand_id,
-                styleId: $variant->style_id,
+                brandId: $variant->product->brand_id,
+                productId: $variant->product_id,
                 sku: $variant->sku,
-                slug: $variant->style->slugFor($locale),
-                name: (string) $variant->style->translate('name', $locale),
+                slug: $variant->product->slugFor($locale),
+                name: (string) $variant->product->translate('name', $locale),
                 imageUrl: $variant->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
-                brandName: $variant->style->brand?->name,
+                brandName: $variant->product->brand?->name,
                 // SKU chưa nhập khối lượng → khối lượng mặc định của cửa hàng (tính phí giao, file gửi hãng).
                 weightGram: $variant->weight_gram > 0 ? $variant->weight_gram : $defaultWeight,
                 options: VariantOptions::present($variant, $locale),
@@ -188,24 +188,24 @@ final class StorefrontProductQuery
             'variants' => fn ($query) => $query->where('status', 'active')->with(['optionValues', 'gallery.media'])];
     }
 
-    private function summary(Style $style, string $locale): array
+    private function summary(Product $product, string $locale): array
     {
-        $firstImage = $style->variants->flatMap(fn (Variant $variant) => $variant->gallery)->first();
+        $firstImage = $product->variants->flatMap(fn (Variant $variant) => $variant->gallery)->first();
 
         return [
-            'id' => $style->id,
-            'slug' => $style->slugFor($locale),
+            'id' => $product->id,
+            'slug' => $product->slugFor($locale),
             // Ngôn ngữ đã dịch (ADR-038): sitemap, hreflang, noindex cho trang chưa dịch.
-            'locales' => $style->translatedLocales(),
-            'style_code' => $style->style_code,
-            'name' => $style->translate('name', $locale),
-            'brand' => $style->brand === null ? null : ['id' => $style->brand->id, 'slug' => $style->brand->slug, 'name' => $style->brand->name],
+            'locales' => $product->translatedLocales(),
+            'product_code' => $product->product_code,
+            'name' => $product->translate('name', $locale),
+            'brand' => $product->brand === null ? null : ['id' => $product->brand->id, 'slug' => $product->brand->slug, 'name' => $product->brand->name],
             'image_url' => $firstImage?->media->url(400, ImageSizes::PRODUCT),
             // Ảnh responsive (0.3.67): theme ghép `sizes` theo bố cục lưới; null khi ảnh không có bản thu nhỏ.
             'image_srcset' => ($firstImage?->media->srcset(ImageSizes::PRODUCT) ?? '') ?: null,
             // Swatch của thẻ: giá trị của trục kiểu ô màu (nếu có) mà SKU đang bán dùng (ADR-045).
-            'colors' => $this->swatches($style, $locale),
-            'variant_ids' => $style->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),
+            'colors' => $this->swatches($product, $locale),
+            'variant_ids' => $product->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),
         ];
     }
 
@@ -215,16 +215,16 @@ final class StorefrontProductQuery
      *
      * @return list<array{code: string, name: string|null, hex: string|null, family: string, image_url: string|null}>
      */
-    private function swatches(Style $style, string $locale): array
+    private function swatches(Product $product, string $locale): array
     {
-        $axis = $style->options->first(fn (StyleOption $option): bool => $option->type->display_type === OptionDisplayType::Swatch);
+        $axis = $product->options->first(fn (ProductOption $option): bool => $option->type->display_type === OptionDisplayType::Swatch);
         if ($axis === null) {
             return [];
         }
 
-        return $this->axisValues($style, $axis, onlyUsed: false)->map(fn (OptionValue $value): array => [
+        return $this->axisValues($product, $axis, onlyUsed: false)->map(fn (OptionValue $value): array => [
             'code' => $value->code, 'name' => $value->translate('name', $locale), 'hex' => $value->hex, 'family' => (string) ($value->family ?? 'multi'),
-            'image_url' => $this->variantsWith($style, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(400, ImageSizes::PRODUCT),
+            'image_url' => $this->variantsWith($product, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(400, ImageSizes::PRODUCT),
         ])->values()->all();
     }
 
@@ -234,20 +234,20 @@ final class StorefrontProductQuery
      *
      * @return Collection<int, OptionValue>
      */
-    private function axisValues(Style $style, StyleOption $axis, bool $onlyUsed = true): Collection
+    private function axisValues(Product $product, ProductOption $axis, bool $onlyUsed = true): Collection
     {
-        $used = $onlyUsed ? $style->variants->flatMap(fn (Variant $variant) => $variant->optionValues)->pluck('id')->unique()->all() : null;
+        $used = $onlyUsed ? $product->variants->flatMap(fn (Variant $variant) => $variant->optionValues)->pluck('id')->unique()->all() : null;
 
-        return $style->optionValues->map(fn (StyleOptionValue $row): OptionValue => $row->value)
+        return $product->optionValues->map(fn (ProductOptionValue $row): OptionValue => $row->value)
             ->filter(fn (OptionValue $value): bool => $value->option_type_id === $axis->option_type_id && ($used === null || in_array($value->id, $used, true)))->values();
     }
 
     /**
      * @return Collection<int, Variant>
      */
-    private function variantsWith(Style $style, int $valueId): Collection
+    private function variantsWith(Product $product, int $valueId): Collection
     {
-        return $style->variants->filter(fn (Variant $variant): bool => $variant->optionValues->contains('id', $valueId))->values();
+        return $product->variants->filter(fn (Variant $variant): bool => $variant->optionValues->contains('id', $valueId))->values();
     }
 
     /**
@@ -259,13 +259,13 @@ final class StorefrontProductQuery
      *
      * @return array{options: list<array<string, mixed>>, variants: list<array<string, mixed>>, media: array{gallery: list<array<string, mixed>>}}
      */
-    private function variantModel(Style $style, string $locale): array
+    private function variantModel(Product $product, string $locale): array
     {
-        $axes = $style->options;
-        $types = $axes->mapWithKeys(fn (StyleOption $axis): array => [$axis->option_type_id => $axis->type->code]);
-        $positions = $style->optionValues->mapWithKeys(fn (StyleOptionValue $row): array => [$row->option_value_id => $row->position]);
-        $ordered = fn (Variant $variant): array => $axes->map(fn (StyleOption $axis): ?OptionValue => $variant->optionValues->first(fn (OptionValue $value): bool => $value->option_type_id === $axis->option_type_id))->filter()->values()->all();
-        $variants = $style->variants->sortBy(fn (Variant $variant): string => implode('-', array_map(fn (OptionValue $value): string => sprintf('%05d', $positions[$value->id] ?? 99999), $ordered($variant))))->values();
+        $axes = $product->options;
+        $types = $axes->mapWithKeys(fn (ProductOption $axis): array => [$axis->option_type_id => $axis->type->code]);
+        $positions = $product->optionValues->mapWithKeys(fn (ProductOptionValue $row): array => [$row->option_value_id => $row->position]);
+        $ordered = fn (Variant $variant): array => $axes->map(fn (ProductOption $axis): ?OptionValue => $variant->optionValues->first(fn (OptionValue $value): bool => $value->option_type_id === $axis->option_type_id))->filter()->values()->all();
+        $variants = $product->variants->sortBy(fn (Variant $variant): string => implode('-', array_map(fn (OptionValue $value): string => sprintf('%05d', $positions[$value->id] ?? 99999), $ordered($variant))))->values();
 
         $gallery = [];
         foreach ($variants as $variant) {
@@ -278,12 +278,12 @@ final class StorefrontProductQuery
         }
 
         return [
-            'options' => $axes->map(fn (StyleOption $axis): array => [
+            'options' => $axes->map(fn (ProductOption $axis): array => [
                 'code' => $axis->type->code, 'name' => $axis->type->translate('name', $locale) ?? $axis->type->code, 'display_type' => $axis->type->display_type->value,
-                'values' => $this->axisValues($style, $axis)->map(fn (OptionValue $value): array => [
+                'values' => $this->axisValues($product, $axis)->map(fn (OptionValue $value): array => [
                     'id' => $value->id, 'code' => $value->code, 'name' => $value->translate('name', $locale) ?? $value->code,
                     'hex' => $value->hex, 'family' => $value->family, 'group' => $value->group,
-                    'image_url' => $this->variantsWith($style, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(400, ImageSizes::PRODUCT),
+                    'image_url' => $this->variantsWith($product, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(400, ImageSizes::PRODUCT),
                 ])->all(),
             ])->values()->all(),
             'variants' => $variants->map(fn (Variant $variant): array => [
@@ -313,13 +313,13 @@ final class StorefrontProductQuery
     }
 
     /**
-     * @param  Collection<int, StyleAttributeValue>  $rows
+     * @param  Collection<int, ProductAttributeValue>  $rows
      * @return list<array{code: string, name: string|null, value: string|bool|list<string|null>|null}>
      */
     private function attributes(Collection $rows, string $locale): array
     {
         return $rows
-            ->filter(fn (StyleAttributeValue $row): bool => $row->attribute->kind === AttributeKind::Spec)
+            ->filter(fn (ProductAttributeValue $row): bool => $row->attribute->kind === AttributeKind::Spec)
             ->groupBy('attribute_id')
             ->map(function (Collection $group) use ($locale): array {
                 $attribute = $group->first()->attribute;

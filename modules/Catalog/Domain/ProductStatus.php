@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Domain;
 
-enum StyleStatus: string
+enum ProductStatus: string
 {
     case Draft = 'draft';
     case Active = 'active';

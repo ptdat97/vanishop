@@ -12,7 +12,7 @@ use Modules\Extension\Contracts\Data\FieldDefinition;
  * Contract test cho VariantFieldProvider (docs/03-domains/variant-matrix.md §3.3) — plugin góp cột vào ma trận biến thể
  * dùng lại trong test của mình:
  *
- *   VariantFieldProviderContract::define('vani.size-chart', fn () => app(MeasureFields::class), fn (): array => [$styleId, $variantIds]);
+ *   VariantFieldProviderContract::define('vani.size-chart', fn () => app(MeasureFields::class), fn (): array => [$productId, $variantIds]);
  *
  * Kiểm: khoá/nhãn hợp lệ, trường có khoá duy nhất; `values()` chỉ trả SKU được hỏi và trường đã khai; lưu giá trị mẫu hợp lệ
  * theo loại trường rồi đọc lại được; `storefront()` chỉ trả SKU được hỏi.
@@ -21,7 +21,7 @@ final class VariantFieldProviderContract
 {
     /**
      * @param  Closure(): VariantFieldProvider  $provider
-     * @param  Closure(): array{0: int, 1: list<int>}  $product  dựng một sản phẩm có SKU, trả [style id, variant ids]
+     * @param  Closure(): array{0: int, 1: list<int>}  $product  dựng một sản phẩm có SKU, trả [product id, variant ids]
      */
     public static function define(string $label, Closure $provider, Closure $product): void
     {
@@ -40,7 +40,7 @@ final class VariantFieldProviderContract
             });
 
             it('lưu giá trị mẫu theo loại trường rồi đọc lại; chỉ trả SKU được hỏi', function () use ($provider, $product): void {
-                [$styleId, $variantIds] = $product();
+                [$productId, $variantIds] = $product();
                 $instance = $provider();
                 $sample = [];
                 foreach ($instance->fields() as $index => $field) {
@@ -53,8 +53,8 @@ final class VariantFieldProviderContract
                 }
                 $first = $variantIds[0];
 
-                $errors = $instance->save($styleId, [$first => $sample]);
-                $values = $instance->values($styleId, [$first]);
+                $errors = $instance->save($productId, [$first => $sample]);
+                $values = $instance->values($productId, [$first]);
 
                 expect(array_keys($values))->each->toBeIn([$first]);
                 expect($errors)->not->toHaveKey($first, 'Giá trị mẫu hợp lệ theo loại trường bị từ chối: '.($errors[$first] ?? ''))

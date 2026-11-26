@@ -33,7 +33,7 @@ function cmsBannerMedia(string $name): Media
 beforeEach(function () {
     Storage::fake('public');
     ['s' => $this->s] = C::store();
-    $this->style = $this->s->style;
+    $this->product = $this->s->product;
     app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
         app(PluginManager::class)->install(CmsServiceProvider::ID);
         app(PluginManager::class)->enable(CmsServiceProvider::ID);
@@ -45,8 +45,8 @@ beforeEach(function () {
             app(Settings::class)->set(CmsServiceProvider::ID, $key, $value);
         }
     });
-    $this->pdp = fn (): string => $this->get('/san-pham/'.$this->style->slug)->assertOk()->getContent();
-    $this->extension = fn () => $this->getJson('/api/storefront/v1/products/'.$this->style->slug)->assertOk()->json('data.extensions')[CmsServiceProvider::ID] ?? null;
+    $this->pdp = fn (): string => $this->get('/san-pham/'.$this->product->slug)->assertOk()->getContent();
+    $this->extension = fn () => $this->getJson('/api/storefront/v1/products/'.$this->product->slug)->assertOk()->json('data.extensions')[CmsServiceProvider::ID] ?? null;
 });
 
 it('thanh thông báo: tắt → không có HTML; nhiều dòng xoay vòng; Markdown an toàn; ngoài khung giờ → ẩn', function () {
@@ -102,7 +102,7 @@ it('hộp ưu đãi ở vị trí cấu hình; sản phẩm chọn ẩn thì kh�
     expect(substr_count($html, 'data-vani-cms-promo-box'))->toBe(1)
         ->and(strpos($html, 'data-vani-cms-promo-box'))->toBeGreaterThan(strpos($html, 'data-variant-form'));
 
-    T::seed(fn () => app(ExtraContent::class)->saveProduct($this->style->id, ['hide_promo_box' => true]));
+    T::seed(fn () => app(ExtraContent::class)->saveProduct($this->product->id, ['hide_promo_box' => true]));
     expect(($this->pdp)())->not->toContain('data-vani-cms-promo-box')
         ->and(($this->extension)())->toBeNull();
 });
@@ -110,19 +110,19 @@ it('hộp ưu đãi ở vị trí cấu hình; sản phẩm chọn ẩn thì kh�
 it('điểm nổi bật: tối đa 8, bỏ dòng trống, hiện dưới tên và có trong Storefront API; form sản phẩm có phần "Nội dung thêm"', function () {
     $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage']), 'staff');
     $lines = implode("\n", ['Lụa tơ tằm', '', '   ', ...array_map(fn (int $i): string => "Ý {$i}", range(1, 9)), '<b>đậm</b>']);
-    T::seed(fn () => app(ExtraContent::class)->saveProduct($this->style->id, [ExtraContent::highlightKey('vi') => $lines]));
+    T::seed(fn () => app(ExtraContent::class)->saveProduct($this->product->id, [ExtraContent::highlightKey('vi') => $lines]));
 
     expect(($this->extension)())->toBe(['highlights' => ['Lụa tơ tằm', 'Ý 1', 'Ý 2', 'Ý 3', 'Ý 4', 'Ý 5', 'Ý 6', 'Ý 7'], 'promo_box' => null]);
     $html = ($this->pdp)();
     expect($html)->toContain('data-vani-cms-highlights')->toContain('Lụa tơ tằm')->not->toContain('Ý 8')
         ->and(strpos($html, 'data-vani-cms-highlights'))->toBeGreaterThan(strpos($html, '<h1'));
 
-    $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page
+    $this->get("/admin/catalog/products/{$this->product->id}/edit")->assertInertia(fn (Assert $page) => $page
         ->where('extensionSections', fn (mixed $sections) => ($section = collect($sections)->firstWhere('plugin', CmsServiceProvider::ID)) !== null
             && str_starts_with($section['values'][ExtraContent::highlightKey('vi')] ?? '', "Lụa tơ tằm\nÝ 1")));
 
     // Xoá hết nội dung → bỏ dòng dữ liệu.
-    T::seed(fn () => app(ExtraContent::class)->saveProduct($this->style->id, [ExtraContent::highlightKey('vi') => '', 'hide_promo_box' => false]));
+    T::seed(fn () => app(ExtraContent::class)->saveProduct($this->product->id, [ExtraContent::highlightKey('vi') => '', 'hide_promo_box' => false]));
     expect(DB::table('plg_cms_product_extras')->count())->toBe(0)->and(($this->extension)())->toBeNull();
 });
 

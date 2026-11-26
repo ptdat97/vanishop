@@ -5,7 +5,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 
 /*
 | Hợp đồng lỗi của /api/* (docs/06-api/api.md §2, ApiErrorRenderer): {"error": {code, message, details?, correlation_id}};
@@ -15,7 +15,7 @@ use Modules\Catalog\Persistence\Models\Style;
 beforeEach(function () {
     config(['app.debug' => false]);
     Route::prefix('api/__contract')->group(function () {
-        Route::get('model', fn () => Style::query()->findOrFail(999_999));
+        Route::get('model', fn () => Product::query()->findOrFail(999_999));
         Route::get('abort', fn () => abort(404, 'Không có đơn này.'));
         Route::get('forbidden', fn () => throw new AuthorizationException);
         Route::get('throttle', fn () => throw new ThrottleRequestsException('Too Many Attempts.', null, ['Retry-After' => 30]));

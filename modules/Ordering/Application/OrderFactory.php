@@ -55,7 +55,7 @@ final class OrderFactory implements OrderWriter
         ]);
 
         foreach ($draft->lines as $line) {
-            $meta = array_filter(['options' => $line->options, 'style_id' => $line->styleId, 'promotions' => $line->promotions]);
+            $meta = array_filter(['options' => $line->options, 'product_id' => $line->productId, 'promotions' => $line->promotions]);
             $unitCost = $unitCosts[$line->variantId] ?? null;
             if (is_int($unitCost) && $unitCost >= 0) {
                 $meta['unit_cost_at_sale'] = $unitCost;

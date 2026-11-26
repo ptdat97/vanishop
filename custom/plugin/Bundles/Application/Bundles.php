@@ -30,7 +30,7 @@ final class Bundles
     ) {}
 
     /**
-     * @param  array{slug: string, name: string, description: ?string, image_media_id: ?int, discount_percent: int, active: bool, starts_at: ?Carbon, ends_at: ?Carbon, position: int, items: list<array{style_id: int, quantity: int}>}  $data
+     * @param  array{slug: string, name: string, description: ?string, image_media_id: ?int, discount_percent: int, active: bool, starts_at: ?Carbon, ends_at: ?Carbon, position: int, items: list<array{product_id: int, quantity: int}>}  $data
      */
     public function save(array $data, ?Bundle $bundle = null): Bundle
     {
@@ -50,7 +50,7 @@ final class Bundles
             ])->save();
             $bundle->items()->delete();
             foreach ($data['items'] as $position => $item) {
-                $bundle->items()->create(['style_id' => $item['style_id'], 'quantity' => $item['quantity'], 'position' => $position]);
+                $bundle->items()->create(['product_id' => $item['product_id'], 'quantity' => $item['quantity'], 'position' => $position]);
             }
             $bundle->load('items');
             $this->sync($bundle);

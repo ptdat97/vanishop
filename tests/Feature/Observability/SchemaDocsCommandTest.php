@@ -7,7 +7,7 @@ it('vani:docs:schema sinh từ điển dữ liệu bảng Core (bỏ plg_*); --c
 
     $this->artisan('vani:docs:schema', ['--path' => $path])->assertSuccessful();
     $markdown = File::get(base_path($path));
-    expect($markdown)->toContain('## carts')->toContain('`public_id`')->toContain('## style_view_stats')->not->toContain('## plg_');
+    expect($markdown)->toContain('## carts')->toContain('`public_id`')->toContain('## product_view_stats')->not->toContain('## plg_');
 
     $this->artisan('vani:docs:schema', ['--path' => $path, '--check' => true])->assertSuccessful();
     File::put(base_path($path), $markdown.'sửa tay');

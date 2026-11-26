@@ -28,7 +28,7 @@ beforeEach(function () {
             app(Settings::class)->set(TrackingPixelsServiceProvider::ID, $key, $value);
         }
     });
-    $this->product = fn () => $this->get('/san-pham/'.$this->s->style->slug)->assertOk()->getContent();
+    $this->product = fn () => $this->get('/san-pham/'.$this->s->product->slug)->assertOk()->getContent();
     $this->placeOrder = function (array $cookies = []) {
         $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();
         $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];

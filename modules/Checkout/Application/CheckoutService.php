@@ -224,7 +224,7 @@ final class CheckoutService implements Checkout
             }
 
             $lines[] = new TotalsLine(
-                key: $line->id, variantId: $line->variantId, options: $line->options, brandId: $line->variant->brandId, brandName: $line->variant->brandName, styleId: $line->variant->styleId,
+                key: $line->id, variantId: $line->variantId, options: $line->options, brandId: $line->variant->brandId, brandName: $line->variant->brandName, productId: $line->variant->productId,
                 sku: $line->variant->sku, name: $line->variant->name, variantOptions: $line->variant->options,
                 imageUrl: $line->variant->imageUrl, quantity: $line->quantity, unitPrice: $line->unitPrice, compareAt: $line->compareAt,
                 subtotal: $line->unitPrice->multiply($line->quantity), discount: $line->unitPrice->multiply(0), priceListCode: $line->priceListCode,
@@ -321,7 +321,7 @@ final class CheckoutService implements Checkout
                 $line->variantId, $line->sku, $line->name, $line->variantOptions, $line->imageUrl, $line->quantity,
                 $line->unitPrice->amount, $line->compareAt?->amount, $line->subtotal->amount, $line->discount->amount, $line->total()->amount,
                 $line->taxRateBp, $line->tax->amount ?? 0, $line->brandId, $line->brandName, $line->options,
-                $line->styleId, $promotionsByLine[$line->key] ?? [], $line->priceListCode,
+                $line->productId, $promotionsByLine[$line->key] ?? [], $line->priceListCode,
             ), $totals->lines),
             adjustments: array_map(fn (Adjustment $adjustment): OrderAdjustmentDraft => new OrderAdjustmentDraft(
                 $adjustment->type, $adjustment->source, $adjustment->code, $adjustment->label, $adjustment->amount->amount, $adjustment->meta,

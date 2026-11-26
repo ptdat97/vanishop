@@ -26,8 +26,8 @@ final readonly class OrderLineDraft
         public ?string $brandName = null,
         /** @var array<string, array<string, scalar|null>> tuỳ chọn dòng theo plugin id — chụp lại, bất biến */
         public array $options = [],
-        /** Style của sản phẩm (cho rule khuyến mãi theo bộ sưu tập khi tính lại sau huỷ một phần). */
-        public ?int $styleId = null,
+        /** Product của sản phẩm (cho rule khuyến mãi theo bộ sưu tập khi tính lại sau huỷ một phần). */
+        public ?int $productId = null,
         /** @var array<int, int> giảm giá của từng khuyến mãi trên dòng: promotion id => số tiền (tổng = discountAmount phần khuyến mãi) */
         public array $promotions = [],
         /** Bảng giá của giá bán lúc đặt (0.3.37) — null: đơn thay thế/không rõ. */

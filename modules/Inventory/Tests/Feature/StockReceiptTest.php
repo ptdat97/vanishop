@@ -20,7 +20,7 @@ require_once __DIR__.'/../../../Pricing/Tests/Feature/PricingTestHelpers.php';
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust']), 'staff');
     $this->location = I::location(['code' => 'KHO-CHINH']);
-    [$this->s, $this->m] = P::variants(T::product(null, ['style_code' => 'DAM01']));
+    [$this->s, $this->m] = P::variants(T::product(null, ['product_code' => 'DAM01']));
     I::stock($this->location, $this->s->id, 2);
     $this->onHand = fn ($variant): int => (int) DB::table('stock_levels')->where('location_id', $this->location->id)->where('variant_id', $variant->id)->value('on_hand');
     $this->payload = fn (array $lines, bool $receive = false): array => [

@@ -16,7 +16,7 @@ final readonly class PromotionLine
     public function __construct(
         public int $key,
         public ?int $brandId,   // thương hiệu (thuộc tính catalog) — cho rule "thuộc brand"
-        public int $styleId,
+        public int $productId,
         public int $quantity,
         public Money $unitPrice,
         public Money $subtotal,

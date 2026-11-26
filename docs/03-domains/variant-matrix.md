@@ -18,7 +18,7 @@
 |---|---|---|
 | Loại tuỳ chọn | `option_types` (+ bản dịch): mã, kiểu hiển thị `swatch`/`button`/`dropdown`, lọc được, thứ tự | Dùng chung cả cửa hàng; Màu (`color`), Size (`size`) có sẵn |
 | Giá trị | `option_values` (+ bản dịch): mã, nhóm (vd. hệ size), hex + nhóm màu (loại ô màu), thứ tự | Giá trị chọn được có id = id giá trị |
-| Trục của sản phẩm | `style_options` (1–3 loại, có thứ tự) + `style_option_values` (giá trị sản phẩm dùng, thứ tự riêng) | Đã có SKU thì không đổi tập loại; đổi thứ tự trục, thêm/bớt giá trị chưa dùng được |
+| Trục của sản phẩm | `product_options` (1–3 loại, có thứ tự) + `product_option_values` (giá trị sản phẩm dùng, thứ tự riêng) | Đã có SKU thì không đổi tập loại; đổi thứ tự trục, thêm/bớt giá trị chưa dùng được |
 | SKU | `variants` + `variant_option_values` (một giá trị cho mỗi trục); khoá tổ hợp `option_key` duy nhất trong sản phẩm | `status` active/inactive, SKU, barcode, khối lượng |
 | Ảnh | Thư viện ảnh **theo SKU** | Nút "Áp cho mọi SKU cùng <giá trị>" chép bộ ảnh sang các SKU cùng giá trị ở một trục (vd. mọi size cùng màu) |
 | Giá | Pricing: bảng giá `base` theo SKU (và bảng khuyến mãi, nhóm khách) | Không lưu giá trong Catalog |

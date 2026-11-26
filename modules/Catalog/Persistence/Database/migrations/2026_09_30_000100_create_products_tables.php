@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('styles', function (Blueprint $table) {
+        Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('brand_id')->nullable()->constrained()->restrictOnDelete();   // thương hiệu (thuộc tính catalog)
-            $table->string('style_code', 64);
+            $table->string('product_code', 64);
             $table->string('slug', 160);
             $table->string('status', 16)->default('draft');       // draft | active | archived
             $table->dateTime('published_from')->nullable();
@@ -23,51 +23,42 @@ return new class extends Migration
             $table->unsignedInteger('lock_version')->default(0);
             $table->timestamps();
 
-            $table->unique('style_code');
+            $table->unique('product_code');
             $table->unique('slug');
             $table->index(['status', 'published_from']);
             $table->index('brand_id');
         });
 
-        Schema::create('style_translations', function (Blueprint $table) {
+        Schema::create('product_translations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('style_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->string('locale', 8);
             $table->string('name');
             $table->text('description')->nullable();
             $table->text('care_instructions')->nullable();
             $table->string('meta_title')->nullable();
             $table->string('meta_description', 512)->nullable();
-            $table->unique(['style_id', 'locale']);
+            $table->unique(['product_id', 'locale']);
         });
 
-        Schema::create('style_colors', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('style_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('color_id')->constrained()->restrictOnDelete();
-            $table->unsignedInteger('position')->default(0);
-            $table->timestamps();
-            $table->unique(['style_id', 'color_id']);
-        });
-
-        Schema::create('category_style', function (Blueprint $table) {
+        Schema::create('category_product', function (Blueprint $table) {
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('style_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('position')->default(0);   // thứ tự merchandising trong danh mục
-            $table->primary(['category_id', 'style_id']);
-            $table->index(['style_id']);
+            $table->primary(['category_id', 'product_id']);
+            $table->index(['product_id']);
         });
 
         // select/multiselect: attribute_value_id; text: value_text; boolean: value_bool.
-        Schema::create('style_attribute_values', function (Blueprint $table) {
+        Schema::create('product_attribute_values', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('style_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('attribute_id')->constrained()->cascadeOnDelete();
             $table->foreignId('attribute_value_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('value_text', 1000)->nullable();
             $table->boolean('value_bool')->nullable();
             $table->index(['attribute_id', 'attribute_value_id']);
-            $table->index(['style_id', 'attribute_id']);
+            $table->index(['product_id', 'attribute_id']);
         });
 
         Schema::create('collections', function (Blueprint $table) {
@@ -88,18 +79,18 @@ return new class extends Migration
             $table->unique(['collection_id', 'locale']);
         });
 
-        Schema::create('collection_style', function (Blueprint $table) {
+        Schema::create('collection_product', function (Blueprint $table) {
             $table->foreignId('collection_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('style_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('position')->default(0);
-            $table->primary(['collection_id', 'style_id']);
-            $table->index(['style_id']);
+            $table->primary(['collection_id', 'product_id']);
+            $table->index(['product_id']);
         });
     }
 
     public function down(): void
     {
-        foreach (['collection_style', 'collection_translations', 'collections', 'style_attribute_values', 'category_style', 'style_colors', 'style_translations', 'styles'] as $table) {
+        foreach (['collection_product', 'collection_translations', 'collections', 'product_attribute_values', 'category_product', 'product_translations', 'products'] as $table) {
             Schema::dropIfExists($table);
         }
     }

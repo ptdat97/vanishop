@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.88
+Storefront API v1 — VaniShop 0.5.89
 GET /address/provinces security[]
   200
     $: object
@@ -3724,8 +3724,8 @@ GET /products security[none,customerBearer,firstPartySession]
     $.data[].price.min.currency: string
     $.data[].price.min.formatted: string
     $.data[].price_hidden: boolean
+    $.data[].product_code: string
     $.data[].slug: string
-    $.data[].style_code: string
     $.meta: object
     $.meta.facets: object|null
     $.meta.facets.attributes: array optional
@@ -3806,8 +3806,8 @@ GET /products/{slug} security[none,customerBearer,firstPartySession]
     $.data.links[]: object
     $.data.links[].code: string
     $.data.links[].name: string|null optional
-    $.data.links[].style_ids: array
-    $.data.links[].style_ids[]: integer
+    $.data.links[].product_ids: array
+    $.data.links[].product_ids[]: integer
     $.data.locales: array optional
     $.data.locales[]: string
     $.data.media: object
@@ -3851,13 +3851,13 @@ GET /products/{slug} security[none,customerBearer,firstPartySession]
     $.data.price.min.currency: string
     $.data.price.min.formatted: string
     $.data.price_hidden: boolean
+    $.data.product_code: string optional
     $.data.purchase: object
     $.data.purchase.is_purchasable: boolean
     $.data.purchase.max_quantity: integer
     $.data.purchase.min_quantity: integer
     $.data.slug: string
     $.data.slugs: object
-    $.data.style_code: string optional
     $.data.variants: array
     $.data.variants[]: object
     $.data.variants[].availability: string|null enum[in_stock,low_stock,out_of_stock,]

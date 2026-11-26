@@ -18,7 +18,7 @@ final class StructuredData
             '@context' => 'https://schema.org',
             '@type' => 'Product',
             'name' => $product['name'],
-            'sku' => $product['style_code'],
+            'sku' => $product['product_code'],
             'image' => $product['image_url'],
             'description' => $product['description'],
             'brand' => $product['brand'] === null ? null : ['@type' => 'Brand', 'name' => $product['brand']['name']],

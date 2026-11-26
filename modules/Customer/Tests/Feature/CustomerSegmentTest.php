@@ -39,7 +39,7 @@ it('khách thuộc nhóm có bảng giá thành viên: giỏ + đơn tính giá 
     $customer = ($this->signIn)();
     app(CustomerSegmentService::class)->assign($customer, $this->vip->id, []);
 
-    $this->get('/san-pham/'.$this->s->style->slug)->assertOk()->assertSee('300.000')->assertDontSee('250.000');
+    $this->get('/san-pham/'.$this->s->product->slug)->assertOk()->assertSee('300.000')->assertDontSee('250.000');
     $this->getJson('/api/storefront/v1/me/prices?variant_ids[]='.$this->s->id, ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonPath('data.group', 'VIP')->assertJsonPath('data.prices.'.$this->s->id.'.amount', 250_000);
 

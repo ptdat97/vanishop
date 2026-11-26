@@ -72,40 +72,11 @@ return new class extends Migration
             $table->string('label');
             $table->unique(['attribute_value_id', 'locale']);
         });
-
-        Schema::create('colors', function (Blueprint $table) {
-            $table->id();
-            $table->string('code', 32);
-            $table->string('color_family', 16);
-            $table->char('hex', 7)->nullable();
-            $table->unsignedInteger('position')->default(0);
-            $table->timestamps();
-            $table->unique('code');
-            $table->index('color_family');
-        });
-
-        Schema::create('color_translations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('color_id')->constrained()->cascadeOnDelete();
-            $table->string('locale', 8);
-            $table->string('name');
-            $table->unique(['color_id', 'locale']);
-        });
-
-        Schema::create('sizes', function (Blueprint $table) {
-            $table->id();
-            $table->string('size_system', 16);    // alpha | numeric | vn | us | eu | one
-            $table->string('code', 16);
-            $table->unsignedInteger('sort_order');
-            $table->timestamps();
-            $table->unique(['size_system', 'code']);
-            $table->index(['size_system', 'sort_order']);
-        });
     }
 
     public function down(): void
     {
-        foreach (['sizes', 'color_translations', 'colors', 'attribute_value_translations', 'attribute_values', 'attribute_translations', 'attributes', 'category_translations', 'categories'] as $table) {
+        foreach (['attribute_value_translations', 'attribute_values', 'attribute_translations', 'attributes', 'category_translations', 'categories'] as $table) {
             Schema::dropIfExists($table);
         }
     }

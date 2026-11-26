@@ -88,7 +88,7 @@ final class PriceListController
     private function overview(PriceOverview $overview): array
     {
         $summary = $overview->summary();
-        $summary['missing_base']['samples'] = array_map(fn (array $sample): array => [...$sample, 'url' => route('admin.catalog.products.edit', $sample['style_id'])], $summary['missing_base']['samples']);
+        $summary['missing_base']['samples'] = array_map(fn (array $sample): array => [...$sample, 'url' => route('admin.catalog.products.edit', $sample['product_id'])], $summary['missing_base']['samples']);
 
         return $summary;
     }
@@ -132,13 +132,13 @@ final class PriceListController
 
     /**
      * Trang làm việc của bảng giá (đợt 1): mọi SKU trong bảng (tìm, phân trang), sửa giá trong ô, chọn nhiều để áp giá
-     * hàng loạt hoặc gỡ; thêm sản phẩm. `?style=` (đường dẫn cũ) được hiểu như ô tìm.
+     * hàng loạt hoặc gỡ; thêm sản phẩm. `?product=` (đường dẫn cũ) được hiểu như ô tìm.
      */
     public function prices(PriceList $priceList, Request $request, PriceListWorkspace $workspace, AdminScreen $screen): Response
     {
         Gate::authorize('pricing.view');
         $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
-        $text = trim((string) ($request->query('q') ?? $request->query('style', '')));
+        $text = trim((string) ($request->query('q') ?? $request->query('product', '')));
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
         $page = $workspace->rows($priceList, $text, max(1, (int) $request->query('page', 1)), $perPage, route('admin.pricing.price-lists.prices', $priceList), $screen->filterIds('price_list_item', $extensionFilters));
 
@@ -165,7 +165,7 @@ final class PriceListController
             // Cách tính / làm tròn của plugin cho "Áp giá…" (EP v3 X4).
             'bulkOptions' => $workspace->pluginOptions(),
             // Từ danh sách sản phẩm "Đưa vào bảng giá…": sản phẩm đã chọn, mở sẵn hộp thoại cách tính giá.
-            'addStyleIds' => $priceList->type === PriceListType::Base ? [] : $this->styleIdsFromQuery((string) $request->query('add', '')),
+            'addProductIds' => $priceList->type === PriceListType::Base ? [] : $this->productIdsFromQuery((string) $request->query('add', '')),
             'canManage' => Gate::allows('pricing.manage'),
         ]);
     }
@@ -322,7 +322,7 @@ final class PriceListController
      *
      * @return list<int>
      */
-    private function styleIdsFromQuery(string $value): array
+    private function productIdsFromQuery(string $value): array
     {
         $ids = array_filter(array_map('intval', explode(',', $value)), fn (int $id): bool => $id > 0);
 
@@ -365,7 +365,7 @@ final class PriceListController
 
     /**
      * Đổi giá niêm yết nhiều sản phẩm (danh sách sản phẩm → "Đổi giá", 0.3.103; tới 2000 sản phẩm khớp bộ lọc — A5). `ids` là
-     * style id.
+     * product id.
      */
     public function bulkBasePrice(Request $request, BulkBasePrice $prices): RedirectResponse
     {
@@ -418,16 +418,16 @@ final class PriceListController
     /**
      * Đặt nhanh giá niêm yết của mọi size cho một sản phẩm từ danh sách sản phẩm.
      */
-    public function setProductBasePrice(int $styleId, Request $request, BulkBasePrice $prices, VariantDirectory $variants): RedirectResponse
+    public function setProductBasePrice(int $productId, Request $request, BulkBasePrice $prices, VariantDirectory $variants): RedirectResponse
     {
         Gate::authorize('pricing.manage');
         $data = $request->validate([
             'amount' => ['required', 'integer', 'min:1', 'max:1000000000'],
         ]);
 
-        abort_unless(array_key_exists($styleId, $variants->ofStyles([$styleId])), 404);
+        abort_unless(array_key_exists($productId, $variants->ofProducts([$productId])), 404);
 
-        $result = $prices->apply([$styleId], 'set', (int) $data['amount'], false);
+        $result = $prices->apply([$productId], 'set', (int) $data['amount'], false);
 
         return back()->with('success', __('pricing::messages.bulk_prices_changed', $result));
     }

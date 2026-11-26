@@ -25,27 +25,27 @@ final class ProductListPrices
     ) {}
 
     /**
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return array{key: string, label: string, values: array<int, string>, edit_values: array<int, int|null>, urls: array<int, string>}|null
      */
-    public function column(array $styleIds): ?array
+    public function column(array $productIds): ?array
     {
         if (! Gate::allows('pricing.view')) {
             return null;
         }
         $list = PriceList::query()->where('code', 'base')->first();
-        $byStyle = $this->variants->ofStyles($styleIds);
-        $variantIds = array_merge([], ...array_map(fn (array $variants): array => array_map(fn ($variant): int => $variant->id, $variants), array_values($byStyle)));
+        $byProduct = $this->variants->ofProducts($productIds);
+        $variantIds = array_merge([], ...array_map(fn (array $variants): array => array_map(fn ($variant): int => $variant->id, $variants), array_values($byProduct)));
         $prices = $list === null ? collect() : Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $variantIds)->get()->keyBy('variant_id');
         $currency = (string) ($list->currency_code ?? config('vanishop.currency'));
 
         $values = [];
         $editValues = [];
-        foreach ($byStyle as $styleId => $variants) {
+        foreach ($byProduct as $productId => $variants) {
             $found = array_values(array_filter(array_map(fn ($variant) => $prices->get($variant->id), $variants)));
             if ($found === []) {
-                $values[$styleId] = __('pricing::texts.product_list_prices.no_price_yet');
-                $editValues[$styleId] = null;
+                $values[$productId] = __('pricing::texts.product_list_prices.no_price_yet');
+                $editValues[$productId] = null;
 
                 continue;
             }
@@ -60,16 +60,16 @@ final class ProductListPrices
             if (count($found) < count($variants)) {
                 $text .= "\n".(count($variants) - count($found)).__('pricing::texts.product_list_prices.variants_without_price');
             }
-            $values[$styleId] = $text;
-            $editValues[$styleId] = count($found) === count($variants) && min($amounts) === max($amounts)
+            $values[$productId] = $text;
+            $editValues[$productId] = count($found) === count($variants) && min($amounts) === max($amounts)
                 ? min($amounts)
                 : null;
         }
 
         $urls = [];
         if (Gate::allows('pricing.manage')) {
-            foreach (array_keys($byStyle) as $styleId) {
-                $urls[$styleId] = route('admin.pricing.base-prices.style', ['styleId' => $styleId]);
+            foreach (array_keys($byProduct) as $productId) {
+                $urls[$productId] = route('admin.pricing.base-prices.product', ['productId' => $productId]);
             }
         }
 

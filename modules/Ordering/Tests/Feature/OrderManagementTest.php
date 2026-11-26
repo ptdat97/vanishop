@@ -183,7 +183,7 @@ it('snapshot: đổi tên, giá, ngừng bán sản phẩm không làm đổi đ
     $order = ($this->order)();
 
     T::seed(function () {
-        DB::table('style_translations')->update(['name' => 'Tên mới']);
+        DB::table('product_translations')->update(['name' => 'Tên mới']);
         DB::table('prices')->update(['amount' => 999_000]);
         $this->s->update(['status' => 'inactive', 'sku' => 'SKU-DOI']);
     });

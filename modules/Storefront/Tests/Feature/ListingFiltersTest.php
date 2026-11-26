@@ -66,7 +66,7 @@ it('Admin → Catalog → Bộ lọc: đổi thứ tự, tắt, ô màu → stor
         ->and($filters[1]['display'])->toBe('list');
 
     $html = $this->get('/tim-kiem')->assertOk()->assertSee('data-filter="opt:color"', false)->assertDontSee('data-filter="brand"', false)->getContent();
-    expect($html)->not->toContain('style="background: #111827"')
+    expect($html)->not->toContain('product="background: #111827"')
         ->and($html)->toContain(e(url('/tim-kiem?opt%5Bcolor%5D=black')))
         ->and($html)->toContain(e(url('/tim-kiem?attr%5Bmaterial%5D=silk')));
 });
@@ -109,12 +109,12 @@ it('lọc theo size: sản phẩm có biến thể đang bán thuộc size đã 
         $medium->update(['code' => 'M', 'position' => 2]);
         $large = OptionValue::factory()->size()->create(['code' => 'L', 'position' => 3]);
         $extraLarge = OptionValue::factory()->size()->create(['code' => 'XL', 'position' => 4]);
-        T::optionValues($dressS->style, $medium);
-        T::optionValues($shirtM->style, $large, $extraLarge);
+        T::optionValues($dressS->product, $medium);
+        T::optionValues($shirtM->product, $large, $extraLarge);
         $options = app(ProductOptions::class);
-        $options->createVariant($dressS->style, [$dressS->valueOf('color')->id, $medium->id], ['sku' => 'DRESS-M']);
-        $options->createVariant($shirtM->style, [$shirtM->valueOf('color')->id, $large->id], ['sku' => 'SHIRT-L']);
-        $options->createVariant($shirtM->style, [$shirtM->valueOf('color')->id, $extraLarge->id], ['sku' => 'SHIRT-XL', 'status' => 'inactive']);
+        $options->createVariant($dressS->product, [$dressS->valueOf('color')->id, $medium->id], ['sku' => 'DRESS-M']);
+        $options->createVariant($shirtM->product, [$shirtM->valueOf('color')->id, $large->id], ['sku' => 'SHIRT-L']);
+        $options->createVariant($shirtM->product, [$shirtM->valueOf('color')->id, $extraLarge->id], ['sku' => 'SHIRT-XL', 'status' => 'inactive']);
     });
     $list = fn (string $query = '') => $this->getJson('/api/storefront/v1/products'.$query)->assertOk();
     $slugs = fn ($response) => collect($response->json('data'))->pluck('slug')->sort()->values()->all();

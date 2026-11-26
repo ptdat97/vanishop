@@ -31,7 +31,7 @@
                 "type": "string"
             }
         },
-        "style_code": {
+        "product_code": {
             "type": "string"
         },
         "name": {
@@ -559,7 +559,7 @@
                 "type": "object",
                 "required": [
                     "code",
-                    "style_ids"
+                    "product_ids"
                 ],
                 "properties": {
                     "code": {
@@ -571,7 +571,7 @@
                             "null"
                         ]
                     },
-                    "style_ids": {
+                    "product_ids": {
                         "type": "array",
                         "items": {
                             "type": "integer"

@@ -158,7 +158,7 @@ final class ContentController
         $query = trim((string) ($request->validate(['q' => ['nullable', 'string', 'max:100']])['q'] ?? ''));
         $items = $this->catalog->searchProducts(new ProductFilters(now: now()->getTimestamp(), text: $query, perPage: 20), StoreLocale::default())['items'];
 
-        return response()->json(['data' => array_map(fn (array $item): array => ['id' => (int) $item['id'], 'name' => (string) $item['name'], 'code' => (string) ($item['style_code'] ?? '')], $items)]);
+        return response()->json(['data' => array_map(fn (array $item): array => ['id' => (int) $item['id'], 'name' => (string) $item['name'], 'code' => (string) ($item['product_code'] ?? '')], $items)]);
     }
 
     /**

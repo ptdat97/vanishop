@@ -7,8 +7,8 @@ use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
@@ -27,15 +27,15 @@ beforeEach(function () {
 
         return [Brand::factory()->create(['slug' => 'lumiere']), Brand::factory()->create(['slug' => 'urbanx']), $women, $dresses, $sale];
     });
-    $this->dress = T::product($this->lumiere->id, ['style_code' => 'DAM01', 'category_ids' => [$this->dresses->id], 'primary_category_id' => $this->dresses->id]);
-    $this->shirt = T::product($this->urbanx->id, ['style_code' => 'AO01']);
-    $this->plain = T::product(null, ['style_code' => 'TUI01', 'status' => 'draft']);
+    $this->dress = T::product($this->lumiere->id, ['product_code' => 'DAM01', 'category_ids' => [$this->dresses->id], 'primary_category_id' => $this->dresses->id]);
+    $this->shirt = T::product($this->urbanx->id, ['product_code' => 'AO01']);
+    $this->plain = T::product(null, ['product_code' => 'TUI01', 'status' => 'draft']);
     $this->codes = fn (array $query): array => collect($this->get('/admin/catalog/products?'.http_build_query($query))->assertOk()
-        ->viewData('page')['props']['products']['data'])->pluck('style_code')->sort()->values()->all();
+        ->viewData('page')['props']['products']['data'])->pluck('product_code')->sort()->values()->all();
 });
 
 it('lọc theo danh mục (gồm danh mục con), thương hiệu (cả "chưa có"), bộ sưu tập; trang có lựa chọn và thao tác hàng loạt', function () {
-    T::seed(fn () => $this->sale->styles()->attach($this->shirt->id, ['position' => 0]));
+    T::seed(fn () => $this->sale->products()->attach($this->shirt->id, ['position' => 0]));
 
     expect(($this->codes)(['category' => $this->women->id]))->toBe(['DAM01'])
         ->and(($this->codes)(['brand' => $this->urbanx->id]))->toBe(['AO01'])
@@ -71,18 +71,18 @@ it('gán/gỡ danh mục hàng loạt: danh mục chính tự đặt khi chưa c
 });
 
 it('đổi/bỏ thương hiệu, thêm/gỡ bộ sưu tập (thêm vào cuối bộ sưu tập)', function () {
-    T::seed(fn () => $this->sale->styles()->attach($this->plain->id, ['position' => 4]));
+    T::seed(fn () => $this->sale->products()->attach($this->plain->id, ['position' => 4]));
 
     $this->post('/admin/catalog/products/bulk-edit', ['ids' => [$this->shirt->id, $this->plain->id], 'action' => 'brand', 'target_id' => $this->lumiere->id]);
-    expect(Style::query()->whereKey([$this->shirt->id, $this->plain->id])->pluck('brand_id')->unique()->all())->toBe([$this->lumiere->id]);
+    expect(Product::query()->whereKey([$this->shirt->id, $this->plain->id])->pluck('brand_id')->unique()->all())->toBe([$this->lumiere->id]);
     $this->post('/admin/catalog/products/bulk-edit', ['ids' => [$this->shirt->id], 'action' => 'brand', 'target_id' => null])->assertSessionHasNoErrors();
     expect($this->shirt->fresh()->brand_id)->toBeNull();
 
     $this->post('/admin/catalog/products/bulk-edit', ['ids' => [$this->shirt->id], 'action' => 'collection_add', 'target_id' => $this->sale->id]);
-    expect($this->sale->styles()->where('styles.id', $this->shirt->id)->value('collection_style.position'))->toBe(5);
+    expect($this->sale->products()->where('products.id', $this->shirt->id)->value('collection_product.position'))->toBe(5);
     $this->post('/admin/catalog/products/bulk-edit', ['ids' => [$this->shirt->id, $this->plain->id], 'action' => 'collection_remove', 'target_id' => $this->sale->id])
         ->assertSessionHas('success', 'Đã cập nhật 2 sản phẩm.');
-    expect($this->sale->styles()->count())->toBe(0);
+    expect($this->sale->products()->count())->toBe(0);
 });
 
 it('dữ liệu sai: thiếu/không có danh mục, thao tác lạ → lỗi, không đổi gì', function () {
@@ -95,8 +95,8 @@ it('dữ liệu sai: thiếu/không có danh mục, thao tác lạ → lỗi, kh
 it('xoá hàng loạt chỉ xoá bản nháp, báo số sản phẩm bỏ qua', function () {
     $this->post('/admin/catalog/products/bulk-delete', ['ids' => [$this->plain->id, $this->shirt->id]])
         ->assertSessionHas('success', 'Đã xoá 1 sản phẩm nháp; bỏ qua 1 sản phẩm đã mở bán hoặc ngừng bán (dùng "Ngừng bán" để ẩn).');
-    expect(Style::query()->whereKey($this->plain->id)->exists())->toBeFalse()
-        ->and(Style::query()->whereKey($this->shirt->id)->exists())->toBeTrue();
+    expect(Product::query()->whereKey($this->plain->id)->exists())->toBeFalse()
+        ->and(Product::query()->whereKey($this->shirt->id)->exists())->toBeTrue();
 });
 
 it('chỉ xem catalog: không có thao tác hàng loạt, gọi trực tiếp bị 403', function () {
@@ -123,7 +123,7 @@ it('báo và lọc sản phẩm thiếu dữ liệu: chưa có SKU, ảnh, danh 
         ->and(($this->codes)(['missing' => 'category']))->toBe(['AO01', 'TUI01'])
         ->and(($this->codes)(['missing' => 'description']))->toBe(['AO01', 'TUI01']);
 
-    $rows = collect($this->get('/admin/catalog/products')->viewData('page')['props']['products']['data'])->keyBy('style_code');
+    $rows = collect($this->get('/admin/catalog/products')->viewData('page')['props']['products']['data'])->keyBy('product_code');
     expect($rows['DAM01']['missing'])->toBe([])
         ->and($rows['AO01']['missing'])->toBe(['Chưa có ảnh', 'Chưa có danh mục', 'SKU chưa nhập khối lượng (đang dùng mặc định)', 'Chưa có mô tả']);
     $this->get('/admin/catalog/products?missing=gia')->assertSessionHasErrors('missing');

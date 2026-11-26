@@ -35,10 +35,10 @@ const props = defineProps<{
     /** Dữ liệu còn thiếu của sản phẩm (nhãn đã dịch) — rỗng khi đủ hoặc khi thêm mới. */
     missing: string[];
     /** Thêm mới: mã sản phẩm gợi ý (để trống ô mã thì dùng mã này). */
-    suggestedStyleCode: string | null;
+    suggestedProductCode: string | null;
     product: null | {
         id: number;
-        style_code: string;
+        product_code: string;
         slug: string;
         status: string;
         published_from: string | null;
@@ -93,7 +93,7 @@ for (const definition of props.attributeDefinitions) {
 }
 
 const { form, save } = useAdminForm({
-    style_code: props.product?.style_code ?? '',
+    product_code: props.product?.product_code ?? '',
     slug: props.product?.slug ?? '',
     status: props.product?.status ?? 'draft',
     published_from: props.product?.published_from ?? null,
@@ -246,12 +246,12 @@ async function duplicate(): Promise<void> {
         message: t('catalog::admin.products_form.creates_draft_same_description_categories'),
         confirmLabel: t('catalog::admin.products_form.duplicate'),
         fields: [
-            { key: 'style_code', label: t('catalog::admin.products_form.new_product_code'), required: true, maxlength: 64, value: `${props.product.style_code}-2` },
+            { key: 'product_code', label: t('catalog::admin.products_form.new_product_code'), required: true, maxlength: 64, value: `${props.product.product_code}-2` },
             { key: 'name', label: t('catalog::admin.products_form.new_product_name'), required: true, maxlength: 255, value: t('catalog::admin.products_form.name_copy', { name: form.translations[defaultLocale]?.name ?? '' }) },
         ],
     });
     if (values !== false) {
-        router.post(`${productUrl.value}/duplicate`, { style_code: values.style_code.trim().toUpperCase(), name: values.name });
+        router.post(`${productUrl.value}/duplicate`, { product_code: values.product_code.trim().toUpperCase(), name: values.name });
     }
 }
 
@@ -266,7 +266,7 @@ async function destroy(): Promise<void> {
 <template>
     <Head :title="product ? t('catalog::admin.products_form.edit_product') : t('catalog::admin.products_form.add_product')" />
     <CatalogTabs :nav="nav" active="products" />
-    <PageHeader :title="product ? t('catalog::admin.products_form.edit_style_code', { style_code: product.style_code }) : t('catalog::admin.products_form.add_product')">
+    <PageHeader :title="product ? t('catalog::admin.products_form.edit_product_code', { product_code: product.product_code }) : t('catalog::admin.products_form.add_product')">
         <Link :href="baseUrl" :class="secondaryButton">{{ t('catalog::admin.products_form.back') }}</Link>
         <Link v-if="stockUrl" :href="stockUrl" :class="secondaryButton" data-stock-link>{{ t('catalog::admin.products_form.inventory') }}</Link>
         <button v-if="product" type="button" :class="secondaryButton" data-duplicate @click="duplicate">{{ t('catalog::admin.products_form.duplicate') }}</button>
@@ -392,7 +392,7 @@ async function destroy(): Promise<void> {
                     ref="defaultVariant"
                     v-model:media-ids="form.media_ids"
                     :product-url="productUrl"
-                    :style-code="form.style_code || suggestedStyleCode || 'SKU'"
+                    :product-code="form.product_code || suggestedProductCode || 'SKU'"
                     :variant="singleVariant"
                     :values="singleValues"
                     :columns="variantMatrix.columns"
@@ -458,14 +458,14 @@ async function destroy(): Promise<void> {
             </section>
             <FullscreenDialog
                 v-model:open="variantsOpen"
-                :title="t('catalog::admin.products_form.variants_i', { i: form.translations[defaultLocale]?.name || form.style_code || t('catalog::admin.products_form.new_product_fallback') })"
+                :title="t('catalog::admin.products_form.variants_i', { i: form.translations[defaultLocale]?.name || form.product_code || t('catalog::admin.products_form.new_product_fallback') })"
                 :subtitle="t('catalog::admin.products_form.choose_options_turn_combinations_sell')"
             >
                 <VariantMatrixEditor
                     ref="matrix"
                     :product-url="productUrl"
                     :urls="variantMatrix.urls"
-                    :style-code="form.style_code || suggestedStyleCode || 'SKU'"
+                    :product-code="form.product_code || suggestedProductCode || 'SKU'"
                     :axes="variantMatrix.axes"
                     :option-types="variantMatrix.optionTypes"
                     :variants="variants"
@@ -502,11 +502,11 @@ async function destroy(): Promise<void> {
 
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5 self-start">
             <FormField
-                :label="t('catalog::admin.products_form.product_code_style_code')"
+                :label="t('catalog::admin.products_form.product_code')"
                 :hint="product ? t('catalog::admin.products_form.uppercase_letters_digits') : t('catalog::admin.products_form.empty_use_suggested_code')"
-                :error="errors.style_code"
+                :error="errors.product_code"
             >
-                <input v-model="form.style_code" :class="inputClass" class="uppercase" :placeholder="suggestedStyleCode ?? ''" data-style-code @blur="form.style_code = form.style_code.trim().toUpperCase()" />
+                <input v-model="form.product_code" :class="inputClass" class="uppercase" :placeholder="suggestedProductCode ?? ''" data-product-code @blur="form.product_code = form.product_code.trim().toUpperCase()" />
             </FormField>
             <FormField :label="t('catalog::admin.products_form.slug_path')" :hint="t('catalog::admin.products_form.empty_slug_from_name')" :error="errors.slug">
                 <input v-model="form.slug" :class="inputClass" :placeholder="slugify(form.translations[defaultLocale]?.name ?? '')" data-slug />

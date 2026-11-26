@@ -31,7 +31,7 @@ const MOBILE_CSS_BUDGET_KB = 96;
 beforeEach(function () {
     Storage::fake('public');
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
-    $this->product = $this->s->style;
+    $this->product = $this->s->product;
     $this->category = T::seed(fn () => Category::factory()->create(['slug' => 'dam']));
     $this->category->syncTranslations(['vi' => ['name' => 'Đầm']]);
     $this->product->categories()->sync([$this->category->id]);
@@ -357,7 +357,7 @@ it('bộ sưu tập nổi bật vừa màn hình nhỏ và dẫn tới đúng t�
         app()->register(StorefrontExtrasServiceProvider::class);
         $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']);
         $collection->syncTranslations(['vi' => ['name' => 'Bộ sưu tập mùa hè']]);
-        $collection->styles()->attach($this->product->id);
+        $collection->products()->attach($this->product->id);
         $cover = app(MediaLibrary::class)->store(UploadedFile::fake()->image('collection.jpg', 800, 1000));
         app(CollectionPages::class)->save($collection->id, [
             ['type' => 'hero', 'zone' => 'banner', 'config' => ['title' => 'Bộ sưu tập mùa hè', 'image' => $cover->id]],

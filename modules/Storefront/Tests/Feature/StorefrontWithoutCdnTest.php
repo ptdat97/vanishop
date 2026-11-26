@@ -26,7 +26,7 @@ function inlineSessionState(string $html): ?array
 beforeEach(function () {
     H::fakeOtp();
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
-    $this->product = '/san-pham/'.$this->s->style->slug;
+    $this->product = '/san-pham/'.$this->s->product->slug;
     $this->signIn = function (): void {
         $this->post('/tai-khoan/dang-nhap', ['email' => H::account('0912345678')->email, 'password' => H::PASSWORD]);
     };

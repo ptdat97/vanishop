@@ -27,7 +27,7 @@ const props = defineProps<{
     /** Lượt nhập file chạy nền vừa bắt đầu — hỏi tiến độ ở URL này. */
     importRunUrl: string | null;
     products: {
-        data: Array<{ id: number; style_code: string; name: string | null; brand: string | null; status: string; skus: number; image_url: string | null; views: number; missing: string[] }>;
+        data: Array<{ id: number; product_code: string; name: string | null; brand: string | null; status: string; skus: number; image_url: string | null; views: number; missing: string[] }>;
         current: number;
         last: number;
         from: number | null;
@@ -85,7 +85,7 @@ const savingStock = ref(false);
 const columns = [
     { key: 'image', label: '', class: 'w-16' },
     { key: 'name', label: t('catalog::admin.products_index.products'), class: 'font-medium' },
-    { key: 'style_code', label: t('catalog::admin.products_index.code'), class: 'font-mono text-xs', sortable: true },
+    { key: 'product_code', label: t('catalog::admin.products_index.code'), class: 'font-mono text-xs', sortable: true },
     { key: 'brand', label: t('catalog::admin.products_index.brand') },
     { key: 'skus', label: 'SKU' },
     { key: 'views', label: t('catalog::admin.products_index.views_30_days'), align: 'right' as const, class: 'tabular-nums' },
@@ -258,7 +258,7 @@ onBeforeUnmount(() => importTimer && clearTimeout(importTimer));
         {{ t('catalog::admin.products_index.count_products_page_selected', { count: products.data.length }) }}
         <button type="button" class="ml-1 font-medium text-indigo-700 underline" :disabled="loadingMatching" @click="selectAllMatching">{{ t('catalog::admin.products_index.select_all_total_products_matching', { total: products.total }) }}</button>
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, products.per_page, next)" :row-label="(product) => product.style_code" :row-click="canManage ? editProduct : undefined" :empty-text="t('catalog::admin.products_index.no_products')">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, products.per_page, next)" :row-label="(product) => product.product_code" :row-click="canManage ? editProduct : undefined" :empty-text="t('catalog::admin.products_index.no_products')">
         <template #cell-image="{ row }">
             <img v-if="row.image_url" :src="row.image_url" alt="" class="h-12 w-10 rounded object-cover" />
             <div v-else class="h-12 w-10 rounded bg-slate-100" />
@@ -321,7 +321,7 @@ onBeforeUnmount(() => importTimer && clearTimeout(importTimer));
                 <span class="block text-xs text-slate-500">{{ t('catalog::admin.products_index.actual_stock_warehouse_before_subtracting') }}</span>
             </form>
             <div v-else class="flex items-start justify-between gap-2">
-                <Link v-if="url" :href="url" class="text-indigo-600 hover:underline" :aria-label="t('catalog::admin.products_index.open_stock_grid_style_code', { style_code: row.name ?? row.style_code })">{{ value }}</Link>
+                <Link v-if="url" :href="url" class="text-indigo-600 hover:underline" :aria-label="t('catalog::admin.products_index.open_stock_grid_product_code', { product_code: row.name ?? row.product_code })">{{ value }}</Link>
                 <span v-else>{{ value }}</span>
                 <button v-if="editValue" type="button" class="shrink-0 text-indigo-600 hover:underline" data-stock-edit @click.stop="openStockEditor(row.id, editValue as StockEdit)">{{ t('catalog::admin.products_index.edit') }}</button>
             </div>

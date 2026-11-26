@@ -43,12 +43,12 @@ final class OptionTypeService
         $count = fn (string $table, string $column): array => DB::table($table)->select($column, DB::raw('count(*) as total'))->groupBy($column)
             ->pluck('total', $column)->mapWithKeys(fn ($total, $id): array => [(int) $id => (int) $total])->all();
 
-        return ['types' => $count('style_options', 'option_type_id'), 'values' => $count('style_option_values', 'option_value_id')];
+        return ['types' => $count('product_options', 'option_type_id'), 'values' => $count('product_option_values', 'option_value_id')];
     }
 
     public function deleteType(OptionType $type): void
     {
-        if (DB::table('style_options')->where('option_type_id', $type->id)->exists()) {
+        if (DB::table('product_options')->where('option_type_id', $type->id)->exists()) {
             throw ValidationException::withMessages(['option_type' => __('catalog::messages.option_type_in_use')]);
         }
         DB::transaction(function () use ($type): void {
@@ -79,7 +79,7 @@ final class OptionTypeService
 
     public function deleteValue(OptionValue $value): void
     {
-        if (DB::table('style_option_values')->where('option_value_id', $value->id)->exists()) {
+        if (DB::table('product_option_values')->where('option_value_id', $value->id)->exists()) {
             throw ValidationException::withMessages(['option_value' => __('catalog::messages.option_value_in_use_by_products')]);
         }
         $value->delete();

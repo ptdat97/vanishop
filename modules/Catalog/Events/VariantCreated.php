@@ -16,7 +16,7 @@ final readonly class VariantCreated implements ShouldDispatchAfterCommit
 
     public function __construct(
         public int $variantId,
-        public int $styleId,
+        public int $productId,
         public string $sku,
     ) {}
 }

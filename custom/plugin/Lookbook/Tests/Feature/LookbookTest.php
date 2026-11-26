@@ -111,7 +111,7 @@ it('bản tiếng Anh dùng tên đã dịch; thiếu bản dịch thì hiện t
 
 it('gắn sản phẩm theo từng ảnh và giữ thứ tự, chỉ hiện sản phẩm đang bán trên Blade và API theo locale', function () {
     $coat = T::product(null, [
-        'style_code' => 'LOOK-COAT',
+        'product_code' => 'LOOK-COAT',
         'slug' => 'ao-khoac',
         'translations' => ['vi' => ['name' => 'Áo khoác len'], 'en' => ['name' => 'Wool coat', 'slug' => 'wool-coat']],
     ]);

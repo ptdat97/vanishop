@@ -42,23 +42,23 @@ it('trạng thái và tình trạng hàng trả', function () {
 
 it('đổi hàng: cùng mẫu giữ giá đã mua; khác mẫu bù trừ với số đã trả, chia theo tỷ lệ, khách bù phần thiếu hoặc được hoàn phần thừa', function () {
     // Cùng mẫu: không chênh.
-    expect(ExchangeValuation::quote([1 => ['quantity' => 2, 'unit_amount' => 150_000, 'same_style' => true, 'paid' => 300_000]]))
+    expect(ExchangeValuation::quote([1 => ['quantity' => 2, 'unit_amount' => 150_000, 'same_product' => true, 'paid' => 300_000]]))
         ->toBe(['credits' => [1 => 300_000], 'payable' => 0, 'refund' => 0]);
 
     // Khác mẫu, đắt hơn: đã trả 300k, mẫu mới 2 × 200k = 400k → khách bù 100k; credit chia 3:1 theo thành tiền.
     expect(ExchangeValuation::quote([
-        1 => ['quantity' => 1, 'unit_amount' => 300_000, 'same_style' => false, 'paid' => 200_000],
-        2 => ['quantity' => 1, 'unit_amount' => 100_000, 'same_style' => false, 'paid' => 100_000],
+        1 => ['quantity' => 1, 'unit_amount' => 300_000, 'same_product' => false, 'paid' => 200_000],
+        2 => ['quantity' => 1, 'unit_amount' => 100_000, 'same_product' => false, 'paid' => 100_000],
     ]))->toBe(['credits' => [1 => 225_000, 2 => 75_000], 'payable' => 100_000, 'refund' => 0]);
 
     // Khác mẫu, rẻ hơn: đã trả 300k, mẫu mới 250k → hoàn 50k, credit bằng giá mẫu mới; tổng credit đúng bằng giá trị.
-    $cheaper = ExchangeValuation::quote([1 => ['quantity' => 1, 'unit_amount' => 250_000, 'same_style' => false, 'paid' => 300_000]]);
+    $cheaper = ExchangeValuation::quote([1 => ['quantity' => 1, 'unit_amount' => 250_000, 'same_product' => false, 'paid' => 300_000]]);
     expect($cheaper)->toBe(['credits' => [1 => 250_000], 'payable' => 0, 'refund' => 50_000]);
 
     // Làm tròn: phần dư sau chia nguyên được rải vào dòng đầu, tổng credit không lệch.
     $odd = ExchangeValuation::quote([
-        1 => ['quantity' => 1, 'unit_amount' => 100_001, 'same_style' => false, 'paid' => 100_000],
-        2 => ['quantity' => 1, 'unit_amount' => 100_002, 'same_style' => false, 'paid' => 100_000],
+        1 => ['quantity' => 1, 'unit_amount' => 100_001, 'same_product' => false, 'paid' => 100_000],
+        2 => ['quantity' => 1, 'unit_amount' => 100_002, 'same_product' => false, 'paid' => 100_000],
     ]);
     expect(array_sum($odd['credits']))->toBe(200_000)->and($odd['payable'])->toBe(3);
 });

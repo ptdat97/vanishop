@@ -113,7 +113,7 @@ it('vani_customer chỉ trả khách đang đăng nhập (DTO); vani_staff chỉ
 it('vani_image: bản thu nhỏ theo bề rộng; id không có → ảnh thay thế đã cấu hình, chưa cấu hình → chuỗi rỗng', function () {
     Storage::fake('public');
     ['s' => $variant] = C::store();
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->style, $variant, [
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->product, $variant, [
         UploadedFile::fake()->image('anh.jpg', 1000, 1000),
     ]));
     $media = $variant->gallery()->with('media')->first()->media;

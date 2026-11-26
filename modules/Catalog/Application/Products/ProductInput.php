@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Application\Products;
 
 use DateTimeImmutable;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 
 final readonly class ProductInput
 {
@@ -15,9 +15,9 @@ final readonly class ProductInput
      * @param  array<int, mixed>  $attributes  attribute id => int | list<int> | string | bool | null
      */
     public function __construct(
-        public string $styleCode,
+        public string $productCode,
         public string $slug,
-        public StyleStatus $status,
+        public ProductStatus $status,
         public array $translations,
         public ?DateTimeImmutable $publishedFrom = null,
         public ?DateTimeImmutable $publishedTo = null,

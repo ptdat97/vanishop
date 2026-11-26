@@ -20,4 +20,4 @@ Route::post('price-lists/{priceList}/remove', [PriceListController::class, 'remo
 Route::get('history', [PriceHistoryController::class, 'index'])->name('history');
 Route::post('base-prices/bulk', [PriceListController::class, 'bulkBasePrice'])->name('base-prices.bulk');
 Route::post('base-prices/bulk/preview', [PriceListController::class, 'previewBulkBasePrice'])->name('base-prices.bulk.preview');
-Route::put('base-prices/{styleId}', [PriceListController::class, 'setProductBasePrice'])->whereNumber('styleId')->name('base-prices.style');
+Route::put('base-prices/{productId}', [PriceListController::class, 'setProductBasePrice'])->whereNumber('productId')->name('base-prices.product');

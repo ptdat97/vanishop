@@ -10,7 +10,7 @@ use Modules\Shared\Contracts\PluginApi;
  * Service contract: tra đối tượng catalog theo id cho link có kiểu (menu, khối giao diện) — theo lô, một truy vấn mỗi
  * loại — và tìm để chọn trong Admin.
  *
- * Loại: `category`, `collection`, `brand`, `product` (style).
+ * Loại: `category`, `collection`, `brand`, `product`.
  */
 #[PluginApi]
 interface CatalogLookup

@@ -42,8 +42,8 @@ final class BundleRule implements CartContentRule
         $lines = [];
         foreach ($candidates->keys as $key) {
             $line = $context->line($key);
-            if ($line !== null && isset($requirement[$line->styleId])) {
-                $lines[$key] = ['style_id' => $line->styleId, 'quantity' => $line->quantity];
+            if ($line !== null && isset($requirement[$line->productId])) {
+                $lines[$key] = ['product_id' => $line->productId, 'quantity' => $line->quantity];
             }
         }
 

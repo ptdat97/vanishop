@@ -11,7 +11,7 @@ const columns = [
     { key: 'name', label: t('catalog::admin.taxonomy.name'), class: 'font-medium' },
     ...(props.showCode ? [{ key: 'code', label: t('catalog::admin.brands.code'), class: 'font-mono text-xs' }] : []),
     { key: 'slug', label: 'Slug', class: 'font-mono text-xs text-slate-500' },
-    { key: 'styles_count', label: t('catalog::admin.taxonomy.products') },
+    { key: 'products_count', label: t('catalog::admin.taxonomy.products') },
     { key: 'status', label: t('catalog::admin.taxonomy.status') },
 ];
 </script>

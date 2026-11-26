@@ -12,14 +12,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('styles', function (Blueprint $table): void {
+        Schema::table('products', function (Blueprint $table): void {
             $table->boolean('track_inventory')->default(true)->after('status');
         });
     }
 
     public function down(): void
     {
-        Schema::table('styles', function (Blueprint $table): void {
+        Schema::table('products', function (Blueprint $table): void {
             $table->dropColumn('track_inventory');
         });
     }

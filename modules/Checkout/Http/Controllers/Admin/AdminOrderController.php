@@ -66,7 +66,7 @@ final class AdminOrderController
     private function variantRow(VariantData $variant): array
     {
         return [
-            'variant_id' => $variant->id, 'sku' => $variant->sku, 'name' => trim($variant->styleName.' '.VariantOptionsText::label($variant->options)), 'status' => $variant->status,
+            'variant_id' => $variant->id, 'sku' => $variant->sku, 'name' => trim($variant->productName.' '.VariantOptionsText::label($variant->options)), 'status' => $variant->status,
         ];
     }
 

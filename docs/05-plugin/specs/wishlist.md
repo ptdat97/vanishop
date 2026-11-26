@@ -6,7 +6,7 @@
 
 | Mục | Nội dung |
 |---|---|
-| Tính năng | Thêm/bỏ sản phẩm (theo mẫu — style) vào danh sách yêu thích từ thẻ sản phẩm và trang sản phẩm; trang danh sách trong tài khoản; khách vãng lai lưu ở trình duyệt, gộp vào tài khoản khi đăng nhập; báo khi có hàng lại / giảm giá (tuỳ chọn, cần consent marketing) |
+| Tính năng | Thêm/bỏ sản phẩm (theo mẫu) vào danh sách yêu thích từ thẻ sản phẩm và trang sản phẩm; trang danh sách trong tài khoản; khách vãng lai lưu ở trình duyệt, gộp vào tài khoản khi đăng nhập; báo khi có hàng lại / giảm giá (tuỳ chọn, cần consent marketing) |
 | Dữ liệu | `plg_wishlist_items` (plugin sở hữu) |
 | Cấu hình | `notify_back_in_stock`, `notify_price_drop` (bool, mặc định tắt) |
 | Quyền | Không có màn hình Admin riêng; mẫu tin ở Admin → Thông báo |
@@ -16,7 +16,7 @@
 
 ## 2. Hành vi
 
-1. **Đơn vị lưu**: một mẫu (style), không theo màu/size. Một khách tối đa 100 mẫu; thêm lại mẫu đã có không tạo dòng mới.
+1. **Đơn vị lưu**: một mẫu, không theo màu/size. Một khách tối đa 100 mẫu; thêm lại mẫu đã có không tạo dòng mới.
 2. **Khách đã đăng nhập** (phiên web hoặc Bearer): lưu ở server. Nút tim gọi Storefront API (`wishlist.js`, phiên cùng nguồn).
 3. **Khách vãng lai**: JS lưu tối đa 100 id mẫu trong `localStorage` của trình duyệt (không cookie, không server).
 4. **Gộp khi đăng nhập**: lần đầu trang biết khách đã đăng nhập (qua dữ liệu phiên của trang — `vani:session`), JS gửi danh sách trong trình duyệt lên server rồi xoá bản trong trình duyệt. Gộp là hợp (union), giữ giới hạn 100; mẫu không còn bán bị bỏ.
@@ -27,15 +27,15 @@
 
 ## 3. Dữ liệu
 
-`plg_wishlist_items`: `id`, `customer_id`, `style_id`, `price_amount` (giá thấp nhất theo nhóm khách lúc thêm hoặc lần báo giá gần nhất), `price_group_id` (nhóm của mốc giá, null khi khách không có nhóm), `in_stock` (bool, lần kiểm gần nhất), `notified_stock_at`, `notified_price_at`, `created_at`, `updated_at`; unique (`customer_id`, `style_id`). Không khoá ngoại sang bảng Core ([ADR-027](../../19-adr/ADR-027-plugin-data-no-core-columns.md)); manifest khai báo `owned`.
+`plg_wishlist_items`: `id`, `customer_id`, `product_id`, `price_amount` (giá thấp nhất theo nhóm khách lúc thêm hoặc lần báo giá gần nhất), `price_group_id` (nhóm của mốc giá, null khi khách không có nhóm), `in_stock` (bool, lần kiểm gần nhất), `notified_stock_at`, `notified_price_at`, `created_at`, `updated_at`; unique (`customer_id`, `product_id`). Không khoá ngoại sang bảng Core ([ADR-027](../../19-adr/ADR-027-plugin-data-no-core-columns.md)); manifest khai báo `owned`.
 
 ## 4. API
 
 | Kênh | Đường dẫn | Ghi chú |
 |---|---|---|
 | Storefront API | `GET /api/storefront/v1/x/vani-wishlist/ids` | `{data: {ids[]}}`, `private, no-store` — wishlist.js tô nút tim |
-| Storefront API | `GET/POST /api/storefront/v1/x/vani-wishlist/items`, `DELETE …/items/{styleId}` | `GET` trả thẻ sản phẩm; `POST`/`DELETE` trả `{data: {ids}}` |
-| Storefront API | `POST /api/storefront/v1/x/vani-wishlist/items/merge` (`style_ids[]`) | Gộp danh sách của trình duyệt sau khi đăng nhập |
+| Storefront API | `GET/POST /api/storefront/v1/x/vani-wishlist/items`, `DELETE …/items/{productId}` | `GET` trả thẻ sản phẩm; `POST`/`DELETE` trả `{data: {ids}}` |
+| Storefront API | `POST /api/storefront/v1/x/vani-wishlist/items/merge` (`product_ids[]`) | Gộp danh sách của trình duyệt sau khi đăng nhập |
 
 Xác thực API: Bearer (app) hoặc phiên web cùng nguồn — wishlist.js gọi bằng cookie phiên + `X-CSRF-TOKEN` (ADR-044, 1.1.0).
 

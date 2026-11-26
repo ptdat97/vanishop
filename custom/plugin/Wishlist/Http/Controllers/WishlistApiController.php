@@ -19,7 +19,7 @@ final class WishlistApiController
     public function index(Request $request): JsonResponse
     {
         return response()->json(['data' => array_map(
-            fn (array $item): array => ['style_id' => $item['style_id'], 'product' => $item['card']],
+            fn (array $item): array => ['product_id' => $item['product_id'], 'product' => $item['card']],
             $this->wishlists->cards($this->customerId($request)),
         )]);
     }
@@ -33,8 +33,8 @@ final class WishlistApiController
     /** Gộp danh sách của trình duyệt (khách vãng lai lưu ở localStorage) khi đăng nhập: bỏ trùng, bỏ mẫu không bán, giữ giới hạn. */
     public function merge(Request $request): JsonResponse
     {
-        $data = $request->validate(['style_ids' => ['present', 'array', 'max:'.Wishlists::MAX], 'style_ids.*' => ['integer', 'min:1']]);
-        $added = $this->wishlists->add($this->customerId($request), array_values(array_map('intval', $data['style_ids'])));
+        $data = $request->validate(['product_ids' => ['present', 'array', 'max:'.Wishlists::MAX], 'product_ids.*' => ['integer', 'min:1']]);
+        $added = $this->wishlists->add($this->customerId($request), array_values(array_map('intval', $data['product_ids'])));
 
         return response()->json(['data' => ['added' => $added, 'ids' => $this->wishlists->ids($this->customerId($request))]]);
     }
@@ -43,16 +43,16 @@ final class WishlistApiController
     {
         $data = $request->validated();
         $customerId = $this->customerId($request);
-        if (! in_array((int) $data['style_id'], $this->wishlists->ids($customerId), true) && $this->wishlists->add($customerId, [(int) $data['style_id']]) === 0) {
+        if (! in_array((int) $data['product_id'], $this->wishlists->ids($customerId), true) && $this->wishlists->add($customerId, [(int) $data['product_id']]) === 0) {
             return response()->json(['error' => ['code' => 'wishlist.unavailable', 'message' => __('vani-wishlist::storefront.add_failed', ['max' => Wishlists::MAX])]], 422);
         }
 
         return response()->json(['data' => ['ids' => $this->wishlists->ids($customerId)]], 201);
     }
 
-    public function destroy(Request $request, int $style): JsonResponse
+    public function destroy(Request $request, int $product): JsonResponse
     {
-        $this->wishlists->remove($this->customerId($request), $style);
+        $this->wishlists->remove($this->customerId($request), $product);
 
         return response()->json(['data' => ['ids' => $this->wishlists->ids($this->customerId($request))]]);
     }

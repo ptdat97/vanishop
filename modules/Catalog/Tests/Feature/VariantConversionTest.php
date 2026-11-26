@@ -22,8 +22,8 @@ require_once __DIR__.'/../../../Inventory/Tests/Feature/InventoryTestHelpers.php
 
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'pricing.manage', 'inventory.adjust']), 'staff');
-    $this->style = T::product(Brand::factory()->create()->id, ['style_code' => 'LM-CVT']);
-    $this->base = "/admin/catalog/products/{$this->style->id}";
+    $this->product = T::product(Brand::factory()->create()->id, ['product_code' => 'LM-CVT']);
+    $this->base = "/admin/catalog/products/{$this->product->id}";
     $this->location = I::location(['code' => 'WH-MAIN']);
     T::seed(function () {
         $this->ivory = OptionValue::factory()->color()->create(['code' => 'IVR']);
@@ -31,8 +31,8 @@ beforeEach(function () {
         $this->colorType = (int) OptionType::query()->where('code', OptionType::COLOR)->value('id');
     });
     $this->payload = fn (): array => T::seed(fn () => [
-        'style_code' => 'LM-CVT', 'slug' => $this->style->fresh()->slug, 'status' => 'active', 'brand_id' => $this->style->brand_id,
-        'lock_version' => $this->style->fresh()->lock_version, 'translations' => ['vi' => ['name' => 'Áo chuyển đổi']],
+        'product_code' => 'LM-CVT', 'slug' => $this->product->fresh()->slug, 'status' => 'active', 'brand_id' => $this->product->brand_id,
+        'lock_version' => $this->product->fresh()->lock_version, 'translations' => ['vi' => ['name' => 'Áo chuyển đổi']],
     ]);
     $this->put = fn (array $variants) => $this->put($this->base, [...($this->payload)(), 'variants' => $variants]);
 
@@ -82,7 +82,7 @@ beforeEach(function () {
     });
     /* Khách xin đổi sang SKU này (chưa có đơn đổi): chỉ dòng đổi trả tham chiếu SKU. */
     $this->exchange = function (int $variantId): void {
-        $lineId = ($this->order)(T::seed(fn () => app(ProductOptions::class)->createVariant(T::product(null, ['style_code' => 'OTHER-'.Str::random(4)]), [], ['sku' => 'OTHER-'.Str::random(4)])->id));
+        $lineId = ($this->order)(T::seed(fn () => app(ProductOptions::class)->createVariant(T::product(null, ['product_code' => 'OTHER-'.Str::random(4)]), [], ['sku' => 'OTHER-'.Str::random(4)])->id));
         T::seed(function () use ($lineId, $variantId): void {
             $returnId = DB::table('return_requests')->insertGetId([
                 'public_id' => strtoupper((string) Str::ulid()), 'number' => 'CV-R'.Str::random(4), 'order_id' => DB::table('order_lines')->where('id', $lineId)->value('order_id'),
@@ -158,7 +158,7 @@ it('có biến thể → đơn: SKU còn lại chưa phát sinh thì bị xoá (
     T::seed(function () use ($keep, $ids, $orderLine): void {
         $kept = Variant::query()->with('optionValues')->sole();
         expect($kept->id)->toBe($keep)->and($kept->sku)->toBe('LM-CVT')->and($kept->optionValues)->toBeEmpty()
-            ->and($this->style->options()->count())->toBe(0)->and($this->style->optionValues()->count())->toBe(0)
+            ->and($this->product->options()->count())->toBe(0)->and($this->product->optionValues()->count())->toBe(0)
             ->and(DB::table('order_lines')->find($orderLine))->variant_id->toBe($keep)->variant_options->toContain('Ngà')
             ->and(DB::table('stock_movements')->where('variant_id', $keep)->count())->toBe(3)
             ->and(DB::table('prices')->where('variant_id', $keep)->count())->toBe(2)
@@ -187,7 +187,7 @@ it('có biến thể → đơn bị từ chối khi SKU bị bỏ đã phát sin
     };
     $state = fn (): array => T::seed(fn () => [
         Variant::query()->with('optionValues')->orderBy('id')->get()->map(fn (Variant $variant): array => [$variant->id, $variant->sku, $variant->optionValues->pluck('id')->all()])->all(),
-        $this->style->options()->count(), DB::table('prices')->count(),
+        $this->product->options()->count(), DB::table('prices')->count(),
     ]);
     $before = $state();
 
@@ -207,13 +207,13 @@ it('có biến thể → đơn: SKU đã phát sinh duy nhất được giữ l�
 
 it('collapse_to không hợp lệ: SKU của sản phẩm khác, còn gửi trục, hoặc sản phẩm chưa có trục → từ chối', function () {
     $ids = ($this->twoColors)();
-    $foreign = T::seed(fn () => app(ProductOptions::class)->createVariant(T::product(null, ['style_code' => 'OTHER']), [], ['sku' => 'OTHER'])->id);
+    $foreign = T::seed(fn () => app(ProductOptions::class)->createVariant(T::product(null, ['product_code' => 'OTHER']), [], ['sku' => 'OTHER'])->id);
 
     ($this->collapse)($foreign)->assertSessionHasErrors('collapse_to');
     ($this->put)(['axes' => [['option_type_id' => $this->colorType, 'value_ids' => [$this->ivory->id]]], 'collapse_to' => $ids['LM-CVT-IVR'], 'cells' => [
         ['values' => [$this->ivory->id], 'enabled' => true, 'status' => 'active', 'sku' => 'LM-CVT-IVR', 'fields' => []],
     ]])->assertSessionHasErrors('collapse_to');
-    expect(T::seed(fn () => Variant::query()->where('style_id', $this->style->id)->count()))->toBe(2);
+    expect(T::seed(fn () => Variant::query()->where('product_id', $this->product->id)->count()))->toBe(2);
 
     ($this->collapse)($ids['LM-CVT-IVR'])->assertSessionHasNoErrors();
     ($this->collapse)($ids['LM-CVT-IVR'])->assertSessionHasErrors('collapse_to');

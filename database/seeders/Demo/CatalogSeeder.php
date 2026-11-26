@@ -15,8 +15,8 @@ use Modules\Catalog\Contracts\CatalogImporter;
 use Modules\Catalog\Contracts\Data\ProductImport;
 use Modules\Catalog\Domain\CategoryStatus;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Inventory\Contracts\StockImporter;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Pricing\Application\PriceListService;
@@ -87,19 +87,19 @@ final class CatalogSeeder extends Seeder
         $resizer = new ImageResizer((int) config('vanishop.demo.image_max', 1600));
         $temporary = storage_path('app/tmp/demo-seed-'.Str::lower((string) Str::ulid()));
         $basePrices = $onlineStock = $storeStock = [];
-        $styleCodes = [];
+        $productCodes = [];
 
         try {
             foreach ($this->photos->groups($source) as $index => $group) {
                 $name = self::NAMES[$index % count(self::NAMES)];
                 $category = self::categoryFor($name);
-                $styleCode = 'VS-'.strtoupper($group['key']);
-                $images = Style::query()->where('style_code', $styleCode)->exists()
+                $productCode = 'VS-'.strtoupper($group['key']);
+                $images = Product::query()->where('product_code', $productCode)->exists()
                     ? [] // đã có: không thu nhỏ lại ảnh (Core chỉ thêm ảnh cho màu chưa có ảnh)
                     : array_map(fn (string $file, int $position): string => $resizer->toTemporary($file, $temporary, "{$group['key']}-{$position}"), $group['files'], array_keys($group['files']));
 
                 $result = $this->catalog->upsertProduct(new ProductImport(
-                    styleCode: $styleCode,
+                    productCode: $productCode,
                     slug: Str::slug($name).'-'.$group['key'],
                     translations: [StoreLocale::default() => ['name' => $name, 'description' => "{$name} — thiết kế Vani Studio, chất liệu mềm, đứng dáng. Ảnh chụp sản phẩm thật (dữ liệu demo)."]],
                     brand: self::BRAND,
@@ -107,8 +107,8 @@ final class CatalogSeeder extends Seeder
                     colors: [[...self::COLORS[$index % count(self::COLORS)], 'images' => $images]],
                     sizes: ['S', 'M', 'L'],
                 ));
-                $this->placeInCategory($styleCode, $category);
-                $styleCodes[$category][] = $styleCode;
+                $this->placeInCategory($productCode, $category);
+                $productCodes[$category][] = $productCode;
 
                 foreach ($result->skus as $sku) {
                     $basePrices[$sku] = ['amount' => self::pick(self::PRICES, $group['key'])];
@@ -124,7 +124,7 @@ final class CatalogSeeder extends Seeder
         $this->salePrices($basePrices);
         $this->seedStock($onlineStock, null);
         $this->seedStock($storeStock, StoreSeeder::STORE_CODE);
-        $this->seedCollections($styleCodes);
+        $this->seedCollections($productCodes);
     }
 
     public static function categoryFor(string $name): string
@@ -162,17 +162,17 @@ final class CatalogSeeder extends Seeder
     /**
      * Sản phẩm nhập từ bản demo cũ chỉ có "Hàng mới về": thêm danh mục con, đặt làm danh mục chính.
      */
-    private function placeInCategory(string $styleCode, string $categorySlug): void
+    private function placeInCategory(string $productCode, string $categorySlug): void
     {
-        $style = Style::query()->where('style_code', $styleCode)->first();
+        $product = Product::query()->where('product_code', $productCode)->first();
         $category = Category::query()->where('slug', $categorySlug)->value('id');
-        if ($style === null || $category === null) {
+        if ($product === null || $category === null) {
             return;
         }
-        $style->categories()->syncWithoutDetaching([(int) $category]);
+        $product->categories()->syncWithoutDetaching([(int) $category]);
         $newArrivals = Category::query()->where('slug', self::NEW_ARRIVALS)->value('id');
-        if ($style->primary_category_id === null || $style->primary_category_id === $newArrivals) {
-            $style->forceFill(['primary_category_id' => (int) $category])->save();
+        if ($product->primary_category_id === null || $product->primary_category_id === $newArrivals) {
+            $product->forceFill(['primary_category_id' => (int) $category])->save();
         }
     }
 
@@ -188,11 +188,11 @@ final class CatalogSeeder extends Seeder
         if (DB::table('prices')->where('price_list_id', $list->id)->exists()) {
             return;
         }
-        $variants = DB::table('variants')->join('styles', 'styles.id', '=', 'variants.style_id')
-            ->whereIn('variants.sku', array_keys($basePrices))->get(['variants.id', 'variants.sku', 'styles.style_code']);
+        $variants = DB::table('variants')->join('products', 'products.id', '=', 'variants.product_id')
+            ->whereIn('variants.sku', array_keys($basePrices))->get(['variants.id', 'variants.sku', 'products.product_code']);
         $rows = [];
         foreach ($variants as $variant) {
-            if (crc32((string) $variant->style_code) % 4 === 0) {
+            if (crc32((string) $variant->product_code) % 4 === 0) {
                 $rows[] = ['variant_id' => (int) $variant->id, 'amount' => (int) (round($basePrices[$variant->sku]['amount'] * 0.8 / 10_000) * 10_000), 'compare_at_amount' => null];
             }
         }
@@ -223,14 +223,14 @@ final class CatalogSeeder extends Seeder
     }
 
     /**
-     * @param  array<string, list<string>>  $styleCodes  danh mục → mã sản phẩm
+     * @param  array<string, list<string>>  $productCodes  danh mục → mã sản phẩm
      */
-    private function seedCollections(array $styleCodes): void
+    private function seedCollections(array $productCodes): void
     {
         $locale = StoreLocale::default();
         $collections = [
-            'thu-dong-2026' => ['Thu Đông 2026', 'Len, dạ và lụa cho mùa se lạnh.', [...array_slice($styleCodes['ao'] ?? [], 0, 4), ...array_slice($styleCodes['dam'] ?? [], 0, 4)]],
-            'cong-so-thanh-lich' => ['Công sở thanh lịch', 'Đi làm chỉn chu mà vẫn thoải mái.', [...array_slice($styleCodes['chan-vay'] ?? [], 0, 3), ...array_slice($styleCodes['quan'] ?? [], 0, 2), ...array_slice($styleCodes['ao'] ?? [], 4, 2)]],
+            'thu-dong-2026' => ['Thu Đông 2026', 'Len, dạ và lụa cho mùa se lạnh.', [...array_slice($productCodes['ao'] ?? [], 0, 4), ...array_slice($productCodes['dam'] ?? [], 0, 4)]],
+            'cong-so-thanh-lich' => ['Công sở thanh lịch', 'Đi làm chỉn chu mà vẫn thoải mái.', [...array_slice($productCodes['chan-vay'] ?? [], 0, 3), ...array_slice($productCodes['quan'] ?? [], 0, 2), ...array_slice($productCodes['ao'] ?? [], 4, 2)]],
         ];
         // Ảnh bìa: ảnh sản phẩm demo (banner đầu trang bộ sưu tập, ảnh chia sẻ).
         $covers = DemoCatalog::covers(count($collections), 10);

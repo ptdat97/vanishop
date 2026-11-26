@@ -40,11 +40,11 @@ final class ReturnFormPresenter
         $lineIds = array_values(array_filter(array_keys($returnable), fn (int $id): bool => $orderLines->has($id)));
         $ownVariants = $this->variants->find(array_values(array_unique(array_map(fn (int $id): int => (int) $orderLines[$id]['variant_id'], $lineIds))));
 
-        $siblingsByStyle = [];
+        $siblingsByProduct = [];
         foreach ($ownVariants as $variant) {
-            $siblingsByStyle[$variant->styleCode] ??= array_map(fn ($sibling): int => $sibling->id, $this->variants->ofStyleCode($variant->styleCode));
+            $siblingsByProduct[$variant->productCode] ??= array_map(fn ($sibling): int => $sibling->id, $this->variants->ofProductCode($variant->productCode));
         }
-        $candidateIds = array_values(array_unique(array_merge(...array_values($siblingsByStyle ?: [[]]))));
+        $candidateIds = array_values(array_unique(array_merge(...array_values($siblingsByProduct ?: [[]]))));
         $sellable = $candidateIds === [] ? [] : $this->catalog->sellableVariants($candidateIds, app()->getLocale(), now()->getTimestamp());
         $stock = $sellable === [] ? [] : $this->availability->forVariants(array_keys($sellable));
 
@@ -53,7 +53,7 @@ final class ReturnFormPresenter
             $line = $orderLines[$lineId];
             $own = $ownVariants[(int) $line['variant_id']] ?? null;
             $options = [];
-            foreach ($own === null ? [] : $siblingsByStyle[$own->styleCode] as $variantId) {
+            foreach ($own === null ? [] : $siblingsByProduct[$own->productCode] as $variantId) {
                 $variant = $sellable[$variantId] ?? null;
                 if ($variant !== null) {
                     $options[] = [

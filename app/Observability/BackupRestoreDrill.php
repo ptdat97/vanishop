@@ -25,7 +25,7 @@ use ZipArchive;
 final class BackupRestoreDrill
 {
     /** Bảng nghiệp vụ đối chiếu số dòng. */
-    public const TABLES = ['orders', 'order_lines', 'payments', 'refunds', 'customers', 'styles', 'variants', 'prices', 'stock_levels', 'stock_movements', 'promotions', 'integration_events', 'plugins', 'settings'];
+    public const TABLES = ['orders', 'order_lines', 'payments', 'refunds', 'customers', 'products', 'variants', 'prices', 'stock_levels', 'stock_movements', 'promotions', 'integration_events', 'plugins', 'settings'];
 
     /**
      * @return array{status: 'ok'|'failed', backup: string, details: array<string, mixed>}

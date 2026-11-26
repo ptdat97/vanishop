@@ -14,7 +14,7 @@ use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Events\ProductUpdated;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
@@ -43,10 +43,10 @@ final class VariantMatrix
      * @param  Closure(string): bool  $can  quyền của người đang xem
      * @return array{columns: list<array{code: string, label: string, editable: bool, fields: list<array<string, mixed>>}>, values: array<int, array<string, array<string, scalar|null>>>}
      */
-    public function columns(?Style $style, Closure $can): array
+    public function columns(?Product $product, Closure $can): array
     {
         // Sản phẩm mới (chưa lưu): chỉ có cột, chưa có giá trị.
-        $variantIds = $style === null ? [] : $style->variants()->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        $variantIds = $product === null ? [] : $product->variants()->pluck('id')->map(fn ($id): int => (int) $id)->all();
         $columns = [];
         $values = [];
         foreach ($this->providers() as $code => $provider) {
@@ -61,7 +61,7 @@ final class VariantMatrix
                     'options' => $field->options, 'help' => $field->help,
                 ], $fields),
             ];
-            $provided = $style === null || $variantIds === [] ? [] : (array) $this->extensions->call($provider, fn (): array => $provider->values($style->id, $variantIds), [], 'catalog.variant_fields.values');
+            $provided = $product === null || $variantIds === [] ? [] : (array) $this->extensions->call($provider, fn (): array => $provider->values($product->id, $variantIds), [], 'catalog.variant_fields.values');
             foreach ($provided as $variantId => $row) {
                 $values[(int) $variantId][$code] = (array) $row;
             }
@@ -86,15 +86,15 @@ final class VariantMatrix
      *
      * @throws ValidationException
      */
-    public function save(Style $style, array $input, Closure $can): array
+    public function save(Product $product, array $input, Closure $can): array
     {
-        $style->load('variants.optionValues');
-        $existing = $style->variants->keyBy(fn (Variant $variant): string => self::canonical($variant->optionValues->mapWithKeys(fn ($value): array => [$value->option_type_id => $value->id])->all()));
+        $product->load('variants.optionValues');
+        $existing = $product->variants->keyBy(fn (Variant $variant): string => self::canonical($variant->optionValues->mapWithKeys(fn ($value): array => [$value->option_type_id => $value->id])->all()));
         $providers = array_filter($this->providers(), fn (VariantFieldProvider $provider): bool => $can($provider->permission() ?? 'catalog.manage'));
-        [$single, $adopt, $existing] = $this->adoption($style, $input, $existing);
-        [$kept, $others, $existing] = $this->collapsing($style, $input, $existing);
+        [$single, $adopt, $existing] = $this->adoption($product, $input, $existing);
+        [$kept, $others, $existing] = $this->collapsing($product, $input, $existing);
         [$axes, $cells] = $this->validate($input, $existing->all(), $providers);
-        if ($axes === [] && $kept === null && $style->options()->exists()) {
+        if ($axes === [] && $kept === null && $product->options()->exists()) {
             throw ValidationException::withMessages(['axes' => __('catalog::messages.single_variant_has_axes')]);
         }
         $typeIds = array_column($axes, 'option_type_id');
@@ -102,7 +102,7 @@ final class VariantMatrix
             throw ValidationException::withMessages(['adopt_single' => __('catalog::messages.single_variant_adopt_invalid')]);
         }
 
-        $result = DB::transaction(function () use ($style, $axes, $cells, $existing, $typeIds, $single, $adopt, $kept, $others): array {
+        $result = DB::transaction(function () use ($product, $axes, $cells, $existing, $typeIds, $single, $adopt, $kept, $others): array {
             // Tắt ô trước khi đổi trục: đổi tập loại tuỳ chọn chỉ được khi không còn SKU nào.
             $toRemove = [];
             foreach ($cells as $cell) {
@@ -120,13 +120,13 @@ final class VariantMatrix
                 }
                 [$collapsed] = $this->remove($others);
                 $deleted += $collapsed;
-                $this->options->collapseToSingle($style, $kept);
+                $this->options->collapseToSingle($product, $kept);
             }
             if ($axes !== []) {
-                $this->options->syncAxes($style, $axes, fromSingle: $single !== null);
+                $this->options->syncAxes($product, $axes, fromSingle: $single !== null);
             }
             if ($single !== null) {
-                $this->options->adoptSingleVariant($style, $single, $adopt);
+                $this->options->adoptSingleVariant($product, $single, $adopt);
             }
 
             $created = $updated = 0;
@@ -138,7 +138,7 @@ final class VariantMatrix
                 $variant = $existing->get(self::canonical(array_combine($typeIds, $cell['values'])));
                 $data = ['sku' => $cell['sku'], 'barcode' => $cell['barcode'], 'status' => $cell['status'], 'weight_gram' => $cell['weight_gram']];
                 if ($variant === null || in_array($variant->id, $toRemove, true)) {
-                    $variant = $this->options->createVariant($style, $cell['values'], $data);
+                    $variant = $this->options->createVariant($product, $cell['values'], $data);
                     $created++;
                 } elseif ($variant->fill($data)->isDirty()) {
                     $variant->save();
@@ -147,8 +147,8 @@ final class VariantMatrix
                 $variantIdsByCell[$index] = $variant->id;
             }
 
-            $this->audit->record('catalog.variants.matrix_saved', 'style', $style->id, compact('created', 'updated', 'deleted', 'deactivated'));
-            event(new ProductUpdated($style->id, $style->style_code));
+            $this->audit->record('catalog.variants.matrix_saved', 'product', $product->id, compact('created', 'updated', 'deleted', 'deactivated'));
+            event(new ProductUpdated($product->id, $product->product_code));
 
             return ['created' => $created, 'updated' => $updated, 'deleted' => $deleted, 'deactivated' => $deactivated, 'variant_ids' => $variantIdsByCell];
         });
@@ -165,7 +165,7 @@ final class VariantMatrix
                 }
             }
             if ($values !== []) {
-                $errors = $this->extensions->call($provider, fn (): array => $provider->save($style->id, $values), array_fill_keys(array_keys($values), __('catalog::messages.variant_field_failed', ['label' => $provider->label()])), 'catalog.variant_fields.save');
+                $errors = $this->extensions->call($provider, fn (): array => $provider->save($product->id, $values), array_fill_keys(array_keys($values), __('catalog::messages.variant_field_failed', ['label' => $provider->label()])), 'catalog.variant_fields.save');
                 foreach ((array) $errors as $variantId => $message) {
                     $fieldErrors[(int) $variantId] = trim(($fieldErrors[(int) $variantId] ?? '').' '.$message);
                 }
@@ -206,13 +206,13 @@ final class VariantMatrix
      *
      * @throws ValidationException
      */
-    private function collapsing(Style $style, array $input, Collection $existing): array
+    private function collapsing(Product $product, array $input, Collection $existing): array
     {
         if (! array_key_exists('collapse_to', $input) || $input['collapse_to'] === null) {
             return [null, [], $existing];
         }
         $kept = is_numeric($input['collapse_to']) ? $existing->first(fn (Variant $variant): bool => $variant->id === (int) $input['collapse_to']) : null;
-        if ($kept === null || ($input['axes'] ?? null) !== [] || ! $style->options()->exists()) {
+        if ($kept === null || ($input['axes'] ?? null) !== [] || ! $product->options()->exists()) {
             throw ValidationException::withMessages(['collapse_to' => __('catalog::messages.collapse_invalid')]);
         }
         $others = $existing->reject(fn (Variant $variant): bool => $variant->id === $kept->id);
@@ -236,7 +236,7 @@ final class VariantMatrix
      *
      * @throws ValidationException
      */
-    private function adoption(Style $style, array $input, Collection $existing): array
+    private function adoption(Product $product, array $input, Collection $existing): array
     {
         if (! array_key_exists('adopt_single', $input) || $input['adopt_single'] === null) {
             return [null, [], $existing];
@@ -244,7 +244,7 @@ final class VariantMatrix
         $single = $existing->get('');
         $adopt = is_array($input['adopt_single']) ? array_values(array_map('intval', array_filter($input['adopt_single'], 'is_numeric'))) : [];
         $typeIds = array_map('intval', array_column(array_filter((array) ($input['axes'] ?? []), 'is_array'), 'option_type_id'));
-        if ($single === null || $existing->count() !== 1 || $style->options()->exists() || $adopt === [] || count($adopt) !== count($typeIds) || count($adopt) !== count((array) $input['adopt_single'])) {
+        if ($single === null || $existing->count() !== 1 || $product->options()->exists() || $adopt === [] || count($adopt) !== count($typeIds) || count($adopt) !== count((array) $input['adopt_single'])) {
             throw ValidationException::withMessages(['adopt_single' => __('catalog::messages.single_variant_adopt_invalid')]);
         }
 

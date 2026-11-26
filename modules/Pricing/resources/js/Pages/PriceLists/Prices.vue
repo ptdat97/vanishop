@@ -29,7 +29,7 @@ import { stateTone, warningTone } from '../../priceListState';
  */
 interface Row {
     variant_id: number;
-    style_code: string;
+    product_code: string;
     name: string;
     sku: string;
     variant_label: string;
@@ -51,7 +51,7 @@ interface PreviewRow {
     percent: number | null;
     warnings: string[];
 }
-type Scope = { scope: 'variants'; variant_ids: number[] } | { scope: 'styles'; style_ids: number[] } | { scope: 'all'; q: string };
+type Scope = { scope: 'variants'; variant_ids: number[] } | { scope: 'products'; product_ids: number[] } | { scope: 'all'; q: string };
 
 const props = defineProps<{
     baseUrl: string;
@@ -72,7 +72,7 @@ const props = defineProps<{
     readOnly: boolean;
     productsUrl: string;
     /** Từ danh sách sản phẩm "Đưa vào bảng giá…": mở sẵn hộp thoại cách tính giá cho các sản phẩm này. */
-    addStyleIds: number[];
+    addProductIds: number[];
     /** Cột/lọc/thao tác/công cụ của plugin theo SKU (EP v3 X1). */
     extensions: ExtensionList;
     /** Bộ lọc phụ của plugin cho SkuPicker (`adminFilter('variant', …)`). */
@@ -149,10 +149,10 @@ function openBulk(scope: Scope, title: string): void {
 watch(rule, () => (preview.value = null));
 // Đến từ danh sách sản phẩm ("Đưa vào bảng giá…"): mở sẵn hộp thoại; khai báo sau các biến của hộp thoại vì chạy ngay.
 watch(
-    () => props.addStyleIds,
+    () => props.addProductIds,
     (ids) => {
         if (ids.length && editable.value) {
-            openBulk({ scope: 'styles', style_ids: [...ids] }, t('pricing::admin.price_lists_prices.add_count_products_name', { count: ids.length, name: props.priceList.name }));
+            openBulk({ scope: 'products', product_ids: [...ids] }, t('pricing::admin.price_lists_prices.add_count_products_name', { count: ids.length, name: props.priceList.name }));
             router.replace({ url: `${listUrl.value}/prices`, preserveState: true, preserveScroll: true });
         }
     },

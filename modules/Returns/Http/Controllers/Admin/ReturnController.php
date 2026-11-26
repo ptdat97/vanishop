@@ -232,7 +232,7 @@ final class ReturnController
                 'lines' => $return->lines->map(fn (ReturnLine $line): array => [
                     'id' => $line->id,
                     'sku' => $skus[$line->variant_id]->sku ?? null,
-                    'name' => $skus[$line->variant_id]->styleName ?? null,
+                    'name' => $skus[$line->variant_id]->productName ?? null,
                     'quantity' => $line->quantity,
                 ])->all(),
             ])->values()->all(),

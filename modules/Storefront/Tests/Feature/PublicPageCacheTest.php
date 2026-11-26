@@ -17,7 +17,7 @@ beforeEach(function () {
     config(['vanishop.storefront.page_cache.enabled' => true]);
     H::fakeOtp();
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
-    $this->product = '/san-pham/'.$this->s->style->slug;
+    $this->product = '/san-pham/'.$this->s->product->slug;
     $this->signIn = function (): void {
         $this->post('/tai-khoan/dang-nhap', ['email' => H::account('0912345678')->email, 'password' => H::PASSWORD]);
     };
@@ -63,7 +63,7 @@ it('/_vani/phien: đăng nhập, số món trong giỏ; lỗi thêm giỏ từ t
 });
 
 it('link có chữ ký (xem trước), trang lỗi → private, no-store; vẫn không phiên', function () {
-    $preview = $this->get(URL::temporarySignedRoute('storefront.product', now()->addMinutes(5), ['slug' => $this->s->style->slug]))
+    $preview = $this->get(URL::temporarySignedRoute('storefront.product', now()->addMinutes(5), ['slug' => $this->s->product->slug]))
         ->assertOk()->assertHeader('Cache-Control', 'no-store, private');
     expect($preview->headers->getCookies())->toBe([]);
     $this->get('/en')->assertOk()->assertSee(url('/_vani/phien?locale=en'), false);

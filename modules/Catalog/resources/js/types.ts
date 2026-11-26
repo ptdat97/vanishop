@@ -22,7 +22,7 @@ export interface TaxonomyRow {
     slug: string;
     status: string;
     image_url: string | null;
-    styles_count: number;
+    products_count: number;
     code?: string;
 }
 
@@ -32,7 +32,7 @@ export type Translations<T extends string> = Partial<Record<string, Partial<Reco
 export interface LinkGroupRow {
     type_id: number;
     name: string;
-    products: Array<{ id: number; style_code: string; name: string | null }>;
+    products: Array<{ id: number; product_code: string; name: string | null }>;
 }
 
 export interface VideoRow {

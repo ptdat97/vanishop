@@ -111,16 +111,16 @@ final class ExtraContent
     /**
      * Dữ liệu `extensions["vani.cms"]` của trang sản phẩm: điểm nổi bật + hộp ưu đãi (null khi tắt hoặc sản phẩm ẩn hộp).
      *
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return array<int, array{highlights: list<string>, promo_box: ?string}>
      */
-    public function forProducts(array $styleIds, string $locale): array
+    public function forProducts(array $productIds, string $locale): array
     {
-        $extras = ProductExtra::query()->whereIn('style_id', $styleIds)->get()->keyBy('style_id');
+        $extras = ProductExtra::query()->whereIn('product_id', $productIds)->get()->keyBy('product_id');
         $promoBox = $this->promoBox($locale);
         $default = StoreLocale::default();
         $result = [];
-        foreach ($styleIds as $id) {
+        foreach ($productIds as $id) {
             $extra = $extras->get($id);
             $highlights = $extra === null ? [] : (($extra->highlights[$locale] ?? []) ?: ($extra->highlights[$default] ?? []));
             $box = $extra?->hide_promo_box ? null : $promoBox;
@@ -137,9 +137,9 @@ final class ExtraContent
      *
      * @return array<string, mixed>
      */
-    public function productForm(int $styleId): array
+    public function productForm(int $productId): array
     {
-        $extra = ProductExtra::query()->where('style_id', $styleId)->first();
+        $extra = ProductExtra::query()->where('product_id', $productId)->first();
         $values = ['hide_promo_box' => (bool) $extra?->hide_promo_box];
         foreach (StoreLocale::supported() as $locale) {
             $values[self::highlightKey($locale)] = implode("\n", $extra->highlights[$locale] ?? []);
@@ -151,7 +151,7 @@ final class ExtraContent
     /**
      * @param  array<string, mixed>  $values
      */
-    public function saveProduct(int $styleId, array $values): void
+    public function saveProduct(int $productId, array $values): void
     {
         $highlights = [];
         foreach (StoreLocale::supported() as $locale) {
@@ -162,11 +162,11 @@ final class ExtraContent
         }
         $hide = (bool) ($values['hide_promo_box'] ?? false);
         if ($highlights === [] && ! $hide) {
-            ProductExtra::query()->where('style_id', $styleId)->delete();
+            ProductExtra::query()->where('product_id', $productId)->delete();
 
             return;
         }
-        ProductExtra::query()->updateOrCreate(['style_id' => $styleId], ['highlights' => $highlights === [] ? null : $highlights, 'hide_promo_box' => $hide]);
+        ProductExtra::query()->updateOrCreate(['product_id' => $productId], ['highlights' => $highlights === [] ? null : $highlights, 'hide_promo_box' => $hide]);
     }
 
     /**

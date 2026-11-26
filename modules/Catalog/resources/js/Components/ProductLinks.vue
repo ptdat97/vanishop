@@ -22,11 +22,11 @@ const oneWay = ref(false);
 const typeOptions = computed(() => props.linkTypes.map((type) => ({ value: type.id, label: `${type.label}${type.is_active ? '' : t('catalog::admin.product_links.inactive')}` })));
 
 function add(): void {
-    const styleCodes = codes.value.split(/[\s,;]+/).filter(Boolean);
-    if (typeId.value && styleCodes.length) {
+    const productCodes = codes.value.split(/[\s,;]+/).filter(Boolean);
+    if (typeId.value && productCodes.length) {
         router.post(
             `${props.productUrl}/links`,
-            { link_type_id: typeId.value, style_codes: styleCodes, one_way: oneWay.value },
+            { link_type_id: typeId.value, product_codes: productCodes, one_way: oneWay.value },
             { preserveScroll: true, onSuccess: () => (codes.value = '') },
         );
     }
@@ -56,15 +56,15 @@ async function remove(group: LinkGroupRow, productId: number, code: string): Pro
                 <input v-model="oneWay" type="checkbox" />
                 {{ t('catalog::admin.product_links.one_way_only_product_suggests') }}
             </label>
-            <p v-if="errors.style_codes" class="text-sm text-red-600">{{ errors.style_codes }}</p>
+            <p v-if="errors.product_codes" class="text-sm text-red-600">{{ errors.product_codes }}</p>
         </div>
 
         <div v-for="group in links" :key="group.type_id">
             <h3 class="mb-1 text-xs font-medium uppercase text-slate-500">{{ group.name }}</h3>
             <ul class="divide-y divide-slate-100 rounded-md border border-slate-200 text-sm">
                 <li v-for="linked in group.products" :key="linked.id" class="flex items-center justify-between px-3 py-1.5">
-                    <span>{{ linked.name }} <span class="font-mono text-xs text-slate-400">{{ linked.style_code }}</span></span>
-                    <button type="button" class="text-red-600 hover:underline" @click="remove(group, linked.id, linked.style_code)">{{ t('catalog::admin.product_links.unlink') }}</button>
+                    <span>{{ linked.name }} <span class="font-mono text-xs text-slate-400">{{ linked.product_code }}</span></span>
+                    <button type="button" class="text-red-600 hover:underline" @click="remove(group, linked.id, linked.product_code)">{{ t('catalog::admin.product_links.unlink') }}</button>
                 </li>
             </ul>
         </div>

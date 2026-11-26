@@ -57,7 +57,7 @@ final class StockCsv
                 }
                 foreach ($locations as $location) {
                     $level = $levels[$location->id.':'.$variant->id] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0];
-                    yield [$variant->sku, $location->code, $level['on_hand'], $level['reserved'], $level['safety_stock'], $level['available'], $variant->styleName, VariantOptionsText::describe($variant->options)];
+                    yield [$variant->sku, $location->code, $level['on_hand'], $level['reserved'], $level['safety_stock'], $level['available'], $variant->productName, VariantOptionsText::describe($variant->options)];
                 }
             }
         }

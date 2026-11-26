@@ -11,18 +11,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Trục biến thể của sản phẩm (ADR-045): loại tuỳ chọn + thứ tự (tối đa 3 trục).
  *
  * @property int $id
- * @property int $style_id
+ * @property int $product_id
  * @property int $option_type_id
  * @property int $position
  * @property OptionType $type
  */
-final class StyleOption extends Model
+final class ProductOption extends Model
 {
-    protected $fillable = ['style_id', 'option_type_id', 'position'];
+    protected $fillable = ['product_id', 'option_type_id', 'position'];
 
     protected function casts(): array
     {
-        return ['style_id' => 'integer', 'option_type_id' => 'integer', 'position' => 'integer'];
+        return ['product_id' => 'integer', 'option_type_id' => 'integer', 'position' => 'integer'];
     }
 
     /**

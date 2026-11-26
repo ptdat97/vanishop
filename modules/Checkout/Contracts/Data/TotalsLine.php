@@ -16,7 +16,7 @@ final readonly class TotalsLine
         public int $key,
         public int $variantId,
         public ?int $brandId,
-        public int $styleId,
+        public int $productId,
         public string $sku,
         public string $name,
         /** @var list<array{type: string, name: string, code: string, value: string}> tổ hợp tuỳ chọn của SKU (ADR-045) — chụp vào dòng đơn */
@@ -53,13 +53,13 @@ final readonly class TotalsLine
 
     public function withDiscount(Money $discount): self
     {
-        return new self($this->key, $this->variantId, $this->brandId, $this->styleId, $this->sku, $this->name, $this->variantOptions,
+        return new self($this->key, $this->variantId, $this->brandId, $this->productId, $this->sku, $this->name, $this->variantOptions,
             $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $discount, $this->taxRateBp, $this->tax, $this->brandName, $this->options, $this->priceListCode, $this->weightGram);
     }
 
     public function withTax(int $rateBp, Money $tax): self
     {
-        return new self($this->key, $this->variantId, $this->brandId, $this->styleId, $this->sku, $this->name, $this->variantOptions,
+        return new self($this->key, $this->variantId, $this->brandId, $this->productId, $this->sku, $this->name, $this->variantOptions,
             $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $this->discount, $rateBp, $tax, $this->brandName, $this->options, $this->priceListCode, $this->weightGram);
     }
 }

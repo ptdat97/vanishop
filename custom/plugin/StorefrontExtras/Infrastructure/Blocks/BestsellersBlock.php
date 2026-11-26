@@ -47,8 +47,8 @@ final class BestsellersBlock implements StorefrontBlock
         $days = in_array((string) ($config['days'] ?? '30'), ['7', '30', '90'], true) ? (int) $config['days'] : 30;
 
         $ids = Cache::remember("vani-extras:bestsellers:{$days}", 3600, fn (): array => array_column(
-            $this->statistics->topStyles(new DateTimeImmutable("-{$days} days"), new DateTimeImmutable, 60),
-            'style_id',
+            $this->statistics->topProducts(new DateTimeImmutable("-{$days} days"), new DateTimeImmutable, 60),
+            'product_id',
         ));
         $products = array_slice($this->products->byIds(array_slice($ids, 0, 60), $locale), 0, $limit);
         if (count($products) < $limit) {

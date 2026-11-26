@@ -9,5 +9,5 @@ Route::middleware('vani.customer')->group(function (): void {
     Route::post('items/merge', [WishlistApiController::class, 'merge'])->middleware('throttle:60,1')->name('items.merge');
     Route::get('items', [WishlistApiController::class, 'index'])->name('items.index');
     Route::post('items', [WishlistApiController::class, 'store'])->name('items.store');
-    Route::delete('items/{style}', [WishlistApiController::class, 'destroy'])->whereNumber('style')->name('items.destroy');
+    Route::delete('items/{product}', [WishlistApiController::class, 'destroy'])->whereNumber('product')->name('items.destroy');
 });

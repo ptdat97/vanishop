@@ -10,7 +10,7 @@ final readonly class ImportedProduct
      * @param  list<string>  $skus  mọi SKU của sản phẩm (cũ + mới)
      */
     public function __construct(
-        public int $styleId,
+        public int $productId,
         public string $slug,
         public bool $created,
         public int $imagesAdded,

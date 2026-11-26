@@ -35,7 +35,7 @@
 
 ### Tên gọi thống nhất (ubiquitous language)
 
-Dùng đúng thuật ngữ trong [glossary.md](../00-overview/glossary.md) cho tên class/bảng: `Style`, `Variant`, `Location`, `StockLevel`, `Reservation`, `Brand` (thực thể catalog), `LegalEntity`, `Shipment`, `ReturnRequest`… Không dùng từ đồng nghĩa lẫn lộn (`Product` vs `Item` vs `Goods`).
+Dùng đúng thuật ngữ trong [glossary.md](../00-overview/glossary.md) cho tên class/bảng: `Product`, `Variant`, `Location`, `StockLevel`, `Reservation`, `Brand` (thực thể catalog), `LegalEntity`, `Shipment`, `ReturnRequest`… Không dùng từ đồng nghĩa lẫn lộn (`Product` vs `Item` vs `Goods`).
 
 ## 3. Kiểm thử
 

@@ -38,7 +38,7 @@ const props = defineProps<{
         attachments: Array<{ id: number; url: string }>;
     };
     exchangeQuote: null | {
-        lines: Array<{ return_line_id: number; sku: string; quantity: number; unit_amount: number; credit: number; same_style: boolean }>;
+        lines: Array<{ return_line_id: number; sku: string; quantity: number; unit_amount: number; credit: number; same_product: boolean }>;
         payable: number;
         refund: number;
     };
@@ -147,8 +147,8 @@ function resolve(): void {
         <p class="font-medium">{{ t('returns::admin.returns_show.complete_exchange') }}</p>
         <ul class="space-y-1 text-sm">
             <li v-for="line in exchangeQuote.lines" :key="line.return_line_id" class="flex justify-between gap-4">
-                <span><span class="font-mono">{{ line.sku }}</span> × {{ line.quantity }} <span class="text-xs text-slate-500">{{ line.same_style ? t('returns::admin.returns_show.same_style_no_price_difference') : t('returns::admin.returns_show.current_price_unit_amount', { unit_amount: money(line.unit_amount) }) }}</span></span>
-                <span>{{ money(line.same_style ? 0 : line.unit_amount * line.quantity - line.credit) }}</span>
+                <span><span class="font-mono">{{ line.sku }}</span> × {{ line.quantity }} <span class="text-xs text-slate-500">{{ line.same_product ? t('returns::admin.returns_show.same_product_no_price_difference') : t('returns::admin.returns_show.current_price_unit_amount', { unit_amount: money(line.unit_amount) }) }}</span></span>
+                <span>{{ money(line.same_product ? 0 : line.unit_amount * line.quantity - line.credit) }}</span>
             </li>
         </ul>
         <p class="text-sm">

@@ -25,8 +25,8 @@ beforeEach(function () {
     app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
     $this->engine = app(PromotionEngine::class);
     $this->context = fn (array $codes = []) => new PromotionContext(null, 'VND', [
-        new PromotionLine($this->s->id, $this->brand->id, $this->s->style_id, 1, Money::vnd(300_000), Money::vnd(300_000)),
-        new PromotionLine($this->m->id, $this->brand->id, $this->m->style_id, 2, Money::vnd(200_000), Money::vnd(400_000)),
+        new PromotionLine($this->s->id, $this->brand->id, $this->s->product_id, 1, Money::vnd(300_000), Money::vnd(300_000)),
+        new PromotionLine($this->m->id, $this->brand->id, $this->m->product_id, 2, Money::vnd(200_000), Money::vnd(400_000)),
     ], $codes, now()->getTimestamp());
 });
 

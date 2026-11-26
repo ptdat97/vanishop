@@ -98,7 +98,7 @@ final class TaxonomyService
      */
     public function deleteBrand(Brand $brand): void
     {
-        if ($brand->styles()->exists()) {
+        if ($brand->products()->exists()) {
             throw ValidationException::withMessages(['brand' => __('catalog::messages.brand_in_use')]);
         }
 

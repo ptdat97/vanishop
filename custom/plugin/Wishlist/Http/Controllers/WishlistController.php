@@ -31,10 +31,10 @@ final class WishlistController
 
     public function preview(Request $request): Response
     {
-        $validated = $request->validate(['style_ids' => ['present', 'array', 'list', 'max:'.Wishlists::MAX], 'style_ids.*' => ['required', 'integer', 'distinct', 'min:1']]);
-        $ids = array_map('intval', $validated['style_ids']);
+        $validated = $request->validate(['product_ids' => ['present', 'array', 'list', 'max:'.Wishlists::MAX], 'product_ids.*' => ['required', 'integer', 'distinct', 'min:1']]);
+        $ids = array_map('intval', $validated['product_ids']);
         $cards = $this->wishlists->cardsFor($ids);
-        $items = array_map(fn (int $id): array => ['style_id' => $id, 'card' => $cards[$id] ?? null], $ids);
+        $items = array_map(fn (int $id): array => ['product_id' => $id, 'card' => $cards[$id] ?? null], $ids);
 
         return response()->view('vani-wishlist::items', ['items' => $items, 'layout' => [1152, 3, 2]])->header('Cache-Control', 'private, no-store');
     }

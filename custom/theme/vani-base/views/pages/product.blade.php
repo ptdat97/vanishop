@@ -226,7 +226,7 @@
 
     {{-- Lượt xem + "Đã xem gần đây" (§3.5-2): JS gửi beacon sau khi trang tải, lưu tối đa 12 mẫu trong trình duyệt và hiện
          các mẫu đã xem khác (thẻ lấy từ Storefront API). HTML giống nhau với mọi khách; JS hiện khung khi có dữ liệu. --}}
-    <section class="mt-12" hidden data-vani-recently-viewed data-style-id="{{ $product['id'] }}"
+    <section class="mt-12" hidden data-vani-recently-viewed data-product-id="{{ $product['id'] }}"
              data-view-url="{{ route('api.storefront.v1.products.views') }}" data-products-url="{{ route('api.storefront.v1.products.index') }}" data-locale="{{ app()->getLocale() }}"
              data-product-url="{{ vani_route('storefront.product', '__slug__') }}">
         <h2 class="mb-4 text-lg font-medium">{{ __('theme::product.recently_viewed') }}</h2>

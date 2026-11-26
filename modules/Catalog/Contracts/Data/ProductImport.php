@@ -19,7 +19,7 @@ final readonly class ProductImport
      * @param  list<string>  $sizes  mã size (S, M, L…)
      */
     public function __construct(
-        public string $styleCode,
+        public string $productCode,
         public string $slug,
         public array $translations,
         public ?array $brand,

@@ -13,8 +13,8 @@ require_once __DIR__.'/InventoryTestHelpers.php';
 
 beforeEach(function () {
     $this->brand = Brand::factory()->create();
-    $this->style = T::product($this->brand->id, ['style_code' => 'LM-REC']);
-    [$this->s, $this->m] = P::variants($this->style);
+    $this->product = T::product($this->brand->id, ['product_code' => 'LM-REC']);
+    [$this->s, $this->m] = P::variants($this->product);
     $this->loc = I::location(['code' => 'WH-REC', 'priority' => 10]);
     $this->level = fn () => DB::table('stock_levels')->where('location_id', $this->loc->id)->where('variant_id', $this->s->id);
     $this->runs = fn () => DB::table('inventory_reconciliations')->orderByDesc('id')->get();

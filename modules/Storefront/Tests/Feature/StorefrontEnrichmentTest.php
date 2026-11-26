@@ -13,7 +13,7 @@ require_once __DIR__.'/Fixtures/Enrichers.php';
 
 beforeEach(function () {
     ['s' => $this->s] = C::store();
-    T::product($this->s->style->brand_id, ['name' => 'Áo lụa']);
+    T::product($this->s->product->brand_id, ['name' => 'Áo lụa']);
     BadgeEnricher::$calls = 0;
 });
 

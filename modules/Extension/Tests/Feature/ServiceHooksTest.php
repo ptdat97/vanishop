@@ -87,8 +87,8 @@ it('vani.service.catalog.product_detail: listener lỗi bị bỏ (on_error skip
     app(HookManager::class)->onFilter('vani.service.catalog.product_detail', fn (array $product): array => [...$product, 'vani.cod' => ['badge' => 'Mới']], 10, 'vani.cod');
     app(HookManager::class)->onFilter('vani.service.catalog.product_detail', fn (array $product): array => throw new RuntimeException('plugin hỏng'), 20, 'vani.cod');
 
-    $this->getJson("/api/storefront/v1/products/{$this->s->style->slug}")->assertOk();
-    $detail = app(CatalogReader::class)->productDetail($this->s->style->slug, 'vi', now()->getTimestamp());
+    $this->getJson("/api/storefront/v1/products/{$this->s->product->slug}")->assertOk();
+    $detail = app(CatalogReader::class)->productDetail($this->s->product->slug, 'vi', now()->getTimestamp());
 
     expect($detail['vani.cod'])->toBe(['badge' => 'Mới']);
 });

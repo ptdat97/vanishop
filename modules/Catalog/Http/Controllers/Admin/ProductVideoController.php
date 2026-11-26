@@ -7,8 +7,8 @@ namespace Modules\Catalog\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Modules\Catalog\Application\Products\StyleVideoService;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Application\Products\ProductVideoService;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Video;
 
 /**
@@ -16,7 +16,7 @@ use Modules\Catalog\Persistence\Models\Video;
  */
 final class ProductVideoController
 {
-    public function store(Style $product, Request $request, StyleVideoService $videos): RedirectResponse
+    public function store(Product $product, Request $request, ProductVideoService $videos): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         $data = $request->validate([
@@ -30,7 +30,7 @@ final class ProductVideoController
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function reorder(Style $product, Request $request, StyleVideoService $videos): RedirectResponse
+    public function reorder(Product $product, Request $request, ProductVideoService $videos): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         $data = $request->validate(['order' => ['required', 'array'], 'order.*' => ['integer']]);
@@ -40,7 +40,7 @@ final class ProductVideoController
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function destroy(Style $product, Video $video, StyleVideoService $videos): RedirectResponse
+    public function destroy(Product $product, Video $video, ProductVideoService $videos): RedirectResponse
     {
         Gate::authorize('catalog.manage');
         abort_unless($product->videos()->whereKey($video->id)->exists(), 404);

@@ -44,7 +44,7 @@ final class ProductListRequest extends FormRequest
     /**
      * @return list<int>|null null = không lọc theo id
      */
-    public function styleIds(): ?array
+    public function productIds(): ?array
     {
         return $this->filled('ids') ? array_map('intval', explode(',', (string) $this->input('ids'))) : null;
     }

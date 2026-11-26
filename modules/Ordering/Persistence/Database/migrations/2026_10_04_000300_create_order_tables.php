@@ -51,8 +51,7 @@ return new class extends Migration
             $table->string('product_name');
             $table->unsignedBigInteger('brand_id')->nullable()->index(); // snapshot thương hiệu (không FK)
             $table->string('brand_name')->nullable();
-            $table->string('color_name')->nullable();
-            $table->string('size_code', 32);
+            $table->json('variant_options')->nullable(); // ADR-045: list<{type, name, code, value}> tổ hợp tuỳ chọn của SKU
             $table->string('image_url')->nullable();
             $table->unsignedInteger('quantity');
             $table->bigInteger('unit_amount');

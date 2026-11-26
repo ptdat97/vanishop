@@ -9,8 +9,8 @@ use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Application\StaleRecord;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Events\ProductUpdated;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Style;
 use Modules\Identity\Contracts\AuditLogger;
 
 /**
@@ -25,20 +25,20 @@ final class CollectionService
 
     /**
      * @param  array{slug: string, status: string, position: int, image_media_id?: int|null, translations: array<string, array{name: string, description?: string|null, meta_title?: string|null, meta_description?: string|null}>}  $data
-     * @param  list<string>  $styleCodes  thứ tự hiển thị
+     * @param  list<string>  $productCodes  thứ tự hiển thị
      * @param  int|null  $expectedLockVersion  phiên bản form đã mở (sửa); khác phiên bản hiện tại → StaleRecord
      */
-    public function save(array $data, array $styleCodes, ?ProductCollection $collection = null, ?int $expectedLockVersion = null): ProductCollection
+    public function save(array $data, array $productCodes, ?ProductCollection $collection = null, ?int $expectedLockVersion = null): ProductCollection
     {
-        $codes = array_values(array_unique(array_filter(array_map('trim', $styleCodes))));
-        $styles = Style::query()->whereIn('style_code', $codes)->pluck('id', 'style_code');
+        $codes = array_values(array_unique(array_filter(array_map('trim', $productCodes))));
+        $products = Product::query()->whereIn('product_code', $codes)->pluck('id', 'product_code');
 
-        $missing = array_values(array_diff($codes, $styles->keys()->all()));
+        $missing = array_values(array_diff($codes, $products->keys()->all()));
         if ($missing !== []) {
-            throw ValidationException::withMessages(['style_codes' => __('catalog::messages.style_codes_not_found', ['codes' => implode(', ', $missing)])]);
+            throw ValidationException::withMessages(['product_codes' => __('catalog::messages.product_codes_not_found', ['codes' => implode(', ', $missing)])]);
         }
 
-        return DB::transaction(function () use ($data, $codes, $styles, $collection, $expectedLockVersion): ProductCollection {
+        return DB::transaction(function () use ($data, $codes, $products, $collection, $expectedLockVersion): ProductCollection {
             if ($collection !== null && $expectedLockVersion !== null) {
                 $updated = ProductCollection::query()->whereKey($collection->id)->where('lock_version', $expectedLockVersion)->increment('lock_version');
                 if ($updated === 0) {
@@ -58,20 +58,20 @@ final class CollectionService
                 $this->media->syncUsages(self::MEDIA_OWNER, $collection->id, 'image', $collection->image_media_id === null ? [] : [$collection->image_media_id]);
             }
 
-            $before = $collection->styles()->pluck('styles.id')->all();
+            $before = $collection->products()->pluck('products.id')->all();
             $sync = [];
             foreach ($codes as $position => $code) {
-                $sync[(int) $styles[$code]] = ['position' => $position];
+                $sync[(int) $products[$code]] = ['position' => $position];
             }
-            $collection->styles()->sync($sync);
+            $collection->products()->sync($sync);
 
             $this->audit->record($collection->wasRecentlyCreated ? 'catalog.collection.created' : 'catalog.collection.updated', 'collection', $collection->id, ['slug' => $collection->slug]);
 
             // Sản phẩm vào/ra bộ sưu tập cần cập nhật chỉ mục tìm kiếm.
-            foreach (array_unique([...$before, ...array_keys($sync)]) as $styleId) {
-                $style = Style::query()->find($styleId);
-                if ($style !== null) {
-                    event(new ProductUpdated($style->id, $style->style_code));
+            foreach (array_unique([...$before, ...array_keys($sync)]) as $productId) {
+                $product = Product::query()->find($productId);
+                if ($product !== null) {
+                    event(new ProductUpdated($product->id, $product->product_code));
                 }
             }
 
@@ -83,13 +83,13 @@ final class CollectionService
     {
         DB::transaction(function () use ($collection): void {
             $collection = ProductCollection::query()->lockForUpdate()->findOrFail($collection->id);
-            $styles = Style::query()->whereIn('id', $collection->styles()->pluck('styles.id'))->get();
+            $products = Product::query()->whereIn('id', $collection->products()->pluck('products.id'))->get();
             $this->media->releaseUsages(self::MEDIA_OWNER, $collection->id);
             $collection->delete();
             $this->audit->record('catalog.collection.deleted', 'collection', $collection->id, ['slug' => $collection->slug]);
 
-            foreach ($styles as $style) {
-                event(new ProductUpdated($style->id, $style->style_code));
+            foreach ($products as $product) {
+                event(new ProductUpdated($product->id, $product->product_code));
             }
         });
     }

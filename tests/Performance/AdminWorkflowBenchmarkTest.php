@@ -7,7 +7,7 @@ use Illuminate\Testing\TestResponse;
 use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\OptionValue;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Inventory\Persistence\Models\Location;
@@ -92,20 +92,20 @@ it('một ngày thao tác Admin: 1.000 sản phẩm, 3.000 SKU, 120 đơn', func
     $location = Location::query()->first() ?? I::location(['code' => 'WH-MAIN']);
     $base = T::seed(fn () => app(BulkBasePrice::class)->baseList());
 
-    $styles = [];
+    $products = [];
     $variantIds = [];
-    T::seed(function () use (&$styles, &$variantIds, $brands, $colors, $sizes): void {
+    T::seed(function () use (&$products, &$variantIds, $brands, $colors, $sizes): void {
         for ($i = 1; $i <= BENCH_PRODUCTS; $i++) {
-            $style = T::product($brands[$i % 5]->id, ['style_code' => sprintf('BX%04d', $i), 'slug' => "bench-{$i}", 'name' => "Áo thun mẫu {$i}"]);
+            $product = T::product($brands[$i % 5]->id, ['product_code' => sprintf('BX%04d', $i), 'slug' => "bench-{$i}", 'name' => "Áo thun mẫu {$i}"]);
             $color = $colors[$i % 12];
-            app(ProductOptions::class)->syncAxes($style, [
+            app(ProductOptions::class)->syncAxes($product, [
                 ['option_type_id' => $color->option_type_id, 'value_ids' => [$color->id]],
                 ['option_type_id' => $sizes[0]->option_type_id, 'value_ids' => $sizes->pluck('id')->all()],
             ]);
             foreach ($sizes as $size) {
-                $variantIds[] = app(ProductOptions::class)->createVariant($style, [$color->id, $size->id], ['sku' => "{$style->style_code}-{$size->code}"])->id;
+                $variantIds[] = app(ProductOptions::class)->createVariant($product, [$color->id, $size->id], ['sku' => "{$product->product_code}-{$size->code}"])->id;
             }
-            $styles[] = $style;
+            $products[] = $product;
         }
     });
     foreach (array_chunk($variantIds, 500) as $chunk) {
@@ -139,9 +139,9 @@ it('một ngày thao tác Admin: 1.000 sản phẩm, 3.000 SKU, 120 đơn', func
         'inventory.view', 'inventory.adjust', 'pricing.view', 'pricing.manage', 'payments.view', 'customers.view', 'returns.view', OrderPermissions::CUSTOMER_CONTACTS]), 'staff');
     $admin = '/admin';
     $orderIds = Order::query()->withoutGlobalScopes()->orderBy('id')->pluck('id')->map(fn ($id): int => (int) $id)->all();
-    $middle = $styles[BENCH_PRODUCTS / 2];
-    $styleIds = array_map(fn (Style $style): int => $style->id, $styles);
-    $styleVariants = DB::table('variants')->where('style_id', $middle->id)->orderBy('id')->get(['id', 'sku']);
+    $middle = $products[BENCH_PRODUCTS / 2];
+    $productIds = array_map(fn (Product $product): int => $product->id, $products);
+    $productVariants = DB::table('variants')->where('product_id', $middle->id)->orderBy('id')->get(['id', 'sku']);
 
     /**
      * [nhóm, thao tác, số lần/ngày, request]
@@ -162,15 +162,15 @@ it('một ngày thao tác Admin: 1.000 sản phẩm, 3.000 SKU, 120 đơn', func
         ['Sản phẩm', 'Danh sách sản phẩm 100/trang', 10, fn () => $this->get("{$admin}/catalog/products?per_page=100")],
         ['Sản phẩm', 'Tìm sản phẩm theo mã', 60, fn (int $i) => $this->get("{$admin}/catalog/products?q=BX0".(500 + $i))],
         ['Sản phẩm', 'Mở form sửa sản phẩm', 30, fn () => $this->get("{$admin}/catalog/products/{$middle->id}/edit")],
-        ['Sản phẩm', 'Lưu sản phẩm + ma trận (giá, tồn 3 SKU)', 30, function (int $i) use ($admin, $middle, $styleVariants, $colors, $sizes) {
-            $style = Style::query()->find($middle->id);
+        ['Sản phẩm', 'Lưu sản phẩm + ma trận (giá, tồn 3 SKU)', 30, function (int $i) use ($admin, $middle, $productVariants, $colors, $sizes) {
+            $product = Product::query()->find($middle->id);
             $color = $colors[(BENCH_PRODUCTS / 2 + 1) % 12]; // sản phẩm thứ 501 (đánh số từ 1)
 
             return $this->put("{$admin}/catalog/products/{$middle->id}", [
-                'style_code' => $style->style_code, 'slug' => $style->slug, 'status' => 'active', 'lock_version' => $style->lock_version,
+                'product_code' => $product->product_code, 'slug' => $product->slug, 'status' => 'active', 'lock_version' => $product->lock_version,
                 'translations' => ['vi' => ['name' => "Áo thun mẫu sửa {$i}"]],
                 'variants' => ['axes' => [['option_type_id' => $color->option_type_id, 'value_ids' => [$color->id]], ['option_type_id' => $sizes[0]->option_type_id, 'value_ids' => $sizes->pluck('id')->all()]],
-                    'cells' => $sizes->values()->map(fn ($size, int $k): array => ['values' => [$color->id, $size->id], 'enabled' => true, 'status' => 'active', 'sku' => $styleVariants[$k]->sku, 'barcode' => null, 'weight_gram' => 300,
+                    'cells' => $sizes->values()->map(fn ($size, int $k): array => ['values' => [$color->id, $size->id], 'enabled' => true, 'status' => 'active', 'sku' => $productVariants[$k]->sku, 'barcode' => null, 'weight_gram' => 300,
                         'fields' => ['pricing' => ['price' => 250_000 + $i * 1000, 'compare_at' => null], 'inventory' => ['on_hand' => 30 + $i]]])->all()],
             ]);
         }],
@@ -179,11 +179,11 @@ it('một ngày thao tác Admin: 1.000 sản phẩm, 3.000 SKU, 120 đơn', func
         ['Tồn kho', 'Sửa tồn một ô', 80, fn (int $i) => $this->post("{$admin}/inventory/stock", ['location_id' => $location->id, 'variant_id' => $variantIds[$i], 'action' => 'count', 'quantity' => 40 + $i, 'reason' => 'Kiểm kê'])],
         ['Tồn kho', 'Lưu 50 ô tồn một lần', 4, fn (int $i) => $this->post("{$admin}/inventory/stock/batch", ['reason' => 'Kiểm kê', 'changes' => array_map(fn (int $id): array => ['location_id' => $location->id, 'variant_id' => $id, 'on_hand' => 50, 'expected' => (int) DB::table('stock_levels')->where('variant_id', $id)->value('on_hand')], array_slice($variantIds, 100 + $i * 50, 50))])],
         ['Tồn kho', 'Xuất file tồn (3.000 SKU)', 1, fn () => $this->get("{$admin}/inventory/stock/export")],
-        ['Giá', 'Đổi giá niêm yết hàng loạt 200 sản phẩm', 5, fn (int $i) => $this->post("{$admin}/pricing/base-prices/bulk", ['ids' => array_slice($styleIds, $i * 200, 200), 'mode' => 'percent_up', 'value' => 5])],
+        ['Giá', 'Đổi giá niêm yết hàng loạt 200 sản phẩm', 5, fn (int $i) => $this->post("{$admin}/pricing/base-prices/bulk", ['ids' => array_slice($productIds, $i * 200, 200), 'mode' => 'percent_up', 'value' => 5])],
         // Đưa sản phẩm vào bảng sale: chọn 200 sản phẩm ở danh sách → "Đưa vào bảng giá…" → trang làm việc → xem trước → áp.
-        ['Giá', 'Sale 200 sản phẩm: mở trang làm việc', 5, fn (int $i) => $this->followingRedirects()->post("{$admin}/pricing/price-lists/add-products", ['ids' => array_slice($styleIds, $i * 200, 200), 'price_list_id' => $sale->id])],
-        ['Giá', 'Sale 200 sản phẩm: xem trước giá −20%', 5, fn (int $i) => $this->postJson("{$admin}/pricing/price-lists/{$sale->id}/bulk/preview", ['scope' => 'styles', 'style_ids' => array_slice($styleIds, $i * 200, 200), 'mode' => 'percent', 'value' => 20, 'round_to' => 1000])],
-        ['Giá', 'Sale 200 sản phẩm: áp giá −20%', 5, fn (int $i) => $this->post("{$admin}/pricing/price-lists/{$sale->id}/bulk", ['scope' => 'styles', 'style_ids' => array_slice($styleIds, $i * 200, 200), 'mode' => 'percent', 'value' => 20, 'round_to' => 1000])],
+        ['Giá', 'Sale 200 sản phẩm: mở trang làm việc', 5, fn (int $i) => $this->followingRedirects()->post("{$admin}/pricing/price-lists/add-products", ['ids' => array_slice($productIds, $i * 200, 200), 'price_list_id' => $sale->id])],
+        ['Giá', 'Sale 200 sản phẩm: xem trước giá −20%', 5, fn (int $i) => $this->postJson("{$admin}/pricing/price-lists/{$sale->id}/bulk/preview", ['scope' => 'products', 'product_ids' => array_slice($productIds, $i * 200, 200), 'mode' => 'percent', 'value' => 20, 'round_to' => 1000])],
+        ['Giá', 'Sale 200 sản phẩm: áp giá −20%', 5, fn (int $i) => $this->post("{$admin}/pricing/price-lists/{$sale->id}/bulk", ['scope' => 'products', 'product_ids' => array_slice($productIds, $i * 200, 200), 'mode' => 'percent', 'value' => 20, 'round_to' => 1000])],
         ['Giá', 'Trang làm việc bảng sale', 15, fn () => $this->get("{$admin}/pricing/price-lists/{$sale->id}/prices")],
         ['Giá', 'Xem trước giảm 10% cả bảng sale', 3, fn () => $this->postJson("{$admin}/pricing/price-lists/{$sale->id}/bulk/preview", ['scope' => 'all', 'mode' => 'percent', 'value' => 10, 'round_to' => 1000])],
         ['Giá', 'Áp giảm 10% cả bảng sale', 1, fn () => $this->post("{$admin}/pricing/price-lists/{$sale->id}/bulk", ['scope' => 'all', 'mode' => 'percent', 'value' => 10, 'round_to' => 1000])],

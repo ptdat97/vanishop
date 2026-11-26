@@ -363,7 +363,7 @@ function productViewViewerId() {
 const recent = document.querySelector('[data-vani-recently-viewed]');
 if (recent) {
     const KEY = 'vani.recently_viewed';
-    const current = Number(recent.dataset.styleId);
+    const current = Number(recent.dataset.productId);
     let ids = [];
     try {
         ids = (JSON.parse(localStorage.getItem(KEY) || '[]') || []).map(Number).filter((id) => id > 0);
@@ -377,7 +377,7 @@ if (recent) {
         // trình duyệt chặn lưu trữ: bỏ qua
     }
     const body = new FormData();
-    body.append('style_id', String(current));
+    body.append('product_id', String(current));
     const viewerId = productViewViewerId();
     if (viewerId) body.append('viewer_id', viewerId);
     if (!(navigator.sendBeacon && navigator.sendBeacon(recent.dataset.viewUrl, body))) {

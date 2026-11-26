@@ -1,4 +1,4 @@
-Liên kết sản phẩm (StyleLinkService, LinkType, StyleLinkGroup*) và video sản phẩm (VideoDriver, Video, StyleVideoService,
+Liên kết sản phẩm (ProductLinkService, LinkType, ProductLinkGroup*) và video sản phẩm (VideoDriver, Video, ProductVideoService,
 plugin vani.video-youtube) được phỏng theo các module Links và Video của Vanilo 6.0 (https://vanilo.io), viết lại theo
 quy ước của VaniShop. Vanilo phát hành theo giấy phép MIT:
 

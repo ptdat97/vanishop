@@ -153,12 +153,12 @@ it('khách vãng lai: vỏ trang, catalog, địa chỉ, giỏ, checkout, đơn,
     $get('/brands', '/brands');
     $get("/brands/{$this->brand->slug}", '/brands/{slug}');
     $slug = $get('/products', '/products')->json('data.0.slug');
-    $styleId = $get("/products/{$slug}", '/products/{slug}')->json('data.id');
-    $get("/products?ids={$styleId}", '/products');
+    $productId = $get("/products/{$slug}", '/products/{slug}')->json('data.id');
+    $get("/products?ids={$productId}", '/products');
     $get('/search/suggestions?q=đầm', '/search/suggestions');
     $get('/address/provinces', '/address/provinces');
     $get('/address/provinces/29/wards', '/address/provinces/{province}/wards');
-    assertStorefrontContract($this->post("{$this->api}/products/views", ['style_id' => $styleId], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent(), '/products/views', 'POST');
+    assertStorefrontContract($this->post("{$this->api}/products/views", ['product_id' => $productId], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent(), '/products/views', 'POST');
 
     $created = assertStorefrontContract($this->postJson("{$this->api}/carts")->assertCreated(), '/carts', 'POST');
     $cart = $created->json('data.id');

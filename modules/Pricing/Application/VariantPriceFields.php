@@ -43,16 +43,16 @@ final class VariantPriceFields implements VariantFieldProvider
         return 'pricing.manage';
     }
 
-    public function values(int $styleId, array $variantIds): array
+    public function values(int $productId, array $variantIds): array
     {
         return DB::table('prices')->where('price_list_id', $this->base->baseList()->id)->where('min_qty', 1)->whereIn('variant_id', $variantIds)->get()
             ->mapWithKeys(fn (object $row): array => [(int) $row->variant_id => ['price' => (int) $row->amount, 'compare_at' => $row->compare_at_amount === null ? null : (int) $row->compare_at_amount]])
             ->all();
     }
 
-    public function save(int $styleId, array $values): array
+    public function save(int $productId, array $values): array
     {
-        $current = $this->values($styleId, array_keys($values));
+        $current = $this->values($productId, array_keys($values));
         $rows = [];
         $errors = [];
         foreach ($values as $variantId => $changes) {

@@ -17,7 +17,7 @@ require_once __DIR__.'/../../../../../modules/Checkout/Tests/Feature/CheckoutTes
 beforeEach(function () {
     // Mỗi size còn 2 (≤ ngưỡng mặc định 5).
     ['s' => $this->s, 'm' => $this->m] = C::store(stock: 2);
-    $this->style = $this->s->style;
+    $this->product = $this->s->product;
     app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
         app(PluginManager::class)->install(ScarcitySignalsServiceProvider::ID);
         app(PluginManager::class)->enable(ScarcitySignalsServiceProvider::ID);
@@ -25,19 +25,19 @@ beforeEach(function () {
     app()->register(ScarcitySignalsServiceProvider::class);
     Cache::flush();
     $this->sold = [];
-    app()->instance(OrderStatistics::class, Mockery::mock(OrderStatistics::class, fn ($mock) => $mock->shouldReceive('confirmedQuantitiesByStyle')->andReturnUsing(fn () => $this->sold)));
+    app()->instance(OrderStatistics::class, Mockery::mock(OrderStatistics::class, fn ($mock) => $mock->shouldReceive('confirmedQuantitiesByProduct')->andReturnUsing(fn () => $this->sold)));
     $this->set = fn (array $values) => T::seed(function () use ($values) {
         foreach ($values as $key => $value) {
             app(Settings::class)->set(ScarcitySignalsServiceProvider::ID, $key, $value);
         }
         Cache::flush();
     });
-    $this->extension = fn () => $this->getJson('/api/storefront/v1/products/'.$this->style->slug)->assertOk()->json('data.extensions')[ScarcitySignalsServiceProvider::ID] ?? null;
+    $this->extension = fn () => $this->getJson('/api/storefront/v1/products/'.$this->product->slug)->assertOk()->json('data.extensions')[ScarcitySignalsServiceProvider::ID] ?? null;
 });
 
 it('"Chỉ còn N" theo từng size khi 0 < còn lại ≤ ngưỡng; ngưỡng riêng theo danh mục lấy nhỏ nhất; tắt được', function () {
     expect(($this->extension)())->toBe(['low_stock' => [(string) $this->s->id => 2, (string) $this->m->id => 2], 'threshold' => 5, 'sold' => null]);
-    $html = $this->get('/san-pham/'.$this->style->slug)->assertOk()->getContent();
+    $html = $this->get('/san-pham/'.$this->product->slug)->assertOk()->getContent();
     expect($html)->toContain('data-scarcity-left')->toContain('Chỉ còn __N__ sản phẩm');
 
     [$parent, $child] = T::seed(function () {
@@ -45,7 +45,7 @@ it('"Chỉ còn N" theo từng size khi 0 < còn lại ≤ ngưỡng; ngưỡng 
 
         return [$parent, Category::factory()->childOf($parent)->create(['slug' => 'dam'])];
     });
-    T::seed(fn () => $this->style->update(['primary_category_id' => $child->id]));
+    T::seed(fn () => $this->product->update(['primary_category_id' => $child->id]));
     ($this->set)(['threshold_overrides' => "nu = 8\n{$child->id} = 1\nrác"]);
     expect(($this->extension)())->toBeNull(); // ngưỡng = min(8, 1) = 1 < 2
 
@@ -54,21 +54,21 @@ it('"Chỉ còn N" theo từng size khi 0 < còn lại ≤ ngưỡng; ngưỡng 
 
     ($this->set)(['show_low_stock' => false]);
     expect(($this->extension)())->toBeNull();
-    expect($this->get('/san-pham/'.$this->style->slug)->getContent())->not->toContain('data-scarcity-left');
+    expect($this->get('/san-pham/'.$this->product->slug)->getContent())->not->toContain('data-scarcity-left');
 });
 
 it('"Đã bán N trong X ngày": số từ đơn đã thu tiền/đã giao; dưới mức tối thiểu hoặc tắt thì giấu', function () {
-    $this->sold = [$this->style->id => 12];
+    $this->sold = [$this->product->id => 12];
     ($this->set)(['show_low_stock' => false, 'sold_window_days' => 14]);
 
     expect(($this->extension)()['sold'])->toBe(['count' => 12, 'days' => 14]);
-    $this->get('/san-pham/'.$this->style->slug)->assertSee('Đã bán 12 trong 14 ngày qua');
+    $this->get('/san-pham/'.$this->product->slug)->assertSee('Đã bán 12 trong 14 ngày qua');
 
-    $this->sold = [$this->style->id => 2];
+    $this->sold = [$this->product->id => 2];
     Cache::flush();
     expect(($this->extension)())->toBeNull(); // 2 < mức tối thiểu 3
 
-    $this->sold = [$this->style->id => 50];
+    $this->sold = [$this->product->id => 50];
     ($this->set)(['show_sold_count' => false]);
     expect(($this->extension)())->toBeNull();
 });

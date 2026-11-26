@@ -93,19 +93,19 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
 
         $this->adminFormSection('product', 'note', 'Hello World',
             fields: [FieldDefinition::string('note', 'Ghi chú Hello', help: 'Lưu trong bảng riêng của plugin.', max: 255)],
-            load: fn (int $styleId): array => ['note' => $notes()->where('style_id', $styleId)->value('note')],
-            save: function (int $styleId, array $values) use ($notes): void {
+            load: fn (int $productId): array => ['note' => $notes()->where('product_id', $productId)->value('note')],
+            save: function (int $productId, array $values) use ($notes): void {
                 $note = trim((string) ($values['note'] ?? ''));
                 $note === ''
-                    ? $notes()->where('style_id', $styleId)->delete()
-                    : $notes()->updateOrInsert(['style_id' => $styleId], ['note' => $note, 'updated_at' => now(), 'created_at' => now()]);
+                    ? $notes()->where('product_id', $productId)->delete()
+                    : $notes()->updateOrInsert(['product_id' => $productId], ['note' => $note, 'updated_at' => now(), 'created_at' => now()]);
             },
         );
         $this->adminColumn('product', 'note', 'Ghi chú Hello',
-            resolve: fn (array $styleIds): array => $notes()->whereIn('style_id', $styleIds)->pluck('note', 'style_id')->all(),
+            resolve: fn (array $productIds): array => $notes()->whereIn('product_id', $productIds)->pluck('note', 'product_id')->all(),
         );
         $this->adminFilter('product', 'has_note', 'Ghi chú Hello', ['yes' => 'Có ghi chú'],
-            apply: fn (string $value): array => $notes()->pluck('style_id')->map(fn ($id): int => (int) $id)->all(),
+            apply: fn (string $value): array => $notes()->pluck('product_id')->map(fn ($id): int => (int) $id)->all(),
         );
         $this->adminAction('order', 'greet', 'Gửi lời chào', 'hello-world.view',
             handle: fn (int $orderId): string => "Đã gửi lời chào cho đơn #{$orderId}.", scope: 'both',

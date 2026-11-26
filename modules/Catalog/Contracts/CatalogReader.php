@@ -81,17 +81,17 @@ interface CatalogReader
     public function searchProducts(ProductFilters $filters, string $locale): array;
 
     /**
-     * Sản phẩm đang hiển thị theo id style (0.3.43), cùng dạng item của `searchProducts` (có "variant_ids"), giữ thứ tự
-     * `$styleIds`; id không hiển thị/không tồn tại bị bỏ.
+     * Sản phẩm đang hiển thị theo id product (0.3.43), cùng dạng item của `searchProducts` (có "variant_ids"), giữ thứ tự
+     * `$productIds`; id không hiển thị/không tồn tại bị bỏ.
      *
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return list<array<string, mixed>>
      */
-    public function productsByIds(array $styleIds, string $locale, int $now): array;
+    public function productsByIds(array $productIds, string $locale, int $now): array;
 
     /**
      * Chi tiết sản phẩm đang hiển thị; có "variants" (list<VariantView>) các variant đang bán, "videos" (video của driver
-     * đang bật) và "links" (0.3.46: list<{code, name, style_ids}> — id có thể gồm sản phẩm không hiển thị, lọc bằng
+     * đang bật) và "links" (0.3.46: list<{code, name, product_ids}> — id có thể gồm sản phẩm không hiển thị, lọc bằng
      * `productsByIds`).
      *
      * @return array<string, mixed>|null

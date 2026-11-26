@@ -43,7 +43,7 @@ Cho Owner thêm nội dung bán hàng ngoài mô tả sản phẩm: thanh thông
 
 | Bảng | Cột chính |
 |---|---|
-| `plg_cms_product_extras` | `style_id` (unique), `highlights` (JSON theo locale: danh sách chuỗi), `hide_promo_box` |
+| `plg_cms_product_extras` | `product_id` (unique), `highlights` (JSON theo locale: danh sách chuỗi), `hide_promo_box` |
 | `plg_cms_category_banners` | `category_id` (unique), `content` (JSON theo locale: tiêu đề, Markdown, chữ nút), `button_url`, `desktop_media_id`, `mobile_media_id`, `active` |
 
 Thanh thông báo và hộp ưu đãi lưu ở settings của `vani.cms` (nội dung theo ngôn ngữ). Tăng version `vani.cms` → 1.2.0, migration mới, cập nhật `data.owned`.

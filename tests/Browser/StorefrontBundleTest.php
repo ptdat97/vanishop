@@ -23,11 +23,11 @@ it('chọn SKU, thêm cả combo đúng một lần và thấy mức giảm tron
         app(Bundles::class)->save([
             'slug' => 'bo-cong-so', 'name' => 'Bộ công sở', 'description' => null, 'image_media_id' => null,
             'discount_percent' => 10, 'active' => true, 'starts_at' => null, 'ends_at' => null, 'position' => 0,
-            'items' => [['style_id' => $shirt->style_id, 'quantity' => 2], ['style_id' => $skirt->style_id, 'quantity' => 1]],
+            'items' => [['product_id' => $shirt->product_id, 'quantity' => 2], ['product_id' => $skirt->product_id, 'quantity' => 1]],
         ]);
     });
 
-    $params = $routeName === 'storefront.product' ? [$shirt->style->slug] : [];
+    $params = $routeName === 'storefront.product' ? [$shirt->product->slug] : [];
     $page = visit(route($routeName, $params, absolute: false));
     $page->assertVisible('[data-vani-bundle-form]')
         ->select('[data-vani-bundle-form] select[name="items[0][variant_id]"]', (string) $shirt->id);

@@ -34,7 +34,7 @@ final class CollectionRequest extends FormRequest
             'translations.*.description' => ['nullable', 'string', 'max:5000'],
             'translations.*.meta_title' => ['nullable', 'string', 'max:255'],
             'translations.*.meta_description' => ['nullable', 'string', 'max:512'],
-            'style_codes' => ['nullable', 'string', 'max:20000'],
+            'product_codes' => ['nullable', 'string', 'max:20000'],
             ...$this->localizedSlugRules('collections', 'collection_translations', 'collection_id', $collection instanceof ProductCollection ? $collection->id : null),
         ];
     }
@@ -61,8 +61,8 @@ final class CollectionRequest extends FormRequest
      *
      * @return list<string>
      */
-    public function styleCodes(): array
+    public function productCodes(): array
     {
-        return array_values(array_filter(array_map('trim', preg_split('/[\s,]+/', (string) $this->validated('style_codes')) ?: [])));
+        return array_values(array_filter(array_map('trim', preg_split('/[\s,]+/', (string) $this->validated('product_codes')) ?: [])));
     }
 }

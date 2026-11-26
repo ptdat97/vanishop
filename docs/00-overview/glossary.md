@@ -9,9 +9,9 @@
 | Order source | Nguồn đơn | `web`, `app`, `zalo`, `admin`, `pos` — thuộc tính của đơn để báo cáo |
 | Channel | Kênh bán (khái niệm cũ) | Khái niệm của mô hình đa brand (ADR-008), đã gỡ khỏi code ở slice 12 theo ADR-028. Không nhầm với **kênh gửi tin** (email/SMS/ZNS) của Notification |
 | Location | Địa điểm tồn kho | Kho hoặc cửa hàng giữ hàng |
-| Style | Mẫu sản phẩm | Sản phẩm hiển thị trên 1 trang chi tiết |
-| Style Color | Màu của mẫu | Biến thể màu, có ảnh riêng |
-| Variant / SKU | Biến thể | Đơn vị bán nhỏ nhất (màu × size) |
+| Product | Sản phẩm (mẫu) | Sản phẩm hiển thị trên 1 trang chi tiết; mã `product_code`. Trước [ADR-050](../19-adr/ADR-050-product-replaces-style.md) gọi là Style |
+| Option type / axis | Loại tuỳ chọn / trục | Màu, Size, Chất liệu…; mỗi sản phẩm 1–3 trục ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)) |
+| Variant / SKU | Biến thể | Đơn vị bán nhỏ nhất: một tổ hợp giá trị tuỳ chọn (vd. màu × size), có ảnh riêng |
 | On-hand | Tồn vật lý | Số lượng thực tế tại location (từ ERP/ODO) |
 | Reservation | Giữ hàng | Lượng hàng đang giữ cho giỏ/đơn chưa xuất kho |
 | Safety stock | Tồn an toàn | Lượng không bán online |

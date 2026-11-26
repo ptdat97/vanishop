@@ -15,14 +15,14 @@ return new class extends Migration
         Schema::create('plg_wishlist_items', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('customer_id');
-            $table->unsignedBigInteger('style_id');
+            $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('price_amount')->nullable();
             $table->boolean('in_stock')->default(true);
             $table->timestamp('notified_stock_at')->nullable();
             $table->timestamp('notified_price_at')->nullable();
             $table->timestamps();
-            $table->unique(['customer_id', 'style_id']);
-            $table->index('style_id');
+            $table->unique(['customer_id', 'product_id']);
+            $table->index('product_id');
         });
     }
 

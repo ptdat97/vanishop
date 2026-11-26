@@ -17,7 +17,7 @@ final class WishlistItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'style_id' => ['required', 'integer', 'min:1'],
+            'product_id' => ['required', 'integer', 'min:1'],
         ];
     }
 }

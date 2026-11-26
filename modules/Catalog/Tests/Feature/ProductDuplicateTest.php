@@ -6,7 +6,7 @@ use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Pricing\Persistence\Models\PriceHistory;
@@ -28,7 +28,7 @@ beforeEach(function () {
         return [Brand::factory()->create(), Category::factory()->create(['slug' => 'dam']), $material, $material->values()->create(['code' => 'silk', 'position' => 0])];
     });
     $this->source = T::product($brand->id, [
-        'style_code' => 'DAM01', 'slug' => 'dam-lua', 'name' => 'Đầm lụa', 'category_ids' => [$category->id], 'primary_category_id' => $category->id,
+        'product_code' => 'DAM01', 'slug' => 'dam-lua', 'name' => 'Đầm lụa', 'category_ids' => [$category->id], 'primary_category_id' => $category->id,
         'translations' => ['vi' => ['name' => 'Đầm lụa', 'description' => 'Mềm mại'], 'en' => ['name' => 'Silk dress', 'slug' => 'silk-dress']],
         'attributes' => [$material->id => $silk->id],
     ]);
@@ -43,19 +43,19 @@ beforeEach(function () {
 });
 
 it('nhân bản: bản nháp với mã/tên mới, cùng phân loại, thuộc tính, trục, SKU mới (barcode trống), ảnh, giá niêm yết; không chép tồn', function () {
-    $response = ($this->duplicate)(['style_code' => 'DAM02', 'name' => 'Đầm lụa xanh']);
+    $response = ($this->duplicate)(['product_code' => 'DAM02', 'name' => 'Đầm lụa xanh']);
 
-    $copy = Style::query()->where('style_code', 'DAM02')->sole();
+    $copy = Product::query()->where('product_code', 'DAM02')->sole();
     $response->assertRedirect("/admin/catalog/products/{$copy->id}/edit")->assertSessionHas('success', 'Đã tạo bản nháp DAM02. Kiểm tra lại ảnh, giá rồi mở bán.');
     expect($copy)->status->value->toBe('draft')->slug->toBe('dam-lua-xanh')->brand_id->toBe($this->source->brand_id)
         ->primary_category_id->toBe($this->source->primary_category_id)
         ->and($copy->translate('name'))->toBe('Đầm lụa xanh')
         ->and($copy->translate('description'))->toBe('Mềm mại')
         ->and($copy->translate('name', 'en'))->toBe('Silk dress')
-        ->and(DB::table('style_translations')->where('style_id', $copy->id)->where('locale', 'en')->value('slug'))->toBeNull()
-        ->and(DB::table('style_attribute_values')->where('style_id', $copy->id)->value('attribute_value_id'))->toBe(DB::table('style_attribute_values')->where('style_id', $this->source->id)->value('attribute_value_id'));
+        ->and(DB::table('product_translations')->where('product_id', $copy->id)->where('locale', 'en')->value('slug'))->toBeNull()
+        ->and(DB::table('product_attribute_values')->where('product_id', $copy->id)->value('attribute_value_id'))->toBe(DB::table('product_attribute_values')->where('product_id', $this->source->id)->value('attribute_value_id'));
 
-    $copies = Variant::query()->where('style_id', $copy->id)->orderBy('id')->get();
+    $copies = Variant::query()->where('product_id', $copy->id)->orderBy('id')->get();
     expect($copies)->toHaveCount(2)
         ->and($copies->pluck('option_key')->all())->toBe(collect($this->variants)->pluck('option_key')->all())
         ->and($copies->pluck('sku')->every(fn (string $sku): bool => str_starts_with($sku, 'DAM02-')))->toBeTrue()
@@ -68,25 +68,25 @@ it('nhân bản: bản nháp với mã/tên mới, cùng phân loại, thuộc t
 });
 
 it('slug trùng thì thêm số; mã trùng hoặc sai định dạng → lỗi, không tạo gì', function () {
-    ($this->duplicate)(['style_code' => 'DAM02', 'name' => 'Đầm lụa'])->assertSessionHasNoErrors();
-    expect(Style::query()->where('style_code', 'DAM02')->value('slug'))->toBe('dam-lua-2');
+    ($this->duplicate)(['product_code' => 'DAM02', 'name' => 'Đầm lụa'])->assertSessionHasNoErrors();
+    expect(Product::query()->where('product_code', 'DAM02')->value('slug'))->toBe('dam-lua-2');
 
-    ($this->duplicate)(['style_code' => 'DAM01', 'name' => 'X'])->assertSessionHasErrors('style_code');
-    ($this->duplicate)(['style_code' => 'dam 03', 'name' => 'X'])->assertSessionHasErrors('style_code');
-    expect(Style::query()->count())->toBe(2);
+    ($this->duplicate)(['product_code' => 'DAM01', 'name' => 'X'])->assertSessionHasErrors('product_code');
+    ($this->duplicate)(['product_code' => 'dam 03', 'name' => 'X'])->assertSessionHasErrors('product_code');
+    expect(Product::query()->count())->toBe(2);
 });
 
 it('chỉ xem catalog → 403', function () {
     $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff');
-    ($this->duplicate)(['style_code' => 'DAM02', 'name' => 'X'])->assertForbidden();
+    ($this->duplicate)(['product_code' => 'DAM02', 'name' => 'X'])->assertForbidden();
 });
 
 it('sản phẩm đơn (không trục tuỳ chọn, một SKU) nhân bản thành sản phẩm đơn', function () {
-    $single = T::product(null, ['style_code' => 'TUI01', 'name' => 'Túi']);
+    $single = T::product(null, ['product_code' => 'TUI01', 'name' => 'Túi']);
     T::seed(fn () => app(ProductOptions::class)->createVariant($single, []));
 
-    $this->post("/admin/catalog/products/{$single->id}/duplicate", ['style_code' => 'TUI02', 'name' => 'Túi đen'])->assertSessionHasNoErrors();
-    $copy = Style::query()->where('style_code', 'TUI02')->sole();
+    $this->post("/admin/catalog/products/{$single->id}/duplicate", ['product_code' => 'TUI02', 'name' => 'Túi đen'])->assertSessionHasNoErrors();
+    $copy = Product::query()->where('product_code', 'TUI02')->sole();
     expect($copy->options()->count())->toBe(0)
-        ->and(Variant::query()->where('style_id', $copy->id)->pluck('sku')->all())->toBe(['TUI02']);
+        ->and(Variant::query()->where('product_id', $copy->id)->pluck('sku')->all())->toBe(['TUI02']);
 });

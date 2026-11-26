@@ -178,7 +178,7 @@ final class StockReceiptController
         $lines = [];
         foreach ($quantities as $variantId => $quantity) {
             $variant = $found[$variantId] ?? null;
-            $lines[] = ['variant_id' => $variantId, 'sku' => $variant->sku ?? "#{$variantId}", 'name' => $variant === null ? '' : trim($variant->styleName.' '.VariantOptionsText::label($variant->options)), 'quantity' => $quantity];
+            $lines[] = ['variant_id' => $variantId, 'sku' => $variant->sku ?? "#{$variantId}", 'name' => $variant === null ? '' : trim($variant->productName.' '.VariantOptionsText::label($variant->options)), 'quantity' => $quantity];
         }
 
         return $lines;

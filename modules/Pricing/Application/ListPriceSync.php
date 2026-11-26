@@ -33,8 +33,8 @@ final class ListPriceSync
     public function forVariants(array $variantIds): void
     {
         foreach (array_chunk(array_values(array_unique($variantIds)), self::CHUNK) as $chunk) {
-            $styleIds = array_values(array_unique(array_map(fn ($variant): int => $variant->styleId, $this->variants->find($chunk))));
-            $this->forStyles($styleIds);
+            $productIds = array_values(array_unique(array_map(fn ($variant): int => $variant->productId, $this->variants->find($chunk))));
+            $this->forProducts($productIds);
         }
     }
 
@@ -60,24 +60,24 @@ final class ListPriceSync
     }
 
     /**
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      */
-    private function forStyles(array $styleIds): void
+    private function forProducts(array $productIds): void
     {
-        if ($styleIds === []) {
+        if ($productIds === []) {
             return;
         }
 
-        $byStyle = $this->variants->ofStyles($styleIds);
-        $variantIds = array_merge([], ...array_map(fn (array $variants): array => array_map(fn ($variant): int => $variant->id, $variants), array_values($byStyle)));
+        $byProduct = $this->variants->ofProducts($productIds);
+        $variantIds = array_merge([], ...array_map(fn (array $variants): array => array_map(fn ($variant): int => $variant->id, $variants), array_values($byProduct)));
         $baseId = $this->baseListId();
         $amounts = $baseId === null || $variantIds === [] ? collect()
             : Price::query()->where('price_list_id', $baseId)->where('min_qty', 1)->whereIn('variant_id', $variantIds)->pluck('amount', 'variant_id');
 
-        $minimums = array_fill_keys($styleIds, null);
-        foreach ($byStyle as $styleId => $variants) {
+        $minimums = array_fill_keys($productIds, null);
+        foreach ($byProduct as $productId => $variants) {
             $found = array_values(array_filter(array_map(fn ($variant): ?int => $amounts->has($variant->id) ? (int) $amounts->get($variant->id) : null, $variants), fn (?int $amount): bool => $amount !== null));
-            $minimums[$styleId] = $found === [] ? null : min($found);
+            $minimums[$productId] = $found === [] ? null : min($found);
         }
 
         $this->listPrices->setMinimums($minimums);

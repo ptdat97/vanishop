@@ -19,8 +19,8 @@ final readonly class ProductDuplicated implements ShouldDispatchAfterCommit
      * @param  array<int, int>  $variantIds  id SKU nguồn => id SKU mới
      */
     public function __construct(
-        public int $sourceStyleId,
-        public int $styleId,
+        public int $sourceProductId,
+        public int $productId,
         public array $variantIds,
     ) {}
 }

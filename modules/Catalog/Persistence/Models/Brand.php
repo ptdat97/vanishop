@@ -49,11 +49,11 @@ final class Brand extends Model
     }
 
     /**
-     * @return HasMany<Style, $this>
+     * @return HasMany<Product, $this>
      */
-    public function styles(): HasMany
+    public function products(): HasMany
     {
-        return $this->hasMany(Style::class);
+        return $this->hasMany(Product::class);
     }
 
     protected static function newFactory(): BrandFactory

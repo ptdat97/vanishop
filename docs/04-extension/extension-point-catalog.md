@@ -61,8 +61,8 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | Contract | Chức năng | Context |
 |---|---|---|
 | `CatalogReader` | Đọc catalog đang hiển thị (cây danh mục, tìm sản phẩm, PDP kèm variant, danh sách/chi tiết brand). **Implemented** | Catalog |
-| `VariantDirectory` | Tra variant (theo mã style, theo id) cho module khác. **Implemented** | Catalog |
-| `CatalogImporter` | Nhập sản phẩm (`upsertProduct(ProductImport)`): idempotent theo mã style, tạo thương hiệu/danh mục/màu/size còn thiếu, ảnh từ file local qua thư viện media, sinh variant; không ghi đè nội dung đã sửa. **Implemented** (0.3.27), dùng bởi `database/seeders/Demo/CatalogSeeder` (trước: plugin `vani.demo-catalog`, đã gỡ 2026-11-05) | Catalog |
+| `VariantDirectory` | Tra variant (theo mã sản phẩm, theo id) cho module khác. **Implemented** | Catalog |
+| `CatalogImporter` | Nhập sản phẩm (`upsertProduct(ProductImport)`): idempotent theo mã sản phẩm, tạo thương hiệu/danh mục/màu/size còn thiếu, ảnh từ file local qua thư viện media, sinh variant; không ghi đè nội dung đã sửa. **Implemented** (0.3.27), dùng bởi `database/seeders/Demo/CatalogSeeder` (trước: plugin `vani.demo-catalog`, đã gỡ 2026-11-05) | Catalog |
 | `PriceResolver` | Giải giá hiệu lực theo variant và `PricingContext` (nhóm khách/khách hàng nếu có). **Implemented** | Pricing |
 | `PriceImporter` | Đặt giá niêm yết (bảng `base`) theo SKU. **Implemented** (0.3.27) | Pricing |
 | `InventoryReservation` | `reserve`, `release`, `commit` (**Implemented**) | Inventory |
@@ -131,7 +131,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.catalog.product.view_data` | filter | không | Bổ sung dữ liệu hiển thị PDP |
 | `vani.customer.before_delete` | validate | không (trước khi kiểm mật khẩu; chỉ đọc) | Việc còn dở chặn khách tự xoá tài khoản; trả `list<{type, reference, label}>`, có mục → `customer.deletion_blocked`. Core: Ordering báo đơn chưa hoàn tất / đổi trả đang mở. Nhân viên ẩn danh hoá trong Admin không qua hook. **Implemented** (0.3.57) |
 | `vani.product.before_save` | validate | không (chạy trước transaction) | Chặn khi lưu sản phẩm (quy tắc riêng của cửa hàng); tham số `ProductDraft`. **Implemented** |
-| `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `styleId`. **Implemented** |
+| `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `productId`. **Implemented** |
 | `vani.cart.validate_line` | validate | có (khoá giỏ; không I/O mạng) | Chặn thêm/tăng dòng giỏ (giới hạn mua mỗi khách, hàng chỉ bán tại cửa hàng…); tham số `CartLineDraft` (số lượng sau thay đổi). **Implemented** |
 | `vani.checkout.payment_methods` | filter | có (khi đặt hàng) | Ẩn/hiện phương thức thanh toán; tham số `(methods, Totals)`. **Implemented** |
 | `vani.checkout.shipping_options` | filter | có (khi đặt hàng) | Sửa danh sách phương thức giao; tham số `(options, TotalsContext)`. **Implemented** |
@@ -150,7 +150,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác; tham số `(payload, OrderData)`; chỉ được **thêm** khoá. **Implemented** (0.3) |
 | `vani.admin.dashboard.cards` | slot | — | Card trên dashboard Admin; trả `{title, body}`. **Implemented** (HelloWorld dùng) |
 | `vani.admin.dashboard.tasks` | slot | 0.3.101 | Ô "Việc cần làm" đầu trang tổng quan; trả `list<{key, label, count, url, tone?, hint?, order?}>`. **Implemented** (Ordering, Returns, Fulfillment, Payment, Inventory) |
-| `vani.admin.product.list_columns` | slot | 0.3.103 | Cột thêm ở danh sách sản phẩm Admin; tham số `list<int>` style id, trả `{key, label, values}` hoặc null. **Implemented** (Pricing: Giá bán; Inventory: Tồn bán được) |
+| `vani.admin.product.list_columns` | slot | 0.3.103 | Cột thêm ở danh sách sản phẩm Admin; tham số `list<int>` id sản phẩm, trả `{key, label, values}` hoặc null. **Implemented** (Pricing: Giá bán; Inventory: Tồn bán được) |
 | `vani.admin.product.bulk_actions` | slot | 0.3.103 | Thao tác hàng loạt ở danh sách sản phẩm; trả `list<{key, label, url, confirm, fields?, data?}>`. **Implemented** (Pricing: Đổi giá) |
 | `vani.admin.order.sidebar` | slot | — | Panel trên trang đơn Admin; tham số `OrderDetail`, trả `{title, rows[{label, value}], link?, actions?}` — `actions` (0.3.96): `{key, label, url, data?, fields?, confirm?, tone?, primary?}`. **Implemented** (Payment, Fulfillment, Returns) |
 | `vani.admin.order.list_columns` | slot | 0.3.96 | Cột thêm ở danh sách đơn Admin (module Core); tham số `list<int>` id đơn, trả `{key, label, values{id: string}}` hoặc null. **Implemented** (Fulfillment: Vận đơn) |
@@ -273,7 +273,7 @@ Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân b�
 ## 6. Dữ liệu của plugin
 
 - Bảng riêng `plg_<plugin>_*`, tham chiếu ID của Core bằng FK (`ON DELETE RESTRICT`). Core **không** FK sang bảng plugin.
-- Cột `meta` (JSON) trên `orders`, `order_lines`, `carts`, `customers`, `styles`, `variants` dùng cho dữ liệu nhỏ, **namespace theo mã plugin** (`meta.einvoice.tax_code`). Không dùng cho dữ liệu cần lọc hoặc báo cáo.
+- Cột `meta` (JSON) trên `orders`, `order_lines`, `carts`, `customers`, `products`, `variants` dùng cho dữ liệu nhỏ, **namespace theo mã plugin** (`meta.einvoice.tax_code`). Không dùng cho dữ liệu cần lọc hoặc báo cáo.
 - Plugin **không** thêm cột vào bảng Core, không sửa migration Core ([ADR-027](../19-adr/ADR-027-plugin-data-no-core-columns.md)).
 
 ## 7. Extension point còn thiếu theo plugin dự kiến

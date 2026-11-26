@@ -22,7 +22,7 @@ Thêm khối cho page builder trang chủ và các vị trí gợi ý mua thêm:
 ### 3.1 Khối "Bán chạy"
 
 - Cấu hình khối: tiêu đề, số sản phẩm (1–24), khoảng thời gian (7 / 30 / 90 ngày, mặc định 30).
-- Xếp sản phẩm (style) theo **tổng số lượng** trên dòng đơn đã đặt trong khoảng, trừ phần đã huỷ; chỉ lấy sản phẩm còn bán được. Thiếu dữ liệu (cửa hàng mới) → bù bằng sản phẩm mới nhất để khối không trống.
+- Xếp sản phẩm theo **tổng số lượng** trên dòng đơn đã đặt trong khoảng, trừ phần đã huỷ; chỉ lấy sản phẩm còn bán được. Thiếu dữ liệu (cửa hàng mới) → bù bằng sản phẩm mới nhất để khối không trống.
 - Kết quả cache 1 giờ (không phụ thuộc khách) — khối nằm trong HTML có cache CDN.
 
 ### 3.2 "Sản phẩm đã xem"
@@ -53,9 +53,9 @@ Không có bảng. Cấu hình khối lưu trong page builder của Core; cấu 
 | Nhu cầu | Extension point | Có sẵn? |
 |---|---|---|
 | Ba khối page builder | `StorefrontBlock` | ✅ |
-| **Thẻ sản phẩm theo danh sách id** cho khối và cho API "đã xem" | Service contract trả thẻ sản phẩm (giá, ảnh, nhãn) giống lưới Core | ✅ 0.3.43 `Storefront\Contracts\ProductCards::forIds(list<int> $styleIds, locale)` |
+| **Thẻ sản phẩm theo danh sách id** cho khối và cho API "đã xem" | Service contract trả thẻ sản phẩm (giá, ảnh, nhãn) giống lưới Core | ✅ 0.3.43 `Storefront\Contracts\ProductCards::forIds(list<int> $productIds, locale)` |
 | Lấy thẻ sản phẩm cho JS "đã xem" | Storefront API `GET /api/storefront/v1/products?ids=…` (tối đa 30) | ✅ 0.3.43 |
-| Top sản phẩm theo số lượng bán | `OrderStatistics` | ✅ 0.3.43 `OrderStatistics::topStyles(from, to, limit)` (id style chụp trong `order_lines.meta`; số lượng sau huỷ một phần; bỏ đơn huỷ, đơn đổi hàng) |
+| Top sản phẩm theo số lượng bán | `OrderStatistics` | ✅ 0.3.43 `OrderStatistics::topProducts(from, to, limit)` (id sản phẩm chụp trong `order_lines.meta`; số lượng sau huỷ một phần; bỏ đơn huỷ, đơn đổi hàng) |
 | Thanh "Đã xem" trang sản phẩm / giỏ | Slot `vani.storefront.pdp.after_details`, `vani.storefront.cart.after_lines` | ✅ |
 | Poster | Thư viện ảnh | ✅ |
 

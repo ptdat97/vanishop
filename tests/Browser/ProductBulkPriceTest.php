@@ -12,8 +12,8 @@ require_once __DIR__.'/../../modules/Pricing/Tests/Feature/PricingTestHelpers.ph
 
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'pricing.view', 'pricing.manage']), 'staff');
-    $this->style = T::product(null, ['style_code' => 'DAM01']);
-    [$s, $m] = P::variants($this->style);
+    $this->product = T::product(null, ['product_code' => 'DAM01']);
+    [$s, $m] = P::variants($this->product);
     $this->base = P::priceList(['code' => 'base'], [$s->id => [300_000], $m->id => [200_000]]);
 });
 

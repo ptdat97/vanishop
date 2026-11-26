@@ -22,8 +22,8 @@ beforeEach(function () {
     app()->register(WarehouseServiceProvider::class);
     $this->data = fn ($location) => app(LocationRegistry::class)->find($location->id);
     $this->brand = Brand::factory()->create();
-    $this->style = T::product($this->brand->id, ['style_code' => 'LM-DR01']);
-    [$this->s, $this->m] = P::variants($this->style);
+    $this->product = T::product($this->brand->id, ['product_code' => 'LM-DR01']);
+    [$this->s, $this->m] = P::variants($this->product);
     $this->hn = I::location(['code' => 'WH-HN', 'priority' => 10]);
     $this->hcm = I::location(['code' => 'WH-HCM', 'priority' => 5]);
     $this->url = '/admin/plugins/vani-warehouse/transfers';

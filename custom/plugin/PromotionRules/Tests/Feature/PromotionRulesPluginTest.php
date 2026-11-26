@@ -55,14 +55,14 @@ function makeContext(array $lines, ?int $customerId = 1): PromotionContext
     );
 }
 
-function makeLine(int $key, ?int $brandId, int $styleId, int $quantity, int $unitPrice): PromotionLine
+function makeLine(int $key, ?int $brandId, int $productId, int $quantity, int $unitPrice): PromotionLine
 {
     $unit = Money::vnd($unitPrice);
 
     return new PromotionLine(
         key: $key,
         brandId: $brandId,
-        styleId: $styleId,
+        productId: $productId,
         quantity: $quantity,
         unitPrice: $unit,
         subtotal: $unit->multiply($quantity),
@@ -76,7 +76,7 @@ it('MinOrderSubtotalRule: kiểm tra ngưỡng tổng tiền đơn', function ()
         ->and($rule->validateConfig(['min_subtotal' => -10]))->not->toBeEmpty()
         ->and($rule->validateConfig([]))->not->toBeEmpty();
 
-    $lines = [makeLine(key: 1, brandId: 1, styleId: 10, quantity: 2, unitPrice: 100_000)];
+    $lines = [makeLine(key: 1, brandId: 1, productId: 10, quantity: 2, unitPrice: 100_000)];
     $ctx = makeContext($lines);
 
     expect($rule->evaluate($ctx, ['min_subtotal' => 200_000], new Eligibility([1]))->keys)->toBe([1])
@@ -90,8 +90,8 @@ it('MinQuantityRule: kiểm tra ngưỡng tổng số lượng', function () {
         ->and($rule->validateConfig(['min_quantity' => 0]))->not->toBeEmpty();
 
     $lines = [
-        makeLine(key: 1, brandId: 1, styleId: 10, quantity: 2, unitPrice: 50_000),
-        makeLine(key: 2, brandId: 1, styleId: 11, quantity: 1, unitPrice: 50_000),
+        makeLine(key: 1, brandId: 1, productId: 10, quantity: 2, unitPrice: 50_000),
+        makeLine(key: 2, brandId: 1, productId: 11, quantity: 1, unitPrice: 50_000),
     ];
     $ctx = makeContext($lines);
 
@@ -101,7 +101,7 @@ it('MinQuantityRule: kiểm tra ngưỡng tổng số lượng', function () {
 
 it('InCollectionsRule: lọc các dòng thuộc bộ sưu tập', function () {
     $collections = Mockery::mock(CollectionDirectory::class);
-    $collections->shouldReceive('slugsForStyles')
+    $collections->shouldReceive('slugsForProducts')
         ->with([10, 20])
         ->andReturn([
             10 => ['he-2026', 'sale'],
@@ -115,8 +115,8 @@ it('InCollectionsRule: lọc các dòng thuộc bộ sưu tập', function () {
         ->and($rule->validateConfig([]))->not->toBeEmpty();
 
     $lines = [
-        makeLine(key: 1, brandId: 1, styleId: 10, quantity: 1, unitPrice: 100_000),
-        makeLine(key: 2, brandId: 1, styleId: 20, quantity: 1, unitPrice: 100_000),
+        makeLine(key: 1, brandId: 1, productId: 10, quantity: 1, unitPrice: 100_000),
+        makeLine(key: 2, brandId: 1, productId: 20, quantity: 1, unitPrice: 100_000),
     ];
     $ctx = makeContext($lines);
 
@@ -134,7 +134,7 @@ it('FirstOrderOnlyRule: từ chối khách đã từng đặt đơn và khách v
         ->and($rule->validateConfig([]))->toBe([])
         ->and($rule->validateConfig(['scope' => 'invalid']))->not->toBeEmpty();
 
-    $lines = [makeLine(key: 1, brandId: 1, styleId: 10, quantity: 1, unitPrice: 100_000)];
+    $lines = [makeLine(key: 1, brandId: 1, productId: 10, quantity: 1, unitPrice: 100_000)];
 
     expect($rule->evaluate(makeContext($lines, customerId: 100), [], new Eligibility([1]))->keys)->toBe([1])
         ->and($rule->evaluate(makeContext($lines, customerId: 200), [], new Eligibility([1]))->keys)->toBe([])
@@ -149,9 +149,9 @@ it('InBrandsRule: lọc các dòng thuộc thương hiệu chỉ định (theo s
         ->and($rule->validateConfig(['slugs' => ['']]))->not->toBeEmpty();
 
     $ctx = makeContext([
-        makeLine(key: 1, brandId: $this->brand->id, styleId: 10, quantity: 1, unitPrice: 100_000),
-        makeLine(key: 2, brandId: $this->otherBrand->id, styleId: 11, quantity: 1, unitPrice: 100_000),
-        makeLine(key: 3, brandId: null, styleId: 12, quantity: 1, unitPrice: 100_000),
+        makeLine(key: 1, brandId: $this->brand->id, productId: 10, quantity: 1, unitPrice: 100_000),
+        makeLine(key: 2, brandId: $this->otherBrand->id, productId: 11, quantity: 1, unitPrice: 100_000),
+        makeLine(key: 3, brandId: null, productId: 12, quantity: 1, unitPrice: 100_000),
     ]);
 
     expect($rule->evaluate($ctx, ['slugs' => ['brand-promo']], new Eligibility([1, 2, 3]))->keys)->toBe([1])
@@ -171,7 +171,7 @@ it('InCustomerGroupsRule / CustomerHasTagsRule: nhắm theo nhóm khách và tag
     $groups = app(InCustomerGroupsRule::class);
     $tags = app(CustomerHasTagsRule::class);
     $all = new Eligibility([1]);
-    $lines = [makeLine(key: 1, brandId: 1, styleId: 10, quantity: 1, unitPrice: 100_000)];
+    $lines = [makeLine(key: 1, brandId: 1, productId: 10, quantity: 1, unitPrice: 100_000)];
 
     expect($groups->validateConfig(['groups' => ['vip']]))->toBe([])
         ->and($groups->validateConfig(['groups' => ['khong-co']]))->not->toBeEmpty()

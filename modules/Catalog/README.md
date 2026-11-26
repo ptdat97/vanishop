@@ -4,7 +4,7 @@
 
 ## Trách nhiệm
 
-Sản phẩm (style), SKU (variant) theo 1–3 trục tuỳ chọn, danh mục, bộ sưu tập, thương hiệu, thuộc tính, media, tìm kiếm SQL.
+Sản phẩm, SKU (variant) theo 1–3 trục tuỳ chọn, danh mục, bộ sưu tập, thương hiệu, thuộc tính, media, tìm kiếm SQL.
 
 ## Bất biến
 
@@ -21,34 +21,30 @@ Sản phẩm (style), SKU (variant) theo 1–3 trục tuỳ chọn, danh mục, 
 - `attribute_translations`
 - `attribute_values`
 - `attribute_value_translations`
-- `colors`
-- `color_translations`
-- `sizes`
 - `media`
 - `mediables`
-- `styles`
-- `style_translations`
-- `style_colors`
-- `category_style`
-- `style_attribute_values`
+- `products`
+- `product_translations`
+- `category_product`
+- `product_attribute_values`
 - `collections`
 - `collection_translations`
-- `collection_style`
+- `collection_product`
 - `variants`
 - `media_folders`
 - `link_types`
 - `link_type_translations`
-- `style_link_groups`
-- `style_link_group_items`
+- `product_link_groups`
+- `product_link_group_items`
 - `videos`
-- `style_video`
-- `style_view_stats`
+- `product_video`
+- `product_view_stats`
 - `option_types`
 - `option_type_translations`
 - `option_values`
 - `option_value_translations`
-- `style_options`
-- `style_option_values`
+- `product_options`
+- `product_option_values`
 - `variant_option_values`
 - `slug_redirects`
 

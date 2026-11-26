@@ -10,12 +10,12 @@ require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.
 
 it('thêm sản phẩm chỉ có một SKU từ trang mobile mà không yêu cầu chọn biến thể', function () {
     ['location' => $location] = C::store();
-    $style = T::product(null, ['name' => 'Khăn lụa']);
-    $variant = T::seed(fn () => app(ProductOptions::class)->createVariant($style, [], ['sku' => 'KHAN-LUA']));
+    $product = T::product(null, ['name' => 'Khăn lụa']);
+    $variant = T::seed(fn () => app(ProductOptions::class)->createVariant($product, [], ['sku' => 'KHAN-LUA']));
     P::priceList([], [$variant->id => [200_000]]);
     I::stock($location, $variant->id, 5);
 
-    visit("/san-pham/{$style->slug}")->on()->mobile()->resize(390, 550)
+    visit("/san-pham/{$product->slug}")->on()->mobile()->resize(390, 550)
         ->assertPresent('input[type="hidden"][name="variant_id"]')
         ->assertVisible('[data-pdp-shortcut]')
         ->click('[data-pdp-shortcut] a')
@@ -29,7 +29,7 @@ it('thêm sản phẩm chỉ có một SKU từ trang mobile mà không yêu c�
 
 it('bấm thêm hai lần chỉ thêm một món và phát một sự kiện, giỏ mini cho phép đổi số lượng', function () {
     ['s' => $variant] = C::store();
-    $page = visit("/san-pham/{$variant->style->slug}?sku={$variant->sku}")->on()->mobile();
+    $page = visit("/san-pham/{$variant->product->slug}?sku={$variant->sku}")->on()->mobile();
     $page->script(<<<'JS'
         () => {
             window.cartAdds = 0;
@@ -70,7 +70,7 @@ it('bấm thêm hai lần chỉ thêm một món và phát một sự kiện, gi
 
 it('mất phản hồi sau khi máy chủ thêm hàng: mở giỏ với số lượng đã ghi đúng một lần', function () {
     ['s' => $variant] = C::store();
-    $page = visit("/san-pham/{$variant->style->slug}?sku={$variant->sku}")->on()->mobile();
+    $page = visit("/san-pham/{$variant->product->slug}?sku={$variant->sku}")->on()->mobile();
     $page->script(<<<'JS'
         () => {
             const originalFetch = window.fetch;
@@ -91,7 +91,7 @@ it('mất phản hồi sau khi máy chủ thêm hàng: mở giỏ với số lư
 
 it('giỏ ở 320px giữ nút thanh toán trong tầm tay và giữ focus khi tăng số lượng', function () {
     ['s' => $variant] = C::store();
-    $page = visit("/san-pham/{$variant->style->slug}?sku={$variant->sku}")->on()->mobile()
+    $page = visit("/san-pham/{$variant->product->slug}?sku={$variant->sku}")->on()->mobile()
         ->click('[data-pdp-purchase]')
         ->assertVisible('[data-vani-offcanvas-cart][open]')
         ->navigate('/gio-hang')

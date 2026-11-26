@@ -11,7 +11,7 @@ use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Persistence\Models\Mediable;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Identity\Contracts\AuditLogger;
 
@@ -31,15 +31,15 @@ final class VariantImages
     /**
      * @param  list<UploadedFile>  $files
      */
-    public function addFiles(Style $style, Variant $variant, array $files): void
+    public function addFiles(Product $product, Variant $variant, array $files): void
     {
         $this->guardCount($variant, count($files));
-        DB::transaction(function () use ($style, $variant, $files): void {
+        DB::transaction(function () use ($product, $variant, $files): void {
             $position = (int) $variant->gallery()->max('position');
             foreach ($files as $file) {
                 $variant->gallery()->create(['media_id' => $this->media->store($file)->id, 'role' => 'gallery', 'position' => ++$position]);
             }
-            $this->touch($style, 'catalog.product.images_added', ['variant_id' => $variant->id, 'count' => count($files)]);
+            $this->touch($product, 'catalog.product.images_added', ['variant_id' => $variant->id, 'count' => count($files)]);
         });
     }
 
@@ -48,7 +48,7 @@ final class VariantImages
      *
      * @param  list<int>  $mediaIds
      */
-    public function attachMedia(Style $style, Variant $variant, array $mediaIds): void
+    public function attachMedia(Product $product, Variant $variant, array $mediaIds): void
     {
         $mediaIds = array_values(array_unique($mediaIds));
         if (Media::query()->whereKey($mediaIds)->count() !== count($mediaIds)) {
@@ -59,12 +59,12 @@ final class VariantImages
             return;
         }
         $this->guardCount($variant, count($new));
-        DB::transaction(function () use ($style, $variant, $new): void {
+        DB::transaction(function () use ($product, $variant, $new): void {
             $position = (int) $variant->gallery()->max('position');
             foreach ($new as $mediaId) {
                 $variant->gallery()->create(['media_id' => $mediaId, 'role' => 'gallery', 'position' => ++$position]);
             }
-            $this->touch($style, 'catalog.product.images_added', ['variant_id' => $variant->id, 'count' => count($new), 'source' => 'library']);
+            $this->touch($product, 'catalog.product.images_added', ['variant_id' => $variant->id, 'count' => count($new), 'source' => 'library']);
         });
     }
 
@@ -76,33 +76,33 @@ final class VariantImages
      * @param  list<int>  $mediaIds  theo thứ tự đã chọn
      * @return int số SKU
      */
-    public function attachToVariants(Style $style, array $variantIds, array $mediaIds): int
+    public function attachToVariants(Product $product, array $variantIds, array $mediaIds): int
     {
-        $variants = $style->variants()->whereKey(array_values(array_unique($variantIds)))->get();
+        $variants = $product->variants()->whereKey(array_values(array_unique($variantIds)))->get();
         if ($variants->count() !== count(array_unique($variantIds))) {
             throw ValidationException::withMessages(['variant_ids' => __('catalog::messages.variant_not_in_product')]);
         }
-        DB::transaction(function () use ($style, $variants, $mediaIds): void {
+        DB::transaction(function () use ($product, $variants, $mediaIds): void {
             foreach ($variants as $variant) {
-                $this->attachMedia($style, $variant, $mediaIds);
+                $this->attachMedia($product, $variant, $mediaIds);
             }
         });
 
         return $variants->count();
     }
 
-    public function remove(Style $style, Variant $variant, Mediable $image): void
+    public function remove(Product $product, Variant $variant, Mediable $image): void
     {
         $image->delete();
-        $this->touch($style, 'catalog.product.image_removed', ['variant_id' => $variant->id]);
+        $this->touch($product, 'catalog.product.image_removed', ['variant_id' => $variant->id]);
     }
 
     /**
      * @param  list<int>  $mediableIds  thứ tự mới
      */
-    public function reorder(Style $style, Variant $variant, array $mediableIds): void
+    public function reorder(Product $product, Variant $variant, array $mediableIds): void
     {
-        DB::transaction(function () use ($style, $variant, $mediableIds): void {
+        DB::transaction(function () use ($product, $variant, $mediableIds): void {
             $current = $variant->gallery()->pluck('id')->all();
             if (array_diff($mediableIds, $current) !== [] || count($mediableIds) !== count($current)) {
                 throw ValidationException::withMessages(['business' => __('catalog::messages.image_order_invalid')]);
@@ -110,7 +110,7 @@ final class VariantImages
             foreach ($mediableIds as $position => $id) {
                 Mediable::query()->whereKey($id)->update(['position' => $position]);
             }
-            $this->touch($style, 'catalog.product.images_reordered', ['variant_id' => $variant->id]);
+            $this->touch($product, 'catalog.product.images_reordered', ['variant_id' => $variant->id]);
         });
     }
 
@@ -119,25 +119,25 @@ final class VariantImages
      *
      * @return int số SKU được áp
      */
-    public function copyToSiblings(Style $style, Variant $source, int $optionTypeId): int
+    public function copyToSiblings(Product $product, Variant $source, int $optionTypeId): int
     {
         $valueId = DB::table('variant_option_values')->where('variant_id', $source->id)->where('option_type_id', $optionTypeId)->value('option_value_id');
         if ($valueId === null) {
             throw ValidationException::withMessages(['option_type_id' => __('catalog::messages.option_value_invalid')]);
         }
-        $siblings = Variant::query()->where('style_id', $style->id)->whereKeyNot($source->id)
+        $siblings = Variant::query()->where('product_id', $product->id)->whereKeyNot($source->id)
             ->whereIn('id', DB::table('variant_option_values')->where('option_type_id', $optionTypeId)->where('option_value_id', $valueId)->select('variant_id'))
             ->get();
         $images = $source->gallery()->get(['media_id', 'position', 'alt']);
 
-        DB::transaction(function () use ($style, $source, $siblings, $images): void {
+        DB::transaction(function () use ($product, $source, $siblings, $images): void {
             foreach ($siblings as $sibling) {
                 $sibling->gallery()->delete();
                 foreach ($images as $image) {
                     $sibling->gallery()->create(['media_id' => $image->media_id, 'role' => 'gallery', 'position' => $image->position, 'alt' => $image->alt]);
                 }
             }
-            $this->touch($style, 'catalog.product.images_copied', ['variant_id' => $source->id, 'targets' => $siblings->count()]);
+            $this->touch($product, 'catalog.product.images_copied', ['variant_id' => $source->id, 'targets' => $siblings->count()]);
         });
 
         return $siblings->count();
@@ -153,10 +153,10 @@ final class VariantImages
     /**
      * @param  array<string, mixed>  $changes
      */
-    private function touch(Style $style, string $action, array $changes): void
+    private function touch(Product $product, string $action, array $changes): void
     {
-        $style->touch();
-        $this->audit->record($action, 'style', $style->id, $changes);
-        event(new ProductUpdated($style->id, $style->style_code));
+        $product->touch();
+        $this->audit->record($action, 'product', $product->id, $changes);
+        event(new ProductUpdated($product->id, $product->product_code));
     }
 }

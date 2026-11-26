@@ -37,13 +37,13 @@ interface VariantFieldProvider
     public function permission(): ?string;
 
     /**
-     * Giá trị hiện tại cho các SKU của sản phẩm. Xuất file theo lô gọi một lần cho nhiều sản phẩm: `$styleId` = 0 và
-     * `$variantIds` thuộc nhiều sản phẩm — trả theo variant id như thường (đừng truy vấn theo `$styleId`).
+     * Giá trị hiện tại cho các SKU của sản phẩm. Xuất file theo lô gọi một lần cho nhiều sản phẩm: `$productId` = 0 và
+     * `$variantIds` thuộc nhiều sản phẩm — trả theo variant id như thường (đừng truy vấn theo `$productId`).
      *
      * @param  list<int>  $variantIds
      * @return array<int, array<string, scalar|null>> variant id => field key => giá trị (thiếu = chưa có)
      */
-    public function values(int $styleId, array $variantIds): array;
+    public function values(int $productId, array $variantIds): array;
 
     /**
      * Lưu giá trị đã kiểm tra theo `fields()` (chỉ gửi SKU và trường có thay đổi). Lỗi theo SKU trả về để Admin hiện ở dòng
@@ -52,7 +52,7 @@ interface VariantFieldProvider
      * @param  array<int, array<string, scalar|null>>  $values  variant id => field key => giá trị
      * @return array<int, string> variant id => thông báo lỗi
      */
-    public function save(int $styleId, array $values): array;
+    public function save(int $productId, array $values): array;
 
     /**
      * Dữ liệu theo SKU công bố ra storefront (`variants[].extensions.<code()>` của Storefront API). Không công bố gì → [].

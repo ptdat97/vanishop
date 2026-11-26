@@ -309,7 +309,7 @@ it('đổi hàng cùng mẫu: hàng trả nhập kho, đơn thay thế 0đ giữ
 
 it('sản phẩm không theo dõi tồn: chưa nhập tồn vẫn đặt được; bù đúng phần thiếu, rời kho thì trừ, đơn huỷ thì phần bù được dùng lại', function () {
     DB::table('stock_levels')->where('variant_id', $this->s->id)->delete();
-    DB::table('styles')->where('id', $this->s->style_id)->update(['track_inventory' => false]);
+    DB::table('products')->where('id', $this->s->product_id)->update(['track_inventory' => false]);
     ($this->snapshot)();
     $level = fn (): array => [
         'on_hand' => (int) DB::table('stock_levels')->where('variant_id', $this->s->id)->sum('on_hand'),
@@ -334,7 +334,7 @@ it('sản phẩm không theo dõi tồn: chưa nhập tồn vẫn đặt đượ
 
 it('không theo dõi tồn + kho do hệ thống ngoài quản lý: chỉ bù ở kho VaniShop quản lý; không có kho như vậy thì bán như sản phẩm thường', function () {
     DB::table('stock_levels')->where('variant_id', $this->s->id)->delete();
-    DB::table('styles')->where('id', $this->s->style_id)->update(['track_inventory' => false]);
+    DB::table('products')->where('id', $this->s->product_id)->update(['track_inventory' => false]);
     DB::table('locations')->where('id', $this->location->id)->update(['stock_authority' => 'erp', 'priority' => 10]);
     ($this->snapshot)();
 

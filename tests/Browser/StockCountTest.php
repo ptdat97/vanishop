@@ -15,7 +15,7 @@ require_once __DIR__.'/../../modules/Pricing/Tests/Feature/PricingTestHelpers.ph
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust']), 'staff');
     $this->location = I::location(['code' => 'KHO-CHINH']);
-    [$this->s] = P::variants(T::product(null, ['style_code' => 'DAM01']), ['S']);
+    [$this->s] = P::variants(T::product(null, ['product_code' => 'DAM01']), ['S']);
     I::stock($this->location, $this->s->id, 5);
 });
 

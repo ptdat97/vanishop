@@ -13,10 +13,10 @@ use Modules\Shared\Support\StoreLocale;
 
 final class EloquentVariantDirectory implements VariantDirectory
 {
-    public function ofStyleCode(string $styleCode): array
+    public function ofProductCode(string $productCode): array
     {
         return Variant::query()
-            ->whereHas('style', fn ($query) => $query->where('style_code', $styleCode))
+            ->whereHas('product', fn ($query) => $query->where('product_code', $productCode))
             ->get()
             ->tap(fn ($variants) => VariantOptions::load($variants))
             ->sortBy(fn (Variant $variant): string => VariantOptions::sortKey($variant))
@@ -25,13 +25,13 @@ final class EloquentVariantDirectory implements VariantDirectory
             ->all();
     }
 
-    public function ofStyles(array $styleIds): array
+    public function ofProducts(array $productIds): array
     {
-        $sorted = $this->read('style_id', $styleIds);
+        $sorted = $this->read('product_id', $productIds);
         uasort($sorted, fn (array $a, array $b): int => $a['sort'] <=> $b['sort']);
         $result = [];
         foreach ($sorted as $row) {
-            $result[$row['data']->styleId][] = $row['data'];
+            $result[$row['data']->productId][] = $row['data'];
         }
 
         return $result;
@@ -58,7 +58,7 @@ final class EloquentVariantDirectory implements VariantDirectory
      * Kết quả giống `toData()` của model: tên theo locale hiện tại → ngôn ngữ mặc định → bản dịch đầu tiên; tuỳ chọn theo thứ
      * tự trục của sản phẩm; khoá sắp xếp như VariantOptions::sortKey.
      *
-     * @param  'id'|'style_id'|'sku'  $column
+     * @param  'id'|'product_id'|'sku'  $column
      * @param  list<int|string>  $keys
      * @return array<int, array{data: VariantData, sort: string}> theo id SKU
      */
@@ -70,15 +70,15 @@ final class EloquentVariantDirectory implements VariantDirectory
 
         $variants = collect();
         foreach (array_chunk(array_values(array_unique($keys)), 1000) as $chunk) {
-            $variants = $variants->concat(DB::table('variants as v')->join('styles as s', 's.id', '=', 'v.style_id')->whereIn("v.{$column}", $chunk)
-                ->get(['v.id', 'v.style_id', 'v.sku', 'v.status', 's.brand_id', 's.style_code', 's.track_inventory']));
+            $variants = $variants->concat(DB::table('variants as v')->join('products as s', 's.id', '=', 'v.product_id')->whereIn("v.{$column}", $chunk)
+                ->get(['v.id', 'v.product_id', 'v.sku', 'v.status', 's.brand_id', 's.product_code', 's.track_inventory']));
         }
         if ($variants->isEmpty()) {
             return [];
         }
 
         $variantIds = $variants->pluck('id')->map(fn ($id): int => (int) $id)->all();
-        $styleIds = $variants->pluck('style_id')->map(fn ($id): int => (int) $id)->unique()->values()->all();
+        $productIds = $variants->pluck('product_id')->map(fn ($id): int => (int) $id)->unique()->values()->all();
         $locale = app()->getLocale();
         $fallback = StoreLocale::default();
         $pick = function ($translations) use ($locale, $fallback): ?string {
@@ -87,12 +87,12 @@ final class EloquentVariantDirectory implements VariantDirectory
             return $translation?->name === null ? null : (string) $translation->name;
         };
 
-        $names = DB::table('style_translations')->whereIn('style_id', $styleIds)->orderBy('id')->get(['style_id', 'locale', 'name'])->groupBy('style_id')->map($pick);
-        $axes = DB::table('style_options')->whereIn('style_id', $styleIds)->orderBy('position')->orderBy('id')->get(['style_id', 'option_type_id'])
-            ->groupBy('style_id')->map(fn ($rows): array => $rows->pluck('option_type_id')->map(fn ($id): int => (int) $id)->all());
+        $names = DB::table('product_translations')->whereIn('product_id', $productIds)->orderBy('id')->get(['product_id', 'locale', 'name'])->groupBy('product_id')->map($pick);
+        $axes = DB::table('product_options')->whereIn('product_id', $productIds)->orderBy('position')->orderBy('id')->get(['product_id', 'option_type_id'])
+            ->groupBy('product_id')->map(fn ($rows): array => $rows->pluck('option_type_id')->map(fn ($id): int => (int) $id)->all());
         $positions = [];
-        foreach (DB::table('style_option_values')->whereIn('style_id', $styleIds)->orderBy('position')->orderBy('id')->get(['style_id', 'option_value_id', 'position']) as $row) {
-            $positions[(int) $row->style_id][(int) $row->option_value_id] = (int) $row->position;
+        foreach (DB::table('product_option_values')->whereIn('product_id', $productIds)->orderBy('position')->orderBy('id')->get(['product_id', 'option_value_id', 'position']) as $row) {
+            $positions[(int) $row->product_id][(int) $row->option_value_id] = (int) $row->position;
         }
         $chosen = [];
         foreach (array_chunk($variantIds, 1000) as $chunk) {
@@ -110,10 +110,10 @@ final class EloquentVariantDirectory implements VariantDirectory
         $result = [];
         foreach ($variants as $row) {
             $id = (int) $row->id;
-            $styleId = (int) $row->style_id;
+            $productId = (int) $row->product_id;
             $options = [];
             $sort = [];
-            foreach ($axes->get($styleId, []) as $typeId) {
+            foreach ($axes->get($productId, []) as $typeId) {
                 $valueId = $chosen[$id][$typeId] ?? null;
                 $value = $valueId === null ? null : $values->get($valueId);
                 if ($value === null) {
@@ -126,21 +126,21 @@ final class EloquentVariantDirectory implements VariantDirectory
                     'code' => (string) $value->code,
                     'value' => (string) ($valueNames->get($valueId) ?? $value->code),
                 ];
-                $sort[] = sprintf('%05d', $positions[$styleId][$valueId] ?? 99999);
+                $sort[] = sprintf('%05d', $positions[$productId][$valueId] ?? 99999);
             }
             $result[$id] = [
                 'data' => new VariantData(
                     id: $id,
                     brandId: $row->brand_id === null ? null : (int) $row->brand_id,
-                    styleId: $styleId,
-                    styleCode: (string) $row->style_code,
-                    styleName: (string) $names->get($styleId),
+                    productId: $productId,
+                    productCode: (string) $row->product_code,
+                    productName: (string) $names->get($productId),
                     sku: (string) $row->sku,
                     status: (string) $row->status,
                     options: $options,
                     tracksInventory: (bool) ($row->track_inventory ?? true),
                 ),
-                'sort' => sprintf('%010d-', $styleId).implode('-', $sort),
+                'sort' => sprintf('%010d-', $productId).implode('-', $sort),
             ];
         }
 
@@ -155,42 +155,42 @@ final class EloquentVariantDirectory implements VariantDirectory
         return Variant::query()
             ->when($text !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('sku', 'like', $like)
-                ->orWhereHas('style', fn ($style) => $style->where('style_code', 'like', $like)
+                ->orWhereHas('product', fn ($product) => $product->where('product_code', 'like', $like)
                     ->orWhereHas('translations', fn ($translation) => $translation->where('name', 'like', $like)))))
             ->limit(max(1, $limit))
             ->get()
             ->tap(fn ($variants) => VariantOptions::load($variants))
-            ->sortBy(fn (Variant $variant): string => mb_strtolower((string) $variant->style->translate('name')).'|'.$variant->style->style_code.'|'.VariantOptions::sortKey($variant))
+            ->sortBy(fn (Variant $variant): string => mb_strtolower((string) $variant->product->translate('name')).'|'.$variant->product->product_code.'|'.VariantOptions::sortKey($variant))
             ->map(fn (Variant $variant): VariantData => $this->toData($variant))
             ->values()
             ->all();
     }
 
-    public function searchIndex(string $text = '', ?string $styleCode = null): array
+    public function searchIndex(string $text = '', ?string $productCode = null): array
     {
         $text = trim($text);
         $like = '%'.addcslashes($text, '%_\\').'%';
         $locale = StoreLocale::default();
         $scope = fn ($query) => $query
-            ->when($styleCode !== null, fn ($query) => $query->where('s.style_code', $styleCode))
-            ->when($styleCode === null && $text !== '', fn ($query) => $query->where(fn ($inner) => $inner
+            ->when($productCode !== null, fn ($query) => $query->where('s.product_code', $productCode))
+            ->when($productCode === null && $text !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('v.sku', 'like', $like)
-                ->orWhere('s.style_code', 'like', $like)
-                ->orWhereExists(fn ($names) => $names->selectRaw('1')->from('style_translations as tn')->whereColumn('tn.style_id', 's.id')->where('tn.name', 'like', $like))));
+                ->orWhere('s.product_code', 'like', $like)
+                ->orWhereExists(fn ($names) => $names->selectRaw('1')->from('product_translations as tn')->whereColumn('tn.product_id', 's.id')->where('tn.name', 'like', $like))));
 
         $rows = $scope(DB::table('variants as v')
-            ->join('styles as s', 's.id', '=', 'v.style_id')
-            ->leftJoin('style_translations as t', fn ($join) => $join->on('t.style_id', '=', 's.id')->where('t.locale', $locale)))
-            ->get(['v.id', 'v.style_id', 's.style_code', 'v.status', 't.name']);
+            ->join('products as s', 's.id', '=', 'v.product_id')
+            ->leftJoin('product_translations as t', fn ($join) => $join->on('t.product_id', '=', 's.id')->where('t.locale', $locale)))
+            ->get(['v.id', 'v.product_id', 's.product_code', 'v.status', 't.name']);
 
         // Giá trị của mọi trục (ADR-045) cùng vị trí trục và vị trí giá trị trong sản phẩm — thứ tự hiển thị.
         $values = $scope(DB::table('variant_option_values as vov')
             ->join('variants as v', 'v.id', '=', 'vov.variant_id')
-            ->join('styles as s', 's.id', '=', 'v.style_id')
+            ->join('products as s', 's.id', '=', 'v.product_id')
             ->join('option_types as ot', 'ot.id', '=', 'vov.option_type_id')
             ->join('option_values as ov', 'ov.id', '=', 'vov.option_value_id')
-            ->leftJoin('style_options as so', fn ($join) => $join->on('so.style_id', '=', 'v.style_id')->on('so.option_type_id', '=', 'vov.option_type_id'))
-            ->leftJoin('style_option_values as sov', fn ($join) => $join->on('sov.style_id', '=', 'v.style_id')->on('sov.option_value_id', '=', 'vov.option_value_id')))
+            ->leftJoin('product_options as so', fn ($join) => $join->on('so.product_id', '=', 'v.product_id')->on('so.option_type_id', '=', 'vov.option_type_id'))
+            ->leftJoin('product_option_values as sov', fn ($join) => $join->on('sov.product_id', '=', 'v.product_id')->on('sov.option_value_id', '=', 'vov.option_value_id')))
             ->orderBy('so.position')
             ->get(['vov.variant_id', 'ot.code as type_code', 'ov.code as value_code', 'sov.position as value_position'])
             ->groupBy('variant_id');
@@ -204,8 +204,8 @@ final class EloquentVariantDirectory implements VariantDirectory
                 $sort[] = str_pad((string) (int) $value->value_position, 6, '0', STR_PAD_LEFT);
             }
             $index[] = [
-                'row' => ['id' => (int) $row->id, 'style_id' => (int) $row->style_id, 'style_code' => (string) $row->style_code, 'options' => $options, 'status' => (string) $row->status],
-                'key' => [mb_strtolower((string) ($row->name ?? $row->style_code)), (string) $row->style_code, implode('|', $sort), (int) $row->id],
+                'row' => ['id' => (int) $row->id, 'product_id' => (int) $row->product_id, 'product_code' => (string) $row->product_code, 'options' => $options, 'status' => (string) $row->status],
+                'key' => [mb_strtolower((string) ($row->name ?? $row->product_code)), (string) $row->product_code, implode('|', $sort), (int) $row->id],
             ];
         }
         usort($index, fn (array $a, array $b): int => $a['key'] <=> $b['key']);
@@ -219,19 +219,19 @@ final class EloquentVariantDirectory implements VariantDirectory
             return [];
         }
 
-        return Variant::query()->join('styles', 'styles.id', '=', 'variants.style_id')
-            ->whereIn('variants.id', $variantIds)->where('styles.track_inventory', false)
+        return Variant::query()->join('products', 'products.id', '=', 'variants.product_id')
+            ->whereIn('variants.id', $variantIds)->where('products.track_inventory', false)
             ->pluck('variants.id')->map(fn (mixed $id): int => (int) $id)->all();
     }
 
-    public function styleIdsOf(array $variantIds): array
+    public function productIdsOf(array $variantIds): array
     {
         if ($variantIds === []) {
             return [];
         }
 
-        return Variant::query()->whereIn('id', $variantIds)->pluck('style_id', 'id')
-            ->mapWithKeys(fn (mixed $styleId, mixed $id): array => [(int) $id => (int) $styleId])->all();
+        return Variant::query()->whereIn('id', $variantIds)->pluck('product_id', 'id')
+            ->mapWithKeys(fn (mixed $productId, mixed $id): array => [(int) $id => (int) $productId])->all();
     }
 
     public function optionTypes(): array
@@ -244,14 +244,14 @@ final class EloquentVariantDirectory implements VariantDirectory
     {
         return new VariantData(
             id: $variant->id,
-            brandId: $variant->style->brand_id,
-            styleId: $variant->style_id,
-            styleCode: $variant->style->style_code,
-            styleName: (string) $variant->style->translate('name'),
+            brandId: $variant->product->brand_id,
+            productId: $variant->product_id,
+            productCode: $variant->product->product_code,
+            productName: (string) $variant->product->translate('name'),
             sku: $variant->sku,
             status: $variant->status->value,
             options: VariantOptions::present($variant),
-            tracksInventory: (bool) ($variant->style->track_inventory ?? true),
+            tracksInventory: (bool) ($variant->product->track_inventory ?? true),
         );
     }
 }

@@ -7,7 +7,7 @@ import { Head, Link } from '@inertiajs/vue3';
 
 defineProps<{
     backUrl: string;
-    variant: { sku: string; style_code: string };
+    variant: { sku: string; product_code: string };
     movements: Array<{
         id: number;
         at: string | null;

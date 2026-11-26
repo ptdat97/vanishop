@@ -67,10 +67,10 @@ final class ProductViews implements CustomerProductPrices, ProductCards
         return $listing;
     }
 
-    public function forIds(array $styleIds, string $locale): array
+    public function forIds(array $productIds, string $locale): array
     {
         $now = now()->getTimestamp();
-        $ids = array_slice($styleIds, 0, self::MAX_IDS);
+        $ids = array_slice($productIds, 0, self::MAX_IDS);
 
         return $this->cards($this->catalog->productsByIds($ids, $locale, $now), $now);
     }
@@ -207,36 +207,36 @@ final class ProductViews implements CustomerProductPrices, ProductCards
     }
 
     /**
-     * Khoảng giá chung theo style (cùng dạng `price` của thẻ) cho trang cache khi ẩn giá — gọi sau khi đã kiểm tra khách
-     * được xem giá (`GET /api/storefront/v1/me/prices`). Style không hiển thị hoặc chưa có giá bị bỏ.
+     * Khoảng giá chung theo product (cùng dạng `price` của thẻ) cho trang cache khi ẩn giá — gọi sau khi đã kiểm tra khách
+     * được xem giá (`GET /api/storefront/v1/me/prices`). Product không hiển thị hoặc chưa có giá bị bỏ.
      *
-     * @param  list<int>  $styleIds
-     * @return array<int, array<string, mixed>> style id => khoảng giá
+     * @param  list<int>  $productIds
+     * @return array<int, array<string, mixed>> product id => khoảng giá
      */
-    public function priceRanges(array $styleIds, string $locale): array
+    public function priceRanges(array $productIds, string $locale): array
     {
-        return $this->rangesForContext($styleIds, $locale, new PricingContext(now()->getTimestamp()));
+        return $this->rangesForContext($productIds, $locale, new PricingContext(now()->getTimestamp()));
     }
 
-    public function forCustomer(array $styleIds, int $customerId, string $locale): array
+    public function forCustomer(array $productIds, int $customerId, string $locale): array
     {
         $groupId = $this->groups->groupOf($customerId);
-        $ranges = $this->rangesForContext($styleIds, $locale, new PricingContext(now()->getTimestamp(), $groupId, $customerId));
+        $ranges = $this->rangesForContext($productIds, $locale, new PricingContext(now()->getTimestamp(), $groupId, $customerId));
         $prices = [];
-        foreach ($ranges as $styleId => $range) {
-            $prices[$styleId] = ['amount' => (int) $range['min']['amount'], 'formatted' => (string) $range['min']['formatted']];
+        foreach ($ranges as $productId => $range) {
+            $prices[$productId] = ['amount' => (int) $range['min']['amount'], 'formatted' => (string) $range['min']['formatted']];
         }
 
         return ['group_id' => $groupId, 'prices' => $prices];
     }
 
     /**
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return array<int, array<string, mixed>>
      */
-    private function rangesForContext(array $styleIds, string $locale, PricingContext $context): array
+    private function rangesForContext(array $productIds, string $locale, PricingContext $context): array
     {
-        $items = $this->catalog->productsByIds(array_slice($styleIds, 0, self::MAX_IDS), $locale, $context->now);
+        $items = $this->catalog->productsByIds(array_slice($productIds, 0, self::MAX_IDS), $locale, $context->now);
         $variantIds = array_merge(...array_column($items, 'variant_ids'));
         $resolved = $variantIds === [] ? [] : $this->prices->forVariants($variantIds, $context);
 
@@ -254,12 +254,12 @@ final class ProductViews implements CustomerProductPrices, ProductCards
     /**
      * Sản phẩm liên kết → thẻ sản phẩm (một lần truy vấn cho mọi loại); loại không còn sản phẩm hiển thị bị bỏ.
      *
-     * @param  list<array{code: string, name: string|null, style_ids: list<int>}>  $links
+     * @param  list<array{code: string, name: string|null, product_ids: list<int>}>  $links
      * @return list<array{code: string, name: string|null, products: list<array<string, mixed>>}>
      */
     private function links(array $links, string $locale, int $now): array
     {
-        $ids = array_values(array_unique(array_merge(...array_column($links, 'style_ids') ?: [[]])));
+        $ids = array_values(array_unique(array_merge(...array_column($links, 'product_ids') ?: [[]])));
         if ($ids === []) {
             return [];
         }
@@ -268,7 +268,7 @@ final class ProductViews implements CustomerProductPrices, ProductCards
 
         $result = [];
         foreach ($links as $link) {
-            $products = array_values(array_filter(array_map(fn (int $id): ?array => $cards[$id] ?? null, $link['style_ids'])));
+            $products = array_values(array_filter(array_map(fn (int $id): ?array => $cards[$id] ?? null, $link['product_ids'])));
             if ($products !== []) {
                 $result[] = ['code' => $link['code'], 'name' => $link['name'], 'products' => $products];
             }

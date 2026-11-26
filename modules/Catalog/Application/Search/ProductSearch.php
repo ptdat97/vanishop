@@ -10,15 +10,15 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\ProductSearchResult;
-use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 /**
  * Tìm kiếm sản phẩm cho storefront bằng truy vấn SQL (dự án chỉ tìm bằng SQL — không có chỉ mục ngoài): tìm không dấu
- * qua cột `styles.search_text` (ProductService ghi khi lưu), lọc danh mục/thuộc tính/tuỳ chọn/giá, facet, sắp xếp.
+ * qua cột `products.search_text` (ProductService ghi khi lưu), lọc danh mục/thuộc tính/tuỳ chọn/giá, facet, sắp xếp.
  * Đo 10.000 sản phẩm / 50.000 SKU: 5–16 ms mỗi truy vấn (2026-11-20).
  */
 final class ProductSearch
@@ -31,22 +31,22 @@ final class ProductSearch
 
         $total = (clone $filtered)->count();
 
-        $ordered = (clone $filtered)->select('styles.id');
+        $ordered = (clone $filtered)->select('products.id');
         if ($query->categoryId !== null && $query->sort === ProductSearchQuery::SORT_NEWEST && $query->text === '') {
             // Trong trang danh mục: ưu tiên thứ tự merchandising đã ghim.
-            $ordered->orderByRaw('(select min(cs.position) from category_style cs where cs.style_id = styles.id and cs.category_id = ?) asc', [$query->categoryId]);
+            $ordered->orderByRaw('(select min(cs.position) from category_product cs where cs.product_id = products.id and cs.category_id = ?) asc', [$query->categoryId]);
         }
         match ($query->sort) {
-            ProductSearchQuery::SORT_CODE => $ordered->orderBy('styles.style_code'),
+            ProductSearchQuery::SORT_CODE => $ordered->orderBy('products.product_code'),
             // Sản phẩm chưa có giá luôn xếp cuối.
-            ProductSearchQuery::SORT_PRICE_ASC => $ordered->orderByRaw('styles.list_price_min is null')->orderBy('styles.list_price_min'),
-            ProductSearchQuery::SORT_PRICE_DESC => $ordered->orderByRaw('styles.list_price_min is null')->orderByDesc('styles.list_price_min'),
-            default => $ordered->orderByDesc('styles.created_at'),
+            ProductSearchQuery::SORT_PRICE_ASC => $ordered->orderByRaw('products.list_price_min is null')->orderBy('products.list_price_min'),
+            ProductSearchQuery::SORT_PRICE_DESC => $ordered->orderByRaw('products.list_price_min is null')->orderByDesc('products.list_price_min'),
+            default => $ordered->orderByDesc('products.created_at'),
         };
-        $ids = $ordered->orderByDesc('styles.id')->offset($query->offset())->limit($query->limit())->pluck('styles.id')->all();
+        $ids = $ordered->orderByDesc('products.id')->offset($query->offset())->limit($query->limit())->pluck('products.id')->all();
 
         return new ProductSearchResult(
-            styleIds: array_map('intval', $ids),
+            productIds: array_map('intval', $ids),
             total: $total,
             facets: [
                 'attribute_values' => $this->attributeFacet($base, $query),
@@ -58,34 +58,34 @@ final class ProductSearch
     }
 
     /**
-     * @return Builder<Style>
+     * @return Builder<Product>
      */
     private function baseQuery(ProductSearchQuery $query): Builder
     {
         $now = Carbon::createFromTimestamp($query->now);
 
-        $builder = Style::query()
-            ->where('styles.status', StyleStatus::Active)
-            ->where(fn (Builder $q) => $q->whereNull('styles.published_from')->orWhere('styles.published_from', '<=', $now))
-            ->where(fn (Builder $q) => $q->whereNull('styles.published_to')->orWhere('styles.published_to', '>', $now));
+        $builder = Product::query()
+            ->where('products.status', ProductStatus::Active)
+            ->where(fn (Builder $q) => $q->whereNull('products.published_from')->orWhere('products.published_from', '<=', $now))
+            ->where(fn (Builder $q) => $q->whereNull('products.published_to')->orWhere('products.published_to', '>', $now));
 
         foreach (VietnameseText::tokens($query->text) as $token) {
-            $builder->where('styles.search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
+            $builder->where('products.search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
         }
 
         if ($query->categoryId !== null) {
             $path = Category::query()->whereKey($query->categoryId)->value('path');
             $builder->whereExists(fn ($q) => $q->select(DB::raw(1))
-                ->from('category_style')
-                ->join('categories', 'categories.id', '=', 'category_style.category_id')
-                ->whereColumn('category_style.style_id', 'styles.id')
+                ->from('category_product')
+                ->join('categories', 'categories.id', '=', 'category_product.category_id')
+                ->whereColumn('category_product.product_id', 'products.id')
                 ->where('categories.path', 'like', ($path ?? '/-1/').'%'));
         }
 
         if ($query->collectionId !== null) {
-            $builder->whereExists(fn ($q) => $q->select(DB::raw(1))->from('collection_style')
-                ->whereColumn('collection_style.style_id', 'styles.id')
-                ->where('collection_style.collection_id', $query->collectionId));
+            $builder->whereExists(fn ($q) => $q->select(DB::raw(1))->from('collection_product')
+                ->whereColumn('collection_product.product_id', 'products.id')
+                ->where('collection_product.collection_id', $query->collectionId));
         }
 
         return $builder;
@@ -95,9 +95,9 @@ final class ProductSearch
      * Áp các nhóm lọc lên bản sao của truy vấn gốc. Facet của một nhóm bỏ chính nhóm đó (`$except`) để khách vẫn thấy
      * các lựa chọn khác trong nhóm.
      *
-     * @param  Builder<Style>  $base
+     * @param  Builder<Product>  $base
      * @param  string|null  $except  'brand' | 'attribute' | 'price' | 'option:<mã loại>'
-     * @return Builder<Style>
+     * @return Builder<Product>
      */
     private function scoped(Builder $base, ProductSearchQuery $query, ?string $except = null): Builder
     {
@@ -115,10 +115,10 @@ final class ProductSearch
         }
         if ($except !== 'price') {
             if ($query->priceMin !== null) {
-                $scope->where('styles.list_price_min', '>=', $query->priceMin);
+                $scope->where('products.list_price_min', '>=', $query->priceMin);
             }
             if ($query->priceMax !== null) {
-                $scope->where('styles.list_price_min', '<=', $query->priceMax);
+                $scope->where('products.list_price_min', '<=', $query->priceMax);
             }
         }
 
@@ -128,13 +128,13 @@ final class ProductSearch
     /**
      * Khoảng giá niêm yết của kết quả (áp mọi bộ lọc trừ bộ lọc giá); null khi không sản phẩm nào có giá.
      *
-     * @param  Builder<Style>  $base
+     * @param  Builder<Product>  $base
      * @return array{min: int, max: int}|null
      */
     private function priceFacet(Builder $base, ProductSearchQuery $query): ?array
     {
-        $range = $this->scoped($base, $query, except: 'price')->whereNotNull('styles.list_price_min')
-            ->selectRaw('min(styles.list_price_min) as lowest, max(styles.list_price_min) as highest')->toBase()->first();
+        $range = $this->scoped($base, $query, except: 'price')->whereNotNull('products.list_price_min')
+            ->selectRaw('min(products.list_price_min) as lowest, max(products.list_price_min) as highest')->toBase()->first();
 
         return $range === null || $range->lowest === null ? null : ['min' => (int) $range->lowest, 'max' => (int) $range->highest];
     }
@@ -142,7 +142,7 @@ final class ProductSearch
     /**
      * Sản phẩm có SKU đang bán mang giá trị của loại tuỳ chọn với mã lọc thuộc danh sách (OR trong một loại).
      *
-     * @param  Builder<Style>  $builder
+     * @param  Builder<Product>  $builder
      * @param  list<string>  $tokens
      */
     private function applyOptionFilter(Builder $builder, string $typeCode, array $tokens): void
@@ -152,7 +152,7 @@ final class ProductSearch
         }
 
         $builder->whereExists(fn ($q) => $this->activeOptionValues($q)
-            ->whereColumn('variants.style_id', 'styles.id')
+            ->whereColumn('variants.product_id', 'products.id')
             ->where('ot.code', $typeCode)
             ->whereIn(DB::raw(OptionFilterToken::SQL), $tokens));
     }
@@ -161,7 +161,7 @@ final class ProductSearch
      * Số sản phẩm theo mã lọc của từng loại tuỳ chọn lọc được. Facet của loại đang lọc bỏ chính bộ lọc đó để khách vẫn thấy
      * các lựa chọn khác trong loại; các loại còn lại dùng chung một truy vấn.
      *
-     * @param  Builder<Style>  $base
+     * @param  Builder<Product>  $base
      * @return array<string, array<string, int>>
      */
     private function optionFacets(Builder $base, ProductSearchQuery $query): array
@@ -171,11 +171,11 @@ final class ProductSearch
         $count = function (Builder $scope, ?string $only, array $skip) use (&$facets): void {
             $rows = $this->activeOptionValues(DB::table('variants'))
                 ->where('ot.is_filterable', true)
-                ->whereIn('variants.style_id', $scope->select('styles.id'))
+                ->whereIn('variants.product_id', $scope->select('products.id'))
                 ->when($only !== null, fn ($q) => $q->where('ot.code', $only))
                 ->when($only === null && $skip !== [], fn ($q) => $q->whereNotIn('ot.code', $skip))
                 ->groupBy('ot.code', DB::raw(OptionFilterToken::SQL))
-                ->selectRaw('ot.code as type_code, '.OptionFilterToken::SQL.' as token, count(distinct variants.style_id) as total')
+                ->selectRaw('ot.code as type_code, '.OptionFilterToken::SQL.' as token, count(distinct variants.product_id) as total')
                 ->get();
             foreach ($rows as $row) {
                 if ($row->token !== null && $row->token !== '') {
@@ -208,29 +208,29 @@ final class ProductSearch
     }
 
     /**
-     * @param  Builder<Style>  $builder
+     * @param  Builder<Product>  $builder
      * @param  list<int>  $brandIds
      */
     private function applyBrandFilter(Builder $builder, array $brandIds): void
     {
         if ($brandIds !== []) {
-            $builder->whereIn('styles.brand_id', $brandIds);
+            $builder->whereIn('products.brand_id', $brandIds);
         }
     }
 
     /**
      * Số sản phẩm theo thương hiệu (áp mọi bộ lọc trừ bộ lọc brand).
      *
-     * @param  Builder<Style>  $base
+     * @param  Builder<Product>  $base
      * @return array<int, int>
      */
     private function brandFacet(Builder $base, ProductSearchQuery $query): array
     {
         $scope = $this->scoped($base, $query, except: 'brand');
 
-        return $scope->whereNotNull('styles.brand_id')
-            ->groupBy('styles.brand_id')
-            ->selectRaw('styles.brand_id as brand_id, count(*) as total')
+        return $scope->whereNotNull('products.brand_id')
+            ->groupBy('products.brand_id')
+            ->selectRaw('products.brand_id as brand_id, count(*) as total')
             ->toBase()
             ->pluck('total', 'brand_id')
             ->mapWithKeys(fn ($total, $brandId): array => [(int) $brandId => (int) $total])
@@ -238,7 +238,7 @@ final class ProductSearch
     }
 
     /**
-     * @param  Builder<Style>  $builder
+     * @param  Builder<Product>  $builder
      * @param  array<int, list<int>>  $valuesByAttribute
      */
     private function applyAttributeFilter(Builder $builder, array $valuesByAttribute): void
@@ -247,30 +247,30 @@ final class ProductSearch
             if ($valueIds === []) {
                 continue;
             }
-            $builder->whereExists(fn ($q) => $q->select(DB::raw(1))->from('style_attribute_values')
-                ->whereColumn('style_attribute_values.style_id', 'styles.id')
-                ->whereIn('style_attribute_values.attribute_value_id', $valueIds));
+            $builder->whereExists(fn ($q) => $q->select(DB::raw(1))->from('product_attribute_values')
+                ->whereColumn('product_attribute_values.product_id', 'products.id')
+                ->whereIn('product_attribute_values.attribute_value_id', $valueIds));
         }
     }
 
     /**
      * Số sản phẩm theo giá trị thuộc tính spec + filterable (áp mọi bộ lọc trừ bộ lọc thuộc tính).
      *
-     * @param  Builder<Style>  $base
+     * @param  Builder<Product>  $base
      * @return array<int, int>
      */
     private function attributeFacet(Builder $base, ProductSearchQuery $query): array
     {
         $scope = $this->scoped($base, $query, except: 'attribute');
 
-        return DB::table('style_attribute_values')
-            ->join('attributes', 'attributes.id', '=', 'style_attribute_values.attribute_id')
+        return DB::table('product_attribute_values')
+            ->join('attributes', 'attributes.id', '=', 'product_attribute_values.attribute_id')
             ->where('attributes.kind', 'spec')
             ->where('attributes.is_filterable', true)
-            ->whereNotNull('style_attribute_values.attribute_value_id')
-            ->whereIn('style_attribute_values.style_id', $scope->select('styles.id'))
-            ->groupBy('style_attribute_values.attribute_value_id')
-            ->selectRaw('style_attribute_values.attribute_value_id as value_id, count(distinct style_attribute_values.style_id) as total')
+            ->whereNotNull('product_attribute_values.attribute_value_id')
+            ->whereIn('product_attribute_values.product_id', $scope->select('products.id'))
+            ->groupBy('product_attribute_values.attribute_value_id')
+            ->selectRaw('product_attribute_values.attribute_value_id as value_id, count(distinct product_attribute_values.product_id) as total')
             ->pluck('total', 'value_id')
             ->mapWithKeys(fn ($total, $valueId): array => [(int) $valueId => (int) $total])
             ->all();

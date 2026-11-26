@@ -99,7 +99,7 @@ final class VietQrServiceProvider extends PluginServiceProvider
 | Được | Không được |
 |---|---|
 | Bảng riêng `plg_<plugin>_*`, FK tới ID của Core (`ON DELETE RESTRICT`) | Thêm/đổi/xoá cột trên bảng Core ([ADR-027](../../19-adr/ADR-027-plugin-data-no-core-columns.md)) |
-| `meta` JSON trên `orders`, `order_lines`, `carts`, `customers`, `styles`, `variants`, **khoá theo plugin id** | Dùng `meta` cho dữ liệu cần lọc/báo cáo |
+| `meta` JSON trên `orders`, `order_lines`, `carts`, `customers`, `products`, `variants`, **khoá theo plugin id** | Dùng `meta` cho dữ liệu cần lọc/báo cáo |
 | Migration idempotent (`Schema::hasTable` trước khi tạo), `down()` dọn sạch bảng của mình | Sửa migration Core; Core FK sang bảng plugin |
 
 MySQL không rollback DDL: migration lỗi giữa chừng → plugin `failed`; sửa lỗi rồi cài lại phải chạy được từ trạng thái dở dang.

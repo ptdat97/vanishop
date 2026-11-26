@@ -45,12 +45,12 @@ final class Products
     }
 
     /**
-     * @param  list<int>  $styleIds
+     * @param  list<int>  $productIds
      * @return list<array<string, mixed>>
      */
-    public function byIds(array $styleIds, string $locale): array
+    public function byIds(array $productIds, string $locale): array
     {
-        return $styleIds === [] ? [] : $this->cards->forIds($styleIds, $locale);
+        return $productIds === [] ? [] : $this->cards->forIds($productIds, $locale);
     }
 
     /** Link nội bộ (`/…`) hoặc http(s) — chặn `javascript:`… */

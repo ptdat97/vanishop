@@ -18,7 +18,7 @@ use Modules\Pricing\Persistence\Models\PriceList;
 
 /**
  * Áp giá hàng loạt / xem trước trên trang làm việc bảng giá. Phạm vi: SKU đã chọn (`variant_ids`), sản phẩm đã chọn để thêm
- * (`style_ids`), hoặc mọi SKU trong bảng khớp ô tìm (`all` + `q`). Cách tính: `mode` + `value` (percent: phần trăm, cho phép
+ * (`product_ids`), hoặc mọi SKU trong bảng khớp ô tìm (`all` + `q`). Cách tính: `mode` + `value` (percent: phần trăm, cho phép
  * một chữ số thập phân), `round_to` (0 | 1000).
  */
 final class BulkPricesRequest extends FormRequest
@@ -32,8 +32,8 @@ final class BulkPricesRequest extends FormRequest
     {
         if ($this->fromProducts()) {
             $this->merge([
-                'scope' => 'styles',
-                'style_ids' => $this->input('ids'),
+                'scope' => 'products',
+                'product_ids' => $this->input('ids'),
                 'round_to' => $this->input('mode') === 'fixed' ? 0 : $this->input('round_to'),
             ]);
         }
@@ -45,11 +45,11 @@ final class BulkPricesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'scope' => ['required', Rule::in(['variants', 'styles', 'all'])],
+            'scope' => ['required', Rule::in(['variants', 'products', 'all'])],
             'variant_ids' => ['required_if:scope,variants', 'array', 'max:'.PriceListWorkspace::MAX_BULK],
             'variant_ids.*' => ['integer', 'min:1'],
-            'style_ids' => ['required_if:scope,styles', 'array', $this->fromProducts() ? 'max:2000' : 'max:200'],
-            'style_ids.*' => ['integer', 'min:1'],
+            'product_ids' => ['required_if:scope,products', 'array', $this->fromProducts() ? 'max:2000' : 'max:200'],
+            'product_ids.*' => ['integer', 'min:1'],
             'q' => ['nullable', 'string', 'max:100'],
             // Cách tính của Core + của plugin (BulkPriceMode, EP v3 X4); làm tròn của plugin (PriceRounding) thay "tới 1.000đ".
             'mode' => ['required', Rule::in([...BulkPriceRule::MODES, ...array_keys($this->workspace()->modes())])],
@@ -120,7 +120,7 @@ final class BulkPricesRequest extends FormRequest
     {
         $ids = match ($this->validated('scope')) {
             'variants' => array_map('intval', (array) $this->validated('variant_ids')),
-            'styles' => $workspace->variantIdsOfStyles(array_map('intval', (array) $this->validated('style_ids'))),
+            'products' => $workspace->variantIdsOfProducts(array_map('intval', (array) $this->validated('product_ids'))),
             default => $workspace->variantIds($list, trim((string) $this->validated('q'))),
         };
         $ids = array_values(array_unique($ids));

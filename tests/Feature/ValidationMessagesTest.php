@@ -16,7 +16,7 @@ it('form Admin báo lỗi tiếng Việt với tên trường dễ đọc, kể 
             'status' => 'Trạng thái không được để trống.',
             'translations.vi.name' => 'Tên (Tiếng Việt) không được để trống.',
         ])
-        ->assertSessionDoesntHaveErrors(['slug', 'style_code']);
+        ->assertSessionDoesntHaveErrors(['slug', 'product_code']);
 });
 
 it('khoá lồng nhau: dòng đánh số từ 1, ngôn ngữ theo nhãn cửa hàng; tên truyền riêng được giữ', function () {

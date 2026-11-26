@@ -26,7 +26,7 @@ interface Draft { sku: string; barcode: string | null; weight_gram: number | nul
 const props = defineProps<{
     /** '' khi sản phẩm chưa lưu. */
     productUrl: string;
-    styleCode: string;
+    productCode: string;
     /** SKU đã lưu của sản phẩm đơn (null khi thêm mới hoặc chưa có SKU). */
     variant: Variant | null;
     /** Giá trị cột góp vào của SKU đã lưu. */
@@ -55,7 +55,7 @@ init();
 watch(() => JSON.stringify([props.variant && [props.variant.id, props.variant.sku, props.variant.barcode, props.variant.status, props.variant.weight_gram], props.values]), init);
 
 const sku = computed({
-    get: () => (skuEdited.value ? draft.sku : props.styleCode.toUpperCase()),
+    get: () => (skuEdited.value ? draft.sku : props.productCode.toUpperCase()),
     set: (value: string) => {
         skuEdited.value = true;
         draft.sku = value;

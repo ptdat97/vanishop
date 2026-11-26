@@ -52,15 +52,15 @@ final class InCollectionsRule implements CartContentRule
             return Eligibility::none();
         }
 
-        $styleIds = [];
+        $productIds = [];
         foreach ($candidates->keys as $key) {
             $line = $context->line($key);
             if ($line !== null) {
-                $styleIds[] = $line->styleId;
+                $productIds[] = $line->productId;
             }
         }
 
-        $styleCollections = $this->collections->slugsForStyles($styleIds);
+        $productCollections = $this->collections->slugsForProducts($productIds);
 
         $matchingKeys = [];
         foreach ($candidates->keys as $key) {
@@ -69,7 +69,7 @@ final class InCollectionsRule implements CartContentRule
                 continue;
             }
 
-            $lineSlugs = $styleCollections[$line->styleId] ?? [];
+            $lineSlugs = $productCollections[$line->productId] ?? [];
             foreach ($lineSlugs as $slug) {
                 if (isset($allowedSlugs[$slug])) {
                     $matchingKeys[] = $key;

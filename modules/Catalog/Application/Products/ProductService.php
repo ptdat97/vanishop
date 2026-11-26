@@ -10,69 +10,69 @@ use InvalidArgumentException;
 use Modules\Catalog\Application\StaleRecord;
 use Modules\Catalog\Contracts\Data\ProductDraft;
 use Modules\Catalog\Domain\AttributeInputType;
+use Modules\Catalog\Domain\ProductStatus;
 use Modules\Catalog\Domain\PublishWindow;
-use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Events\ProductArchived;
 use Modules\Catalog\Events\ProductCreated;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Style;
+use Modules\Catalog\Persistence\Models\Product;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 /**
- * Use case sản phẩm (style). Mỗi thao tác là một transaction; event phát sau commit.
+ * Use case sản phẩm. Mỗi thao tác là một transaction; event phát sau commit.
  */
 final class ProductService
 {
     public function __construct(private readonly AuditLogger $audit) {}
 
-    public function create(ProductInput $input): Style
+    public function create(ProductInput $input): Product
     {
         $this->guard(null, $input);
 
-        return DB::transaction(function () use ($input): Style {
-            $style = new Style;
-            $this->fill($style, $input);
-            $style->save();
-            $this->syncRelations($style, $input);
+        return DB::transaction(function () use ($input): Product {
+            $product = new Product;
+            $this->fill($product, $input);
+            $product->save();
+            $this->syncRelations($product, $input);
 
-            Hook::action('vani.product.after_save', $style->id);
-            $this->audit->record('catalog.product.created', 'style', $style->id, ['style_code' => $style->style_code]);
-            event(new ProductCreated($style->id, $style->style_code));
+            Hook::action('vani.product.after_save', $product->id);
+            $this->audit->record('catalog.product.created', 'product', $product->id, ['product_code' => $product->product_code]);
+            event(new ProductCreated($product->id, $product->product_code));
 
-            return $style;
+            return $product;
         });
     }
 
-    public function update(Style $style, ProductInput $input, int $expectedLockVersion): Style
+    public function update(Product $product, ProductInput $input, int $expectedLockVersion): Product
     {
-        $this->guard($style->id, $input);
+        $this->guard($product->id, $input);
 
-        return DB::transaction(function () use ($style, $input, $expectedLockVersion): Style {
-            $updated = Style::query()->whereKey($style->id)->where('lock_version', $expectedLockVersion)->increment('lock_version');
+        return DB::transaction(function () use ($product, $input, $expectedLockVersion): Product {
+            $updated = Product::query()->whereKey($product->id)->where('lock_version', $expectedLockVersion)->increment('lock_version');
             if ($updated === 0) {
                 throw new StaleRecord;
             }
-            $style->lock_version = $expectedLockVersion + 1;
-            $style->syncOriginalAttribute('lock_version');
+            $product->lock_version = $expectedLockVersion + 1;
+            $product->syncOriginalAttribute('lock_version');
 
-            $wasArchived = $style->status === StyleStatus::Archived;
-            $this->fill($style, $input);
-            $style->save();
-            $this->syncRelations($style, $input);
+            $wasArchived = $product->status === ProductStatus::Archived;
+            $this->fill($product, $input);
+            $product->save();
+            $this->syncRelations($product, $input);
 
-            Hook::action('vani.product.after_save', $style->id);
-            $this->audit->record('catalog.product.updated', 'style', $style->id, ['style_code' => $style->style_code, 'status' => $style->status->value]);
+            Hook::action('vani.product.after_save', $product->id);
+            $this->audit->record('catalog.product.updated', 'product', $product->id, ['product_code' => $product->product_code, 'status' => $product->status->value]);
 
-            event($style->status === StyleStatus::Archived && ! $wasArchived
-                ? new ProductArchived($style->id, $style->style_code)
-                : new ProductUpdated($style->id, $style->style_code));
+            event($product->status === ProductStatus::Archived && ! $wasArchived
+                ? new ProductArchived($product->id, $product->product_code)
+                : new ProductUpdated($product->id, $product->product_code));
 
-            return $style->refresh();
+            return $product->refresh();
         });
     }
 
@@ -82,23 +82,23 @@ final class ProductService
      *
      * @return bool false khi đã ở trạng thái đó
      */
-    public function changeStatus(int $styleId, StyleStatus $status): bool
+    public function changeStatus(int $productId, ProductStatus $status): bool
     {
-        return DB::transaction(function () use ($styleId, $status): bool {
-            $style = Style::query()->whereKey($styleId)->lockForUpdate()->firstOrFail();
-            if ($style->status === $status) {
+        return DB::transaction(function () use ($productId, $status): bool {
+            $product = Product::query()->whereKey($productId)->lockForUpdate()->firstOrFail();
+            if ($product->status === $status) {
                 return false;
             }
-            $wasArchived = $style->status === StyleStatus::Archived;
-            $style->status = $status;
-            $style->lock_version++;
-            $style->save();
+            $wasArchived = $product->status === ProductStatus::Archived;
+            $product->status = $status;
+            $product->lock_version++;
+            $product->save();
 
-            Hook::action('vani.product.after_save', $style->id);
-            $this->audit->record('catalog.product.status_changed', 'style', $style->id, ['style_code' => $style->style_code, 'status' => $status->value]);
-            event($status === StyleStatus::Archived && ! $wasArchived
-                ? new ProductArchived($style->id, $style->style_code)
-                : new ProductUpdated($style->id, $style->style_code));
+            Hook::action('vani.product.after_save', $product->id);
+            $this->audit->record('catalog.product.status_changed', 'product', $product->id, ['product_code' => $product->product_code, 'status' => $status->value]);
+            event($status === ProductStatus::Archived && ! $wasArchived
+                ? new ProductArchived($product->id, $product->product_code)
+                : new ProductUpdated($product->id, $product->product_code));
 
             return true;
         });
@@ -108,12 +108,12 @@ final class ProductService
      * Dữ liệu hiện tại của sản phẩm dưới dạng ProductInput — để sửa một phần (nhập file, A4) qua `update` mà không làm mất bản
      * dịch, thuộc tính, khung giờ bán.
      */
-    public function inputFor(Style $style): ProductInput
+    public function inputFor(Product $product): ProductInput
     {
-        $style->loadMissing(['translations', 'attributeValues']);
-        $types = Attribute::query()->whereIn('id', $style->attributeValues->pluck('attribute_id'))->pluck('input_type', 'id');
+        $product->loadMissing(['translations', 'attributeValues']);
+        $types = Attribute::query()->whereIn('id', $product->attributeValues->pluck('attribute_id'))->pluck('input_type', 'id');
         $attributes = [];
-        foreach ($style->attributeValues->groupBy('attribute_id') as $attributeId => $rows) {
+        foreach ($product->attributeValues->groupBy('attribute_id') as $attributeId => $rows) {
             $attributes[(int) $attributeId] = match ($types->get($attributeId)) {
                 AttributeInputType::Multiselect => $rows->pluck('attribute_value_id')->map(fn ($id): int => (int) $id)->all(),
                 AttributeInputType::Select => (int) $rows->first()->attribute_value_id,
@@ -123,44 +123,44 @@ final class ProductService
         }
 
         return new ProductInput(
-            styleCode: $style->style_code,
-            slug: $style->slug,
-            status: $style->status,
-            translations: $style->translationsByLocale(),
-            publishedFrom: $style->published_from?->toDateTimeImmutable(),
-            publishedTo: $style->published_to?->toDateTimeImmutable(),
-            categoryIds: $style->categories()->pluck('categories.id')->map(fn ($id): int => (int) $id)->all(),
-            primaryCategoryId: $style->primary_category_id,
+            productCode: $product->product_code,
+            slug: $product->slug,
+            status: $product->status,
+            translations: $product->translationsByLocale(),
+            publishedFrom: $product->published_from?->toDateTimeImmutable(),
+            publishedTo: $product->published_to?->toDateTimeImmutable(),
+            categoryIds: $product->categories()->pluck('categories.id')->map(fn ($id): int => (int) $id)->all(),
+            primaryCategoryId: $product->primary_category_id,
             attributes: $attributes,
-            brandId: $style->brand_id,
-            trackInventory: $style->track_inventory,
+            brandId: $product->brand_id,
+            trackInventory: $product->track_inventory,
         );
     }
 
     /**
      * Chỉ xoá được bản nháp; sản phẩm đã bán dùng trạng thái archived để giữ lịch sử.
      */
-    public function deleteDraft(Style $style): void
+    public function deleteDraft(Product $product): void
     {
-        if ($style->status !== StyleStatus::Draft) {
+        if ($product->status !== ProductStatus::Draft) {
             throw ValidationException::withMessages(['status' => __('catalog::messages.only_draft_deletable')]);
         }
 
-        DB::transaction(function () use ($style): void {
-            foreach ($style->variants as $variant) {
+        DB::transaction(function () use ($product): void {
+            foreach ($product->variants as $variant) {
                 $variant->gallery()->delete();
             }
-            $style->variants()->delete(); // tổ hợp tuỳ chọn xoá theo khoá ngoại (cascade)
-            $style->delete();
-            $this->audit->record('catalog.product.deleted', 'style', $style->id, ['style_code' => $style->style_code]);
-            event(new ProductArchived($style->id, $style->style_code));
+            $product->variants()->delete(); // tổ hợp tuỳ chọn xoá theo khoá ngoại (cascade)
+            $product->delete();
+            $this->audit->record('catalog.product.deleted', 'product', $product->id, ['product_code' => $product->product_code]);
+            event(new ProductArchived($product->id, $product->product_code));
         });
     }
 
     /**
      * Kiểm tra dữ liệu liên quan (brand, danh mục, thuộc tính) và hook của plugin.
      */
-    private function guard(?int $styleId, ProductInput $input): void
+    private function guard(?int $productId, ProductInput $input): void
     {
         try {
             new PublishWindow($input->publishedFrom, $input->publishedTo);
@@ -185,8 +185,8 @@ final class ProductService
 
         $issues = Hook::collect('vani.product.before_save', new ProductDraft(
             brandId: $input->brandId,
-            styleId: $styleId,
-            styleCode: $input->styleCode,
+            productId: $productId,
+            productCode: $input->productCode,
             slug: $input->slug,
             status: $input->status->value,
             translations: $input->translations,
@@ -230,11 +230,11 @@ final class ProductService
         }
     }
 
-    private function fill(Style $style, ProductInput $input): void
+    private function fill(Product $product, ProductInput $input): void
     {
-        $style->fill([
+        $product->fill([
             'brand_id' => $input->brandId,
-            'style_code' => $input->styleCode,
+            'product_code' => $input->productCode,
             'slug' => $input->slug,
             'status' => $input->status,
             'published_from' => $input->publishedFrom,
@@ -243,13 +243,13 @@ final class ProductService
             'search_text' => $this->searchText($input),
         ]);
         if ($input->trackInventory !== null) {
-            $style->track_inventory = $input->trackInventory;
+            $product->track_inventory = $input->trackInventory;
         }
     }
 
     private function searchText(ProductInput $input): string
     {
-        $parts = [$input->styleCode];
+        $parts = [$input->productCode];
         foreach ($input->translations as $fields) {
             $parts[] = (string) ($fields['name'] ?? '');
         }
@@ -257,22 +257,22 @@ final class ProductService
         return VietnameseText::normalize(implode(' ', $parts));
     }
 
-    private function syncRelations(Style $style, ProductInput $input): void
+    private function syncRelations(Product $product, ProductInput $input): void
     {
-        $style->syncTranslations($input->translations);
+        $product->syncTranslations($input->translations);
 
         // Giữ thứ tự merchandising của danh mục vẫn được chọn; danh mục mới vào vị trí 0.
-        $existing = $style->categories()->pluck('category_style.position', 'categories.id')->all();
+        $existing = $product->categories()->pluck('category_product.position', 'categories.id')->all();
         $sync = [];
         foreach (array_unique($input->categoryIds) as $categoryId) {
             $sync[$categoryId] = ['position' => (int) ($existing[$categoryId] ?? 0)];
         }
-        $style->categories()->sync($sync);
+        $product->categories()->sync($sync);
 
-        $style->attributeValues()->delete();
+        $product->attributeValues()->delete();
         foreach ($input->attributes as $attributeId => $value) {
             foreach ($this->attributeRows((int) $attributeId, $value) as $row) {
-                $style->attributeValues()->create($row);
+                $product->attributeValues()->create($row);
             }
         }
     }

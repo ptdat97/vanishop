@@ -25,7 +25,7 @@ it('cập nhật giá, tài khoản và số món sau khi khách đăng nhập',
         ->fill('email', $customer->email)->fill('password', H::PASSWORD)
         ->click('form[data-vani-login] button[type="submit"]')
         ->assertPathIs('/tai-khoan')
-        ->navigate("/san-pham/{$variant->style->slug}?sku={$variant->sku}")
+        ->navigate("/san-pham/{$variant->product->slug}?sku={$variant->sku}")
         ->waitForText('300.000')
         ->click('form[data-variant-form] button[type="submit"]:not([name])')
         ->assertVisible('dialog[data-vani-offcanvas-cart][open]')

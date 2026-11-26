@@ -82,12 +82,12 @@ it('trình chiếu chỉ bật điều hướng khi có nhiều ảnh và dùng 
 it('Bán chạy: theo số lượng đã bán, bỏ sản phẩm không còn bán, thiếu thì bù sản phẩm mới nhất', function () {
     $hidden = T::product($this->brand->id, ['status' => 'draft']);
     $other = T::product($this->brand->id, ['name' => 'Áo mới']);
-    app()->instance(OrderStatistics::class, Mockery::mock(OrderStatistics::class, fn (MockInterface $mock) => $mock->shouldReceive('topStyles')->andReturn([
-        ['style_id' => $hidden->id, 'quantity' => 9], ['style_id' => $this->s->style_id, 'quantity' => 5],
+    app()->instance(OrderStatistics::class, Mockery::mock(OrderStatistics::class, fn (MockInterface $mock) => $mock->shouldReceive('topProducts')->andReturn([
+        ['product_id' => $hidden->id, 'quantity' => 9], ['product_id' => $this->s->product_id, 'quantity' => 5],
     ])));
 
     $products = app(BestsellersBlock::class)->resolve(['limit' => 2, 'days' => '30'], 'vi')['products'];
-    expect(array_column($products, 'id'))->toBe([$this->s->style_id, $other->id]);
+    expect(array_column($products, 'id'))->toBe([$this->s->product_id, $other->id]);
 });
 
 it('Video hero chỉ nhận https mp4/webm; Markdown bỏ HTML thô và link javascript:', function () {
@@ -128,7 +128,7 @@ it('Video hero 1.2.0: video chọn từ Thư viện ảnh (id), di động riên
 
 it('Sản phẩm theo tab: tab thiếu tên/nguồn hoặc không có sản phẩm bị bỏ; chọn tay giữ thứ tự id', function () {
     $tabs = app(ProductTabsBlock::class)->resolve([
-        'tab_1_label' => 'Chọn', 'tab_1_source' => 'ids', 'tab_1_value' => "{$this->m->style_id}, {$this->s->style_id}",
+        'tab_1_label' => 'Chọn', 'tab_1_source' => 'ids', 'tab_1_value' => "{$this->m->product_id}, {$this->s->product_id}",
         'tab_2_label' => 'Trống', 'tab_2_source' => 'category', 'tab_2_value' => 'khong-co',
         'tab_3_label' => '', 'tab_3_source' => 'newest',
     ], 'vi')['tabs'];
@@ -146,7 +146,7 @@ it('trang chủ render khối của plugin + script; giỏ có thanh "Đã xem" 
         ->assertSee('https://shop.test/plugins/vani.storefront-extras/extras.', false);
 
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1]);
-    $this->get('/gio-hang')->assertOk()->assertSee('data-exclude-slugs="'.$this->s->style->slug.'"', false);
+    $this->get('/gio-hang')->assertOk()->assertSee('data-exclude-slugs="'.$this->s->product->slug.'"', false);
 
     T::seed(fn () => app(Settings::class)->set(StorefrontExtrasServiceProvider::ID, 'recent_on_cart', false));
     $this->get('/gio-hang')->assertOk()->assertDontSee('data-extras-recent', false);
@@ -220,7 +220,7 @@ it('bộ sưu tập nổi bật dùng đúng locale, ảnh và thẻ sản phẩ
     [$collection, $cover] = T::seed(function (): array {
         $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']);
         $collection->syncTranslations(['vi' => ['name' => 'Mùa hè'], 'en' => ['name' => 'Summer edit', 'slug' => 'summer-edit']]);
-        $collection->styles()->attach($this->s->style_id);
+        $collection->products()->attach($this->s->product_id);
         $cover = app(MediaLibrary::class)->store(UploadedFile::fake()->image('cover.jpg', 1200, 1500));
         app(BuilderEngine::class)->save([['type' => 'extras_featured_collection', 'config' => [
             'collection' => (string) $collection->id, 'image' => $cover->id, 'image_alt' => 'Ảnh bìa mùa hè',
@@ -234,12 +234,12 @@ it('bộ sưu tập nổi bật dùng đúng locale, ảnh và thẻ sản phẩ
         ->assertSee('Mùa hè')->assertSee('alt="Ảnh bìa mùa hè"', false)->assertSee('width="1200"', false)->assertSee('height="1500"', false)
         ->assertSee('srcset="'.$cover->srcset().'"', false)
         ->assertSee('<strong>Phối đồ mùa hè</strong>')->assertDontSee('<strong>Phối đồ mùa hè</strong>', false)
-        ->assertSee('data-vani-product="'.$this->s->style->slug.'"', false);
+        ->assertSee('data-vani-product="'.$this->s->product->slug.'"', false);
     $this->get('/en')->assertOk()->assertSee('Summer edit')->assertSee('/en/collections/summer-edit');
     $this->getJson('/api/storefront/v1/pages/home', ['X-Vani-Locale' => 'en'])->assertOk()
         ->assertJsonPath('data.0.data.title', 'Summer edit')
         ->assertJsonCount(1, 'data.0.data.products')
-        ->assertJsonPath('data.0.data.products.0.id', $this->s->style_id);
+        ->assertJsonPath('data.0.data.products.0.id', $this->s->product_id);
 
     T::seed(fn () => $collection->update(['status' => 'hidden']));
     $this->get('/')->assertOk()->assertDontSee('data-block="extras_featured_collection"', false);
