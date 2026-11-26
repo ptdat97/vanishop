@@ -40,7 +40,7 @@
 | R14 | **Giữ hàng (reservation) phải atomic**: khoá dòng tồn, kiểm tra ATS và ghi reservation trong một transaction. | Concurrency test |
 | R15 | **Order phải giữ snapshot**: tên, SKU, giá, thuế, giảm giá, địa chỉ, thông tin khách, vận chuyển. Không join ngược catalog để hiển thị đơn. | Review + test |
 | R16 | **Không dùng FLOAT/DOUBLE/DECIMAL cho tiền.** Tiền là số nguyên minor unit (`BIGINT`) + currency. | CI grep migration + arch test |
-| R17 | Ledger (stock movement, loyalty, audit, order events, price history) là **append-only**: không UPDATE, không DELETE. | Review + test |
+| R17 | Ledger (stock movement, loyalty, audit, order events, price history) là **append-only**: không UPDATE, không DELETE. Lưu trữ — chuyển nguyên vẹn (giữ id, nội dung) sang bảng `*_archive` theo lô, như `vani:audit:archive` (db-refactor G3, Owner 2026-11-26) — không tính là xoá. | Review + test |
 | R18 | Mỗi Job/Listener phải **idempotent** và chịu được chạy lại. | Review |
 | R30 | **Trạng thái thương mại quan trọng** (tồn, hàng giữ, trạng thái/tiền của đơn, thanh toán, hoàn tiền, đổi trả, vận đơn) chỉ được đổi qua Application/Domain service của module sở hữu — không `UPDATE` trực tiếp từ controller, listener module khác, command hay plugin. Sửa dữ liệu vận hành cũng đi qua service (vd. `vani:inventory:verify --repair-reserved` ghi movement `reconcile`). | Arch test (controller/plugin không dùng `Persistence` của module khác) + review |
 | R31 | **Mọi thao tác đổi trạng thái có đường truy vết**: ledger/event của module (`stock_movements`, `order_events`, `return_events`, `shipment_events`, `payment_transactions`) hoặc `audit_logs` (thao tác nhân viên/operator, `--force`). | Review + feature test kiểm tra bản ghi truy vết |

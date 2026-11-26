@@ -38,6 +38,8 @@ return [
         'order_delivered' => 'Đã giao thành công',
         'order_out_delivery' => 'Đơn đang được giao',
         'order_placed' => 'Đặt đơn thành công',
+        'retention_months' => 'Giữ nhật ký gửi tin (tháng)',
+        'retention_months_help' => 'Nhật ký email/SMS/ZNS cũ hơn số tháng này bị xoá mỗi đêm.',
         'view_message_templates_send_log' => 'Xem mẫu tin và nhật ký gửi',
     ],
 ];

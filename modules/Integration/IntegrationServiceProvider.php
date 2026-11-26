@@ -27,6 +27,7 @@ use Modules\Integration\Application\OutboxWorker;
 use Modules\Integration\Console\ClientCommand;
 use Modules\Integration\Console\DispatchOutboxCommand;
 use Modules\Integration\Console\ProcessInboxCommand;
+use Modules\Integration\Console\PruneCommand;
 use Modules\Integration\Console\ReconcileOrdersCommand;
 use Modules\Integration\Console\ReplayCommand;
 use Modules\Integration\Console\WebhookCommand;
@@ -41,6 +42,9 @@ use Modules\Integration\Http\Middleware\RequireIntegrationScope;
 use Modules\Integration\Persistence\Models\IntegrationClient;
 use Modules\Shared\Contracts\Metrics;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Integration platform: event feed, outbox/inbox, webhook, Integration API v1, replay (ADR-005, ADR-013).
@@ -111,10 +115,15 @@ final class IntegrationServiceProvider extends ModuleServiceProvider
             $schedule->command('vani:integration:dispatch')->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command('vani:integration:process-inbox')->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command('vani:integration:reconcile-orders')->hourly()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:integration:prune')->dailyAt('04:10')->withoutOverlapping()->onOneServer();
         });
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', PruneCommand::SETTING, 'integration::texts.integration_service_provider.retention_months', 'int', 3,
+            help: 'integration::texts.integration_service_provider.retention_months_help', rules: ['min:1', 'max:120'], group: SettingGroup::Other,
+        ));
 
         if ($this->app->runningInConsole()) {
-            $this->commands([DispatchOutboxCommand::class, ProcessInboxCommand::class, ReplayCommand::class, ReconcileOrdersCommand::class, ClientCommand::class, WebhookCommand::class]);
+            $this->commands([DispatchOutboxCommand::class, ProcessInboxCommand::class, ReplayCommand::class, ReconcileOrdersCommand::class, ClientCommand::class, WebhookCommand::class, PruneCommand::class]);
         }
 
         if (! $this->app->routesAreCached()) {

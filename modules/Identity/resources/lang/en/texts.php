@@ -10,6 +10,8 @@ return [
     ],
     'identity_service_provider' => [
         'access_admin_area' => 'Access the admin area',
+        'audit_archive_months' => 'Archive audit log after (months)',
+        'audit_archive_months_help' => 'Audit entries older than this move to the archive table (audit_logs_archive) nightly — never deleted.',
         'manage_staff_roles' => 'Manage staff and roles',
         'staff' => 'Staff',
     ],

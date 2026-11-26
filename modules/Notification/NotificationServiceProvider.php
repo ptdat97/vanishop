@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Notification;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\Event;
 use Modules\Extension\Contracts\Extensions;
@@ -18,6 +19,7 @@ use Modules\Notification\Application\Listeners\SendOrderNotifications;
 use Modules\Notification\Application\Mail\MailSettings;
 use Modules\Notification\Application\Mail\SettingsMailTransport;
 use Modules\Notification\Application\NotificationService;
+use Modules\Notification\Console\PruneLogsCommand;
 use Modules\Notification\Contracts\Data\NotificationType;
 use Modules\Notification\Contracts\NotificationCatalog;
 use Modules\Notification\Contracts\NotificationChannel;
@@ -25,6 +27,7 @@ use Modules\Notification\Contracts\Notifier;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -55,6 +58,18 @@ final class NotificationServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        // Lưu giữ nhật ký gửi tin (db-refactor G3).
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', PruneLogsCommand::SETTING, 'notification::texts.notification_service_provider.retention_months', 'int', 6,
+            help: 'notification::texts.notification_service_provider.retention_months_help', rules: ['min:1', 'max:120'], group: SettingGroup::Other,
+        ));
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('vani:notification:prune')->dailyAt('04:20')->withoutOverlapping()->onOneServer();
+        });
+        if ($this->app->runningInConsole()) {
+            $this->commands([PruneLogsCommand::class]);
+        }
+
         $catalog = $this->app->make(NotificationCatalog::class);
         $order = ['store_name', 'customer_name', 'order_number', 'total'];
         $catalog->define(new NotificationType('order_placed', 'notification::texts.notification_service_provider.order_placed', $order));

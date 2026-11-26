@@ -6,6 +6,7 @@ namespace Modules\Ordering\Application;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -30,7 +31,7 @@ final class EloquentOrderStatistics implements OrderStatistics
         $this->guardRange($from, $to);
         $labels = $this->cancellationReasons->options();
 
-        return DB::table('order_events')->whereIn('type', ['status_changed', 'status_overridden'])
+        return $this->db()->table('order_events')->whereIn('type', ['status_changed', 'status_overridden'])
             ->where('to_status', OrderStatus::Cancelled->value)
             ->where('created_at', '>=', $this->utc($from))->where('created_at', '<', $this->utc($to))
             ->select('data->reason_code as reason_code')->selectRaw('count(*) as total')
@@ -53,7 +54,7 @@ final class EloquentOrderStatistics implements OrderStatistics
             ->selectRaw('count(*) as orders_count, coalesce(sum(total_amount), 0) as revenue, coalesce(sum(discount_amount), 0) as discount, coalesce(sum(shipping_amount), 0) as shipping, count(distinct customer_id) as customers_count')
             ->first();
 
-        $cancelled = DB::table('orders')
+        $cancelled = $this->db()->table('orders')
             ->where('order_status', OrderStatus::Cancelled->value)
             ->where('placed_at', '>=', $this->utc($from))
             ->where('placed_at', '<', $this->utc($to))
@@ -67,7 +68,7 @@ final class EloquentOrderStatistics implements OrderStatistics
 
     public function orderIdsWithPriceLists(array $priceListCodes): array
     {
-        return $priceListCodes === [] ? [] : DB::table('order_lines')->whereIn('price_list_code', $priceListCodes)->distinct()->orderBy('order_id')
+        return $priceListCodes === [] ? [] : $this->db()->table('order_lines')->whereIn('price_list_code', $priceListCodes)->distinct()->orderBy('order_id')
             ->pluck('order_id')->map(fn (mixed $id): int => (int) $id)->all();
     }
 
@@ -78,10 +79,10 @@ final class EloquentOrderStatistics implements OrderStatistics
             return new SalesTotals(0, 0, 0, 0, 0, 0);
         }
 
-        $rows = collect(array_chunk($orderIds, 1000))->map(fn (array $chunk) => DB::table('orders')->whereIn('id', $chunk)
+        $rows = collect(array_chunk($orderIds, 1000))->map(fn (array $chunk) => $this->db()->table('orders')->whereIn('id', $chunk)
             ->selectRaw('sum(case when order_status <> ? then 1 else 0 end) as orders_count, sum(case when order_status <> ? then total_amount else 0 end) as revenue, sum(case when order_status <> ? then discount_amount else 0 end) as discount, sum(case when order_status <> ? then shipping_amount else 0 end) as shipping, sum(case when order_status = ? then 1 else 0 end) as cancelled', array_fill(0, 5, OrderStatus::Cancelled->value))
             ->first());
-        $customers = DB::table('orders')->whereIn('id', $orderIds)->where('order_status', '<>', OrderStatus::Cancelled->value)->whereNotNull('customer_id')->distinct()->count('customer_id');
+        $customers = $this->db()->table('orders')->whereIn('id', $orderIds)->where('order_status', '<>', OrderStatus::Cancelled->value)->whereNotNull('customer_id')->distinct()->count('customer_id');
 
         return new SalesTotals(
             (int) $rows->sum('orders_count'), (int) $rows->sum('revenue'), (int) $rows->sum('discount'),
@@ -175,7 +176,7 @@ final class EloquentOrderStatistics implements OrderStatistics
     {
         $counts = array_fill_keys(array_map(fn (OrderStatus $status): string => $status->value, OrderStatus::cases()), 0);
 
-        foreach (DB::table('orders')->selectRaw('order_status, count(*) as total')->groupBy('order_status')->get() as $row) {
+        foreach ($this->db()->table('orders')->selectRaw('order_status, count(*) as total')->groupBy('order_status')->get() as $row) {
             $counts[(string) $row->order_status] = (int) $row->total;
         }
 
@@ -224,7 +225,7 @@ final class EloquentOrderStatistics implements OrderStatistics
 
     private function orders(DateTimeImmutable $from, DateTimeImmutable $to): Builder
     {
-        return DB::table('orders')
+        return $this->db()->table('orders')
             ->where('order_status', '!=', OrderStatus::Cancelled->value)
             ->where('placed_at', '>=', $this->utc($from))
             ->where('placed_at', '<', $this->utc($to));
@@ -232,7 +233,7 @@ final class EloquentOrderStatistics implements OrderStatistics
 
     private function lines(DateTimeImmutable $from, DateTimeImmutable $to): Builder
     {
-        return DB::table('order_lines')
+        return $this->db()->table('order_lines')
             ->join('orders', 'orders.id', '=', 'order_lines.order_id')
             ->where('orders.order_status', '!=', OrderStatus::Cancelled->value)
             ->where('orders.placed_at', '>=', $this->utc($from))
@@ -253,5 +254,14 @@ final class EloquentOrderStatistics implements OrderStatistics
         if ($from->diff($to)->days > self::MAX_DAYS) {
             throw new InvalidArgumentException('Khoảng thời gian tối đa '.self::MAX_DAYS.' ngày.');
         }
+    }
+
+    /**
+     * Kết nối đọc cho thống kê/báo cáo (db-refactor G3): `vanishop.database.report_connection` (vd. `mysql_report` trỏ tới
+     * read replica, bật bằng DB_REPORT_CONNECTION) — mặc định kết nối chính.
+     */
+    private function db(): ConnectionInterface
+    {
+        return DB::connection(config('vanishop.database.report_connection'));
     }
 }

@@ -38,6 +38,8 @@ return [
         'order_delivered' => 'Order delivered',
         'order_out_delivery' => 'Order out for delivery',
         'order_placed' => 'Order placed',
+        'retention_months' => 'Keep notification logs (months)',
+        'retention_months_help' => 'Email/SMS/ZNS delivery logs older than this are deleted nightly.',
         'view_message_templates_send_log' => 'View message templates and the send log',
     ],
 ];

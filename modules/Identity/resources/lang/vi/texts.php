@@ -10,6 +10,8 @@ return [
     ],
     'identity_service_provider' => [
         'access_admin_area' => 'Truy cập trang quản trị',
+        'audit_archive_months' => 'Lưu trữ nhật ký thao tác sau (tháng)',
+        'audit_archive_months_help' => 'Nhật ký thao tác cũ hơn số tháng này chuyển sang bảng lưu trữ (audit_logs_archive) mỗi đêm — không xoá.',
         'manage_staff_roles' => 'Quản lý nhân viên và vai trò',
         'staff' => 'Nhân viên',
     ],

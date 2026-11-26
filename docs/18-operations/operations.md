@@ -54,11 +54,32 @@ Job phải **idempotent**, có `tries`, `backoff`, `timeout`; job tích hợp th
 
 | Tần suất | Lệnh |
 |---|---|
-| Mỗi phút | Giải phóng reservation hết hạn; dispatcher outbox (bổ sung cho worker); kiểm tra thanh toán treo |
+| Mỗi phút | Giải phóng reservation hết hạn; dispatcher outbox (bổ sung cho worker); kiểm tra thanh toán treo; ghi lượt xem sản phẩm từ cache xuống DB (`vani:catalog:flush-views`) |
 | 5 phút | Health check connector; đồng bộ trạng thái vận đơn (fallback polling) |
 | Hằng giờ | Kích hoạt/kết thúc khuyến mãi & bảng giá theo lịch; giỏ bỏ quên |
-| Hằng đêm | Xoá ảnh đổi trả của yêu cầu đã đóng quá 90 ngày (`vani:returns:purge-attachments`, 03:45); snapshot tồn đối chiếu; chuyển điểm loyalty pending → available; hết hạn điểm; sitemap; feed sàn/quảng cáo; dọn log |
+| Hằng đêm | Xoá ảnh đổi trả của yêu cầu đã đóng quá 90 ngày (`vani:returns:purge-attachments`, 03:45); snapshot tồn đối chiếu; chuyển điểm loyalty pending → available; hết hạn điểm; sitemap; feed sàn/quảng cáo; dọn log: `vani:integration:prune` (04:10, sự kiện/outbox đã gửi/inbox đã xử lý > `integration.retention_months`, mặc định 3), `vani:notification:prune` (04:20, > 6 tháng), `vani:audit:archive` (04:30, nhật ký thao tác > 24 tháng chuyển sang `audit_logs_archive`), `vani:catalog:flush-views --compact` (04:40, lượt xem theo giờ > 30 ngày gộp theo ngày). Nhật ký nghiệp vụ (`order_events`, `shipment_events`, `return_events`, `customer_consent_events`) không xoá |
 | Hằng tháng | Xét hạng thành viên |
+
+### 4.1 Bảng lớn: read replica và partition (db-refactor G3)
+
+- **Read replica** (mặc định tắt): `DB_READ_HOST=host1,host2` → đọc từ replica, ghi vào `DB_HOST`, `sticky` (request vừa ghi đọc lại từ primary). Thống kê/báo cáo (`OrderStatistics`, plugin Reports) đọc qua kết nối `mysql_report` khi đặt `DB_REPORT_CONNECTION=mysql_report` + `DB_REPORT_HOST`. Màn hình cần số liệu tức thời (giữ hàng, checkout) luôn đọc primary trong transaction.
+- **Partition** (chưa bật — làm khi `stock_movements` hoặc `price_history` vượt ~50 triệu dòng): hai bảng này append-only và không có khoá ngoại. Bảng partition không có FK và khoá chính phải gồm cột partition. Làm ngoài giờ cao điểm, sau khi sao lưu:
+
+```sql
+ALTER TABLE stock_movements DROP PRIMARY KEY, ADD PRIMARY KEY (id, created_at);
+ALTER TABLE stock_movements PARTITION BY RANGE (TO_DAYS(created_at)) (
+    PARTITION p2026_11 VALUES LESS THAN (TO_DAYS('2026-12-01')),
+    PARTITION p2026_12 VALUES LESS THAN (TO_DAYS('2027-01-01')),
+    PARTITION pmax VALUES LESS THAN MAXVALUE
+);
+-- Mỗi tháng: tách pmax thành tháng mới.
+ALTER TABLE stock_movements REORGANIZE PARTITION pmax INTO (
+    PARTITION p2027_01 VALUES LESS THAN (TO_DAYS('2027-02-01')),
+    PARTITION pmax VALUES LESS THAN MAXVALUE
+);
+```
+
+  Kiểm tra trước: `SELECT COUNT(*)` và truy vấn nóng có điều kiện `created_at` (EXPLAIN phải có `partitions: …` thu hẹp). Không dựng lại bảng có chỉ mục FULLTEXT (`products`) ngoài kết nối của ứng dụng: kết nối `mysql` tắt stopword (`innodb_ft_enable_stopword = OFF`); dựng lại bằng client khác thì đặt biến này trước.
 
 ## 5. Cache
 

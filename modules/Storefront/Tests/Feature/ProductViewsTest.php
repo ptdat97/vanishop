@@ -23,11 +23,14 @@ it('beacon lượt xem (Storefront API, ADR-044): miễn CSRF, 204, gom theo gi�
 
     $this->post('/api/storefront/v1/products/views', ['product_id' => $this->product->id], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
     $this->post('/api/storefront/v1/products/views', ['product_id' => $this->product->id], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
+    expect(DB::table('product_view_stats')->count())->toBe(0); // đếm trong cache, ghi dồn mỗi phút
+    $this->artisan('vani:catalog:flush-views')->assertSuccessful();
     expect(DB::table('product_view_stats')->where('product_id', $this->product->id)->sum('views'))->toEqual(1);
     Event::assertDispatchedTimes(ProductViewed::class, 1);
 
     $this->travel(31)->minutes();
     $this->post('/api/storefront/v1/products/views', ['product_id' => $this->product->id], ['Sec-Fetch-Site' => 'same-origin']);
+    $this->artisan('vani:catalog:flush-views')->assertSuccessful();
     expect(app(ProductViewStatistics::class)->counts([$this->product->id]))->toBe([$this->product->id => 2]);
 
     $draft = T::product($this->brand->id, ['status' => 'draft']);
@@ -43,11 +46,13 @@ it('beacon cùng IP phân biệt trình duyệt và chỉ tin viewer_id gửi c�
     $send(str_repeat('a', 32), $headers);
     $send(str_repeat('a', 32), $headers);
     $send(str_repeat('b', 32), $headers);
+    $this->artisan('vani:catalog:flush-views')->assertSuccessful();
     expect(app(ProductViewStatistics::class)->counts([$this->product->id]))->toBe([$this->product->id => 2]);
 
     $headers['Sec-Fetch-Site'] = 'cross-site';
     $send(str_repeat('c', 32), $headers);
     $send(str_repeat('d', 32), $headers);
+    $this->artisan('vani:catalog:flush-views')->assertSuccessful();
     expect(app(ProductViewStatistics::class)->counts([$this->product->id]))->toBe([$this->product->id => 3]);
 });
 
@@ -86,3 +91,29 @@ it('PDP có khung "Đã xem gần đây" + beacon (HTML không phụ thuộc kh�
     $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff')
         ->get('/admin/catalog/products')->assertOk()->assertInertia(fn (Assert $page) => $page->where('products.data.0.views', 7));
 });
+
+it('gộp lượt xem theo giờ cũ hơn 30 ngày thành theo ngày, giữ tổng', function () {
+    $day = now()->utc()->subDays(40)->startOfDay();
+    DB::table('product_view_stats')->insert([
+        ['product_id' => $this->product->id, 'hour' => $day->copy()->addHours(9)->toDateTimeString(), 'views' => 3],
+        ['product_id' => $this->product->id, 'hour' => $day->copy()->addHours(20)->toDateTimeString(), 'views' => 4],
+        ['product_id' => $this->product->id, 'hour' => now()->utc()->subDays(2)->startOfHour()->toDateTimeString(), 'views' => 5],
+    ]);
+
+    $this->artisan('vani:catalog:flush-views --compact')->assertSuccessful();
+
+    expect(DB::table('product_view_stats')->orderBy('hour')->pluck('views', 'hour')->all())->toBe([$day->toDateTimeString() => 7, now()->utc()->subDays(2)->startOfHour()->toDateTimeString() => 5])
+        ->and(app(ProductViewStatistics::class)->counts([$this->product->id], 60))->toBe([$this->product->id => 12]);
+});
+
+it('đếm lượt xem cả khi cache store là database (increment không tự tạo khoá)', function () {
+    config(['cache.default' => 'database']);
+    $this->app->forgetInstance('cache.store');
+    $this->app->forgetInstance(ProductViewStatistics::class);
+
+    $this->post('/api/storefront/v1/products/views', ['product_id' => $this->product->id, 'viewer_id' => str_repeat('e', 32)], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
+    $this->artisan('vani:catalog:flush-views')->assertSuccessful();
+
+    expect(app(ProductViewStatistics::class)->counts([$this->product->id]))->toBe([$this->product->id => 1]);
+});
+

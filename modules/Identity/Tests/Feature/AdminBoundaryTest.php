@@ -28,9 +28,14 @@ function setBootEnv(string $name, ?string $value): void
     $_ENV[$name] = $_SERVER[$name] = $value;
 }
 
+beforeEach(function () {
+    $this->bootCacheStore = getenv('CACHE_STORE') === false ? null : (string) getenv('CACHE_STORE');
+});
+
 afterEach(function () {
     Cache::store('file')->forget('vani:admin-path');
-    setBootEnv('CACHE_STORE', null);
+    // Trả lại đúng giá trị trước test (phpunit.xml đặt `array`) — bỏ hẳn biến thì test sau đọc CACHE_STORE của .env.
+    setBootEnv('CACHE_STORE', $this->bootCacheStore);
 });
 
 it('khởi động dùng đường dẫn Admin đã lưu: route Admin, Horizon, Pulse dưới đường dẫn mới', function () {

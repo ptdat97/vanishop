@@ -26,6 +26,8 @@ return [
         'integrations' => 'Integrations',
         'manage_integration_clients_webhooks' => 'Manage Integration Clients and webhooks',
         'resend_failed_integration_messages' => 'Resend failed integration messages',
+        'retention_months' => 'Keep integration logs (months)',
+        'retention_months_help' => 'Events, sent outbox and processed inbox messages older than this are deleted nightly. Dead messages are kept for replay.',
         'view_integration_status_outbox_inbox' => 'View the integration status (outbox/inbox, clients)',
     ],
     'order_feed' => [

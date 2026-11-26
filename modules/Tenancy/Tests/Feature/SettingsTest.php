@@ -75,7 +75,7 @@ it('Admin → Cài đặt: form (lựa chọn lấy từ extension point), lưu/
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'settings.manage'])->create(), 'staff');
 
     $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Index')
-        ->where('system', fn ($groups) => collect($groups)->pluck('code')->all() === ['system:store', 'system:appearance', 'system:seo', 'system:sales', 'system:inventory', 'system:orders', 'system:mail']
+        ->where('system', fn ($groups) => collect($groups)->pluck('code')->all() === ['system:store', 'system:appearance', 'system:seo', 'system:sales', 'system:inventory', 'system:orders', 'system:mail', 'system:other']
             && collect($groups)->firstWhere('code', 'system:sales')['url'] === route('admin.settings.system', 'sales')
             && collect($groups)->firstWhere('code', 'system:sales')['count'] === 9
             && ! array_key_exists('fields', collect($groups)->first()))
@@ -90,7 +90,7 @@ it('Admin → Cài đặt: form (lựa chọn lấy từ extension point), lưu/
         ->where('fields', fn ($fields) => collect($fields)->pluck('key')->sort()->values()->all() === ['cart.abandoned_after_minutes', 'cart.max_line_quantity', 'cart.max_lines', 'cart.ttl_days', 'payment.capture_on', 'pricing.max_discount_percent', 'pricing.strategy', 'storefront.guest_checkout', 'tax.calculator']
             && collect($fields)->firstWhere('key', 'tax.calculator')['options'] === ['none' => 'none', 'vn_vat_inclusive' => 'vn_vat_inclusive', 'zero_tax' => 'zero_tax']));
     $this->get('/admin/settings/system/khong-co')->assertNotFound();
-    $this->get('/admin/settings/system/other')->assertNotFound(); // nhóm không có cấu hình nào
+    $this->get('/admin/settings/system/other')->assertOk(); // lưu giữ dữ liệu (db-refactor G3) nằm ở nhóm Khác
 
     $this->put('/admin/settings', ['namespace' => 'core', 'values' => ['tax.calculator' => 'zero_tax', 'returns.policy' => '']])->assertSessionHasNoErrors();
     expect(app(Settings::class)->get('core', 'tax.calculator'))->toBe('zero_tax')
@@ -122,8 +122,8 @@ it('cấu hình hệ thống không khai nhóm → nhóm "Khác" (cuối danh s�
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'settings.manage'])->create(), 'staff');
 
     $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->where('system', fn ($groups) => collect($groups)->last()['code'] === 'system:other'
-        && collect($groups)->last()['labels'] === ['Chưa xếp nhóm']));
-    $this->get('/admin/settings/system/other')->assertOk()->assertInertia(fn (Assert $page) => $page->where('fields.0.key', 'test.ungrouped'));
+        && in_array('Chưa xếp nhóm', collect($groups)->last()['labels'], true)));
+    $this->get('/admin/settings/system/other')->assertOk()->assertInertia(fn (Assert $page) => $page->where('fields', fn ($fields) => collect($fields)->contains('key', 'test.ungrouped')));
 });
 
 it('rule validate thêm của cấu hình (0.3.43): sai → lỗi theo trường, không lưu; rỗng = đặt lại không bị kiểm tra', function () {

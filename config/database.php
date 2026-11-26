@@ -48,6 +48,13 @@ return [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
+            // Read replica (db-refactor G3, mặc định tắt): DB_READ_HOST=host1,host2 → đọc từ replica, ghi vào DB_HOST; sticky:
+            // request vừa ghi đọc lại từ primary (không thấy dữ liệu cũ của chính mình).
+            ...(env('DB_READ_HOST') ? [
+                'read' => ['host' => array_map('trim', explode(',', (string) env('DB_READ_HOST')))],
+                'write' => ['host' => [env('DB_HOST', '127.0.0.1')]],
+                'sticky' => true,
+            ] : []),
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
             'username' => env('DB_USERNAME', 'root'),
@@ -68,6 +75,28 @@ return [
                 // db-refactor §4.1: chỉ mục FULLTEXT ngram của products.search_text không dùng stopword (danh sách mặc định có
                 // "an", "la", "in"… là bigram của từ tiếng Việt). Thiết lập được chụp khi chỉ mục được dựng — cả khi InnoDB
                 // dựng lại bảng (TRUNCATE, OPTIMIZE, ALTER kiểu COPY) — nên đặt cho mọi phiên.
+                Mysql::ATTR_INIT_COMMAND => 'SET SESSION innodb_ft_enable_stopword = OFF',
+            ]) : [],
+        ],
+
+        // Kết nối đọc cho báo cáo (vanishop.database.report_connection): như mysql, host = DB_REPORT_HOST (read replica).
+        'mysql_report' => [
+            'driver' => 'mysql',
+            'host' => env('DB_REPORT_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_REPORT_PORT', env('DB_PORT', '3306')),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_REPORT_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('DB_REPORT_PASSWORD', env('DB_PASSWORD', '')),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'isolation_level' => env('DB_ISOLATION_LEVEL', 'READ COMMITTED'),
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 Mysql::ATTR_INIT_COMMAND => 'SET SESSION innodb_ft_enable_stopword = OFF',
             ]) : [],
         ],

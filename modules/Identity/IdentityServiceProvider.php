@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Identity;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
@@ -13,6 +14,7 @@ use Modules\Identity\Application\EloquentStaffNames;
 use Modules\Identity\Application\InMemoryPermissionRegistry;
 use Modules\Identity\Application\RbacAuthorizer;
 use Modules\Identity\Console\AdminPathCommand;
+use Modules\Identity\Console\ArchiveAuditCommand;
 use Modules\Identity\Console\CreateStaffCommand;
 use Modules\Identity\Console\ResetStaffPasswordCommand;
 use Modules\Identity\Contracts\AdminNavigation;
@@ -24,6 +26,9 @@ use Modules\Identity\Http\Middleware\ConfigureAdminSession;
 use Modules\Identity\Http\Middleware\ResolveStaffContext;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
+use Modules\Tenancy\Contracts\Settings;
 
 final class IdentityServiceProvider extends ModuleServiceProvider
 {
@@ -94,7 +99,15 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         $this->bootModuleResources();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([CreateStaffCommand::class, ResetStaffPasswordCommand::class, AdminPathCommand::class]);
+            $this->commands([CreateStaffCommand::class, ResetStaffPasswordCommand::class, AdminPathCommand::class, ArchiveAuditCommand::class]);
         }
+        // Lưu trữ nhật ký thao tác (db-refactor G3).
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', ArchiveAuditCommand::SETTING, 'identity::texts.identity_service_provider.audit_archive_months', 'int', 24,
+            help: 'identity::texts.identity_service_provider.audit_archive_months_help', rules: ['min:6', 'max:240'], group: SettingGroup::Other,
+        ));
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('vani:audit:archive')->dailyAt('04:30')->withoutOverlapping()->onOneServer();
+        });
     }
 }

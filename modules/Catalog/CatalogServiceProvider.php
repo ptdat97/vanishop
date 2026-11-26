@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,7 @@ use Modules\Catalog\Application\Products\ProductListPrices;
 use Modules\Catalog\Application\Products\ProductViewCounter;
 use Modules\Catalog\Application\Search\ProductListingProjector;
 use Modules\Catalog\Application\StorefrontCatalog;
+use Modules\Catalog\Console\FlushViewsCommand;
 use Modules\Catalog\Console\MediaCacheCommand;
 use Modules\Catalog\Console\RebuildListingCommand;
 use Modules\Catalog\Contracts\CatalogImporter;
@@ -105,8 +107,14 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         Event::listen(SettingChanged::class, DeclareSettingMedia::class);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([MediaCacheCommand::class, RebuildListingCommand::class]);
+            $this->commands([MediaCacheCommand::class, RebuildListingCommand::class, FlushViewsCommand::class]);
         }
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            // Lượt xem đếm trong cache, ghi dồn xuống DB (db-refactor G3).
+            $schedule->command('vani:catalog:flush-views')->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:catalog:flush-views --compact')->dailyAt('04:40')->withoutOverlapping()->onOneServer();
+        });
 
         // Không lưu tên class vào cột *_type (đổi namespace không làm hỏng dữ liệu).
         Relation::morphMap(['catalog.category' => Category::class, 'catalog.variant' => Variant::class]);

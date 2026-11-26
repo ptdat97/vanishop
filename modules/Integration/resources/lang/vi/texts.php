@@ -26,6 +26,8 @@ return [
         'integrations' => 'Tích hợp',
         'manage_integration_clients_webhooks' => 'Quản lý Integration Client và webhook',
         'resend_failed_integration_messages' => 'Gửi lại message tích hợp lỗi',
+        'retention_months' => 'Giữ log tích hợp (tháng)',
+        'retention_months_help' => 'Sự kiện, outbox đã gửi và inbox đã xử lý cũ hơn số tháng này bị xoá mỗi đêm. Message lỗi (dead) giữ lại để phát lại.',
         'view_integration_status_outbox_inbox' => 'Xem tình trạng tích hợp (outbox/inbox, client)',
     ],
     'order_feed' => [

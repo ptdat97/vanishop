@@ -9,7 +9,7 @@ Nhân viên, vai trò theo phạm vi (Owner/location), đăng nhập Admin, nh�
 ## Bất biến
 
 - Mọi thao tác Admin kiểm quyền qua `Authorizer`/Gate theo phạm vi.
-- `audit_logs` chỉ thêm, không sửa/xoá (R17, R31).
+- `audit_logs` chỉ thêm, không sửa (R17, R31). Dòng cũ hơn `identity.audit_archive_months` (mặc định 24) được chuyển **nguyên vẹn** (giữ id) sang `audit_logs_archive` bởi `vani:audit:archive` — không mất truy vết.
 - Nhân viên không tự khoá/đổi vai trò của mình; chỉ Owner cấp quyền `*`.
 
 ## Bảng sở hữu
@@ -19,6 +19,7 @@ Nhân viên, vai trò theo phạm vi (Owner/location), đăng nhập Admin, nh�
 - `role_permissions`
 - `staff_role_assignments`
 - `audit_logs`
+- `audit_logs_archive`
 
 ## Contract công bố
 
