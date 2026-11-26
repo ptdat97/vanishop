@@ -4,7 +4,6 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\VariantImages;
-use Modules\Catalog\Contracts\CollectionPages;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
@@ -355,15 +354,11 @@ it('bộ sưu tập nổi bật vừa màn hình nhỏ và dẫn tới đúng t�
         app(PluginManager::class)->install(StorefrontExtrasServiceProvider::ID);
         app(PluginManager::class)->enable(StorefrontExtrasServiceProvider::ID);
         app()->register(StorefrontExtrasServiceProvider::class);
-        $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active']);
-        $collection->syncTranslations(['vi' => ['name' => 'Bộ sưu tập mùa hè']]);
-        $collection->products()->attach($this->product->id);
         $cover = app(MediaLibrary::class)->store(UploadedFile::fake()->image('collection.jpg', 800, 1000));
-        app(CollectionPages::class)->save($collection->id, [
-            ['type' => 'hero', 'zone' => 'banner', 'config' => ['title' => 'Bộ sưu tập mùa hè', 'image' => $cover->id]],
-            ['type' => 'rich_text', 'zone' => 'before', 'config' => ['body' => '<p>Chất liệu cho ngày nắng</p>']],
-            ['type' => 'rich_text', 'zone' => 'after', 'config' => ['body' => '<p>Gợi ý phối đồ</p>']],
-        ], [$cover->id]);
+        // Banner trang bộ sưu tập: ảnh + mô tả của chính bộ sưu tập (Builder chỉ còn cho trang chủ từ 0.5.87).
+        $collection = ProductCollection::query()->create(['slug' => 'mua-he', 'status' => 'active', 'image_media_id' => $cover->id]);
+        $collection->syncTranslations(['vi' => ['name' => 'Bộ sưu tập mùa hè', 'description' => 'Chất liệu cho ngày nắng']]);
+        $collection->products()->attach($this->product->id);
         app(BuilderEngine::class)->save([['type' => 'extras_featured_collection', 'config' => [
             'collection' => (string) $collection->id,
             'image' => $cover->id,
@@ -380,7 +375,6 @@ it('bộ sưu tập nổi bật vừa màn hình nhỏ và dẫn tới đúng t�
         ->assertVisible('[data-collection-banner] img')
         ->assertVisible('[data-vani-product="'.$this->product->slug.'"]')
         ->assertSee('Chất liệu cho ngày nắng')
-        ->assertSee('Gợi ý phối đồ')
         ->assertNoJavaScriptErrors();
     $page->resize(320, 844);
     $metrics = mobilePageMetrics($page);

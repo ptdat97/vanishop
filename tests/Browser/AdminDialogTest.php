@@ -20,7 +20,7 @@ beforeEach(function () {
 });
 
 it('popup: giữ Tab/Shift+Tab trong popup, khoá cuộn nền, Esc đóng và trả focus về nút đã mở', function () {
-    $page = visit($this->edit)->click('Chọn từ thư viện')->assertSee('Chọn ảnh danh mục');
+    $page = visit($this->edit)->click('Chọn Ảnh')->assertSee('Chọn Ảnh từ thư viện');
     $insideDialog = 'document.querySelector(\'[role="dialog"]\').contains(document.activeElement)';
 
     expect($page->script('document.body.style.overflow'))->toBe('hidden');
@@ -28,29 +28,34 @@ it('popup: giữ Tab/Shift+Tab trong popup, khoá cuộn nền, Esc đóng và t
     $page->keys('[role="dialog"]', array_fill(0, 30, 'Tab'));
     expect($page->script($insideDialog))->toBeTrue();
     $page->keys('[role="dialog"]', array_fill(0, 30, 'Shift+Tab'));
+    $page->keys('[role="dialog"]', array_fill(0, 30, 'Shift+Tab'));
     expect($page->script($insideDialog))->toBeTrue();
 
-    $page->keys('[role="dialog"]', ['Escape'])->assertDontSee('Chọn ảnh danh mục');
-    expect($page->script('document.activeElement?.textContent?.trim()'))->toBe('Chọn từ thư viện')
+    $page->keys('[role="dialog"]', ['Escape'])->assertDontSee('Chọn Ảnh từ thư viện');
+    expect($page->script('document.activeElement?.textContent?.trim()'))->toBe('Chọn Ảnh')
         ->and($page->script('document.body.style.overflow'))->toBe('');
     $page->assertNoJavaScriptErrors();
 });
 
-it('ô tải ảnh chặn tệp sai loại và chấp nhận ảnh khi chọn lại', function () {
+it('thư viện ảnh: chặn tệp sai loại ngay trên trình duyệt, nhận ảnh đúng vào hàng chờ tải; chọn ảnh có sẵn gắn vào ô ảnh', function () {
     $fixtures = Storage::fake('local');
     Storage::fake('public');
     $fixtures->put('sai.txt', 'not an image');
     $fixtures->put('banner.png', UploadedFile::fake()->image('banner.png')->getContent());
+    T::seed(fn () => app(MediaLibrary::class)->store(UploadedFile::fake()->image('anh-co-san.jpg', 400, 400)));
 
+    // Phần gửi lên server (trường `images[]`) không kiểm ở đây: server thử của Pest không đọc tên trường dạng mảng — đã có
+    // feature test MediaLibraryTest.
     visit($this->edit)
-        ->attach('[data-file-input] input', $fixtures->path('sai.txt'))
+        ->click('Chọn Ảnh')
+        ->attach('[role="dialog"] input[type="file"]', $fixtures->path('sai.txt'))
         ->assertSee('sai.txt: loại tệp không được hỗ trợ.')
-        ->assertScript("Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Tải lên').disabled", true)
-        ->attach('[data-file-input] input', $fixtures->path('banner.png'))
-        ->assertDontSee('sai.txt: loại tệp không được hỗ trợ.')
-        ->click('Tải lên')
-        ->assertSee('Gỡ ảnh')
-        ->assertNoJavaScriptErrors();
+        ->attach('[role="dialog"] input[type="file"]', $fixtures->path('banner.png'))
+        ->assertSeeIn('[data-upload-queue]', 'banner.png')
+        ->click('[role="dialog"] [title="anh-co-san.jpg"]')
+        ->click('[role="dialog"] button:has-text("Chọn 1 ảnh")')
+        ->assertDontSee('Chọn Ảnh từ thư viện')
+        ->assertSee('Đổi Ảnh');
 });
 
 it('chọn ảnh banner trong form danh mục và lưu cùng nội dung banner', function () {
