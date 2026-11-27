@@ -16,6 +16,7 @@ Củng cố cache trang theo tình huống vận hành ([ADR-051](../19-adr/ADR-
 - Khoá cache phân biệt http/https; API `products?ids=` không lưu.
 - Store cache lỗi: trang vẫn phục vụ (`cache_error`). Lô xoá lỗi giữa chừng không mất tag.
 - `vani:production:check`: cảnh báo cache trang dùng store `file`/`array`.
+- Bản cache trang hết hạn theo mốc `expires_at` đã tính lúc lưu (không chỉ TTL của store); thời gian theo `now()` thống nhất. Đã chạy toàn bộ test với `CACHE_STORE=redis`.
 
 ## 0.5.106 — 2026-11-27 · Extension API 1.45.0
 

@@ -94,7 +94,7 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
                 $remaining === [] ? $store->forget(self::PENDING_KEY) : $store->put(self::PENDING_KEY, $remaining, self::PENDING_TTL_SECONDS);
             });
         }
-        $this->cache->put(self::PROCESSED_AT_KEY, time(), self::STALE_AFTER_SECONDS * 10);
+        $this->cache->put(self::PROCESSED_AT_KEY, now()->getTimestamp(), self::STALE_AFTER_SECONDS * 10);
 
         return count($pending);
     }

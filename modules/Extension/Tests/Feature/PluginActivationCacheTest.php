@@ -9,6 +9,7 @@ use Modules\Extension\Persistence\Models\PluginRecord;
 */
 
 it('bản ghi plugin đổi mà không xoá cache: tối đa một ngày sau tự đọc lại DB', function () {
+    $this->useArrayCache(); // travel() vượt TTL: Redis tính TTL theo đồng hồ thật
     expect(app(PluginActivation::class)->isActive('vani.wishlist'))->toBeFalse();
     PluginRecord::query()->create(['id' => 'vani.wishlist', 'version' => '1.5.0', 'status' => PluginStatus::Enabled, 'installed_at' => now()]);
 

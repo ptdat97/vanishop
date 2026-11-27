@@ -56,7 +56,7 @@ final class CachedResponses
             $response = $this->render($request, $next, $api);
             $shareable = $this->unshareableReason($request, $response) === null;
 
-            return $this->finish($request, $response, 'BYPASS', $reason, $shareable, $api, $this->collectedTags(), $shareable ? time() + $this->ttl($request) : null);
+            return $this->finish($request, $response, 'BYPASS', $reason, $shareable, $api, $this->collectedTags(), $shareable ? now()->getTimestamp() + $this->ttl($request) : null);
         }
 
         $entry = $this->store->get($key, $schedulerStale);
@@ -119,7 +119,7 @@ final class CachedResponses
             default => 'stale_render',
         };
 
-        return ['response' => $response, 'stored' => $stored, 'reason' => $reason, 'tags' => $tags, 'expires_at' => time() + max(0, $ttl)];
+        return ['response' => $response, 'stored' => $stored, 'reason' => $reason, 'tags' => $tags, 'expires_at' => now()->getTimestamp() + max(0, $ttl)];
     }
 
     /**
@@ -180,7 +180,7 @@ final class CachedResponses
      */
     private function ttl(Request $request): int
     {
-        $now = time();
+        $now = now()->getTimestamp();
         $until = array_filter([
             PublicPageExpiry::timestamp($request),
             app(PriceListSchedule::class)->nextChangeAfter($now),
@@ -231,7 +231,7 @@ final class CachedResponses
         $fresh = (int) ($config['s_maxage'] ?? 300);
         $stale = (int) ($config['stale_while_revalidate'] ?? 600);
         if ($expiresAt !== null) {
-            $remaining = max(0, $expiresAt - time());
+            $remaining = max(0, $expiresAt - now()->getTimestamp());
             $fresh = min($fresh, $remaining);
             $stale = min($stale, $remaining - $fresh);
         }

@@ -31,7 +31,7 @@ beforeEach(function () {
     config(['vanishop.storefront.page_cache.mode' => 'app']);
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
     $this->product = '/san-pham/'.$this->s->product->slug;
-    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, time(), 3600);
+    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, now()->getTimestamp(), 3600);
     $this->artisan('vani:page-cache:invalidate')->assertSuccessful();
 });
 
@@ -129,7 +129,7 @@ it('sản phẩm hẹn giờ hiện: trang thương hiệu hết hạn đúng l�
     $this->get($page)->assertHeader('X-Vani-Cache', 'HIT');
 
     $this->travel(11)->minutes();
-    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, time(), 3600);
+    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, now()->getTimestamp(), 3600);
 
     $this->get($page)->assertHeader('X-Vani-Cache', 'MISS')->assertSee('Áo hẹn giờ');
 });

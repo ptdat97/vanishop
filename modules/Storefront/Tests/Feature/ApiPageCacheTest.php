@@ -21,7 +21,7 @@ beforeEach(function () {
     H::fakeOtp();
     ['s' => $this->s] = C::store();
     $this->api = '/api/storefront/v1/products/'.$this->s->product->slug;
-    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, time(), 3600);
+    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, now()->getTimestamp(), 3600);
     $this->runBatch = fn () => $this->artisan('vani:page-cache:invalidate')->assertSuccessful();
     ($this->runBatch)();
 });

@@ -29,7 +29,7 @@ beforeEach(function () {
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
     $this->product = '/san-pham/'.$this->s->product->slug;
     // Cron đang chạy: request không tự chạy lô xoá.
-    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, time(), 3600);
+    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, now()->getTimestamp(), 3600);
     $this->runBatch = fn () => $this->artisan('vani:page-cache:invalidate')->assertSuccessful();
     // Bỏ tag do dữ liệu mẫu vừa tạo.
     ($this->runBatch)();
@@ -104,7 +104,7 @@ it('bảng giá hẹn giờ: bản cache hết hạn đúng lúc sale bắt đ�
     $this->get($this->product)->assertHeader('X-Vani-Cache', 'HIT');
 
     $this->travel(11)->minutes();
-    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, time(), 3600);
+    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, now()->getTimestamp(), 3600);
 
     $this->get($this->product)->assertHeader('X-Vani-Cache', 'MISS')->assertSee('250.000');
 });
@@ -130,7 +130,7 @@ it('không có cron: request thấy lô cuối quá hạn thì tự chạy lô s
     $sale = P::priceList(['type' => 'sale', 'priority' => 10, 'status' => 'inactive'], [$this->s->id => [250_000]]);
     $this->get($this->product);
     app(PriceListSchedule::class)->schedule($sale->id, null, null, true, 'sale');
-    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, time() - 600, 3600);
+    Cache::put(BatchedPageCacheInvalidator::PROCESSED_AT_KEY, now()->getTimestamp() - 600, 3600);
 
     $this->get($this->product)->assertHeader('X-Vani-Cache', 'HIT');
 

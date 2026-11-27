@@ -58,9 +58,13 @@ final class PageCacheStore
         if (! is_array($entry) || ! isset($entry['content'], $entry['tags'], $entry['versions'], $entry['expires_at'])) {
             return null;
         }
+        // Hết hạn theo mốc đã tính lúc lưu (lịch bảng giá, khung giờ sản phẩm), không chỉ dựa vào TTL của store.
+        if ((int) $entry['expires_at'] <= now()->getTimestamp()) {
+            return null;
+        }
         [$current, $extra] = $this->versions->current($entry['tags'], [BatchedPageCacheInvalidator::PROCESSED_AT_KEY]);
         $processedAt = $extra[BatchedPageCacheInvalidator::PROCESSED_AT_KEY] ?? null;
-        $schedulerStale = ! is_numeric($processedAt) || time() - (int) $processedAt > BatchedPageCacheInvalidator::STALE_AFTER_SECONDS;
+        $schedulerStale = ! is_numeric($processedAt) || now()->getTimestamp() - (int) $processedAt > BatchedPageCacheInvalidator::STALE_AFTER_SECONDS;
 
         return $current === $entry['versions'] ? $entry : null;
     }
@@ -85,8 +89,8 @@ final class PageCacheStore
             }
 
             return $this->cache->put($key, [
-                'content' => $content, 'status' => $status, 'headers' => $headers, 'tags' => $tags, 'versions' => $versions, 'stored_at' => time(),
-                'expires_at' => time() + $ttl,
+                'content' => $content, 'status' => $status, 'headers' => $headers, 'tags' => $tags, 'versions' => $versions, 'stored_at' => now()->getTimestamp(),
+                'expires_at' => now()->getTimestamp() + $ttl,
             ], $ttl);
         }, false);
     }
