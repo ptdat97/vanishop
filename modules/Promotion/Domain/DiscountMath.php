@@ -22,6 +22,22 @@ final class DiscountMath
     }
 
     /**
+     * Kẹp tổng giảm của một khuyến mãi về `max` (vd. "giảm 10%, tối đa 50.000đ"), chia lại theo tỷ trọng mức giảm của từng dòng.
+     *
+     * @param  array<int, Money>  $discounts
+     * @return array<int, Money>
+     */
+    public static function capTotal(array $discounts, Money $max): array
+    {
+        $total = array_sum(array_map(fn (Money $money): int => max(0, $money->amount), $discounts));
+        if ($total <= $max->amount) {
+            return $discounts;
+        }
+
+        return self::amountOff($discounts, $max);
+    }
+
+    /**
      * Giảm một khoản cố định cho nhóm dòng, chia theo tỷ trọng số tiền còn lại; không vượt tổng còn lại.
      *
      * @param  array<int, Money>  $remaining
@@ -42,19 +58,24 @@ final class DiscountMath
     }
 
     /**
-     * Kẹp giảm giá để tổng giảm của mỗi dòng không vượt maxBasisPoints × tổng dòng (giá sàn).
+     * Kẹp giảm giá để tổng giảm của mỗi dòng không vượt maxBasisPoints × thành tiền theo giá gốc (giá sàn). Dòng đang bán
+     * dưới giá gốc (bảng giá sale/thành viên, giá gạch) đã dùng một phần trần: phần chênh giá gốc − giá bán được tính vào
+     * (0.5.109) — flash sale −50% thì không còn chỗ cho mã giảm thêm khi trần là 50%.
      *
      * @param  array<int, Money>  $proposed  giảm giá mới đề xuất
-     * @param  array<int, Money>  $lineSubtotals
+     * @param  array<int, Money>  $lineSubtotals  thành tiền theo giá bán
      * @param  array<int, Money>  $alreadyDiscounted
+     * @param  array<int, Money>  $referenceSubtotals  thành tiền theo giá gốc (thiếu = bằng giá bán)
      * @return array<int, Money>
      */
-    public static function capToFloor(array $proposed, array $lineSubtotals, array $alreadyDiscounted, int $maxBasisPoints): array
+    public static function capToFloor(array $proposed, array $lineSubtotals, array $alreadyDiscounted, int $maxBasisPoints, array $referenceSubtotals = []): array
     {
         $result = [];
         foreach ($proposed as $key => $discount) {
-            $ceiling = $lineSubtotals[$key]->percentage($maxBasisPoints, \RoundingMode::TowardsZero);
-            $room = max(0, $ceiling->amount - ($alreadyDiscounted[$key]->amount ?? 0));
+            $reference = $referenceSubtotals[$key] ?? $lineSubtotals[$key];
+            $priceDiscount = max(0, $reference->amount - $lineSubtotals[$key]->amount);
+            $ceiling = $reference->percentage($maxBasisPoints, \RoundingMode::TowardsZero);
+            $room = max(0, min($lineSubtotals[$key]->amount, $ceiling->amount - $priceDiscount) - ($alreadyDiscounted[$key]->amount ?? 0));
             $result[$key] = Money::of(min(max(0, $discount->amount), $room), $discount->currency);
         }
 

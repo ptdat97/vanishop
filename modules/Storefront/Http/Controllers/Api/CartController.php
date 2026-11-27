@@ -79,7 +79,7 @@ final class CartController
 
         return response()->json([
             'data' => $this->presenter->present($result['cart']),
-            'meta' => ['rejected_vouchers' => array_map(fn (VoucherRejection $rejection): array => ['code' => $rejection->code, 'reason' => $rejection->reason], $result['rejected'])],
+            'meta' => ['rejected_vouchers' => array_map(fn (VoucherRejection $rejection): array => ['code' => $rejection->code, 'reason' => $rejection->reason, 'message' => CartVoucher::describe($rejection)], $result['rejected'])],
         ]);
     }
 

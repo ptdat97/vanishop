@@ -7,6 +7,7 @@ namespace Modules\Promotion\Application;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Promotion\Contracts\Data\ManagedPromotion;
+use Modules\Promotion\Contracts\Data\ManagedPromotionUsage;
 use Modules\Promotion\Contracts\ManagedPromotions;
 use Modules\Promotion\Domain\Stacking;
 use Modules\Promotion\Persistence\Models\Promotion;
@@ -32,10 +33,11 @@ final class ManagedPromotionService implements ManagedPromotions
             'ends_at' => $promotion->endsAt === null ? null : Carbon::createFromTimestamp($promotion->endsAt),
             'priority' => $promotion->priority,
             'stacking' => $promotion->exclusive ? Stacking::Exclusive : Stacking::Combinable,
-            'requires_voucher' => false,
+            'requires_voucher' => $promotion->requiresVoucher,
             'action_type' => $promotion->actionType,
             'action_config' => $promotion->actionConfig,
             'usage_limit' => $promotion->usageLimit,
+            'usage_limit_per_customer' => $promotion->usageLimitPerCustomer,
             'budget_amount' => $promotion->budgetAmount,
             'rules' => $promotion->rules,
         ];
@@ -63,5 +65,14 @@ final class ManagedPromotionService implements ManagedPromotions
     {
         return Promotion::query()->where('managed_by', $owner)->whereNotNull('managed_key')
             ->pluck('id', 'managed_key')->map(fn ($id): int => (int) $id)->all();
+    }
+
+    public function usage(string $owner): array
+    {
+        return Promotion::query()->where('managed_by', $owner)->whereNotNull('managed_key')
+            ->get(['id', 'managed_key', 'usage_count', 'budget_used_amount'])
+            ->mapWithKeys(fn (Promotion $promotion): array => [
+                (string) $promotion->managed_key => new ManagedPromotionUsage($promotion->id, $promotion->usage_count, $promotion->budget_used_amount),
+            ])->all();
     }
 }

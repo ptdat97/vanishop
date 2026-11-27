@@ -56,6 +56,15 @@ final readonly class TotalsContext
             $this->shippingMethod, $this->shippingAddress, $this->now, $shipping, $this->promotions, $this->attributes);
     }
 
+    /**
+     * @param  list<string>  $voucherCodes
+     */
+    public function withVoucherCodes(array $voucherCodes): self
+    {
+        return new self($this->customerId, $this->currencyCode, $this->lines, $this->adjustments, $voucherCodes,
+            $this->shippingMethod, $this->shippingAddress, $this->now, $this->shipping, $this->promotions, $this->attributes);
+    }
+
     public function withPromotions(PromotionResult $promotions): self
     {
         return new self($this->customerId, $this->currencyCode, $this->lines, $this->adjustments, $this->voucherCodes,

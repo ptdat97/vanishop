@@ -28,6 +28,8 @@ return [
         'exhausted' => 'Code :code has no uses left.',
         'not_active' => 'Code :code is not active yet.',
         'not_applicable' => 'Code :code does not apply to this cart.',
+        'customer_limit' => 'You have used up your uses of code :code.',
+        'not_owner' => 'Code :code belongs to another account — sign in with the account that received it.',
     ],
     'cart_updated' => 'Cart updated.',
     'cart_line_removed' => 'Item removed from cart.',

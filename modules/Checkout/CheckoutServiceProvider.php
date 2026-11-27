@@ -24,6 +24,7 @@ use Modules\Checkout\Contracts\ReplacementOrders;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Contracts\TaxCalculator;
 use Modules\Checkout\Contracts\TotalsCalculator;
+use Modules\Checkout\Contracts\VoucherPreview;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Flows;
 use Modules\Extension\Contracts\Requirement;
@@ -43,6 +44,7 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(Checkout::class, CheckoutService::class);
+        $this->app->bind(VoucherPreview::class, CheckoutService::class);
         $this->app->bind(ReplacementOrders::class, ReplacementOrderService::class);
 
         $this->app->make(Extensions::class)->tag([SubtotalCalculator::class, PromotionCalculator::class, ShippingCalculator::class, TaxStage::class, GuardCalculator::class], TotalsCalculator::TAG);

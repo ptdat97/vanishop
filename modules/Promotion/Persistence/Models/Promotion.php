@@ -27,6 +27,7 @@ use Modules\Promotion\Domain\Stacking;
  * @property array<string, mixed> $action_config
  * @property int|null $usage_limit
  * @property int $usage_count
+ * @property int|null $usage_limit_per_customer lượt tối đa mỗi khách (0.5.109)
  * @property int|null $budget_amount
  * @property int $budget_used_amount
  * @property int $lock_version
@@ -34,13 +35,13 @@ use Modules\Promotion\Domain\Stacking;
 final class Promotion extends Model
 {
     protected $fillable = ['campaign_id', 'managed_by', 'managed_key', 'managed_route', 'name', 'status', 'starts_at', 'ends_at', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
-        'usage_limit', 'usage_count', 'budget_amount', 'budget_used_amount', 'lock_version'];
+        'usage_limit', 'usage_count', 'usage_limit_per_customer', 'budget_amount', 'budget_used_amount', 'lock_version'];
 
     protected function casts(): array
     {
         return [
             'starts_at' => 'datetime', 'ends_at' => 'datetime', 'priority' => 'integer', 'stacking' => Stacking::class,
-            'requires_voucher' => 'boolean', 'action_config' => 'array', 'usage_limit' => 'integer', 'usage_count' => 'integer',
+            'requires_voucher' => 'boolean', 'action_config' => 'array', 'usage_limit' => 'integer', 'usage_count' => 'integer', 'usage_limit_per_customer' => 'integer',
             'budget_amount' => 'integer', 'budget_used_amount' => 'integer', 'lock_version' => 'integer',
         ];
     }

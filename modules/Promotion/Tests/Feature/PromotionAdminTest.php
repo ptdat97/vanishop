@@ -76,6 +76,15 @@ it('từ chối cấu hình giảm giá sai và loại chưa đăng ký', functi
     $this->post($this->base, promotionPayload(['action_type' => 'khong_co']))->assertSessionHasErrors('action_config');
 });
 
+it('lưu lượt dùng mỗi khách và mức giảm tối đa của giảm %; từ chối mức giảm tối đa không dương', function () {
+    $this->post($this->base, promotionPayload(['usage_limit_per_customer' => 1, 'action_config' => ['basis_points' => 1000, 'max_amount' => 50_000]]))->assertSessionHasNoErrors();
+    $this->post($this->base, promotionPayload(['action_config' => ['basis_points' => 1000, 'max_amount' => 0]]))->assertSessionHasErrors('action_config');
+
+    $promotion = T::seed(fn () => Promotion::query()->sole());
+    expect($promotion->usage_limit_per_customer)->toBe(1)
+        ->and($promotion->action_config)->toBe(['basis_points' => 1000, 'max_amount' => 50_000]);
+});
+
 it('tạo voucher cụ thể và sinh hàng loạt, mã duy nhất', function () {
     $this->post($this->base, promotionPayload());
     $promotion = T::seed(fn () => Promotion::query()->sole());

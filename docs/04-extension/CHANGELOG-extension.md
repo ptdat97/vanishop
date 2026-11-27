@@ -6,6 +6,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.109 — 2026-11-27 · Extension API 1.46.0
+
+Nâng Promotion cho mã giảm giá của plugin (`vani.coupon-code`, [đặc tả](../05-plugin/specs/coupon-code.md)). **Đổi hành vi:** trần giảm (Cài đặt → Bán hàng & thuế, VN 50%) tính theo **giá gốc** của dòng — dòng đang bán giá sale/thành viên (có giá gạch) đã dùng một phần trần, khuyến mãi chỉ giảm thêm tới trần (trước: tính trên giá đang bán, flash sale −50% + mã −50% = −75%).
+
+- **Lượt dùng mỗi khách:** `promotions.usage_limit_per_customer` (Admin: "Lượt dùng mỗi khách"); bộ đếm `promotion_customer_usages` tăng bằng UPDATE có điều kiện trong `PromotionEngine::recordUsage`, hoàn trong `revertUsage`. Khách vãng lai đếm theo khách Checkout giải từ SĐT lúc đặt đơn. Lý do từ chối mới `customer_limit`; `PromotionUnavailable::customerLimitReached()` (mã lỗi `promotion.customer_limit_reached`).
+- **Voucher gán khách:** `vouchers.customer_id`; khách khác hoặc chưa đăng nhập nhận lý do `not_owner`. Contract mới `Promotion\Contracts\Vouchers` (`create`, `generate`, `ofPromotion`, `forCustomer`, `setActive`, `remove`) + DTO `VoucherData`.
+- `ManagedPromotion`: thêm `requiresVoucher`, `usageLimitPerCustomer` (named, mặc định như cũ). `ManagedPromotions::usage(owner)` → `ManagedPromotionUsage` (lượt, tổng giảm). Admin → Khuyến mãi hiện danh sách voucher (chỉ xem) của khuyến mãi do plugin quản lý.
+- `percent_off`: cấu hình `max_amount` (giảm tối đa, minor unit) — kẹp tổng giảm của khuyến mãi, chia theo tỷ trọng dòng.
+- `PromotionLine`: thêm `compareAt`, `priceListCode` (named), `isDiscounted()`, `referenceSubtotal()`. Checkout và kiểm tra lại khi huỷ một phần truyền giá gốc/bảng giá của dòng.
+- `VoucherRejection`: thêm `hint`, `shortfall` (PluginApi). Interface tuỳ chọn mới `ExplainsIneligibility` cho rule: giải thích vì sao giỏ chưa đạt (`Ineligibility` — câu cho khách, số tiền còn thiếu); Core gọi khi voucher bị từ chối vì rule đó.
+- **Checkout:** contract mới `Checkout\Contracts\VoucherPreview::forCart(CartKey, codes)` → `VoucherPreviewResult` (giảm của mã, tổng giảm của giỏ, lý do) — tính thử từng mã một mình, không đổi mã của giỏ (ví voucher, "chọn mã tốt nhất"). `TotalsContext::withVoucherCodes()`.
+- **Storefront API:** `meta.rejected_vouchers[]` (PUT `carts/{cart}/vouchers`) và `rejected_vouchers[]` của quote có thêm `message` (câu cho khách, ưu tiên gợi ý của rule). Câu mới cho `customer_limit`, `not_owner`.
+
 ## 0.5.108 — 2026-11-27 · Extension API 1.45.0
 
 Sửa giá, kéo thả Builder và các thao tác Admin nhỏ khác làm mới cache trang **ngay** (trước: chờ lô mỗi phút, hoặc hơn 2 phút khi không có cron). Request web của nhân viên gom ≤ 200 tag thì xoá ngay trước khi gửi response; sửa hàng loạt, job, lệnh, request của khách vẫn theo lô ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md) sửa đổi §4). Không đổi API cho plugin hay hợp đồng Storefront API.

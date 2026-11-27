@@ -34,10 +34,12 @@ final class PromotionRequest extends FormRequest
             'action_config' => ['required', 'array'],
             'action_config.basis_points' => ['nullable', 'integer'],
             'action_config.amount' => ['nullable', 'integer'],
+            'action_config.max_amount' => ['nullable', 'integer'],
             'rules' => ['nullable', 'array'],
             'rules.*.type' => ['required', 'string', 'max:64'],
             'rules.*.config' => ['nullable', 'array'],
             'usage_limit' => ['nullable', 'integer', 'min:1'],
+            'usage_limit_per_customer' => ['nullable', 'integer', 'min:1'],
             'budget_amount' => ['nullable', 'integer', 'min:1'],
             'lock_version' => [$this->route('promotion') instanceof Promotion ? 'required' : 'nullable', 'integer', 'min:0'],
         ];
@@ -55,6 +57,6 @@ final class PromotionRequest extends FormRequest
             array_values((array) ($data['rules'] ?? [])),
         );
 
-        return $data + ['starts_at' => null, 'ends_at' => null, 'usage_limit' => null, 'budget_amount' => null];
+        return $data + ['starts_at' => null, 'ends_at' => null, 'usage_limit' => null, 'usage_limit_per_customer' => null, 'budget_amount' => null];
     }
 }

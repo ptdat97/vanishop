@@ -42,7 +42,7 @@ final class CheckoutPresenter
                 'label' => $adjustment->label,
                 'amount' => $this->money->toArray($adjustment->amount),
             ], $totals->adjustments),
-            'rejected_vouchers' => array_map(fn (VoucherRejection $rejection): array => ['code' => $rejection->code, 'reason' => $rejection->reason], $totals->rejectedVouchers),
+            'rejected_vouchers' => array_map(fn (VoucherRejection $rejection): array => ['code' => $rejection->code, 'reason' => $rejection->reason, 'message' => CartVoucher::describe($rejection)], $totals->rejectedVouchers),
             'shipping' => $totals->shipping === null ? null : $this->option($totals->shipping),
             'shipping_options' => array_map($this->option(...), $quote->shippingOptions),
             'payment_methods' => $quote->paymentMethods,

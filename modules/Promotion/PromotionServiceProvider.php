@@ -15,10 +15,12 @@ use Modules\Promotion\Application\CampaignService;
 use Modules\Promotion\Application\ManagedPromotionService;
 use Modules\Promotion\Application\PromotionEvaluator;
 use Modules\Promotion\Application\PromotionRegistry;
+use Modules\Promotion\Application\VoucherService;
 use Modules\Promotion\Contracts\Campaigns;
 use Modules\Promotion\Contracts\ManagedPromotions;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Promotion\Contracts\PromotionRule;
+use Modules\Promotion\Contracts\Vouchers;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -36,6 +38,7 @@ final class PromotionServiceProvider extends ModuleServiceProvider
         $this->app->make(AdminScreen::class)->declareResource('campaign');
         $this->app->bind(Campaigns::class, CampaignService::class);
         $this->app->bind(ManagedPromotions::class, ManagedPromotionService::class);
+        $this->app->bind(Vouchers::class, VoucherService::class);
         $this->app->make(Extensions::class)->tag([PercentOffAction::class, AmountOffAction::class], PromotionRegistry::ACTIONS_TAG);
         $this->app->make(Extensions::class)->kindContract('promotion', PromotionRule::TAG);
         $this->app->bind(PromotionEngine::class, fn ($app): PromotionEvaluator => new PromotionEvaluator(

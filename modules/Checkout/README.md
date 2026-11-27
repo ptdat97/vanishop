@@ -28,6 +28,7 @@ Không có bảng.
 | `ShippingRateProvider` | interface | tag `vani.checkout.shipping_providers`, plugin |
 | `TaxCalculator` | interface | tag `vani.tax.calculators`, plugin |
 | `TotalsCalculator` | interface | tag `vani.totals.calculators`, plugin |
+| `VoucherPreview` | interface | plugin (0.5.109) |
 
 ---
 

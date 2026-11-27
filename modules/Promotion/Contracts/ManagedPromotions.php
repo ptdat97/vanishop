@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Promotion\Contracts;
 
 use Modules\Promotion\Contracts\Data\ManagedPromotion;
+use Modules\Promotion\Contracts\Data\ManagedPromotionUsage;
 use Modules\Shared\Contracts\PluginApi;
 
 /**
@@ -25,4 +26,11 @@ interface ManagedPromotions
      * @return array<int|string, int> khoá của plugin => id khuyến mãi (khoá số thành int theo quy tắc khoá mảng của PHP)
      */
     public function ids(string $owner): array;
+
+    /**
+     * Số liệu dùng (0.5.109) cho danh sách của plugin.
+     *
+     * @return array<int|string, ManagedPromotionUsage> khoá của plugin => số liệu
+     */
+    public function usage(string $owner): array;
 }

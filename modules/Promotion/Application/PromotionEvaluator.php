@@ -11,9 +11,11 @@ use Modules\Promotion\Contracts\CartContentRule;
 use Modules\Promotion\Contracts\ContextualPromotionAction;
 use Modules\Promotion\Contracts\Data\AppliedPromotion;
 use Modules\Promotion\Contracts\Data\Eligibility;
+use Modules\Promotion\Contracts\Data\Ineligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
 use Modules\Promotion\Contracts\Data\PromotionResult;
 use Modules\Promotion\Contracts\Data\VoucherRejection;
+use Modules\Promotion\Contracts\ExplainsIneligibility;
 use Modules\Promotion\Contracts\PromotionAction;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Promotion\Contracts\PromotionUnavailable;
@@ -52,7 +54,8 @@ final class PromotionEvaluator implements PromotionEngine
             return new PromotionResult([], array_map(fn (string $code) => new VoucherRejection($code, 'not_applicable'), $context->voucherCodes));
         }
 
-        [$voucherByPromotion, $rejected] = $this->vouchers($context);
+        $customerUsed = $this->customerUsage($context->customerId);
+        [$voucherByPromotion, $rejected] = $this->vouchers($context, $customerUsed);
 
         /** @var Collection<int, Promotion> $candidates */
         $candidates = Promotion::query()
@@ -61,23 +64,25 @@ final class PromotionEvaluator implements PromotionEngine
             ->where(fn ($query) => $query->where('requires_voucher', false)->orWhereIn('id', array_keys($voucherByPromotion)))
             ->orderByDesc('priority')->orderBy('id')
             ->get()
-            ->filter(fn (Promotion $promotion): bool => $promotion->isRunningAt($context->now) && ! $this->exhausted($promotion));
+            ->filter(fn (Promotion $promotion): bool => $promotion->isRunningAt($context->now) && ! $this->exhausted($promotion)
+                && ! $this->customerExhausted($promotion, $context->customerId, $customerUsed));
 
-        $subtotals = [];
-        $discounted = [];
-        foreach ($context->lines as $line) {
-            $subtotals[$line->key] = $line->subtotal;
-            $discounted[$line->key] = Money::zero($context->currencyCode);
-        }
+        [$subtotals, $references, $discounted] = $this->lineAmounts($context);
 
         $applied = [];
+        /** @var array<int, array{type: string, config: array<string, mixed>, candidates: Eligibility}> $failures */
+        $failures = [];
         foreach ($candidates as $promotion) {
             if ($promotion->stacking === Stacking::Exclusive && $applied !== []) {
                 continue;
             }
 
             $config = $this->configuration($promotion);
-            $eligibility = $this->eligibility($promotion->id, $config['rules'], $context);
+            $failure = null;
+            $eligibility = $this->eligibility($promotion->id, $config['rules'], $context, failure: $failure);
+            if ($failure !== null) {
+                $failures[$promotion->id] = $failure;
+            }
             $action = $this->registry->action($config['action_type']);
             if ($eligibility === null || $eligibility->isEmpty() || $action === null) {
                 continue;
@@ -90,7 +95,7 @@ final class PromotionEvaluator implements PromotionEngine
 
             $proposed = $this->propose($action, $context, $remaining, $config['action_config']);
             $lineDiscounts = array_filter(
-                DiscountMath::capToFloor(array_intersect_key($proposed, $remaining), $subtotals, $discounted, $this->maxDiscountBasisPoints),
+                DiscountMath::capToFloor(array_intersect_key($proposed, $remaining), $subtotals, $discounted, $this->maxDiscountBasisPoints, $references),
                 fn (Money $discount): bool => $discount->isPositive(),
             );
             $total = Money::of(array_sum(array_map(fn (Money $money): int => $money->amount, $lineDiscounts)), $context->currencyCode);
@@ -117,7 +122,8 @@ final class PromotionEvaluator implements PromotionEngine
         $appliedVoucherIds = array_filter(array_map(fn (AppliedPromotion $promotion): ?int => $promotion->voucherId, $applied));
         foreach ($voucherByPromotion as $voucher) {
             if (! in_array($voucher->id, $appliedVoucherIds, true)) {
-                $rejected[] = new VoucherRejection($voucher->code, 'not_applicable');
+                $explained = isset($failures[$voucher->promotion_id]) ? $this->explain($context, $failures[$voucher->promotion_id]) : null;
+                $rejected[] = new VoucherRejection($voucher->code, 'not_applicable', $explained?->message, $explained?->shortfall);
             }
         }
 
@@ -147,6 +153,9 @@ final class PromotionEvaluator implements PromotionEngine
             if ($updated === 0) {
                 throw PromotionUnavailable::limitReached($applied->name);
             }
+            if ($customerId !== null) {
+                $this->countCustomerUsage($applied, $customerId);
+            }
 
             DB::table('promotion_usages')->insert([
                 'promotion_id' => $applied->promotionId, 'voucher_id' => $applied->voucherId, 'order_id' => $orderId, 'customer_id' => $customerId,
@@ -170,6 +179,10 @@ final class PromotionEvaluator implements PromotionEngine
                 if ($usage->voucher_id !== null) {
                     DB::table('vouchers')->where('id', $usage->voucher_id)->where('used_count', '>', 0)->decrement('used_count');
                 }
+                if ($usage->customer_id !== null) {
+                    DB::table('promotion_customer_usages')->where('promotion_id', $usage->promotion_id)->where('customer_id', $usage->customer_id)
+                        ->where('used_count', '>', 0)->decrement('used_count', 1, ['updated_at' => now()]);
+                }
             }
         });
     }
@@ -185,12 +198,7 @@ final class PromotionEvaluator implements PromotionEngine
                 $configs[$promotion->id] = $this->configuration($promotion);
             }
         }
-        $subtotals = [];
-        $discounted = [];
-        foreach ($context->lines as $line) {
-            $subtotals[$line->key] = $line->subtotal;
-            $discounted[$line->key] = Money::zero($context->currencyCode);
-        }
+        [$subtotals, $references, $discounted] = $this->lineAmounts($context);
 
         $result = [];
         foreach ($promotionIds as $promotionId) {
@@ -212,7 +220,7 @@ final class PromotionEvaluator implements PromotionEngine
             }
             $proposed = $this->propose($action, $context, $remaining, $config['action_config']);
             $lineDiscounts = array_filter(
-                DiscountMath::capToFloor(array_intersect_key($proposed, $remaining), $subtotals, $discounted, $this->maxDiscountBasisPoints),
+                DiscountMath::capToFloor(array_intersect_key($proposed, $remaining), $subtotals, $discounted, $this->maxDiscountBasisPoints, $references),
                 fn (Money $discount): bool => $discount->isPositive(),
             );
             foreach ($lineDiscounts as $key => $discount) {
@@ -241,9 +249,10 @@ final class PromotionEvaluator implements PromotionEngine
     }
 
     /**
+     * @param  array<int, int>  $customerUsed
      * @return array{0: array<int, Voucher>, 1: list<VoucherRejection>}
      */
-    private function vouchers(PromotionContext $context): array
+    private function vouchers(PromotionContext $context, array $customerUsed): array
     {
         $codes = array_values(array_unique(array_filter(array_map(Voucher::normalize(...), $context->voucherCodes))));
         if ($codes === []) {
@@ -262,7 +271,9 @@ final class PromotionEvaluator implements PromotionEngine
                 $voucher === null, $promotion === null => 'not_found',
                 $voucher->status !== 'active', ! $promotion->isRunningAt($context->now) => 'not_active',
                 $voucher->expires_at !== null && $voucher->expires_at->getTimestamp() <= $context->now => 'expired',
+                $voucher->customer_id !== null && $voucher->customer_id !== $context->customerId => 'not_owner',
                 ($voucher->usage_limit !== null && $voucher->used_count >= $voucher->usage_limit) || $this->exhausted($promotion) => 'exhausted',
+                $this->customerExhausted($promotion, $context->customerId, $customerUsed) => 'customer_limit',
                 isset($byPromotion[$promotion->id]) => 'not_applicable', // một voucher cho mỗi khuyến mãi
                 default => null,
             };
@@ -281,6 +292,74 @@ final class PromotionEvaluator implements PromotionEngine
     {
         return ($promotion->usage_limit !== null && $promotion->usage_count >= $promotion->usage_limit)
             || ($promotion->budget_amount !== null && $promotion->budget_used_amount >= $promotion->budget_amount);
+    }
+
+    /**
+     * Lượt khách đã dùng theo khuyến mãi (đơn chưa huỷ). Khách chưa xác định (vãng lai ở giỏ) → rỗng: lượt mỗi khách được
+     * chặn lúc đặt đơn, khi Checkout đã giải khách theo SĐT.
+     *
+     * @return array<int, int> promotion id => lượt
+     */
+    private function customerUsage(?int $customerId): array
+    {
+        return $customerId === null ? [] : DB::table('promotion_customer_usages')->where('customer_id', $customerId)->where('used_count', '>', 0)
+            ->pluck('used_count', 'promotion_id')->map(fn (mixed $count): int => (int) $count)->all();
+    }
+
+    /**
+     * @param  array<int, int>  $customerUsed
+     */
+    private function customerExhausted(Promotion $promotion, ?int $customerId, array $customerUsed): bool
+    {
+        return $customerId !== null && $promotion->usage_limit_per_customer !== null
+            && ($customerUsed[$promotion->id] ?? 0) >= $promotion->usage_limit_per_customer;
+    }
+
+    /**
+     * Đếm lượt của khách bằng UPDATE có điều kiện (trong transaction đặt hàng); hết lượt → PromotionUnavailable.
+     * Đếm cả khuyến mãi không giới hạn mỗi khách, để đặt giới hạn về sau vẫn tính đúng lượt đã dùng.
+     */
+    private function countCustomerUsage(AppliedPromotion $applied, int $customerId): void
+    {
+        $limit = DB::table('promotions')->where('id', $applied->promotionId)->value('usage_limit_per_customer');
+        DB::table('promotion_customer_usages')->insertOrIgnore([
+            'promotion_id' => $applied->promotionId, 'customer_id' => $customerId, 'used_count' => 0, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $updated = DB::table('promotion_customer_usages')->where('promotion_id', $applied->promotionId)->where('customer_id', $customerId)
+            ->when($limit !== null, fn ($query) => $query->where('used_count', '<', (int) $limit))
+            ->increment('used_count', 1, ['updated_at' => now()]);
+        if ($updated === 0) {
+            throw PromotionUnavailable::customerLimitReached($applied->name);
+        }
+    }
+
+    /**
+     * Thành tiền theo giá bán, theo giá gốc (mốc trần giảm) và phần đã giảm (bắt đầu 0) của từng dòng.
+     *
+     * @return array{0: array<int, Money>, 1: array<int, Money>, 2: array<int, Money>}
+     */
+    private function lineAmounts(PromotionContext $context): array
+    {
+        $subtotals = [];
+        $references = [];
+        $discounted = [];
+        foreach ($context->lines as $line) {
+            $subtotals[$line->key] = $line->subtotal;
+            $references[$line->key] = $line->referenceSubtotal();
+            $discounted[$line->key] = Money::zero($context->currencyCode);
+        }
+
+        return [$subtotals, $references, $discounted];
+    }
+
+    /**
+     * @param  array{type: string, config: array<string, mixed>, candidates: Eligibility}  $failure
+     */
+    private function explain(PromotionContext $context, array $failure): ?Ineligibility
+    {
+        $rule = $this->registry->rule($failure['type']);
+
+        return $rule instanceof ExplainsIneligibility ? $rule->explain($context, $failure['config'], $failure['candidates']) : null;
     }
 
     /**
@@ -306,12 +385,16 @@ final class PromotionEvaluator implements PromotionEngine
     }
 
     /**
-     * Mọi dòng của giỏ, lọc qua mọi rule (hoặc chỉ `CartContentRule` khi kiểm tra lại).
+     * Mọi dòng của giỏ, lọc qua mọi rule (hoặc chỉ `CartContentRule` khi kiểm tra lại). Rule làm tập rỗng được ghi vào
+     * `$failure` (để giải thích cho khách).
      *
      * @param  list<array{type: string, config: array<string, mixed>}>  $rules
+     *
+     * @param-out array{type: string, config: array<string, mixed>, candidates: Eligibility}|null  $failure
      */
-    private function eligibility(int $promotionId, array $rules, PromotionContext $context, bool $cartContentOnly = false): ?Eligibility
+    private function eligibility(int $promotionId, array $rules, PromotionContext $context, bool $cartContentOnly = false, ?array &$failure = null): ?Eligibility
     {
+        $failure = null;
         $eligibility = new Eligibility(array_map(fn ($line): int => $line->key, $context->lines));
 
         foreach ($rules as $record) {
@@ -324,8 +407,11 @@ final class PromotionEvaluator implements PromotionEngine
 
                 return null;
             }
+            $candidates = $eligibility;
             $eligibility = $eligibility->intersect($rule->evaluate($context, $record['config'], $eligibility));
             if ($eligibility->isEmpty()) {
+                $failure = ['type' => $record['type'], 'config' => $record['config'], 'candidates' => $candidates];
+
                 return $eligibility;
             }
         }

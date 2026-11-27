@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Cart\Contracts\Carts;
+use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Cart\Contracts\Data\CartLineView;
 use Modules\Cart\Contracts\Data\CartView;
 use Modules\Checkout\Contracts\Checkout;
@@ -21,6 +22,8 @@ use Modules\Checkout\Contracts\Data\PlaceOrderResult;
 use Modules\Checkout\Contracts\Data\Totals;
 use Modules\Checkout\Contracts\Data\TotalsContext;
 use Modules\Checkout\Contracts\Data\TotalsLine;
+use Modules\Checkout\Contracts\Data\VoucherPreviewResult;
+use Modules\Checkout\Contracts\VoucherPreview;
 use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\Customers;
 use Modules\Extension\Contracts\Extensions;
@@ -44,6 +47,7 @@ use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Contracts\Metrics;
 use Modules\Shared\Contracts\ShippingAddresses;
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Modules\Shared\Domain\Money\Money;
 use Modules\Shared\Support\Phones;
 use Modules\Tenancy\Contracts\Settings;
 use Throwable;
@@ -52,7 +56,7 @@ use Throwable;
  * PlaceOrder: docs/03-domains/cart-checkout.md §4. Một transaction: khoá giỏ → tính lại tổng → kiểm tra →
  * giữ hàng → tạo đơn → ghi nhận khuyến mãi → đóng giỏ → lưu phản hồi idempotency.
  */
-final class CheckoutService implements Checkout
+final class CheckoutService implements Checkout, VoucherPreview
 {
     public const GUEST_CHECKOUT = 'storefront.guest_checkout';
 
@@ -82,6 +86,46 @@ final class CheckoutService implements Checkout
         $totals = $this->pipeline->run($context);
 
         return vani_filter('vani.service.checkout.quote', new CheckoutQuote($totals, $this->shipping->for($context), $this->payments->available($totals, $request), $cart->isCheckoutReady()), $request);
+    }
+
+    public function forCart(CartKey $cart, array $codes): array
+    {
+        $normalized = [];
+        foreach ($codes as $code) {
+            $key = strtoupper((string) preg_replace('/\s+/', '', (string) $code));
+            if ($key !== '' && ! isset($normalized[$key])) {
+                $normalized[$key] = $key;
+            }
+        }
+        $normalized = array_slice(array_values($normalized), 0, VoucherPreview::MAX_CODES);
+        if ($normalized === []) {
+            return [];
+        }
+
+        $view = $this->carts->view($cart);
+        $base = $this->context($view, new CheckoutRequest(
+            cart: $cart, contact: null, shippingAddress: null, shippingMethod: null, paymentMethod: null, voucherCodes: [], note: null, expectedTotal: null,
+        ), $this->signedInCustomer());
+
+        $results = [];
+        foreach ($normalized as $code) {
+            $totals = $this->pipeline->run($base->withVoucherCodes([$code]));
+            $rejection = null;
+            foreach ($totals->rejectedVouchers as $rejected) {
+                if (strcasecmp($rejected->code, $code) === 0) {
+                    $rejection = $rejected;
+                }
+            }
+            $discount = 0;
+            foreach ($totals->promotions->applied ?? [] as $applied) {
+                if ($applied->voucherCode !== null && strcasecmp($applied->voucherCode, $code) === 0) {
+                    $discount += $applied->total->amount;
+                }
+            }
+            $results[] = new VoucherPreviewResult($code, Money::of($discount, $totals->currencyCode), $totals->discount, $rejection);
+        }
+
+        return $results;
     }
 
     public function placeOrder(CheckoutRequest $request, string $idempotencyKey): PlaceOrderResult

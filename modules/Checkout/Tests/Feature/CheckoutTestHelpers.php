@@ -45,6 +45,7 @@ final class CheckoutTestHelpers
                 'requires_voucher' => $attributes['requires_voucher'] ?? $vouchers !== [],
                 'action_type' => $attributes['action_type'] ?? 'percent_off', 'action_config' => $attributes['action_config'] ?? ['basis_points' => 1000],
                 'usage_limit' => $attributes['usage_limit'] ?? null, 'budget_amount' => $attributes['budget_amount'] ?? null,
+                'usage_limit_per_customer' => $attributes['usage_limit_per_customer'] ?? null,
                 'starts_at' => $attributes['starts_at'] ?? null, 'ends_at' => $attributes['ends_at'] ?? null,
             ]);
             foreach ($vouchers as $code => $limit) {

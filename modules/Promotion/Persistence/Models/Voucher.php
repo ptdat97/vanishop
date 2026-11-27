@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $promotion_id
+ * @property int|null $customer_id chỉ khách này dùng được (0.5.109)
  * @property string $code
  * @property int|null $usage_limit
  * @property int $used_count
@@ -19,11 +20,11 @@ use Illuminate\Support\Carbon;
  */
 final class Voucher extends Model
 {
-    protected $fillable = ['promotion_id', 'code', 'usage_limit', 'used_count', 'expires_at', 'status'];
+    protected $fillable = ['promotion_id', 'customer_id', 'code', 'usage_limit', 'used_count', 'expires_at', 'status'];
 
     protected function casts(): array
     {
-        return ['promotion_id' => 'integer', 'usage_limit' => 'integer', 'used_count' => 'integer', 'expires_at' => 'datetime'];
+        return ['promotion_id' => 'integer', 'customer_id' => 'integer', 'usage_limit' => 'integer', 'used_count' => 'integer', 'expires_at' => 'datetime'];
     }
 
     /**

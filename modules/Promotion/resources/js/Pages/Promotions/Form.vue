@@ -37,6 +37,7 @@ const props = defineProps<{
         action_type: string;
         action_config: Record<string, number>;
         usage_limit: number | null;
+        usage_limit_per_customer: number | null;
         usage_count: number;
         budget_amount: number | null;
         budget_used_amount: number;
@@ -47,7 +48,7 @@ const props = defineProps<{
         /** Do plugin quản lý (ManagedPromotions): chỉ xem. */
         managed: { owner: string; url: string | null } | null;
     };
-    vouchers: Array<{ id: number; code: string; status: string; used_count: number; usage_limit: number | null; expires_at: string | null }>;
+    vouchers: Array<{ id: number; code: string; status: string; used_count: number; usage_limit: number | null; expires_at: string | null; customer_id: number | null }>;
     vouchersTotal: number;
     voucherFilters: { q: string };
     voucherPagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number } | null;
@@ -62,11 +63,13 @@ const ruleTypeOptions = props.ruleTypes.map((type) => ({ value: type.type, label
 const voucherColumns = [
     { key: 'code', label: t('promotion::admin.promotions_form.code'), class: 'font-mono' },
     { key: 'used_count', label: t('promotion::admin.promotions_form.used') },
+    { key: 'customer_id', label: t('promotion::admin.promotions_form.voucher_customer'), class: 'text-xs' },
     { key: 'expires_at', label: t('promotion::admin.promotions_form.expired'), class: 'text-xs' },
     { key: 'actions', label: '', align: 'right' as const },
 ];
 const percent = ref(props.promotion?.action_config.basis_points ? props.promotion.action_config.basis_points / 100 : 10);
 const amount = ref(props.promotion?.action_config.amount ?? 50000);
+const maxAmount = ref<number | null>(props.promotion?.action_config.max_amount ?? null);
 
 const { form, save } = useAdminForm({
     name: props.promotion?.name ?? '',
@@ -80,6 +83,7 @@ const { form, save } = useAdminForm({
     action_config: {} as Record<string, number>,
     rules: [] as RuleInput[],
     usage_limit: props.promotion?.usage_limit ?? null,
+    usage_limit_per_customer: props.promotion?.usage_limit_per_customer ?? null,
     budget_amount: props.promotion?.budget_amount ?? null,
     lock_version: props.promotion?.lock_version ?? null,
 }, { lockVersion: () => props.promotion?.lock_version });
@@ -113,8 +117,10 @@ function collectRules(): boolean {
     return true;
 }
 
-watch([() => form.action_type, percent, amount], () => {
-    form.action_config = form.action_type === 'percent_off' ? { basis_points: Math.round(Number(percent.value) * 100) } : form.action_type === 'amount_off' ? { amount: Number(amount.value) } : {};
+watch([() => form.action_type, percent, amount, maxAmount], () => {
+    form.action_config = form.action_type === 'percent_off'
+        ? { basis_points: Math.round(Number(percent.value) * 100), ...(maxAmount.value ? { max_amount: Number(maxAmount.value) } : {}) }
+        : form.action_type === 'amount_off' ? { amount: Number(amount.value) } : {};
 }, { immediate: true });
 
 const voucherForm = useForm({ code: '', prefix: '', count: null as number | null, usage_limit: 1 as number | null, expires_at: null as string | null });
@@ -177,6 +183,9 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
         <FormField v-if="form.action_type === 'percent_off' || (promotion?.managed && promotion.action_config.basis_points !== undefined)" :label="t('promotion::admin.promotions_form.discount_percentage')" :error="form.errors.action_config">
             <input v-model.number="percent" :class="inputClass" type="number" step="0.01" min="0.01" max="100" />
         </FormField>
+        <FormField v-if="form.action_type === 'percent_off'" :label="t('promotion::admin.promotions_form.max_discount_symbol', { symbol })" :hint="t('promotion::admin.promotions_form.leave_empty_unlimited')">
+            <input v-model.number="maxAmount" :class="inputClass" type="number" min="1" />
+        </FormField>
         <FormField v-else-if="form.action_type === 'amount_off'" :label="t('promotion::admin.promotions_form.discount_amount_symbol', { symbol })" :error="form.errors.action_config">
             <input v-model.number="amount" :class="inputClass" type="number" min="1" />
         </FormField>
@@ -190,6 +199,9 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
         </FormField>
         <FormField :label="t('promotion::admin.promotions_form.maximum_total_uses')" :hint="t('promotion::admin.promotions_form.leave_empty_unlimited')" :error="form.errors.usage_limit">
             <input v-model.number="form.usage_limit" :class="inputClass" type="number" min="1" />
+        </FormField>
+        <FormField :label="t('promotion::admin.promotions_form.uses_per_customer')" :hint="t('promotion::admin.promotions_form.uses_per_customer_hint')" :error="form.errors.usage_limit_per_customer">
+            <input v-model.number="form.usage_limit_per_customer" :class="inputClass" type="number" min="1" />
         </FormField>
         <FormField :label="t('promotion::admin.promotions_form.budget_symbol', { symbol })" :hint="t('promotion::admin.promotions_form.maximum_total_discount_leave_empty')" :error="form.errors.budget_amount">
             <input v-model.number="form.budget_amount" :class="inputClass" type="number" min="1" />
@@ -216,9 +228,9 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
         </fieldset>
     </form>
 
-    <section v-if="promotion && !promotion.managed && promotion.requires_voucher" class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-white p-5">
+    <section v-if="promotion && promotion.requires_voucher" class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-white p-5">
         <h2 class="mb-3 font-semibold">Voucher ({{ vouchersTotal }})</h2>
-        <form class="mb-4 grid gap-3 sm:grid-cols-5" @submit.prevent="createVouchers">
+        <form v-if="!promotion.managed" class="mb-4 grid gap-3 sm:grid-cols-5" @submit.prevent="createVouchers">
             <input v-model="voucherForm.code" :class="inputClass" :placeholder="t('promotion::admin.promotions_form.specific_code_sale10')" />
             <input v-model="voucherForm.prefix" :class="inputClass" :placeholder="t('promotion::admin.promotions_form.prefix')" />
             <input v-model.number="voucherForm.count" :class="inputClass" type="number" min="1" max="5000" :placeholder="t('promotion::admin.promotions_form.codes_generate')" />
@@ -234,8 +246,9 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
             <template #cell-code="{ row }">{{ row.code }}<span v-if="row.status !== 'active'" class="font-sans text-xs text-slate-400"> {{ t('promotion::admin.promotions_form.off') }}</span></template>
             <template #cell-used_count="{ row }">{{ row.used_count }}<span v-if="row.usage_limit"> / {{ row.usage_limit }}</span></template>
             <template #cell-expires_at="{ row }">{{ row.expires_at ?? '—' }}</template>
+            <template #cell-customer_id="{ row }">{{ row.customer_id ? `#${row.customer_id}` : t('promotion::admin.promotions_form.voucher_everyone') }}</template>
             <template #cell-actions="{ row }">
-                <button type="button" class="text-xs text-indigo-600 hover:underline" @click="toggleVoucher(row)">{{ row.status === 'active' ? t('promotion::admin.promotions_form.off_2') : t('promotion::admin.promotions_form.enable') }}</button>
+                <button v-if="!promotion.managed" type="button" class="text-xs text-indigo-600 hover:underline" @click="toggleVoucher(row)">{{ row.status === 'active' ? t('promotion::admin.promotions_form.off_2') : t('promotion::admin.promotions_form.enable') }}</button>
             </template>
         </DataTable>
         <Pagination

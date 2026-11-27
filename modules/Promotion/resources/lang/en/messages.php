@@ -4,6 +4,7 @@ return [
     'managed' => 'This promotion is managed by plugin :owner; edit it on the plugin screen.',
     'voucher_exhausted' => 'Voucher :code has no uses left.',
     'limit_reached' => 'Promotion ":name" has reached its usage or budget limit.',
+    'customer_limit_reached' => 'You have used up your uses of promotion ":name".',
     'saved' => 'Saved.',
     'deleted' => 'Deleted.',
     'stale' => 'This promotion was changed by someone else. Reload the page.',

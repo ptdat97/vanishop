@@ -47,7 +47,7 @@ it('mã giảm giá lưu theo giỏ: PUT /vouchers chỉ lưu mã dùng được
 
     ($this->vouchers)(['giam10', 'KHONGCO', 'giam10'])->assertOk()
         ->assertJsonPath('data.voucher_codes', ['giam10'])
-        ->assertJsonPath('meta.rejected_vouchers', [['code' => 'KHONGCO', 'reason' => 'not_found']]);
+        ->assertJsonPath('meta.rejected_vouchers', [['code' => 'KHONGCO', 'reason' => 'not_found', 'message' => 'Mã KHONGCO không tồn tại.']]);
     ($this->quote)()
         ->assertJsonPath('data.discount.amount', 30_000)
         ->assertJsonPath('data.adjustments.0.code', 'GIAM10')

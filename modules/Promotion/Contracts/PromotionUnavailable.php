@@ -7,7 +7,7 @@ namespace Modules\Promotion\Contracts;
 use Modules\Shared\Domain\BusinessRuleViolation;
 
 /**
- * Khuyến mãi/voucher hết lượt hoặc hết ngân sách ngay lúc ghi nhận (PlaceOrder) → đơn rollback.
+ * Khuyến mãi/voucher hết lượt (tổng hoặc của khách) hoặc hết ngân sách ngay lúc ghi nhận (PlaceOrder) → đơn rollback.
  */
 final class PromotionUnavailable extends BusinessRuleViolation
 {
@@ -24,6 +24,11 @@ final class PromotionUnavailable extends BusinessRuleViolation
     public static function limitReached(string $name): self
     {
         return new self('promotion.limit_reached', __('promotion::messages.limit_reached', ['name' => $name]), []);
+    }
+
+    public static function customerLimitReached(string $name): self
+    {
+        return new self('promotion.customer_limit_reached', __('promotion::messages.customer_limit_reached', ['name' => $name]), []);
     }
 
     public function errorCode(): string

@@ -28,6 +28,8 @@ return [
         'exhausted' => 'Mã :code đã hết lượt sử dụng.',
         'not_active' => 'Mã :code chưa được kích hoạt.',
         'not_applicable' => 'Mã :code không áp dụng được cho giỏ hàng này.',
+        'customer_limit' => 'Bạn đã dùng hết lượt của mã :code.',
+        'not_owner' => 'Mã :code dành cho tài khoản khác — hãy đăng nhập đúng tài khoản được tặng mã.',
     ],
     'cart_updated' => 'Đã cập nhật giỏ hàng.',
     'cart_line_removed' => 'Đã xoá sản phẩm khỏi giỏ.',

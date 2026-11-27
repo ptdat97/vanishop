@@ -9,7 +9,8 @@ Khuyến mãi, mã giảm giá, chiến dịch (khuyến mãi + bảng giá ch�
 ## Bất biến
 
 - Tổng giảm không vượt mức trần cấu hình (VN: 50%) và không làm giá âm.
-- Lượt dùng mã đếm trong transaction đặt hàng; huỷ đơn trả lượt.
+- Lượt dùng mã (tổng, theo voucher, theo khách) đếm trong transaction đặt hàng; huỷ đơn trả lượt.
+- Trần giảm tính theo giá gốc của dòng: phần đã giảm bằng bảng giá sale/thành viên dùng chung trần với khuyến mãi.
 - Chiến dịch sở hữu lịch; kết quả chiến dịch do plugin báo cáo dựng (M3).
 
 ## Bảng sở hữu
@@ -18,6 +19,7 @@ Khuyến mãi, mã giảm giá, chiến dịch (khuyến mãi + bảng giá ch�
 - `promotion_rules`
 - `vouchers`
 - `promotion_usages`
+- `promotion_customer_usages`
 - `campaigns`
 - `campaign_price_lists`
 
@@ -27,10 +29,13 @@ Khuyến mãi, mã giảm giá, chiến dịch (khuyến mãi + bảng giá ch�
 |---|---|---|
 | `Campaigns` | interface | plugin (experimental) |
 | `CartContentRule` | interface | plugin |
+| `ExplainsIneligibility` | interface | plugin (0.5.109) |
+| `ManagedPromotions` | interface | plugin |
 | `PromotionAction` | interface | tag `vani.promotion.actions`, plugin |
 | `PromotionEngine` | interface | plugin |
 | `PromotionRule` | interface | tag `vani.promotion.rules`, plugin |
 | `PromotionUnavailable` | class | plugin |
+| `Vouchers` | interface | plugin (0.5.109) |
 
 ---
 

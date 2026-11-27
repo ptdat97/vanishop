@@ -13,6 +13,7 @@ return [
     'percent_off_action' => [
         'decrease' => 'Decrease by %',
         'discount_percentage_must_between_0' => 'The discount percentage must be between 0.01% and 100%.',
+        'max_amount_positive' => 'The maximum discount must be an amount greater than 0.',
     ],
     'promotion_service' => [
         'code_already_exists' => 'The code already exists.',

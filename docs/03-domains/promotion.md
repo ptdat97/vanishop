@@ -110,6 +110,15 @@ Campaign gói **khuyến mãi + bảng giá sale/thành viên** chạy chung m�
 - **Báo cáo** trên trang campaign: số đơn dùng khuyến mãi của campaign, doanh thu (`OrderStatistics::summarize`), tổng giảm khuyến mãi, số khách, đơn huỷ. Chưa tính: đơn chỉ hưởng giá sale của bảng giá campaign mà không dùng khuyến mãi (dòng đơn chưa lưu nguồn bảng giá).
 - Tách thành viên khỏi campaign không đổi trạng thái của thành viên đó.
 
+## 5.2 Lượt mỗi khách, mã riêng, giảm tối đa, trần theo giá gốc (Implemented, 0.5.109)
+
+- **Lượt mỗi khách:** `promotions.usage_limit_per_customer`. Bộ đếm `promotion_customer_usages(promotion_id, customer_id, used_count)` luôn được ghi khi đơn có khách (kể cả khuyến mãi chưa giới hạn, để đặt giới hạn về sau tính đúng); tăng bằng `UPDATE … WHERE used_count < limit` trong `recordUsage`, hoàn trong `revertUsage`. Ở giỏ khách vãng lai chưa xác định nên chưa chặn; lúc đặt đơn Checkout đã giải khách theo SĐT nên đánh giá lại sẽ bỏ mã (`customer_limit`, ADR-044 §6), còn hai đơn song song thì đơn sau rollback với `promotion.customer_limit_reached`.
+- **Mã riêng:** `vouchers.customer_id` — chỉ khách đó dùng được; khách khác/chưa đăng nhập nhận `not_owner`. Contract `Vouchers` cho plugin phát mã (mã chào mừng, ví voucher). Admin hiện cột "Khách" (id; tên do plugin hiện).
+- **Giảm tối đa:** `percent_off.max_amount` kẹp tổng giảm của khuyến mãi, chia lại theo tỷ trọng dòng.
+- **Trần theo giá gốc:** `PromotionLine::$compareAt` (giá gạch khi dòng có giá từ bảng giá sale/thành viên hoặc giá gốc nhập tay). Trần của dòng = `max_bp × giá gốc × số lượng`, trừ phần đã giảm bằng giá (giá gốc − giá bán) — flash sale −50% thì không giảm thêm khi trần 50%. Dòng không có giá gạch: như cũ.
+- **Giải thích:** rule implement `ExplainsIneligibility` trả `Ineligibility` (câu, số tiền thiếu); voucher bị từ chối vì rule đó mang `hint`/`shortfall`. Storefront trả `message` = gợi ý hoặc câu theo lý do.
+- **Xem trước mã:** `Checkout\Contracts\VoucherPreview::forCart()` chạy totals pipeline cho từng mã (tối đa 50), cùng khuyến mãi tự động; dùng cho ví voucher của `vani.coupon-code`.
+
 ## 6. Ví dụ plugin rule
 
 ```php

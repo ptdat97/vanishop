@@ -115,14 +115,14 @@ final class PromotionController
     public function storeVouchers(Promotion $promotion, VoucherRequest $request, PromotionService $service): RedirectResponse
     {
         $this->assertNotManaged($promotion);
-        $count = $service->createVouchers(
+        $count = count($service->createVouchers(
             $promotion,
             $request->validated('code'),
             $request->validated('prefix'),
             (int) ($request->validated('count') ?? 1),
             $request->validated('usage_limit') === null ? null : (int) $request->validated('usage_limit'),
             $request->validated('expires_at'),
-        );
+        ));
 
         return back()->with('success', __('promotion::messages.vouchers_created', ['count' => $count]));
     }
@@ -163,7 +163,7 @@ final class PromotionController
             'baseUrl' => route('admin.promotion.promotions.index'),
             'labels' => __('promotion::labels'),
             'promotion' => $promotion === null ? null : [
-                ...$promotion->only(['id', 'name', 'status', 'priority', 'requires_voucher', 'action_type', 'action_config', 'usage_limit', 'usage_count', 'budget_amount', 'budget_used_amount', 'lock_version']),
+                ...$promotion->only(['id', 'name', 'status', 'priority', 'requires_voucher', 'action_type', 'action_config', 'usage_limit', 'usage_count', 'usage_limit_per_customer', 'budget_amount', 'budget_used_amount', 'lock_version']),
                 'stacking' => $promotion->stacking->value,
                 'starts_at' => StoreClock::toInput($promotion->starts_at),
                 'ends_at' => StoreClock::toInput($promotion->ends_at),
@@ -177,6 +177,7 @@ final class PromotionController
                 'status' => $voucher->status,
                 'used_count' => $voucher->used_count,
                 'usage_limit' => $voucher->usage_limit,
+                'customer_id' => $voucher->customer_id,
                 'expires_at' => StoreClock::format($voucher->expires_at),
             ])->all(),
             'vouchersTotal' => $promotion?->vouchers()->count() ?? 0,

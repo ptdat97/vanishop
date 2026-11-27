@@ -13,6 +13,7 @@ return [
     'percent_off_action' => [
         'decrease' => 'Giảm theo %',
         'discount_percentage_must_between_0' => 'Phần trăm giảm phải từ 0,01% đến 100%.',
+        'max_amount_positive' => 'Mức giảm tối đa phải là số tiền lớn hơn 0.',
     ],
     'promotion_service' => [
         'code_already_exists' => 'Mã đã tồn tại.',

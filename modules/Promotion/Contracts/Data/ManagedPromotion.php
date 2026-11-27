@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Promotion\Contracts\Data;
 
 use Modules\Promotion\Contracts\ManagedPromotions;
+use Modules\Promotion\Contracts\Vouchers;
 use Modules\Shared\Contracts\PluginApi;
 
 /**
@@ -18,6 +19,8 @@ final readonly class ManagedPromotion
      * @param  array<string, mixed>  $actionConfig
      * @param  list<array{type: string, config: array<string, mixed>}>  $rules
      * @param  string|null  $editRoute  route Admin của plugin để sửa, nhận một tham số là khoá của plugin
+     * @param  bool  $requiresVoucher  true = chỉ áp khi khách nhập mã (mã tạo qua {@see Vouchers}, 0.5.109)
+     * @param  int|null  $usageLimitPerCustomer  lượt tối đa mỗi khách (0.5.109)
      */
     public function __construct(
         public string $name,
@@ -32,5 +35,7 @@ final readonly class ManagedPromotion
         public ?int $usageLimit = null,
         public ?int $budgetAmount = null,
         public ?string $editRoute = null,
+        public bool $requiresVoucher = false,
+        public ?int $usageLimitPerCustomer = null,
     ) {}
 }

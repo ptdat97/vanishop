@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Promotion\Application;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Identity\Contracts\AuditLogger;
@@ -113,28 +114,48 @@ final class PromotionService
     }
 
     /**
-     * Tạo một mã cụ thể (code) hoặc sinh hàng loạt (prefix + count mã ngẫu nhiên).
+     * Tạo một mã cụ thể (code) hoặc sinh hàng loạt (prefix + count mã ngẫu nhiên). `customerId` = mã riêng của khách đó.
      *
-     * @return int số mã đã tạo
+     * @return list<string> các mã đã tạo
      */
-    public function createVouchers(Promotion $promotion, ?string $code, ?string $prefix, int $count, ?int $usageLimit, ?string $expiresAt): int
+    public function createVouchers(Promotion $promotion, ?string $code, ?string $prefix, int $count, ?int $usageLimit, ?string $expiresAt, ?int $customerId = null): array
     {
         $codes = $code !== null && $code !== ''
             ? [Voucher::normalize($code)]
-            : $this->generateCodes(Voucher::normalize((string) $prefix), $count);
+            : $this->generateCodes(Voucher::normalize((string) $prefix), max(1, min(5000, $count)));
 
         if ($codes !== [] && Voucher::query()->whereIn('code', $codes)->exists()) {
             throw ValidationException::withMessages(['code' => __('promotion::texts.promotion_service.code_already_exists')]);
         }
 
-        DB::transaction(function () use ($promotion, $codes, $usageLimit, $expiresAt): void {
-            foreach ($codes as $voucherCode) {
-                $promotion->vouchers()->create(['code' => $voucherCode, 'usage_limit' => $usageLimit, 'expires_at' => $expiresAt, 'status' => 'active']);
+        $expiresAt = $expiresAt === null || $expiresAt === '' ? null : Carbon::parse($expiresAt)->toDateTimeString();
+        DB::transaction(function () use ($promotion, $codes, $usageLimit, $expiresAt, $customerId): void {
+            $now = now();
+            foreach (array_chunk($codes, 500) as $chunk) {
+                Voucher::query()->insert(array_map(fn (string $voucherCode): array => [
+                    'promotion_id' => $promotion->id, 'customer_id' => $customerId, 'code' => $voucherCode, 'usage_limit' => $usageLimit,
+                    'used_count' => 0, 'expires_at' => $expiresAt, 'status' => 'active', 'created_at' => $now, 'updated_at' => $now,
+                ], $chunk));
             }
-            $this->audit->record('promotion.vouchers_created', 'promotion', $promotion->id, ['count' => count($codes), 'sample' => array_slice($codes, 0, 3)]);
+            $this->audit->record('promotion.vouchers_created', 'promotion', $promotion->id,
+                ['count' => count($codes), 'sample' => array_slice($codes, 0, 3), 'customer_id' => $customerId]);
         });
 
-        return count($codes);
+        return $codes;
+    }
+
+    /** Xoá voucher chưa dùng; đã dùng thì tắt để giữ lịch sử đơn. */
+    public function removeVoucher(Voucher $voucher): void
+    {
+        if (DB::table('promotion_usages')->where('voucher_id', $voucher->id)->exists()) {
+            $this->setVoucherStatus($voucher, 'inactive');
+
+            return;
+        }
+        DB::transaction(function () use ($voucher): void {
+            $voucher->delete();
+            $this->audit->record('promotion.voucher_deleted', 'voucher', $voucher->id, ['code' => $voucher->code]);
+        });
     }
 
     public function setVoucherStatus(Voucher $voucher, string $status): void

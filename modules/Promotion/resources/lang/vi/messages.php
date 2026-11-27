@@ -4,6 +4,7 @@ return [
     'managed' => 'Khuyến mãi do plugin :owner quản lý, sửa tại màn hình của plugin.',
     'voucher_exhausted' => 'Mã :code đã hết lượt sử dụng.',
     'limit_reached' => 'Khuyến mãi ":name" đã hết lượt hoặc hết ngân sách.',
+    'customer_limit_reached' => 'Bạn đã dùng hết lượt của khuyến mãi ":name".',
     'saved' => 'Đã lưu.',
     'deleted' => 'Đã xoá.',
     'stale' => 'Khuyến mãi đã được người khác cập nhật. Vui lòng tải lại trang.',

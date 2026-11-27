@@ -63,7 +63,7 @@ final class CartVoucher
         $code = trim($code);
         $rejection = self::find($this->applyCodes($cart, [$code])['rejected'], $code);
 
-        return $rejection === null ? null : self::message($rejection->reason, $code);
+        return $rejection === null ? null : self::describe($rejection);
     }
 
     /**
@@ -105,7 +105,15 @@ final class CartVoucher
     {
         $rejection = self::find($rejections, $code);
 
-        return $rejection === null ? null : self::message($rejection->reason, $code);
+        return $rejection === null ? null : self::describe($rejection);
+    }
+
+    /**
+     * Câu cho khách: gợi ý của rule nếu có ("Mua thêm 120.000đ để dùng mã", 0.5.109), không thì theo lý do.
+     */
+    public static function describe(VoucherRejection $rejection): string
+    {
+        return $rejection->hint ?? self::message($rejection->reason, $rejection->code);
     }
 
     /**
