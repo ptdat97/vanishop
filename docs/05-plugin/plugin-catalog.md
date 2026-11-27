@@ -80,6 +80,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 |---|---|---|
 | `vani.store-omnichannel` ([spec](specs/store-omnichannel.md)) | `FulfillmentMethod`, `SourcingStrategy` | P2 |
 | `vani.advanced-sourcing` | `SourcingStrategy` | P3 |
+| `vani.purchasing` (đơn mua nhiều bước, nhận một phần, danh bạ nhà cung cấp — [spec](specs/purchasing.md)) | `IncomingStock`, nhập kho của Inventory, `adminTool` | Later — đề xuất, Owner hoãn 2026-11-27 |
 
 ### Hoá đơn & thông báo
 | Plugin | Contract | Đợt |
