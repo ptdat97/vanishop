@@ -83,6 +83,10 @@ it('tạo mã dùng chung: đồng bộ khuyến mãi cần mã của Core (rule
         ->and($promotion->action_config)->toBe(['basis_points' => 1000, 'max_amount' => 20_000])
         ->and($promotion->rules->pluck('rule_type')->all())->toBe(['in_products', 'exclude_on_sale', 'min_order_subtotal'])
         ->and(Voucher::query()->where('promotion_id', $promotion->id)->pluck('code')->all())->toBe(['GIAM10']);
+
+    // Admin → Khuyến mãi: bấm vào dòng mở thẳng màn hình sửa của plugin.
+    $this->get('/admin/promotion/promotions')->assertInertia(fn (Assert $page) => $page
+        ->where('promotions.0.managed', true)->where('promotions.0.edit_url', route('admin.plugins.vani-coupon-code.edit', $coupon->id)));
 });
 
 it('từ chối % vượt mức, mã trùng, kết thúc trước bắt đầu; nhân viên chỉ xem không tạo được', function () {

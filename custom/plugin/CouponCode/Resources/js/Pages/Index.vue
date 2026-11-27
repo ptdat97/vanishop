@@ -5,7 +5,7 @@ import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { primaryButton } from '@admin/styles';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 type State = 'running' | 'scheduled' | 'ended' | 'off';
@@ -49,7 +49,7 @@ const columns = computed(() => [
         <PageHeader :title="t('vani-coupon-code::admin.index.title')" :subtitle="t('vani-coupon-code::admin.index.subtitle')">
             <Link v-if="can.manage" :href="couponUrls.create" :class="primaryButton">{{ t('vani-coupon-code::admin.index.add') }}</Link>
         </PageHeader>
-        <DataTable :columns="columns" :rows="coupons" :row-label="(row) => row.name" :empty-text="t('vani-coupon-code::admin.index.empty')">
+        <DataTable :columns="columns" :rows="coupons" :row-label="(row) => row.name" :row-click="(row) => router.visit(row.edit_url)" :empty-text="t('vani-coupon-code::admin.index.empty')">
             <template #cell-name="{ row }">
                 <Link :href="row.edit_url" class="hover:underline">{{ row.name }}</Link>
                 <div class="font-mono text-xs text-slate-500">{{ row.code ?? t('vani-coupon-code::admin.index.template') }}</div>

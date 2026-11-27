@@ -21,6 +21,7 @@ const props = defineProps<{
         id: number;
         name: string;
         managed: boolean;
+        edit_url: string;
         status: string;
         running: boolean;
         action_type: string;
@@ -60,6 +61,13 @@ function describe(type: string, config: Record<string, number>): string {
     if (type === 'amount_off') return t('promotion::admin.promotions_index.amount_off', { amount: money(config.amount ?? 0) });
     return type;
 }
+
+/** Mở dòng: khuyến mãi do plugin quản lý → màn hình sửa của plugin (plugin tự kiểm quyền); còn lại cần quyền sửa khuyến mãi. */
+function openPromotion(promotion: { managed: boolean; edit_url: string }): void {
+    if (props.canManage || promotion.managed) {
+        router.visit(promotion.edit_url);
+    }
+}
 </script>
 
 <template>
@@ -77,7 +85,7 @@ function describe(type: string, config: Record<string, number>): string {
             <ExtensionActions :actions="extensions.actions" :ids="selected" :selection-description="t('promotion::admin.promotions_index.promotions')" />
         </template>
     </div>
-    <DataTable v-model:selected="selected" :sort="sort" :loading="list.loading.value" @sort="(next) => reload(next)" :extensions="extensions" :columns="columns" :rows="promotions" :row-label="(promotion) => promotion.name" :row-click="canManage ? (promotion) => router.visit(`${props.baseUrl}/${promotion.id}/edit`) : undefined" :empty-text="t('promotion::admin.promotions_index.no_promotions_yet')">
+    <DataTable v-model:selected="selected" :sort="sort" :loading="list.loading.value" @sort="(next) => reload(next)" :extensions="extensions" :columns="columns" :rows="promotions" :row-label="(promotion) => promotion.name" :row-click="openPromotion" :empty-text="t('promotion::admin.promotions_index.no_promotions_yet')">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-slate-400">

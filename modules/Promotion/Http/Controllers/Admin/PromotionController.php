@@ -52,6 +52,8 @@ final class PromotionController
                 'id' => $promotion->id,
                 'name' => $promotion->name,
                 'managed' => $promotion->isManaged(),
+                // Khuyến mãi do plugin quản lý: mở thẳng màn hình sửa của plugin (plugin tắt → form chỉ xem của Core).
+                'edit_url' => $promotion->managedUrl() ?? route('admin.promotion.promotions.edit', $promotion->id),
                 'status' => $promotion->status,
                 'running' => $promotion->isRunningAt(now()->getTimestamp()),
                 'action_type' => $promotion->action_type,

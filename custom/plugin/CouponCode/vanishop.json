@@ -8,7 +8,7 @@
         "vi": "Tạo mã giảm giá sản phẩm trên một form gọn: giảm % hoặc số tiền, giảm tối đa, đơn tối thiểu, phạm vi sản phẩm, lượt mỗi khách. Ví voucher ở giỏ/checkout, mã cho sản phẩm ở trang sản phẩm, mã riêng phát cho khách.",
         "en": "Product discount codes on one simple form: percent or amount off, maximum discount, minimum order, product scope, uses per customer. Voucher wallet in cart/checkout, product codes on product pages, personal codes issued to customers."
     },
-    "version": "0.1.0",
+    "version": "0.1.1",
     "kind": "promotion",
     "provider": "Plugin\\CouponCode\\CouponCodeServiceProvider",
     "requires": {
