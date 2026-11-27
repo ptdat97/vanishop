@@ -74,4 +74,5 @@ return [
     'category_not_found' => 'Không tìm thấy danh mục.',
     'product_not_found' => 'Không tìm thấy sản phẩm.',
     'page_cache_cleared' => 'Đã xoá cache trang; trang được dựng lại ở lượt xem kế tiếp.',
+    'cross_site_request' => 'Yêu cầu không đến từ trang của cửa hàng.',
 ];

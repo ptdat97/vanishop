@@ -51,7 +51,7 @@ foreach (StoreLocale::supported() as $locale) {
             // Ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`): giỏ và checkout chuyển sang đăng nhập.
             Route::middleware('vani.prices-visible')->group(function () use ($p): void {
                 Route::get($p('cart'), [CartController::class, 'show'])->name('cart');
-                Route::middleware('throttle:vani-cart-create')->post($p('cart'), [CartController::class, 'add'])->name('cart.add');
+                Route::middleware(['throttle:vani-cart-create', 'vani.same-origin'])->post($p('cart'), [CartController::class, 'add'])->name('cart.add');
                 Route::post($p('cart.update'), [CartController::class, 'update'])->whereNumber('line')->name('cart.update');
                 Route::post($p('cart.remove'), [CartController::class, 'remove'])->whereNumber('line')->name('cart.remove');
                 Route::post($p('cart.select'), [CartController::class, 'select'])->name('cart.select');

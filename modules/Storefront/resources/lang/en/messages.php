@@ -74,4 +74,5 @@ return [
     'category_not_found' => 'Category not found.',
     'product_not_found' => 'Product not found.',
     'page_cache_cleared' => 'Page cache cleared; pages are rebuilt on their next view.',
+    'cross_site_request' => 'The request did not come from the store website.',
 ];
