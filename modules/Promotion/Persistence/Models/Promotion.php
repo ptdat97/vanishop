@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use Modules\Promotion\Domain\Stacking;
+use Modules\Shared\Domain\Schedule\WeeklySchedule;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * @property int $id
@@ -20,6 +22,7 @@ use Modules\Promotion\Domain\Stacking;
  * @property string $status
  * @property Carbon|null $starts_at
  * @property Carbon|null $ends_at
+ * @property list<array{days: list<int>, from: string, to: string}>|null $recurrence lịch lặp theo tuần (0.5.116)
  * @property int $priority
  * @property Stacking $stacking
  * @property bool $requires_voucher
@@ -34,13 +37,13 @@ use Modules\Promotion\Domain\Stacking;
  */
 final class Promotion extends Model
 {
-    protected $fillable = ['campaign_id', 'managed_by', 'managed_key', 'managed_route', 'name', 'status', 'starts_at', 'ends_at', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
+    protected $fillable = ['campaign_id', 'managed_by', 'managed_key', 'managed_route', 'name', 'status', 'starts_at', 'ends_at', 'recurrence', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
         'usage_limit', 'usage_count', 'usage_limit_per_customer', 'budget_amount', 'budget_used_amount', 'lock_version'];
 
     protected function casts(): array
     {
         return [
-            'starts_at' => 'datetime', 'ends_at' => 'datetime', 'priority' => 'integer', 'stacking' => Stacking::class,
+            'starts_at' => 'datetime', 'ends_at' => 'datetime', 'recurrence' => 'array', 'priority' => 'integer', 'stacking' => Stacking::class,
             'requires_voucher' => 'boolean', 'action_config' => 'array', 'usage_limit' => 'integer', 'usage_count' => 'integer', 'usage_limit_per_customer' => 'integer',
             'budget_amount' => 'integer', 'budget_used_amount' => 'integer', 'lock_version' => 'integer',
         ];
@@ -80,6 +83,7 @@ final class Promotion extends Model
     {
         return $this->status === 'active'
             && ($this->starts_at === null || $this->starts_at->getTimestamp() <= $now)
-            && ($this->ends_at === null || $this->ends_at->getTimestamp() > $now);
+            && ($this->ends_at === null || $this->ends_at->getTimestamp() > $now)
+            && (WeeklySchedule::fromArray($this->recurrence)?->isOpenAt($now, StoreClock::zone()) ?? true);
     }
 }

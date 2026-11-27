@@ -6,6 +6,7 @@ namespace Modules\Pricing\Contracts\Data;
 
 use Modules\Pricing\Contracts\ManagedPriceLists;
 use Modules\Shared\Contracts\PluginApi;
+use Modules\Shared\Domain\Schedule\WeeklySchedule;
 
 /**
  * Bảng giá do plugin quản lý ({@see ManagedPriceLists}, 0.5.115): plugin giữ nội dung (vd. chiến
@@ -24,6 +25,7 @@ final readonly class ManagedPriceList
      * @param  array<int, int>  $prices  variant id => giá bán (minor unit, ≥ 0); variant không còn trong mảng bị gỡ khỏi bảng giá
      * @param  int|null  $customerGroupId  bắt buộc với `member`
      * @param  string|null  $editRoute  route Admin của plugin để sửa, nhận một tham số là khoá của plugin
+     * @param  WeeklySchedule|null  $recurrence  lịch lặp theo tuần (0.5.116) — sale cuối tuần, khung giờ vàng
      */
     public function __construct(
         public string $name,
@@ -35,5 +37,6 @@ final readonly class ManagedPriceList
         public ?int $startsAt = null,
         public ?int $endsAt = null,
         public ?string $editRoute = null,
+        public ?WeeklySchedule $recurrence = null,
     ) {}
 }

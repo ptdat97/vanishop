@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\CarbonImmutable;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -94,4 +95,26 @@ it('không có quyền bảng giá: sửa campaign không đụng tới danh sá
     $this->actingAs(T::staff(['admin.access', 'promotion.view', 'promotion.manage']), 'staff');
     $this->put("{$this->base}/{$campaign->id}", [...($this->payload)(['price_list_ids' => []]), 'lock_version' => $campaign->fresh()->lock_version])->assertSessionHasNoErrors();
     $this->get("{$this->base}/{$campaign->id}/edit")->assertInertia(fn (Assert $page) => $page->where('campaign.price_list_ids', [$this->sale->id])->where('can.price_lists', false));
+});
+
+it('lịch lặp cuối tuần của campaign ghi xuống khuyến mãi và bảng giá: giá sale và khuyến mãi chỉ chạy thứ Bảy, Chủ nhật', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-12-04 10:00', 'Asia/Ho_Chi_Minh')); // thứ Sáu
+    $weekend = [['days' => [6, 7], 'from' => '00:00', 'to' => '00:00']];
+    $this->post($this->base, ($this->payload)([
+        'starts_at' => '2026-12-04T09:00', 'ends_at' => '2026-12-31T23:00', 'recurrence' => $weekend,
+    ]))->assertSessionHasNoErrors();
+    $campaign = Campaign::query()->sole();
+    $this->post("{$this->base}/{$campaign->id}/activate")->assertSessionHasNoErrors();
+
+    expect(PriceList::query()->find($this->sale->id)->recurrence)->toBe($weekend)
+        ->and($this->promotion->fresh()->recurrence)->toBe($weekend)
+        ->and(($this->price)())->toBe(300_000)
+        ->and($this->promotion->fresh()->isRunningAt(now()->getTimestamp()))->toBeFalse();
+
+    $this->travelTo(CarbonImmutable::parse('2026-12-05 10:00', 'Asia/Ho_Chi_Minh')); // thứ Bảy
+    expect(($this->price)())->toBe(200_000)
+        ->and($this->promotion->fresh()->isRunningAt(now()->getTimestamp()))->toBeTrue();
+
+    $this->put("{$this->base}/{$campaign->id}", [...($this->payload)(['recurrence' => [['days' => [9], 'from' => '00:00', 'to' => '00:00']]]), 'lock_version' => $campaign->fresh()->lock_version])
+        ->assertSessionHasErrors('recurrence');
 });

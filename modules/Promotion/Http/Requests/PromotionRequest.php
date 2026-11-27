@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Modules\Promotion\Domain\Stacking;
 use Modules\Promotion\Persistence\Models\Promotion;
+use Modules\Shared\Domain\Schedule\WeeklySchedule;
+use Modules\Shared\Http\Rules\WeeklyScheduleRule;
 
 final class PromotionRequest extends FormRequest
 {
@@ -27,6 +29,7 @@ final class PromotionRequest extends FormRequest
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date'],
+            'recurrence' => ['nullable', 'array', new WeeklyScheduleRule],
             'priority' => ['required', 'integer', 'min:-1000', 'max:1000'],
             'stacking' => ['required', Rule::enum(Stacking::class)],
             'requires_voucher' => ['required', 'boolean'],
@@ -51,6 +54,7 @@ final class PromotionRequest extends FormRequest
     public function toData(): array
     {
         $data = collect($this->validated())->except('lock_version')->all();
+        $data['recurrence'] = WeeklySchedule::fromArray($data['recurrence'] ?? null)?->toArray();
         $data['action_config'] = array_filter((array) $data['action_config'], fn (mixed $value): bool => $value !== null);
         $data['rules'] = array_map(
             fn (array $rule): array => ['type' => $rule['type'], 'config' => (array) ($rule['config'] ?? [])],

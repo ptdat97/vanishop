@@ -7,6 +7,7 @@ namespace Modules\Promotion\Contracts\Data;
 use Modules\Promotion\Contracts\ManagedPromotions;
 use Modules\Promotion\Contracts\Vouchers;
 use Modules\Shared\Contracts\PluginApi;
+use Modules\Shared\Domain\Schedule\WeeklySchedule;
 
 /**
  * Khuyến mãi do plugin quản lý ({@see ManagedPromotions}): plugin giữ nội dung (vd. combo),
@@ -21,6 +22,7 @@ final readonly class ManagedPromotion
      * @param  string|null  $editRoute  route Admin của plugin để sửa, nhận một tham số là khoá của plugin
      * @param  bool  $requiresVoucher  true = chỉ áp khi khách nhập mã (mã tạo qua {@see Vouchers}, 0.5.109)
      * @param  int|null  $usageLimitPerCustomer  lượt tối đa mỗi khách (0.5.109)
+     * @param  WeeklySchedule|null  $recurrence  lịch lặp theo tuần (0.5.116)
      */
     public function __construct(
         public string $name,
@@ -37,5 +39,6 @@ final readonly class ManagedPromotion
         public ?string $editRoute = null,
         public bool $requiresVoucher = false,
         public ?int $usageLimitPerCustomer = null,
+        public ?WeeklySchedule $recurrence = null,
     ) {}
 }

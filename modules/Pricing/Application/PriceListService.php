@@ -30,7 +30,7 @@ final class PriceListService
     ) {}
 
     /**
-     * @param  array{code: string, name: string, type: string, customer_group_id?: ?int, priority: int, starts_at: ?string, ends_at: ?string, status: string, managed_by?: string, managed_key?: string, managed_route?: ?string}  $data
+     * @param  array{code: string, name: string, type: string, customer_group_id?: ?int, priority: int, starts_at: ?string, ends_at: ?string, recurrence?: list<array{days: list<int>, from: string, to: string}>|null, status: string, managed_by?: string, managed_key?: string, managed_route?: ?string}  $data
      */
     public function save(array $data, ?PriceList $list = null, ?int $expectedLockVersion = null): PriceList
     {

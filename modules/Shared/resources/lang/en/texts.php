@@ -20,4 +20,5 @@ return [
         'idempotency_key_was_already_used' => 'The Idempotency-Key was already used for another request.',
         'request_idempotency_key_being_processed' => 'A request with this Idempotency-Key is being processed. Please try again later.',
     ],
+    'weekly_schedule_invalid' => 'Invalid weekly schedule: pick at least one day, times as HH:MM, at most 3 windows.',
 ];

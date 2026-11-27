@@ -48,6 +48,7 @@ final class ManagedPriceListService implements ManagedPriceLists
                 'priority' => $list->priority,
                 'starts_at' => $list->startsAt === null ? null : Carbon::createFromTimestamp($list->startsAt)->toDateTimeString(),
                 'ends_at' => $list->endsAt === null ? null : Carbon::createFromTimestamp($list->endsAt)->toDateTimeString(),
+                'recurrence' => $list->recurrence?->toArray(),
                 'status' => $list->active ? 'active' : 'inactive',
                 'managed_by' => $owner,
                 'managed_key' => $key,

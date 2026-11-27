@@ -2,6 +2,7 @@
 import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
+import WeeklyScheduleInput, { type WeeklyWindow } from '@admin/Components/WeeklyScheduleInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -27,6 +28,7 @@ const props = defineProps<{
         priority: number;
         starts_at: string | null;
         ends_at: string | null;
+        recurrence: WeeklyWindow[] | null;
         status: string;
         lock_version: number;
     };
@@ -53,6 +55,7 @@ const { form, save } = useAdminForm(
         priority: props.priceList?.priority ?? (null as number | null),
         starts_at: props.priceList?.starts_at ?? null,
         ends_at: props.priceList?.ends_at ?? null,
+        recurrence: (props.priceList?.recurrence ?? null) as WeeklyWindow[] | null,
         status: props.priceList?.status ?? 'active',
         lock_version: props.priceList?.lock_version ?? null,
     },
@@ -103,6 +106,7 @@ async function destroy(): Promise<void> {
         <FormField :label="t('pricing::admin.price_lists_form.name')" class="sm:col-span-2" :error="form.errors.name"><input v-model="form.name" :class="inputClass" :placeholder="t('pricing::admin.price_lists_form.end_season_sale_12_2026')" :aria-label="t('pricing::admin.price_lists_form.price_list_name')" /></FormField>
         <FormField :label="t('pricing::admin.price_lists_form.started')" :hint="t('pricing::admin.price_lists_form.leave_empty_starts_now')" :error="form.errors.starts_at"><DateInput v-model="form.starts_at" with-time /></FormField>
         <FormField :label="t('pricing::admin.price_lists_form.ends')" :hint="t('pricing::admin.price_lists_form.leave_empty_never_expires')" :error="form.errors.ends_at"><DateInput v-model="form.ends_at" with-time /></FormField>
+        <div v-if="form.type !== 'base'" class="sm:col-span-2"><WeeklyScheduleInput v-model="form.recurrence" :error="form.errors.recurrence" /></div>
         <FormField v-if="priceList" :label="t('pricing::admin.price_lists_form.use')" :error="form.errors.status">
             <label class="flex items-center gap-2 text-sm"><input v-model="form.status" type="checkbox" true-value="active" false-value="inactive" /> {{ form.status === 'active' ? t('pricing::admin.price_lists_form.enable') : t('pricing::admin.price_lists_form.off_customers_do_not_see') }}</label>
         </FormField>

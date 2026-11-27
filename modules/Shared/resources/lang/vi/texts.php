@@ -20,4 +20,5 @@ return [
         'idempotency_key_was_already_used' => 'Idempotency-Key đã được dùng cho một yêu cầu khác.',
         'request_idempotency_key_being_processed' => 'Yêu cầu với Idempotency-Key này đang được xử lý. Vui lòng thử lại sau.',
     ],
+    'weekly_schedule_invalid' => 'Lịch lặp theo tuần không hợp lệ: chọn ít nhất một ngày, giờ dạng HH:MM, tối đa 3 khung.',
 ];

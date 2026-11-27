@@ -11,6 +11,8 @@ use Modules\Pricing\Application\ListPriceSync;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\PriceList;
+use Modules\Shared\Domain\Schedule\WeeklySchedule;
+use Modules\Shared\Http\Rules\WeeklyScheduleRule;
 use Modules\Shared\Support\StoreClock;
 
 final class PriceListRequest extends FormRequest
@@ -47,13 +49,14 @@ final class PriceListRequest extends FormRequest
             'priority' => ['nullable', 'integer', 'min:-1000', 'max:1000'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date'],
+            'recurrence' => ['nullable', 'array', new WeeklyScheduleRule],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'lock_version' => [$list instanceof PriceList ? 'required' : 'nullable', 'integer', 'min:0'],
         ];
     }
 
     /**
-     * @return array{code: string, name: string, type: string, customer_group_id: ?int, priority: int, starts_at: ?string, ends_at: ?string, status: string}
+     * @return array{code: string, name: string, type: string, customer_group_id: ?int, priority: int, starts_at: ?string, ends_at: ?string, recurrence: list<array{days: list<int>, from: string, to: string}>|null, status: string}
      */
     public function toData(): array
     {
@@ -67,6 +70,8 @@ final class PriceListRequest extends FormRequest
             // Nhân viên nhập theo giờ cửa hàng; lưu UTC.
             'starts_at' => $this->validated('starts_at') === null ? null : StoreClock::fromInput((string) $this->validated('starts_at'))->toDateTimeString(),
             'ends_at' => $this->validated('ends_at') === null ? null : StoreClock::fromInput((string) $this->validated('ends_at'))->toDateTimeString(),
+            // Lịch lặp theo tuần (0.5.116); bảng giá niêm yết luôn chạy.
+            'recurrence' => $this->validated('type') === PriceListType::Base->value ? null : WeeklySchedule::fromArray($this->validated('recurrence'))?->toArray(),
             'status' => (string) $this->validated('status'),
         ];
     }

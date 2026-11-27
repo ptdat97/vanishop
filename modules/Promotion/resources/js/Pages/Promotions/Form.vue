@@ -3,6 +3,7 @@ import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
 import DateInput from '@admin/Components/DateInput.vue';
+import WeeklyScheduleInput, { type WeeklyWindow } from '@admin/Components/WeeklyScheduleInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -37,6 +38,7 @@ const props = defineProps<{
         action_type: string;
         action_config: Record<string, number>;
         usage_limit: number | null;
+        recurrence: WeeklyWindow[] | null;
         usage_limit_per_customer: number | null;
         usage_count: number;
         budget_amount: number | null;
@@ -76,6 +78,7 @@ const { form, save } = useAdminForm({
     status: props.promotion?.status ?? 'active',
     starts_at: props.promotion?.starts_at ?? null,
     ends_at: props.promotion?.ends_at ?? null,
+    recurrence: (props.promotion?.recurrence ?? null) as WeeklyWindow[] | null,
     priority: props.promotion?.priority ?? 0,
     stacking: props.promotion?.stacking ?? 'combinable',
     requires_voucher: props.promotion?.requires_voucher ?? true,
@@ -191,6 +194,7 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
         </FormField>
         <FormField :label="t('promotion::admin.promotions_form.valid_from')" :error="form.errors.starts_at"><DateInput v-model="form.starts_at" with-time /></FormField>
         <FormField :label="t('promotion::admin.promotions_form.valid_until')" :error="form.errors.ends_at"><DateInput v-model="form.ends_at" with-time /></FormField>
+        <div class="sm:col-span-2"><WeeklyScheduleInput v-model="form.recurrence" :error="form.errors.recurrence" /></div>
         <FormField label="Priority" :hint="t('promotion::admin.promotions_form.higher_evaluated_first')" :error="form.errors.priority">
             <input v-model.number="form.priority" :class="inputClass" type="number" />
         </FormField>

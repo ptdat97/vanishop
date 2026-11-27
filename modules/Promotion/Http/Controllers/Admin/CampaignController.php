@@ -16,6 +16,7 @@ use Modules\Promotion\Application\AdminQueries;
 use Modules\Promotion\Application\CampaignService;
 use Modules\Promotion\Persistence\Models\Campaign;
 use Modules\Promotion\Persistence\Models\Promotion;
+use Modules\Shared\Http\Rules\WeeklyScheduleRule;
 use Modules\Shared\Support\StoreClock;
 
 /**
@@ -110,6 +111,7 @@ final class CampaignController
                 'id' => $campaign->id, 'code' => $campaign->code, 'name' => $campaign->name, 'description' => $campaign->description,
                 'starts_at' => StoreClock::toInput($campaign->starts_at),
                 'ends_at' => StoreClock::toInput($campaign->ends_at),
+                'recurrence' => $campaign->recurrence,
                 'status' => $campaign->status, 'state' => $campaign->state(), 'lock_version' => $campaign->lock_version,
                 'promotion_ids' => $campaign->promotions()->pluck('id')->all(),
                 'price_list_ids' => $campaigns->priceListIds($campaign),
@@ -123,7 +125,7 @@ final class CampaignController
     }
 
     /**
-     * @return array{0: array{code: string, name: string, description: ?string, starts_at: string, ends_at: string}, 1: list<int>, 2: list<int>|null}
+     * @return array{0: array{code: string, name: string, description: ?string, starts_at: string, ends_at: string, recurrence: mixed}, 1: list<int>, 2: list<int>|null}
      */
     private function validated(Request $request, ?Campaign $campaign = null): array
     {
@@ -133,6 +135,7 @@ final class CampaignController
             'description' => ['nullable', 'string', 'max:500'],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date'],
+            'recurrence' => ['nullable', 'array', new WeeklyScheduleRule],
             'promotion_ids' => ['array'],
             'promotion_ids.*' => ['integer', 'exists:promotions,id'],
             'price_list_ids' => ['array'],
@@ -141,7 +144,7 @@ final class CampaignController
         $toUtc = fn (string $local): string => StoreClock::fromInput($local)->toDateTimeString();
 
         return [
-            ['code' => $data['code'], 'name' => $data['name'], 'description' => $data['description'] ?? null, 'starts_at' => $toUtc($data['starts_at']), 'ends_at' => $toUtc($data['ends_at'])],
+            ['code' => $data['code'], 'name' => $data['name'], 'description' => $data['description'] ?? null, 'starts_at' => $toUtc($data['starts_at']), 'ends_at' => $toUtc($data['ends_at']), 'recurrence' => $data['recurrence'] ?? null],
             array_map('intval', $data['promotion_ids'] ?? []),
             // Không có quyền bảng giá → không đụng tới danh sách bảng giá của campaign.
             Gate::allows('pricing.manage') ? array_map('intval', $data['price_list_ids'] ?? []) : null,

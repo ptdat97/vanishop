@@ -13,6 +13,8 @@ use Modules\Pricing\Domain\PriceCandidate;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Domain\PriceSelection;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Domain\Schedule\WeeklySchedule;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Chiến lược mặc định: bảng giá đang hiệu lực của kênh → PriceSelection (priority, giá thấp nhất, giá gốc).
@@ -42,7 +44,17 @@ final class PriceListPriorityStrategy implements PricingStrategy
             ->where(fn ($query) => $query->whereNull('price_lists.ends_at')->orWhere('price_lists.ends_at', '>', $now))
             ->whereIn('prices.variant_id', $variantIds)
             ->where('prices.min_qty', 1)
-            ->get(['prices.variant_id', 'prices.amount', 'prices.compare_at_amount', 'price_lists.id as list_id', 'price_lists.code', 'price_lists.type', 'price_lists.priority', 'price_lists.currency_code']);
+            ->get(['prices.variant_id', 'prices.amount', 'prices.compare_at_amount', 'price_lists.id as list_id', 'price_lists.code', 'price_lists.type', 'price_lists.priority', 'price_lists.currency_code', 'price_lists.recurrence']);
+
+        // Lịch lặp theo tuần (0.5.116): bảng giá ngoài khung giờ không tham gia — sale cuối tuần, khung giờ vàng.
+        $inWindow = [];
+        $rows = $rows->filter(function (object $row) use (&$inWindow, $context): bool {
+            if ($row->recurrence === null) {
+                return true;
+            }
+
+            return $inWindow[$row->list_id] ??= (WeeklySchedule::fromArray(json_decode((string) $row->recurrence, true))?->isOpenAt($context->now, StoreClock::zone()) ?? true);
+        });
 
         $resolved = [];
         foreach ($rows->groupBy('variant_id') as $variantId => $group) {

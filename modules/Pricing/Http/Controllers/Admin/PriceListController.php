@@ -368,6 +368,7 @@ final class PriceListController
                 'type' => $list->type->value,
                 'customer_group_id' => $list->customer_group_id,
                 'priority' => $list->priority,
+                'recurrence' => $list->recurrence,
                 'starts_at' => StoreClock::toInput($list->starts_at),
                 'ends_at' => StoreClock::toInput($list->ends_at),
                 'status' => $list->status,

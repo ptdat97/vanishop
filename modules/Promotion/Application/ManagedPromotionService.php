@@ -31,6 +31,7 @@ final class ManagedPromotionService implements ManagedPromotions
             'status' => $promotion->active ? 'active' : 'inactive',
             'starts_at' => $promotion->startsAt === null ? null : Carbon::createFromTimestamp($promotion->startsAt),
             'ends_at' => $promotion->endsAt === null ? null : Carbon::createFromTimestamp($promotion->endsAt),
+            'recurrence' => $promotion->recurrence?->toArray(),
             'priority' => $promotion->priority,
             'stacking' => $promotion->exclusive ? Stacking::Exclusive : Stacking::Combinable,
             'requires_voucher' => $promotion->requiresVoucher,

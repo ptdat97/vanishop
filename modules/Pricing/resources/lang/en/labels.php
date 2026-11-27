@@ -9,7 +9,7 @@ return [
     'price_list_status' => ['active' => 'Active', 'inactive' => 'Inactive'],
     'history' => ['system' => 'System', 'staff_removed' => 'Removed staff'],
     'matrix' => ['label' => 'Price', 'price' => 'Price (list)', 'compare_at' => 'Compare-at price', 'compare_at_help' => 'Strike-through price; leave empty when not discounted.'],
-    'price_list_state' => ['running' => 'Running', 'scheduled' => 'Scheduled', 'expired' => 'Expired', 'disabled' => 'Disabled'],
+    'price_list_state' => ['running' => 'Running', 'scheduled' => 'Scheduled', 'expired' => 'Expired', 'disabled' => 'Disabled', 'outside_window' => 'Outside time window'],
     'bulk' => [
         'mode' => 'Method', 'value' => 'Value',
         'modes' => ['percent' => 'Percent off', 'amount' => 'Amount off', 'fixed' => 'Fixed price'],

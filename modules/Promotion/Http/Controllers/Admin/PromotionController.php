@@ -169,6 +169,7 @@ final class PromotionController
                 'stacking' => $promotion->stacking->value,
                 'starts_at' => StoreClock::toInput($promotion->starts_at),
                 'ends_at' => StoreClock::toInput($promotion->ends_at),
+                'recurrence' => $promotion->recurrence,
                 // Do plugin quản lý (ManagedPromotions): Admin chỉ xem, sửa tại màn hình của plugin.
                 'managed' => $promotion->isManaged() ? ['owner' => $promotion->managed_by, 'url' => $promotion->managedUrl()] : null,
                 'rules' => $promotion->rules->map(fn ($rule): array => ['type' => $rule->rule_type, 'label' => $registry->rule($rule->rule_type)?->label(), 'config' => $rule->config])->all(),

@@ -85,6 +85,7 @@ final class PriceListWorkspace
             $list->status !== 'active' => 'disabled',
             $list->ends_at !== null && $list->ends_at->isPast() => 'expired',
             $list->starts_at !== null && $list->starts_at->isFuture() => 'scheduled',
+            ! $list->isInWindowAt(now()->getTimestamp()) => 'outside_window',
             default => 'running',
         };
     }

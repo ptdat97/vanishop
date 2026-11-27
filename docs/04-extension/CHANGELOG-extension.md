@@ -6,6 +6,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.116 — 2026-11-28 · Extension API 1.52.0
+
+Đợt 3 B2 — lịch lặp theo tuần (sale cuối tuần, khung giờ vàng):
+
+- Value object `Shared\Domain\Schedule\WeeklySchedule` (tối đa 3 khung: ngày trong tuần + giờ `HH:MM` theo giờ cửa hàng, qua nửa đêm được): `fromArray`, `isValid`, `isOpenAt`, `nextBoundaryAfter`. Rule form `Shared\Http\Rules\WeeklyScheduleRule`, component Admin `@admin/Components/WeeklyScheduleInput.vue`.
+- `price_lists.recurrence`, `promotions.recurrence`, `campaigns.recurrence`. Bảng giá ngoài khung không tham gia giải giá (`PriceListPriorityStrategy`); `PriceListSchedule::nextChangeAfter` gồm mốc mở/đóng của lịch lặp (cache trang hết hạn đúng lúc); trạng thái bảng giá mới `outside_window` ("Ngoài khung giờ"). `Promotion::isRunningAt` xét lịch lặp.
+- Campaign ghi lịch lặp xuống khuyến mãi và bảng giá thành viên. `PriceListSchedule::schedule(..., ?WeeklySchedule $recurrence = null)` (giữa module).
+- `ManagedPriceList::$recurrence`, `ManagedPromotion::$recurrence` (named, mặc định null).
+- Admin: ô "Chỉ chạy theo khung giờ trong tuần" ở form bảng giá (trừ giá niêm yết), khuyến mãi, campaign.
+
 ## 0.5.115 — 2026-11-28 · Extension API 1.51.0
 
 Đợt 3 của kế hoạch `vani.pricing-campaign` — B1 (Owner duyệt 2026-11-27):

@@ -13,6 +13,7 @@ use Modules\Promotion\Contracts\Campaigns;
 use Modules\Promotion\Contracts\Data\CampaignUsage;
 use Modules\Promotion\Persistence\Models\Campaign;
 use Modules\Promotion\Persistence\Models\Promotion;
+use Modules\Shared\Domain\Schedule\WeeklySchedule;
 
 /**
  * Campaign (roadmap Phase 8): gói khuyến mãi + bảng giá sale/member chạy chung lịch. Campaign SỞ HỮU lịch: khi kích hoạt,
@@ -30,7 +31,7 @@ final class CampaignService implements Campaigns
     ) {}
 
     /**
-     * @param  array{code: string, name: string, description: ?string, starts_at: string, ends_at: string}  $data
+     * @param  array{code: string, name: string, description: ?string, starts_at: string, ends_at: string, recurrence?: mixed}  $data
      * @param  list<int>  $promotionIds
      * @param  list<int>|null  $priceListIds  null = giữ nguyên (người sửa không có quyền bảng giá)
      */
@@ -50,7 +51,8 @@ final class CampaignService implements Campaigns
                 throw ValidationException::withMessages(['lock_version' => __('promotion::messages.stale')]);
             }
             $campaign ??= new Campaign(['status' => Campaign::DRAFT]);
-            $campaign->fill(['code' => $data['code'], 'name' => $data['name'], 'description' => $data['description'], 'starts_at' => $startsAt, 'ends_at' => $endsAt])->save();
+            $campaign->fill(['code' => $data['code'], 'name' => $data['name'], 'description' => $data['description'], 'starts_at' => $startsAt, 'ends_at' => $endsAt,
+                'recurrence' => WeeklySchedule::fromArray($data['recurrence'] ?? null)?->toArray()])->save();
             $campaign->refresh();
 
             $this->syncPromotions($campaign, $promotionIds);
@@ -148,11 +150,13 @@ final class CampaignService implements Campaigns
     private function apply(Campaign $campaign, string $reason): void
     {
         $on = $campaign->status === Campaign::ACTIVE;
+        $recurrence = WeeklySchedule::fromArray($campaign->recurrence);
         Promotion::query()->where('campaign_id', $campaign->id)->update([
-            'status' => $on ? 'active' : 'inactive', 'starts_at' => $campaign->starts_at, 'ends_at' => $campaign->ends_at, 'updated_at' => now(),
+            'status' => $on ? 'active' : 'inactive', 'starts_at' => $campaign->starts_at, 'ends_at' => $campaign->ends_at,
+            'recurrence' => $recurrence === null ? null : json_encode($recurrence->toArray(), JSON_THROW_ON_ERROR), 'updated_at' => now(),
         ]);
         foreach ($this->priceListIds($campaign) as $listId) {
-            $this->priceLists->schedule($listId, $campaign->starts_at, $campaign->ends_at, $on, "campaign:{$campaign->code}:{$reason}");
+            $this->priceLists->schedule($listId, $campaign->starts_at, $campaign->ends_at, $on, "campaign:{$campaign->code}:{$reason}", $recurrence);
         }
     }
 

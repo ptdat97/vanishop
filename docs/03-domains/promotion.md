@@ -119,6 +119,10 @@ Campaign gói **khuyến mãi + bảng giá sale/thành viên** chạy chung m�
 - **Giải thích:** rule implement `ExplainsIneligibility` trả `Ineligibility` (câu, số tiền thiếu); voucher bị từ chối vì rule đó mang `hint`/`shortfall`. Storefront trả `message` = gợi ý hoặc câu theo lý do.
 - **Xem trước mã:** `Checkout\Contracts\VoucherPreview::forCart()` chạy totals pipeline cho từng mã (tối đa 50), cùng khuyến mãi tự động; dùng cho ví voucher của `vani.coupon-code`.
 
+## 5.3 Lịch lặp theo tuần (Implemented, 0.5.116)
+
+Khuyến mãi, bảng giá sale/thành viên và campaign có thêm **lịch lặp** (`WeeklySchedule`): tối đa 3 khung, mỗi khung là các ngày trong tuần + giờ bắt đầu/kết thúc theo giờ cửa hàng, luôn nằm trong khoảng bắt đầu–kết thúc của đối tượng. Ví dụ "Sale cuối tuần tháng 12" = 01/12–31/12 + khung T7, CN 00:00–00:00; "Giờ vàng" = khung mọi ngày 12:00–14:00. Campaign ghi lịch lặp xuống thành viên. Cache trang hết hạn ở mốc mở/đóng kế tiếp.
+
 ## 6. Ví dụ plugin rule
 
 ```php

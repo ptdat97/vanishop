@@ -2,6 +2,7 @@
 import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
+import WeeklyScheduleInput, { type WeeklyWindow } from '@admin/Components/WeeklyScheduleInput.vue';
 import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -23,6 +24,7 @@ const props = defineProps<{
         description: string | null;
         starts_at: string;
         ends_at: string;
+        recurrence: WeeklyWindow[] | null;
         status: 'draft' | 'active' | 'stopped';
         state: string;
         lock_version: number;
@@ -41,6 +43,7 @@ const { form, save } = useAdminForm({
     description: props.campaign?.description ?? '',
     starts_at: props.campaign?.starts_at ?? '',
     ends_at: props.campaign?.ends_at ?? '',
+    recurrence: (props.campaign?.recurrence ?? null) as WeeklyWindow[] | null,
     promotion_ids: props.campaign?.promotion_ids ?? ([] as number[]),
     price_list_ids: props.campaign?.price_list_ids ?? ([] as number[]),
     lock_version: props.campaign?.lock_version ?? 0,
@@ -96,6 +99,7 @@ async function destroy(): Promise<void> {
             <FormField :label="t('promotion::admin.campaigns_form.description')" :error="errors.description"><textarea v-model="form.description" rows="2" :class="inputClass" :disabled="!editable" /></FormField>
             <FormField :label="t('promotion::admin.campaigns_form.starts_store_time')" :error="errors.starts_at"><DateInput v-model="form.starts_at" with-time :disabled="!editable" /></FormField>
             <FormField :label="t('promotion::admin.campaigns_form.ends_store_time')" :error="errors.ends_at"><DateInput v-model="form.ends_at" with-time :disabled="!editable" /></FormField>
+            <div class="sm:col-span-2"><WeeklyScheduleInput v-model="form.recurrence" :disabled="!editable" :error="errors.recurrence" /></div>
             <button v-if="editable" type="submit" :class="primaryButton" :disabled="form.processing">{{ t('promotion::admin.campaigns_form.save') }}</button>
             <p class="text-xs text-slate-500">{{ t('promotion::admin.campaigns_form.campaign_controls_schedule_status_all') }}</p>
         </div>
