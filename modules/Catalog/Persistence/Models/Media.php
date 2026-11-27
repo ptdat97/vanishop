@@ -26,6 +26,7 @@ use Modules\Catalog\Application\Media\ImageCache;
  * @property int|null $focal_x
  * @property int|null $focal_y
  * @property string $checksum
+ * @property int|null $poster_media_id ảnh poster của video (ảnh trong Thư viện), null khi chưa có
  * @property Carbon $created_at
  * @property-read bool|null $in_product_gallery chỉ có khi query `withExists(['usages as in_product_gallery' => …])`
  */

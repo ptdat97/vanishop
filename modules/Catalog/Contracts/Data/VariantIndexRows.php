@@ -19,7 +19,7 @@ final class VariantIndexRows
     {
         $rows = [];
         foreach ($byProduct as $productId => $variants) {
-            foreach (array_values($variants) as $rank => $variant) {
+            foreach ($variants as $rank => $variant) {
                 $name = mb_strtolower(trim($variant->productName));
                 $rows[] = [
                     'variant_id' => $variant->id, 'product_id' => (int) $productId, 'product_code' => $variant->productCode,

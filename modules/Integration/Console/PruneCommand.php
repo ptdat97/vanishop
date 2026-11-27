@@ -25,7 +25,9 @@ final class PruneCommand extends Command
     public function handle(Settings $settings): int
     {
         $before = now()->subMonths(max(1, (int) $settings->get('core', self::SETTING, 3)));
-        $done = fn (array $statuses): \Closure => fn (Builder $query) => $query->whereIn('status', array_map(fn (MessageStatus $status): string => $status->value, $statuses));
+        $done = fn (array $statuses): \Closure => function (Builder $query) use ($statuses): void {
+            $query->whereIn('status', array_map(fn (MessageStatus $status): string => $status->value, $statuses));
+        };
 
         $outbox = ChunkedPrune::olderThan('integration_outbox', 'created_at', $before, $done([MessageStatus::Sent]));
         $inbox = ChunkedPrune::olderThan('integration_inbox', 'received_at', $before, $done([MessageStatus::Processed, MessageStatus::IgnoredStale]));

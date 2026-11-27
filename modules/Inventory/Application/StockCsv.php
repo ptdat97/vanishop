@@ -125,7 +125,7 @@ final class StockCsv
         $rank = ['invalid' => 0, 'unknown_sku' => 0, 'unknown_location' => 0, 'external' => 0, 'duplicate' => 0, 'change' => 1, 'same' => 2];
         $shown = $lines;
         if (count($shown) > self::PREVIEW_LINES) {
-            usort($shown, fn (array $a, array $b): int => [$rank[$a['status']] ?? 3, $a['line']] <=> [$rank[$b['status']] ?? 3, $b['line']]);
+            usort($shown, fn (array $a, array $b): int => [$rank[$a['status']], $a['line']] <=> [$rank[$b['status']], $b['line']]);
         }
 
         return [

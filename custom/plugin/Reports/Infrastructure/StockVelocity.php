@@ -45,7 +45,7 @@ final class StockVelocity
     {
         return array_map(fn (VariantData $variant): array => [
             'sku' => $variant->sku,
-            'product' => trim($variant->productName.' '.implode(' / ', array_filter(array_map(fn (array $option): string => (string) ($option['value'] ?? ''), $variant->options)))),
+            'product' => trim($variant->productName.' '.implode(' / ', array_filter(array_map(fn (array $option): string => $option['value'], $variant->options)))),
         ], $variantIds === [] ? [] : $this->variants->find($variantIds));
     }
 }

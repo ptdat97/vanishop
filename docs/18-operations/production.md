@@ -10,7 +10,7 @@
 
 | Thành phần | Bắt buộc | Ghi chú |
 |---|---|---|
-| Nginx + PHP-FPM 8.4 | ✅ | Ext: `pdo_mysql`, `redis` (phpredis), `mbstring`, `intl`, `bcmath`, `zip`, `exif`, và `imagick` **hoặc** `gd` có WebP |
+| Nginx + PHP-FPM **8.4.28+** | ✅ | Bản 8.4 cũ hơn có lỗ hổng đã công bố (`roave/security-advisories` chặn khi `composer update`; `composer.json` đặt `config.platform.php = 8.4.28`). Ext: `pdo_mysql`, `redis` (phpredis), `mbstring`, `intl`, `bcmath`, `zip`, `exif`, và `imagick` **hoặc** `gd` có WebP |
 | MySQL 8.4 | ✅ | Managed tại VN nếu có ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)); `utf8mb4` |
 | Redis | ✅ | Cache, session, queue, lock của scheduler (`onOneServer`) |
 | Horizon (queue worker) | ✅ | `php artisan horizon` dưới supervisor — §6 |

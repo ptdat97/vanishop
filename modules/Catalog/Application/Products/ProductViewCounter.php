@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\ProductViewStatistics;
 use Modules\Catalog\Events\ProductViewed;
 use Modules\Catalog\Persistence\Models\Product;
+use Modules\Shared\Support\CacheLocks;
 
 /**
  * Ghi lượt xem (§3.5-2): cùng người xem (phiên) + cùng mẫu trong DEDUPE_MINUTES phút chỉ tính một. Lượt xem cộng vào bộ đếm
@@ -41,7 +42,7 @@ final class ProductViewCounter implements ProductViewStatistics
         $this->cache->add($key, 0, now()->addDays(3));
         if ((int) $this->cache->increment($key) === 1) {
             // Lượt đầu của sản phẩm trong giờ: ghi vào chỉ mục để flush biết cần đọc bộ đếm nào.
-            $this->cache->lock(self::PREFIX.'lock', 5)->block(3, function () use ($hour, $productId): void {
+            CacheLocks::lock($this->cache, self::PREFIX.'lock', 5)->block(3, function () use ($hour, $productId): void {
                 $index = (array) $this->cache->get(self::PREFIX.'index', []);
                 $index[$hour][$productId] = true;
                 $this->cache->put(self::PREFIX.'index', $index, now()->addDays(3));
@@ -77,7 +78,7 @@ final class ProductViewCounter implements ProductViewStatistics
                 DB::table('product_view_stats')->upsert([$row], ['product_id', 'hour'], ['views' => DB::raw('product_view_stats.views + '.(int) $row['views'])]);
             }
             if ((string) $hour < $current) {
-                $this->cache->lock(self::PREFIX.'lock', 5)->block(3, function () use ($hour): void {
+                CacheLocks::lock($this->cache, self::PREFIX.'lock', 5)->block(3, function () use ($hour): void {
                     $index = (array) $this->cache->get(self::PREFIX.'index', []);
                     unset($index[$hour]);
                     $this->cache->put(self::PREFIX.'index', $index, now()->addDays(3));

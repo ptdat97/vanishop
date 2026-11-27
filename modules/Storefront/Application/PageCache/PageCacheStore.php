@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\Shared\Application\PageCache\BatchedPageCacheInvalidator;
 use Modules\Shared\Application\PageCache\PageCacheTagVersions;
 use Modules\Shared\Contracts\PageCacheTags;
+use Modules\Shared\Support\CacheLocks;
 use Throwable;
 
 /**
@@ -112,7 +113,7 @@ final class PageCacheStore
     public function rendering(string $key, Closure $render, Closure $reread): mixed
     {
         $lock = $this->guard(function () use ($key) {
-            $lock = $this->cache->lock($key.':lock', (int) config('vanishop.storefront.page_cache.lock_seconds', 10));
+            $lock = CacheLocks::lock($this->cache, $key.':lock', (int) config('vanishop.storefront.page_cache.lock_seconds', 10));
 
             return $lock->get() ? $lock : false;
         }, null);

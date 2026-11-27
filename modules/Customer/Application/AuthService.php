@@ -19,6 +19,7 @@ use Modules\Customer\Events\CustomerRegistered;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerIdentity;
 use Modules\Customer\Persistence\Models\CustomerToken;
+use Modules\Shared\Support\CacheLocks;
 use Modules\Shared\Support\DurableCache;
 use Modules\Shared\Support\Phones;
 use Modules\Shared\Support\StoreLocale;
@@ -345,7 +346,7 @@ final class AuthService
     {
         $key = $prefix.hash('sha256', $token);
 
-        return DurableCache::store()->lock($key.':consume', 10)->get(fn (): mixed => DurableCache::store()->pull($key));
+        return CacheLocks::lock(DurableCache::store(), $key.':consume', 10)->get(fn (): mixed => DurableCache::store()->pull($key));
     }
 
     private function emailChallengeCustomer(mixed $pending): ?Customer

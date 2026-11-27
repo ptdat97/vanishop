@@ -7,12 +7,6 @@ parameters:
 			path: custom/plugin/Cod/Config/cod.php
 
 		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: custom/plugin/HelloWorld/Http/routes/storefront-pages.php
-
-		-
 			message: '#^Strict comparison using \=\=\= between 500000\|bool\|string and null will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 1

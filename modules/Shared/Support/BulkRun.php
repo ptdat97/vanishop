@@ -40,7 +40,7 @@ final class BulkRun
             }
         }
         if ($errors !== []) {
-            $lock = DurableCache::store()->lock(self::key($batchId, 'errors-lock'), 10);
+            $lock = CacheLocks::lock(DurableCache::store(), self::key($batchId, 'errors-lock'), 10);
             $lock->block(5, function () use ($batchId, $errors): void {
                 $current = (array) DurableCache::store()->get(self::key($batchId, 'errors'), []);
                 DurableCache::store()->put(self::key($batchId, 'errors'), array_slice([...$current, ...$errors], 0, self::MAX_ERRORS), now()->addHours(self::TTL_HOURS));

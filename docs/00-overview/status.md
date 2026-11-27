@@ -39,7 +39,7 @@
 
 | Hạng mục | Trạng thái | Bằng chứng / Ghi chú |
 |---|---|---|
-| Laravel 13, PHP 8.4 | Implemented | `laravel/framework 13.33` |
+| Laravel 13, PHP 8.4 | Implemented | `laravel/framework 13.44`; `composer.json` yêu cầu `php ^8.4`, lock giải theo 8.4.28 |
 | `modules/` + autoload `Modules\`, `ModuleServiceProvider`, `config/modules.php` | Implemented | `app/Providers/ModuleServiceProvider.php` |
 | `custom/plugin/` + autoload `Plugin\`; theme `custom/theme/vani-base` | Implemented | |
 | MySQL | Implemented (dev) | `.env` dùng database `vanishop`; mức cô lập `READ COMMITTED` (ADR-016). **Máy dev đang chạy MySQL 9.7.2** (DBngin); CI dùng MySQL 8.4 theo ADR-016 |

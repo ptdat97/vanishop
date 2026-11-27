@@ -4,7 +4,7 @@
         "vi": "Báo cáo bán hàng",
         "en": "Sales reports"
     },
-    "version": "1.6.0",
+    "version": "1.6.1",
     "kind": "analytics",
     "provider": "Plugin\\Reports\\ReportsServiceProvider",
     "requires": {

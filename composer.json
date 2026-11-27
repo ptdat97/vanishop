@@ -9,7 +9,7 @@
     ],
     "license": "proprietary",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "composer/semver": "^3.4",
         "inertiajs/inertia-laravel": "^3.4",
         "intervention/image": "^4.3",
@@ -120,6 +120,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.4.28"
         }
     },
     "minimum-stability": "stable",

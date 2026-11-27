@@ -42,7 +42,7 @@ final class OptionValue extends Model
     protected static function booted(): void
     {
         self::saving(function (OptionValue $value): void {
-            $type = $value->relationLoaded('type') && $value->type?->id === $value->option_type_id ? $value->type : OptionType::query()->find($value->option_type_id);
+            $type = $value->relationLoaded('type') && $value->getRelation('type') instanceof OptionType && $value->type->id === $value->option_type_id ? $value->type : OptionType::query()->find($value->option_type_id);
             $value->filter_token = $type === null ? null : self::filterTokenFor($type->display_type, $value->code, $value->family);
         });
     }

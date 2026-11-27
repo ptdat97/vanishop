@@ -13,7 +13,7 @@ Mục tiêu là xây dựng một nền tảng commerce có khả năng mở r�
 ## Tổng quan
 
 - **Framework:** Laravel 13
-- **Backend:** PHP 8.3+
+- **Backend:** PHP 8.4+
 - **Database:** MySQL 8.4+
 - **Admin:** Inertia.js 3, Vue 3, TypeScript
 - **UI:** Tailwind CSS 4, Reka UI
@@ -295,7 +295,7 @@ VaniShop hiện hướng tới plugin nội bộ được triển khai cùng cod
 
 | Thành phần | Công nghệ |
 |---|---|
-| Backend | PHP 8.3+, Laravel 13 |
+| Backend | PHP 8.4+, Laravel 13 |
 | Database | MySQL 8.4+ |
 | ORM | Eloquent |
 | Admin | Inertia.js 3 |
@@ -321,7 +321,7 @@ VaniShop hiện hướng tới plugin nội bộ được triển khai cùng cod
 
 Để chạy môi trường phát triển:
 
-- PHP 8.3 trở lên.
+- PHP 8.4 trở lên (production: 8.4.28+ — các bản trước có lỗ hổng bảo mật đã công bố).
 - Composer.
 - Node.js và npm.
 - MySQL 8.4 trở lên.

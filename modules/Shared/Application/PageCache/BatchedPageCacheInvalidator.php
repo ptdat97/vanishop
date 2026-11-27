@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Shared\Contracts\PageCacheInvalidator;
 use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Events\PageCacheTagsInvalidated;
+use Modules\Shared\Support\CacheLocks;
 use Modules\Shared\Support\DurableCache;
 use Throwable;
 
@@ -89,7 +90,7 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
         $pending = array_map('strval', array_keys((array) $store->get(self::PENDING_KEY, [])));
         $this->apply($pending);
         if ($pending !== []) {
-            $store->lock(self::PENDING_LOCK, 10)->block(5, function () use ($store, $pending): void {
+            CacheLocks::lock($store, self::PENDING_LOCK, 10)->block(5, function () use ($store, $pending): void {
                 $remaining = array_diff_key((array) $store->get(self::PENDING_KEY, []), array_flip($pending));
                 $remaining === [] ? $store->forget(self::PENDING_KEY) : $store->put(self::PENDING_KEY, $remaining, self::PENDING_TTL_SECONDS);
             });
@@ -104,7 +105,7 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
      */
     public function processWhenStale(): void
     {
-        $this->cache->lock(self::FALLBACK_LOCK, 60)->get(fn () => $this->process());
+        CacheLocks::lock($this->cache, self::FALLBACK_LOCK, 60)->get(fn () => $this->process());
     }
 
     /**
@@ -154,7 +155,7 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
         $this->buffer = [];
         try {
             $store = DurableCache::store();
-            $store->lock(self::PENDING_LOCK, 10)->block(5, function () use ($store, $tags): void {
+            CacheLocks::lock($store, self::PENDING_LOCK, 10)->block(5, function () use ($store, $tags): void {
                 $pending = (array) $store->get(self::PENDING_KEY, []);
                 $store->put(self::PENDING_KEY, $pending + array_fill_keys($tags, true), self::PENDING_TTL_SECONDS);
             });
