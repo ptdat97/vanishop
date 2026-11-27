@@ -67,6 +67,33 @@ it('ẩn giá với khách chưa đăng nhập: vùng DOM thay sau (lọc danh s
         ->assertNoJavaScriptErrors();
 });
 
+it('trang khôi phục từ back/forward cache lấy lại phiên: số món mới; /_vani/phien lỗi thì thử lại, gọi cùng lúc chỉ một request', function () {
+    config(['vanishop.storefront.page_cache.mode' => 'app']);
+    ['s' => $variant] = C::store();
+
+    $page = visit('/')->assertMissing('header [data-vani-cart-count]')->assertNoJavaScriptErrors();
+    // Tab khác thêm vào giỏ (cùng phiên), rồi khách bấm Back về trang cũ.
+    $page->script(<<<JS
+        async () => {
+            await fetch('/gio-hang', { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ variant_id: {$variant->id}, quantity: 2 }) });
+            const original = window.fetch;
+            window.sessionCalls = 0;
+            window.fetch = (url, options) => {
+                if (String(url).includes('/_vani/phien')) {
+                    window.sessionCalls++;
+                    if (window.sessionCalls === 1) return Promise.reject(new TypeError('mạng lỗi'));
+                }
+                return original(url, options);
+            };
+            window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+            window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+        }
+    JS);
+    $page->assertSeeIn('header [data-vani-cart-count]', '2')
+        ->assertScript('window.sessionCalls', 2)
+        ->assertNoJavaScriptErrors();
+});
+
 it('Escape giữ hộp gợi ý ẩn khi phản hồi đến chậm, đóng modal trả focus về nút tìm kiếm', function () {
     C::store();
     $opener = '[data-vani-search-open]';

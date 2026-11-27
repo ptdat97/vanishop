@@ -6,15 +6,43 @@ export function createSession({ urls, cartPage, t }) {
     const sessionReady = new Promise((resolve) => {
         sessionLoaded = resolve;
     });
+    /** Áp dụng phiên (đặt ở `mount`); trước đó chỉ giữ token CSRF. */
+    let applyLoaded = (session) => {
+        if (session?.csrf_token) csrfToken = session.csrf_token;
+    };
+    /** Request /_vani/phien đang chạy: mọi nơi cần phiên (mở trang, token CSRF, trang khôi phục) dùng chung một request. */
+    let inflight = null;
 
-    /** Token CSRF: có sẵn khi trang không cache; trang cache CDN chờ /_vani/phien (tối đa 3 giây), không có thì tự gọi. */
+    /**
+     * Lấy phần riêng của khách từ /_vani/phien rồi áp dụng. Dùng chung request đang chạy; lỗi mạng hoặc lỗi server thì thử
+     * lại một lần sau 1 giây, vẫn lỗi thì giữ trạng thái đang hiện (không đoán). Phiên có flash "đọc một lần" nên luôn áp
+     * dụng kết quả, không gọi riêng chỉ để lấy token.
+     */
+    function loadSession() {
+        if (inflight) return inflight;
+        const url = document.documentElement.dataset.vaniSession || urls.session;
+        if (!url) return Promise.resolve(null);
+        const attempt = () =>
+            fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } }).then((response) => {
+                if (response.status >= 500) throw new Error(`session ${response.status}`);
+                return response.ok ? response.json() : null;
+            });
+        inflight = attempt()
+            .catch(() => new Promise((resolve) => setTimeout(resolve, 1000)).then(attempt))
+            .catch(() => null)
+            .then((session) => {
+                inflight = null;
+                if (session) applyLoaded(session);
+                return session;
+            });
+        return inflight;
+    }
+
+    /** Token CSRF: có sẵn khi trang không cache; trang cache chờ /_vani/phien (tối đa 3 giây), không có thì tự lấy. */
     async function csrf(refresh = false) {
         if (csrfToken && !refresh) return csrfToken;
         if (!refresh) await Promise.race([sessionReady, new Promise((resolve) => setTimeout(resolve, 3000))]);
-        if ((!csrfToken || refresh) && urls.session) {
-            const session = await fetch(urls.session, { credentials: 'same-origin', headers: { Accept: 'application/json' } }).then((response) => (response.ok ? response.json() : null));
-            csrfToken = session?.csrf_token ?? csrfToken;
-        }
+        if (!csrfToken || refresh) await loadSession();
         return csrfToken ?? '';
     }
 
@@ -71,7 +99,8 @@ export function createSession({ urls, cartPage, t }) {
             account.setAttribute('title', session.account.label);
             account.setAttribute('href', session.account.url);
         });
-        if (session.cart.count > 0) updateCartCount(session.cart.count);
+        // Luôn áp dụng (kể cả 0): trang khôi phục từ bộ nhớ trình duyệt có thể đang hiện số món cũ.
+        updateCartCount(session.cart?.count ?? 0);
         const status = document.querySelector('[data-vani-flash="status"]');
         if (status && session.flash?.status) {
             status.textContent = session.flash.status;
@@ -136,6 +165,16 @@ export function createSession({ urls, cartPage, t }) {
     function mount({ updateCartCount, dispatchCartChange }) {
         document.addEventListener('vani:content-updated', (event) => fillHiddenPrices(event.detail?.element));
         const apply = (session) => applySession(session, updateCartCount, dispatchCartChange);
+        applyLoaded = apply;
+        // Back/forward cache: trang hiện lại nguyên trạng cũ (số món, tài khoản) → lấy lại phiên; đăng nhập/đăng xuất ở nơi
+        // khác thì tải lại trang (giá, nội dung theo khách đã điền không còn đúng).
+        window.addEventListener('pageshow', (event) => {
+            if (!event.persisted) return;
+            const signedIn = current?.signed_in ?? null;
+            loadSession().then((session) => {
+                if (session && signedIn !== null && session.signed_in !== signedIn) window.location.reload();
+            });
+        });
         const inlineSession = document.querySelector('script[data-vani-session-state]');
         if (inlineSession) {
             try {
@@ -145,13 +184,7 @@ export function createSession({ urls, cartPage, t }) {
             }
         }
 
-        const sessionUrl = document.documentElement.dataset.vaniSession;
-        if (sessionUrl) {
-            fetch(sessionUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-                .then((response) => (response.ok ? response.json() : null))
-                .then(apply)
-                .catch(() => {});
-        }
+        if (document.documentElement.dataset.vaniSession) loadSession();
     }
 
     function mountLoginForm(firstError) {
