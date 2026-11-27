@@ -2,6 +2,8 @@
 
 > Trạng thái: **Implemented** cho những gì có trong mã nguồn hiện tại (Core 0.3.28). Kiến trúc mục tiêu (nhiều web node, CDN…) và chính sách RPO/RTO: [operations](operations.md). Giám sát: [observability](../16-observability/observability.md).
 >
+> Dự án chạy trên **máy chủ thường / VPS** (Nginx + PHP-FPM, supervisor, cron — [ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)), không dùng container hay Laravel Octane.
+>
 > Tài liệu này dành cho người cài đặt, deploy và trực vận hành website. Mỗi lệnh ở đây đều có trong mã nguồn; mục nào chưa làm được ghi rõ ở §12.
 
 ## 1. Thành phần cần chạy
@@ -102,7 +104,6 @@ Deploy theo thư mục release + symlink (Deployer/Envoyer/script tương đươ
 - `storage/` dùng chung giữa các release: log, file tạm, ảnh khi `VANI_MEDIA_DISK=public`, backup local.
 - `public/cache` (ảnh thu nhỏ) nên dùng chung; nếu để riêng từng release thì mỗi lần deploy cache trống và ảnh được resize lại dần (chạy `vani:media:cache --warm` để tạo trước).
 - `bootstrap/cache/` **không** dùng chung: mỗi release tự sinh bằng `php artisan optimize` (§5).
-- Chạy container: mount `storage/` và `public/cache` thành volume; image build sẵn `vendor/` và `public/build`.
 
 ## 4. Cài đặt lần đầu
 
@@ -150,12 +151,12 @@ curl -fsS -H "X-Health-Token: $TOKEN" https://ten-mien/health
 
 > **Bản 0.3.42 thêm plugin hệ thống `vani.phone-vn`** (luật SĐT Việt Nam). Deploy phải chạy `vani:install` (đã có ở bước trên): thiếu plugin này Core chỉ nhận số dạng `+84…` → khách nhập `0912…` bị từ chối ở checkout/OTP. `vani:plugin:doctor` báo `bundled_not_installed` khi còn thiếu.
 
-1. **Plugin chỉ được nạp từ `bootstrap/cache/vanishop-plugins.php`.** File này ghi khi install/enable/disable, nên một release mới (thư mục hoặc container mới) chưa có nó → **không plugin nào được nạp**: mất COD, cổng thanh toán, phí giao, thuế… mà không báo lỗi lúc boot. `php artisan optimize` đã gồm `vani:plugin:cache` (dựng lại từ DB, và publish tài nguyên tĩnh của plugin sang `public/plugins/` — thư mục này không nằm trong git, mỗi release tự sinh); có thể chạy riêng `php artisan vani:plugin:cache`. `optimize:clear` **không** xoá file này. Không xoá thủ công `bootstrap/cache/vanishop-plugins.php` trên server đang chạy.
+1. **Plugin chỉ được nạp từ `bootstrap/cache/vanishop-plugins.php`.** File này ghi khi install/enable/disable, nên một release mới (thư mục release mới) chưa có nó → **không plugin nào được nạp**: mất COD, cổng thanh toán, phí giao, thuế… mà không báo lỗi lúc boot. `php artisan optimize` đã gồm `vani:plugin:cache` (dựng lại từ DB, và publish tài nguyên tĩnh của plugin sang `public/plugins/` — thư mục này không nằm trong git, mỗi release tự sinh); có thể chạy riêng `php artisan vani:plugin:cache`. `optimize:clear` **không** xoá file này. Không xoá thủ công `bootstrap/cache/vanishop-plugins.php` trên server đang chạy.
 2. **Đổi `.env` phải chạy lại `php artisan optimize`** (config đã cache); sau đó reload PHP-FPM và `horizon:terminate`.
 3. **Queue worker giữ mã cũ trong bộ nhớ**: luôn `php artisan horizon:terminate` sau khi chuyển `current`, nếu không job sẽ chạy code cũ với schema mới.
 4. **Migration chạy TRƯỚC khi chuyển traffic** nên bản cũ phải chạy được với schema mới: thêm cột nullable/bảng mới trước, xoá cột ở release sau (expand/contract). Không đổi tên cột trong một bước.
 5. **Plugin có migration riêng**: `migrate` không chạy migration plugin. Nâng code plugin xong phải `vani:plugin:upgrade <id>`; `vani:plugin:doctor` liệt kê plugin cần nâng và trả mã thoát 1 khi có lỗi — dùng làm cổng chặn deploy.
-6. **Scheduler chỉ chạy trên một server** (`onOneServer`, cần `CACHE_STORE=redis` dùng chung). Cron có thể đặt trên mọi node nhưng cache phải chung, không thì lệnh chạy trùng.
+6. **Scheduler chỉ chạy trên một server** (`onOneServer`, cần cache dùng chung `CACHE_STORE=redis` hoặc `database`). Cron có thể đặt trên mọi node nhưng cache phải chung, không thì lệnh chạy trùng. Deploy không cần khởi động lại cron (§6).
 7. **Nginx phải chuyển request `/cache/` chưa có file về Laravel** (§7). Cấu hình kiểu `location ~* \.(jpg|png|webp)$ { try_files $uri =404; }` áp lên `/cache/` làm ảnh thu nhỏ không bao giờ được tạo (storefront mất ảnh). Sau khi bật/tắt `vani.media-webp` hoặc đổi chất lượng: `php artisan vani:media:cache --clear`.
 8. **Callback/webhook phải vào được từ Internet**, không bị allowlist Admin hay WAF chặn: `/api/payments/{gateway}/callback` (IPN cổng thanh toán, GET+POST), `/api/shipping/{carrier}/webhook`, `/api/integration/v1/*` (ERP/POS, xác thực HMAC). URL đăng ký với VNPay/GHN phải là `https://` theo `APP_URL`.
 9. **Đổi đường dẫn Admin** làm mất đường dẫn cũ (kể cả Horizon/Pulse dưới `/{admin}/system/...`) và đăng xuất mọi nhân viên; báo nhân viên trước. Route đã cache (`route:cache`) được dựng lại tự động; nhiều máy chủ dùng chung cache thì máy khác nhận giá trị mới ở request kế tiếp nhưng route cache của từng máy phải dựng lại (`php artisan route:cache`). Quên đường dẫn: `php artisan vani:admin-path`.
@@ -179,21 +180,45 @@ stdout_logfile=/var/www/vanishop/shared/storage/logs/horizon.log
 
 Queue đang dùng: `notifications`, `fulfillment`, `default`, `search` (`config/horizon.php`, production tối đa 10 process). Dashboard: `/{đường dẫn Admin}/system/horizon` (quyền `system.monitor`).
 
-**Scheduler** (crontab của user chạy PHP):
+**Scheduler** (cron của hệ điều hành, mỗi phút chạy `schedule:run`)
+
+Cài bằng `sudo crontab -u www-data -e` — **đúng user chạy PHP-FPM**, không dùng root (file log, cache, ảnh tạo ra sẽ sai quyền):
 
 ```cron
-* * * * * cd /var/www/vanishop/current && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/vanishop/current && php artisan schedule:run >> /var/www/vanishop/shared/storage/logs/scheduler.log 2>&1
 ```
 
-Lịch (giờ VN; xem đầy đủ: `php artisan schedule:list`):
+- Trỏ vào symlink `current`: mỗi phút cron chạy mã của release đang phục vụ, **deploy không cần khởi động lại cron** (khác Horizon: phải `horizon:terminate`).
+- Ghi log ra file (không `>> /dev/null`): lệnh lỗi lặp lại mới có chỗ xem. Log chỉ có đầu ra của `schedule:run`; lỗi trong lệnh vẫn vào log ứng dụng.
+- `schedule:run` chạy lần lượt các lệnh đến hạn; lệnh chậm (backup 02:00) không làm mất lượt của phút sau — cron mở tiến trình mới mỗi phút, `withoutOverlapping()` chặn chạy trùng cùng lệnh.
+- **Nhiều web node**: đặt cron trên mọi node cũng được (`onOneServer` chỉ cho một node chạy) với điều kiện cache dùng chung (`CACHE_STORE=redis` hoặc `database`); store `file` thì mỗi node chạy riêng → hết hạn thanh toán, gửi outbox, xoá cache trang… chạy trùng (`vani:production:check` cảnh báo). Đơn giản nhất: chỉ đặt cron trên một node.
+- Giờ của lệnh hằng ngày theo `APP_SCHEDULE_TIMEZONE` (mặc định theo `VANI_TIMEZONE` = `Asia/Ho_Chi_Minh`). `php artisan schedule:list` in biểu thức cron theo **UTC** (vd. `0 19 * * *` = 02:00 giờ VN).
+
+Lịch của Core (giờ VN; plugin đang bật có thêm lệnh riêng — xem đầy đủ bằng `php artisan schedule:list`):
 
 | Tần suất | Lệnh |
 |---|---|
-| Mỗi phút | `vani:inventory:release-expired`, `vani:payment:expire`, `vani:payment:reconcile`, `vani:integration:dispatch`, `vani:integration:process-inbox`, `vani:metrics:snapshot` (kèm nhịp tim scheduler cho `/health`), `vani:alerts:check` (cảnh báo tự động) |
-| 5 phút | `vani:cart:detect-abandoned`, `vani:plugin:finish-draining`, `horizon:snapshot` |
+| Mỗi phút | `vani:inventory:release-expired` (trả hàng giữ quá hạn), `vani:payment:expire`, `vani:payment:reconcile`, `vani:integration:dispatch`, `vani:integration:process-inbox`, `vani:page-cache:invalidate` (lô xoá cache trang, ADR-051), `vani:catalog:flush-views`, `vani:metrics:snapshot` (kèm nhịp tim scheduler cho `/health`), `vani:alerts:check` (cảnh báo tự động) |
+| 5 phút | `vani:cart:detect-abandoned`, `vani:payment:refunds`, `vani:plugin:finish-draining`, `horizon:snapshot` |
 | 15 phút | `vani:plugin:health` |
-| Hằng giờ | `vani:integration:reconcile-orders`, `vani:orders:complete-delivered`, `vani:idempotency:prune` |
-| Hằng ngày | 01:30 `backup:clean` · 02:00 `backup:run` · 03:30 `vani:inventory:verify`, `vani:cart:prune` · 04:00 `vani:payment:verify` · 09:00 `backup:monitor` |
+| Hằng giờ | `vani:integration:reconcile-orders`, `vani:orders:complete-delivered`, `vani:idempotency:prune`, `vani:cache:prune-durable` (dọn dòng hết hạn của bảng `cache_durable` và `cache`) |
+| Hằng ngày | 01:30 `backup:clean` · 02:00 `backup:run` · 03:10 `vani:pricing:sync-list-prices` · 03:30 `vani:inventory:verify`, `vani:cart:prune` · 03:45 `vani:returns:purge-attachments` · 04:00 `vani:payment:verify` · 04:10 `vani:integration:prune` · 04:20 `vani:notification:prune` · 04:30 `vani:audit:archive` · 04:40 `vani:catalog:flush-views --compact` · 09:00 `backup:monitor` |
+
+Kiểm tra sau khi cài:
+
+| Kiểm tra | Cách |
+|---|---|
+| Lịch đã nạp đủ | `php artisan schedule:list` |
+| Cron đang chạy thật | `/health` (header `X-Health-Token`) → `scheduler: ok`; quá 5 phút không có nhịp → `degraded`. Hoặc `tail storage/logs/scheduler.log` |
+| Toàn bộ release | `php artisan vani:production:check --runtime` |
+
+Sự cố thường gặp:
+
+- **Một lệnh không chạy nữa** (các lệnh khác vẫn chạy): tiến trình bị kill giữa chừng (hết RAM, reboot) để lại khoá `withoutOverlapping` trong cache — mặc định giữ tới **24 giờ**, lệnh đó bị bỏ qua suốt thời gian ấy. Xử lý: `php artisan schedule:clear-cache`.
+- **Không lệnh nào chạy**: sai user/đường dẫn trong crontab, `php` không nằm trong `PATH` của cron (ghi đường dẫn đầy đủ, vd. `/usr/bin/php8.4`), hoặc cache dùng chung không kết nối được (khoá `onOneServer` lỗi). Xem `scheduler.log`.
+- **Thiếu cron hoàn toàn**: hàng giữ quá hạn không được trả, thanh toán treo không hết hạn, outbox không gửi, cảnh báo vận hành không chạy, cache trang của thay đổi hàng loạt chỉ làm mới khi có lượt xem trúng cache và lô cuối đã quá 2 phút. Thao tác Admin nhỏ (sửa giá, Builder) vẫn thấy ngay vì không qua lô (ADR-051 sửa đổi §4).
+
+Máy dev: chạy `php artisan schedule:work` ở một terminal riêng thay cho cron.
 
 ## 7. Nginx mẫu
 

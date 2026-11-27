@@ -30,7 +30,7 @@ flowchart TB
 ```
 
 - **Toàn bộ hạ tầng và dữ liệu đặt tại Việt Nam** từ slice Foundation ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)): Viettel IDC, FPT Cloud, VNG Cloud, BizFly Cloud hoặc CMC Cloud (Owner chọn trực tiếp). Ưu tiên managed MySQL + object storage S3-compatible; Redis tự vận hành nếu không có managed. Không cần Meilisearch: tìm kiếm bằng truy vấn SQL (Owner, 2026-11-12).
-- Triển khai bằng container (Docker), hạ tầng mô tả bằng mã (Terraform/Ansible) để có thể đổi nhà cung cấp.
+- **Chạy trên máy chủ thường / VPS** (Owner, 2026-11-27, [ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)): Nginx + PHP-FPM, Horizon dưới supervisor, scheduler bằng cron. Không dùng container (Docker/Kubernetes). Cửa hàng nhỏ chạy một VPS (web + Horizon + cron; MySQL/Redis cùng máy hoặc managed); tải cao thì thêm web node sau load balancer, cron/Horizon vẫn chỉ cần một máy. Script cài đặt (Ansible…) tuỳ chọn để dựng lại máy chủ giống nhau. Cách cài: [production](production.md).
 - Backup khác vùng: 2 DC (Hà Nội ↔ TP.HCM).
 - Web node **stateless**; session/cache ở Redis; file ở object storage.
 - **Không dùng Laravel Octane** (Owner, 2026-11-27): web chạy Nginx + PHP-FPM, mỗi request một tiến trình sạch. Tải cao thì tăng web node, cache trang trong ứng dụng ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md)) và CDN tuỳ chọn. Code vẫn giữ trạng thái theo request (scoped) đúng cho tiến trình phục vụ nhiều việc như queue worker, nhưng không thiết kế hay kiểm thử cho Octane.

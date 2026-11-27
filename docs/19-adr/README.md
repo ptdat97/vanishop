@@ -20,7 +20,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [014](ADR-014-idempotency.md) | Idempotency cho API, webhook, job, message | Accepted |
 | [016](ADR-016-mysql.md) | MySQL 8.4 | Accepted |
 | [017](ADR-017-admin-ui-inertia.md) | Admin: Inertia + Vue 3 + TypeScript (bộ component: ADR-039) | Accepted |
-| [018](ADR-018-infrastructure-vietnam.md) | Hạ tầng và dữ liệu đặt tại Việt Nam | Accepted |
+| [018](ADR-018-infrastructure-vietnam.md) | Hạ tầng và dữ liệu đặt tại Việt Nam; chạy trên máy chủ thường / VPS, không container (sửa đổi 2026-11-27) | Accepted |
 | [019](ADR-019-shared-domain-brand-path.md) | Một domain chung, storefront brand theo đường dẫn | Superseded by 028 |
 | [020](ADR-020-admin-path-no-2fa.md) | Admin: đường dẫn cấu hình được, không dùng 2FA | Accepted |
 | [021](ADR-021-storefront-composition-module.md) | Module Storefront làm tầng ghép (Catalog + Pricing + …) | Accepted |
