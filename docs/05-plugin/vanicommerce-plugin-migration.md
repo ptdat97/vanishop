@@ -47,8 +47,8 @@ Mỗi plugin là một lát độc lập; không gộp nhiều plugin vào một
 | ProvincesVN | `vani.provinces-vn` (dữ liệu đã dùng lại) | — |
 | MediaOptimizer | Core: ảnh thu nhỏ `public/cache`; `vani.media-webp` | Tạo sẵn thumbnail qua queue |
 | FileManagerPro | Core: Thư viện ảnh dùng chung | Thao tác thư mục |
-| CouponCode | Core: voucher (Promotion) | Gán mã cho khách, mã một lần |
-| PricingCampaign | Core: bảng giá + campaign (0.3.36), giá thành viên (0.3.35) | Weekend sale, hot deal (lịch lặp) |
+| CouponCode | Core: voucher (Promotion) → plugin `vani.coupon-code` ([đặc tả](specs/coupon-code.md), Designed 2026-11-27) | Gán mã cho khách, mã một lần, lượt/khách, giảm tối đa, ví voucher |
+| PricingCampaign | Core: bảng giá + campaign (0.3.36), giá thành viên (0.3.35) → plugin `vani.pricing-campaign` ([đặc tả](specs/pricing-campaign.md), Designed 2026-11-27) | Weekend sale, hot deal (lịch lặp), suất flash sale, giới hạn/khách |
 | PromotionInsight | Core: tầng giá trên đơn (0.3.37) + `vani.reports` | Báo cáo đơn bị giá sàn kẹp |
 | ReturnExchange | Core: Returns (nhập lại tồn, thông báo, đổi hàng) | — |
 | ProductSlug | Core: slug sản phẩm (Catalog) | Tự sinh slug không dấu từ tên |
