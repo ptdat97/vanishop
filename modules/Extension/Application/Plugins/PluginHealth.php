@@ -17,6 +17,8 @@ final class PluginHealth
 {
     private const CACHE_KEY = 'vani:plugins:health';
 
+    private const TTL_SECONDS = 86400;
+
     public function __construct(private readonly Extensions $extensions) {}
 
     /**
@@ -45,7 +47,8 @@ final class PluginHealth
             }
         }
 
-        Cache::forever(self::CACHE_KEY, $results);
+        // Hạn 1 ngày: lịch kiểm tra (15 phút) ngừng chạy thì kết quả cũ không nằm lại mãi (§6b L61).
+        Cache::put(self::CACHE_KEY, $results, self::TTL_SECONDS);
 
         return $results;
     }

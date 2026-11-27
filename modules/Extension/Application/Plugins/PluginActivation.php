@@ -16,6 +16,8 @@ final class PluginActivation
 {
     private const CACHE_KEY = 'vani:plugins:enabled';
 
+    private const TTL_SECONDS = 86400;
+
     /** @var array<string, string>|null plugin id => trạng thái (enabled | draining) */
     private ?array $enabled = null;
 
@@ -65,7 +67,8 @@ final class PluginActivation
         }
 
         try {
-            $ids = Cache::rememberForever(self::CACHE_KEY, fn (): array => PluginRecord::query()
+            // Hạn 1 ngày làm lưới an toàn: sót một chỗ forgetCache() thì tối đa một ngày sau tự đọc lại DB (§6b L61).
+            $ids = Cache::remember(self::CACHE_KEY, self::TTL_SECONDS, fn (): array => PluginRecord::query()
                 ->whereIn('status', [PluginStatus::Enabled, PluginStatus::Draining])
                 ->get(['id', 'status'])
                 ->mapWithKeys(fn (PluginRecord $record): array => [(string) $record->id => $record->status->value])

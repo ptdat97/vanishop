@@ -29,13 +29,16 @@ final class AdminPathSetting
 
     private const CACHE_KEY = 'vani:admin-path';
 
+    private const TTL_SECONDS = 86400;
+
     /** Chỉ phụ thuộc Settings: được tạo khi app bắt đầu boot, trước khi provider nào boot. */
     public function __construct(private readonly Settings $settings) {}
 
     public function current(): string
     {
         try {
-            $path = Cache::rememberForever(self::CACHE_KEY, fn (): string => (string) ($this->settings->get('core', self::SETTING) ?? self::DEFAULT));
+            // Hạn 1 ngày làm lưới an toàn khi sót chỗ xoá cache (§6b L61).
+            $path = Cache::remember(self::CACHE_KEY, self::TTL_SECONDS, fn (): string => (string) ($this->settings->get('core', self::SETTING) ?? self::DEFAULT));
         } catch (Throwable) {
             return self::DEFAULT;
         }
