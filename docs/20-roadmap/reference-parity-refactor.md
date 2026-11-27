@@ -478,6 +478,8 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L72 (2026-11-27, Core 0.5.109) | Mã giảm **phí vận chuyển** chưa có: action của Promotion chỉ giảm trên dòng hàng, không nhắm phí giao (điều kiện phí tối thiểu, phương thức, khu vực). `vani.coupon-code` chỉ làm mã giảm giá sản phẩm. | Promotion, Checkout | Action nhắm `shipping` trong totals (sau calculator phí giao) khi Owner mở |
 | L73 (2026-11-27) | Phát mã riêng tự động theo sự kiện (đăng ký, lên hạng) qua Workflow chưa có — chưa có `vani.workflow`. Hiện phát tay ở `vani.coupon-code`. | `vani.coupon-code`, `vani.workflow` | Hành động "phát mã" khi có Workflow (`Vouchers::generate`) |
 | L74 (2026-11-27, Core 0.5.109) | Lượt mỗi khách của khách vãng lai chỉ chặn lúc đặt đơn (giỏ chưa biết khách): giỏ hiện mã dùng được, đặt đơn thì mã bị bỏ (`dropped_vouchers`, lý do `customer_limit`). | Promotion, Checkout | Kiểm theo SĐT ở bước checkout khi khách đã nhập SĐT |
+| L75 (2026-11-27, Core 0.5.109) | Gộp hồ sơ khách (`CustomerMerged`) chưa chuyển voucher riêng (`vouchers.customer_id`) và bộ đếm lượt mỗi khách (`promotion_customer_usages`) sang khách được giữ: mã riêng của hồ sơ bị gộp không còn dùng được, lượt đã dùng không cộng sang. | Promotion, Customer | Promotion nghe `CustomerMerged`: chuyển voucher, cộng bộ đếm |
+| L76 (2026-11-27, `vani.coupon-code` 0.1.0) | Mỗi mã một phạm vi (sản phẩm **hoặc** danh mục **hoặc** bộ sưu tập **hoặc** thương hiệu); bộ sưu tập/thương hiệu lưu theo slug lúc lưu mã — đổi slug phải lưu lại mã. Phát mã cho nhóm lớn đọc lại danh sách voucher của mã mẫu mỗi lô. | `vani.coupon-code` | Rule "thuộc một trong các phạm vi" (OR) nếu SME cần; rule theo id |
 
 ## 7. Quyết định của Owner (2026-11-03)
 
