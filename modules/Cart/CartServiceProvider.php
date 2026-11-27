@@ -7,6 +7,7 @@ namespace Modules\Cart;
 use Illuminate\Console\Scheduling\Schedule;
 use Modules\Cart\Application\CartedVariants;
 use Modules\Cart\Application\CartService;
+use Modules\Cart\Application\CartViewBuilder;
 use Modules\Cart\Console\DetectAbandonedCartsCommand;
 use Modules\Cart\Console\PruneCartsCommand;
 use Modules\Cart\Contracts\Carts;
@@ -31,6 +32,8 @@ final class CartServiceProvider extends ModuleServiceProvider
         // Ma trận biến thể: SKU đã có ở Cart chỉ ngừng bán, không xoá (variant-matrix §3.2).
         $this->app->make(Extensions::class)->tag([CartedVariants::class], VariantUsage::TAG);
         $this->app->bind(Carts::class, CartService::class);
+        // Ghi nhớ giỏ đã dựng trong request (trang giỏ, mã giảm giá, báo giá cùng đọc một giỏ).
+        $this->app->scoped(CartViewBuilder::class);
         // Giới hạn đọc lúc dùng (Admin → Cài đặt → Bán hàng & thuế; mặc định .env).
         $this->app->bind(CartLimits::class, fn ($app): CartLimits => new CartLimits(
             (int) $app->make(Settings::class)->get('core', CartSettings::MAX_LINE_QUANTITY),

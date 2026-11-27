@@ -6,6 +6,10 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.106 — 2026-11-27 · Extension API 1.45.0
+
+Trang giỏ dựng giỏ một lần mỗi request: trang giỏ, xem trước mã giảm giá và báo giá checkout trước đây mỗi nơi dựng lại giỏ (dòng, biến thể, giá, tồn, ảnh) — 3 lần trên dev (71 truy vấn, 54 trùng). `Carts::view()`/`forCustomer()` ghi nhớ giỏ đã dựng theo `lock_version` (mọi thay đổi giỏ đều tăng) + trạng thái + khách + ngôn ngữ + phút; sửa giỏ và khoá giỏ để đặt hàng vẫn dựng mới. Không đổi API cho plugin hay hợp đồng Storefront API.
+
 ## 0.5.105 — 2026-11-27 · Extension API 1.45.0
 
 Bớt truy vấn trùng khi trang công khai chưa có cache. Trang chủ dữ liệu demo, store `database`: ngay sau "Xoá cache" 221 → 142 truy vấn (trùng 113 → 6); lượt MISS thường 136 → 123 (trùng 8 → 1). Không đổi API cho plugin hay hợp đồng Storefront API.

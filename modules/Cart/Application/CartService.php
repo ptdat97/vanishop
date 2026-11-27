@@ -64,7 +64,7 @@ final class CartService implements Carts
 
     public function view(CartKey $key): CartView
     {
-        return $this->build($this->find($key));
+        return $this->views->cached($this->find($key), $this->locale(), $this->now());
     }
 
     public function addLine(CartKey $key, int $variantId, int $quantity, array $options = []): CartView
@@ -184,7 +184,7 @@ final class CartService implements Carts
             ]);
         }
 
-        return $this->build($cart);
+        return $this->views->cached($cart, $this->locale(), $this->now());
     }
 
     public function attachToCustomer(CartKey $guestCart, int $customerId): CartView

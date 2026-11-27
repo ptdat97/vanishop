@@ -19,12 +19,29 @@ use Modules\Shared\Domain\Money\Money;
  */
 final class CartViewBuilder
 {
+    /** @var array<string, CartView> giỏ đã dựng trong request (scoped), theo trạng thái giỏ */
+    private array $built = [];
+
     public function __construct(
         private readonly CatalogReader $catalog,
         private readonly PriceResolver $prices,
         private readonly AvailabilityReader $availability,
     ) {}
 
+    /**
+     * Giỏ đã dựng trong request này nếu giỏ chưa đổi: trang giỏ, tính mã giảm giá và báo giá checkout cùng đọc giỏ trong một
+     * request. Khoá gồm `lock_version` (mọi thay đổi giỏ đều tăng, đọc mới từ DB mỗi lần), trạng thái, khách, ngôn ngữ, phút.
+     */
+    public function cached(Cart $cart, string $locale, int $now): CartView
+    {
+        $key = implode('|', [$cart->id, $cart->lock_version, $cart->status->value, (int) $cart->customer_id, $locale, intdiv($now, 60)]);
+
+        return $this->built[$key] ??= $this->build($cart, $locale, $now);
+    }
+
+    /**
+     * Dựng mới (sau khi sửa giỏ, khi khoá giỏ để đặt hàng: luôn kiểm giá và tồn tại thời điểm đó).
+     */
     public function build(Cart $cart, string $locale, int $now): CartView
     {
         /** @var list<CartLine> $lines */
