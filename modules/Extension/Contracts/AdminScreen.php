@@ -35,7 +35,7 @@ interface AdminScreen
     /**
      * Phần form của plugin + giá trị hiện tại (null khi tạo mới).
      *
-     * Khoá input trong form: `extensions.<input>.<key>.<field>` (`input` = id plugin dạng slug, vd. `vani-hello-world`).
+     * Khoá input trong form: `extensions.<input>.<key>.<field>` (`input` = id plugin dạng slug, vd. `vani-wishlist`).
      *
      * @return list<array{plugin: string, input: string, key: string, label: string, fields: list<array<string, mixed>>, values: array<string, mixed>}>
      */

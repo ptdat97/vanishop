@@ -34,6 +34,21 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * Test bật plugin qua PluginManager ghi file cache plugin (`VANI_PLUGINS_CACHE`); file đó nạp lại provider ở mọi lần boot
+     * app sau — test kế tiếp (cùng tiến trình hay lần chạy sau) thấy route/hook của plugin không bật cho nó (§6b L70).
+     * Chỉ xoá file trong `storage/framework/testing`, không đụng cache thật.
+     */
+    protected function tearDown(): void
+    {
+        $cache = (string) $this->app->make('config')->get('vanishop.plugins.cache');
+        $testing = $this->app->storagePath('framework/testing').DIRECTORY_SEPARATOR;
+        parent::tearDown();
+        if (str_starts_with($cache, $testing) && is_file($cache)) {
+            @unlink($cache);
+        }
+    }
+
+    /**
      * Cho test dùng `travel()` để vượt TTL của cache: TTL trên Redis chạy theo đồng hồ thật, không theo thời gian giả
      * của Carbon, nên lượt chạy CI với `CACHE_STORE=redis` phải quay về store `array` ở các test này.
      */

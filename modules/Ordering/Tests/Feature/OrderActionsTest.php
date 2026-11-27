@@ -3,20 +3,21 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
-use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
+use Modules\Ordering\Contracts\ConfirmationChannel;
 use Modules\Ordering\Contracts\Data\RiskSignal;
 use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Contracts\OrderActions;
 use Modules\Ordering\Contracts\OrderRisks;
 use Modules\Ordering\Contracts\OrderRiskSignal;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Ordering\Tests\Fixtures\LogConfirmationChannel;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
-use Plugin\HelloWorld\HelloWorldServiceProvider;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
+require_once __DIR__.'/../Fixtures/ContractExtensions.php';
 
 /*
 | EP v3 X2 — lệnh nhân viên cho plugin (OrderActions), hook chặn xác nhận, gộp tín hiệu rủi ro, kênh xác nhận.
@@ -65,23 +66,19 @@ it('hook vani.order.before_confirm chặn mọi đường xác nhận; tín hi�
 });
 
 it('kênh xác nhận của plugin: nút trên đơn "Cần xác nhận" và hàng loạt; gửi ghi lịch sử đơn; đơn đã xác nhận không gửi', function () {
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
-        app(PluginManager::class)->install('vani.hello-world');
-        app(PluginManager::class)->enable('vani.hello-world');
-    });
-    app()->register(HelloWorldServiceProvider::class);
+    app(Extensions::class)->tag([LogConfirmationChannel::class], ConfirmationChannel::TAG);
     [$order, $confirmed] = [($this->place)(), ($this->place)()];
     DB::table('orders')->where('id', $confirmed->id)->update(['order_status' => 'confirmed']);
     $this->actingAs(T::staff(['admin.access', 'orders.view', 'orders.manage']), 'staff');
 
-    $action = collect($this->get("/admin/orders/orders/{$order->id}")->viewData('page')['props']['statusCard']['actions'])->firstWhere('key', 'confirmation-hello');
-    $this->post($action['url'])->assertSessionHas('success', "Đã gửi lời chào xác nhận đơn {$order->number}.");
-    $this->post("/admin/orders/orders/{$confirmed->id}/confirmation/hello")->assertSessionHasErrors('business');
-    $bulk = collect($this->get('/admin/orders/orders')->viewData('page')['props']['extensions']['actions'])->firstWhere('key', 'confirmation_hello');
-    $this->post($bulk['url'], ['ids' => [$order->id, $confirmed->id]])->assertSessionHas('success', 'Đã gửi yêu cầu xác nhận qua Hello (thử) cho 1 đơn; bỏ qua 1 đơn.');
+    $action = collect($this->get("/admin/orders/orders/{$order->id}")->viewData('page')['props']['statusCard']['actions'])->firstWhere('key', 'confirmation-test-log');
+    $this->post($action['url'])->assertSessionHas('success', "Đã ghi yêu cầu xác nhận đơn {$order->number}.");
+    $this->post("/admin/orders/orders/{$confirmed->id}/confirmation/test-log")->assertSessionHasErrors('business');
+    $bulk = collect($this->get('/admin/orders/orders')->viewData('page')['props']['extensions']['actions'])->firstWhere('key', 'confirmation_test-log');
+    $this->post($bulk['url'], ['ids' => [$order->id, $confirmed->id]])->assertSessionHas('success', 'Đã gửi yêu cầu xác nhận qua Ghi log (thử) cho 1 đơn; bỏ qua 1 đơn.');
 
     expect(DB::table('order_events')->where('order_id', $order->id)->where('type', 'note')->count())->toBe(2)
-        ->and(json_decode((string) ($this->event)($order, 'note')->data, true)['note'])->toStartWith('Gửi yêu cầu xác nhận qua Hello (thử)');
+        ->and(json_decode((string) ($this->event)($order, 'note')->data, true)['note'])->toStartWith('Gửi yêu cầu xác nhận qua Ghi log (thử)');
 });
 
 final class BrokenRiskSignal implements OrderRiskSignal

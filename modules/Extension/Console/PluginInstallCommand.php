@@ -10,7 +10,7 @@ use Modules\Extension\Application\Plugins\PluginOperationFailed;
 
 final class PluginInstallCommand extends Command
 {
-    protected $signature = 'vani:plugin:install {plugin : Id plugin, ví dụ vani.hello-world}';
+    protected $signature = 'vani:plugin:install {plugin : Id plugin, ví dụ vani.wishlist}';
 
     protected $description = 'Cài plugin: kiểm tra phụ thuộc và chạy migration';
 

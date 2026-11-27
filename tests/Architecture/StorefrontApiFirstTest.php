@@ -387,7 +387,6 @@ const STOREFRONT_API_READ_PAIRS = [
     'storefront.p.vani-lookbook.index' => ['api.storefront.x.vani-lookbook.lookbooks.index'],
     'storefront.p.vani-lookbook.show' => ['api.storefront.x.vani-lookbook.lookbooks.show'],
     'storefront.p.vani-wishlist.account.index' => ['api.storefront.x.vani-wishlist.items.index'],
-    'storefront.p.vani-hello-world.index' => ['api.storefront.x.vani-hello-world.greeting'],
 ];
 
 /**

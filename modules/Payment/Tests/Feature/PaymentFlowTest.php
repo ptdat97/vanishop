@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
-use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Persistence\Models\AuditLog;
@@ -22,16 +21,17 @@ use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\RefundOutcome;
 use Modules\Payment\Contracts\Data\RefundResult;
 use Modules\Payment\Contracts\Payments;
+use Modules\Payment\Contracts\RefundPayout;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
 use Modules\Payment\Tests\Feature\Fixtures\FakeCollectOnDeliveryGateway;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
+use Modules\Payment\Tests\Fixtures\LimitedPayout;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
 use Modules\Shared\Support\ExternalCallInTransaction;
 use Modules\Tenancy\Contracts\Settings;
-use Plugin\HelloWorld\HelloWorldServiceProvider;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -301,11 +301,7 @@ it('hook vani.payment.before_refund (EP v3 X2): chặn hoàn tiền do nhân vi�
 });
 
 it('RefundPayout (EP v3 X5): "Chuyển trả qua …" ghi nhận đã chuyển trả với tham chiếu; kênh từ chối giữ "chờ chuyển trả"', function () {
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
-        app(PluginManager::class)->install('vani.hello-world');
-        app(PluginManager::class)->enable('vani.hello-world');
-    });
-    app()->register(HelloWorldServiceProvider::class);
+    app(Extensions::class)->tag([LimitedPayout::class], RefundPayout::TAG);
     C::autoConfirmCod();
     ($this->order)('cod')->assertCreated();
     $payment = Payment::query()->withoutGlobalScopes()->sole();
@@ -315,21 +311,17 @@ it('RefundPayout (EP v3 X5): "Chuyển trả qua …" ghi nhận đã chuyển t
     $this->post("/admin/payment/payments/{$payment->id}/refunds", ['amount' => 50_000, 'reason' => 'x', 'idempotency_key' => 'r1'])->assertSessionHasNoErrors();
     $refund = DB::table('refunds')->sole();
 
-    $this->get('/admin/payment/payments')->assertInertia(fn ($page) => $page->where('payouts', [['code' => 'hello', 'label' => 'Hello (thử)']]));
-    $this->post("/admin/payment/refunds/{$refund->id}/payout/hello")->assertSessionHas('success', fn (string $message) => str_starts_with($message, 'Đã chuyển trả qua Hello (thử) (mã HELLO-'));
+    $this->get('/admin/payment/payments')->assertInertia(fn ($page) => $page->where('payouts', [['code' => 'test-limited', 'label' => 'Chi thử có hạn mức']]));
+    $this->post("/admin/payment/refunds/{$refund->id}/payout/test-limited")->assertSessionHas('success', fn (string $message) => str_starts_with($message, 'Đã chuyển trả qua Chi thử có hạn mức (mã TEST-'));
 
     expect(DB::table('refunds')->value('status'))->toBe('completed')
         ->and(app(Payments::class)->paymentId($payment->public_id))->toBe($payment->id)
         ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(1);
-    $this->post("/admin/payment/refunds/{$refund->id}/payout/hello")->assertSessionHasErrors('business');
+    $this->post("/admin/payment/refunds/{$refund->id}/payout/test-limited")->assertSessionHasErrors('business');
 });
 
 it('RefundPayout: khoản hoàn đang được chuyển trả không gọi kênh lần hai; nhân viên kiểm tra ngân hàng rồi ghi nhận đã chuyển trả', function () {
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
-        app(PluginManager::class)->install('vani.hello-world');
-        app(PluginManager::class)->enable('vani.hello-world');
-    });
-    app()->register(HelloWorldServiceProvider::class);
+    app(Extensions::class)->tag([LimitedPayout::class], RefundPayout::TAG);
     C::autoConfirmCod();
     ($this->order)('cod')->assertCreated();
     $payment = Payment::query()->withoutGlobalScopes()->sole();
@@ -340,7 +332,7 @@ it('RefundPayout: khoản hoàn đang được chuyển trả không gọi kênh
     // Lần bấm thứ nhất đã giành khoản hoàn và đang chờ ngân hàng (hoặc tiến trình chết sau khi gọi kênh).
     DB::table('refunds')->where('id', $refund->id)->update(['status' => 'paying_out']);
 
-    $this->post("/admin/payment/refunds/{$refund->id}/payout/hello")->assertSessionHasErrors('business');
+    $this->post("/admin/payment/refunds/{$refund->id}/payout/test-limited")->assertSessionHasErrors('business');
     $this->get('/admin/payment/payments')->assertInertia(fn ($page) => $page->where('refunds.0.paying_out', true));
 
     $this->post("/admin/payment/refunds/{$refund->id}/complete", ['note' => 'Đã kiểm tra sao kê'])->assertSessionHasNoErrors();

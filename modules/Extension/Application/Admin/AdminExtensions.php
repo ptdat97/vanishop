@@ -273,7 +273,7 @@ final class AdminExtensions implements AdminScreen
 
     /**
      * Khoá input của plugin trong form (`extensions.<khoá>.<phần>.<trường>`): id plugin có dấu chấm, mà dấu chấm là
-     * phân cấp trong validate/lỗi của Laravel → dùng dạng slug `vani-hello-world` (như đường dẫn Admin của plugin).
+     * phân cấp trong validate/lỗi của Laravel → dùng dạng slug `vani-wishlist` (như đường dẫn Admin của plugin).
      */
     public static function inputKey(string $plugin): string
     {
