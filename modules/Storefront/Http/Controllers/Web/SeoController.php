@@ -69,7 +69,9 @@ final class SeoController
      */
     private function files(CatalogReader $catalog, CollectionPages $collections, Extensions $extensions): array
     {
-        return Cache::remember('vani:sitemap:files', 3600, fn (): array => $this->build($catalog, $collections, $extensions));
+        // Tươi 1 giờ; quá hạn thì vẫn trả bản cũ (tối đa thêm 1 giờ) trong lúc một request dựng lại sau khi trả response —
+        // nhiều bot cùng đọc lúc hết hạn không dựng lại đồng loạt (§6b L59).
+        return Cache::flexible('vani:sitemap:files', [3600, 7200], fn (): array => $this->build($catalog, $collections, $extensions), ['seconds' => 120]);
     }
 
     private function xml(string $xml): Response

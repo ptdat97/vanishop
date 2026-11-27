@@ -27,8 +27,9 @@ final class Navigation
         if ($this->links !== null) {
             return $this->links;
         }
+        // Tươi 5 phút, sau đó trả bản cũ trong lúc tính lại nền (chống dồn tải, §6b L59); lưu trang thì forget() ngay.
         /** @var array{header: list<array{label: string, slug: string}>, footer: list<array{label: string, slug: string}>} $data */
-        $data = Cache::remember(self::CACHE_KEY, 300, function (): array {
+        $data = Cache::flexible(self::CACHE_KEY, [300, 900], function (): array {
             $pages = Page::query()->published()->where(fn (Builder $query) => $query->where('show_in_header', true)->orWhere('show_in_footer', true))
                 ->orderBy('sort_order')->orderBy('title')->get(['title', 'slug', 'show_in_header', 'show_in_footer']);
 
@@ -36,7 +37,7 @@ final class Navigation
                 'header' => $pages->where('show_in_header', true)->map(fn (Page $page): array => ['label' => $page->title, 'slug' => $page->slug])->values()->all(),
                 'footer' => $pages->where('show_in_footer', true)->map(fn (Page $page): array => ['label' => $page->title, 'slug' => $page->slug])->values()->all(),
             ];
-        });
+        }, ['seconds' => 30]);
 
         $url = fn (array $link): array => ['label' => $link['label'], 'url' => vani_route('storefront.p.vani-cms.page', $link['slug'])];
         $header = array_map($url, $data['header']);

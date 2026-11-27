@@ -427,6 +427,16 @@ it('robots.txt chặn trang riêng tư, không lộ đường dẫn Admin; sitem
         ->and(simplexml_load_string($xml))->not->toBeFalse();
 });
 
+it('sitemap quá 1 giờ: lượt đó vẫn trả bản cũ (không dựng lại đồng loạt), dựng lại sau khi trả response', function () {
+    $this->get('/sitemap.xml')->assertOk();
+    T::product($this->urbanx->id, ['name' => 'Áo mới', 'slug' => 'ao-moi-ve']);
+
+    $this->travel(61)->minutes();
+    $this->get('/sitemap.xml')->assertOk()->assertDontSee('ao-moi-ve');
+
+    $this->get('/sitemap.xml')->assertOk()->assertSee('ao-moi-ve');
+});
+
 it('PDP có ảnh đầu ưu tiên và ảnh sau tải lười, liên kết phóng to và dữ liệu ảnh theo biến thể', function () {
     Storage::fake('public');
     $productColor = $this->s; // ảnh theo SKU (ADR-045)

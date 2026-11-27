@@ -6,6 +6,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.103 — 2026-11-27 · Extension API 1.45.0
+
+Dọn nốt phần cache ([§6b](../20-roadmap/reference-parity-refactor.md) L59, L61, L70). Không đổi API cho plugin hay hợp đồng Storefront API.
+
+- Sitemap, khối bán chạy (`vani.storefront-extras` 1.8.1), menu CMS (`vani.cms` 1.9.1) dùng `Cache::flexible` (phục vụ bản cũ, tính lại nền) — hết hạn không làm nhiều request tính lại cùng lúc.
+- Cache plugin đang bật, đường dẫn Admin, kết quả health plugin có hạn 1 ngày thay cho `forever`.
+- Test: `TestCase` xoá file cache plugin của môi trường test sau mỗi test (plugin test đã bật không lọt sang test khác).
+
 ## 0.5.102 — 2026-11-27 · Extension API 1.45.0
 
 Storefront API dùng chung cache trang ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md) đợt 4, [§6b](../20-roadmap/reference-parity-refactor.md) L60). Không đổi API cho plugin; hợp đồng Storefront API giữ nguyên trường, chỉ thêm header.

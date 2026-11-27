@@ -46,10 +46,11 @@ final class BestsellersBlock implements StorefrontBlock
         $limit = max(1, min(24, (int) ($config['limit'] ?? 8) ?: 8));
         $days = in_array((string) ($config['days'] ?? '30'), ['7', '30', '90'], true) ? (int) $config['days'] : 30;
 
-        $ids = Cache::remember("vani-extras:bestsellers:{$days}", 3600, fn (): array => array_column(
+        // Tươi 1 giờ, sau đó trả bản cũ trong lúc tính lại nền (chống dồn tải, §6b L59).
+        $ids = Cache::flexible("vani-extras:bestsellers:{$days}", [3600, 7200], fn (): array => array_column(
             $this->statistics->topProducts(new DateTimeImmutable("-{$days} days"), new DateTimeImmutable, 60),
             'product_id',
-        ));
+        ), ['seconds' => 60]);
         $products = array_slice($this->products->byIds(array_slice($ids, 0, 60), $locale), 0, $limit);
         if (count($products) < $limit) {
             $taken = array_column($products, 'id');
