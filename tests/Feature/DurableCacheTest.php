@@ -35,7 +35,18 @@ it('vani:cache:prune-durable xoá dòng hết hạn, giữ dòng còn hạn', fu
         ->and(DurableCache::store()->get('vani:fresh'))->toBe('mới');
 });
 
-it('vani:cache:prune-durable bỏ qua khi store durable không phải database', function () {
+it('vani:cache:prune-durable dọn cả store mặc định khi dùng bảng database (bản cache trang)', function () {
+    config(['cache.default' => 'database']);
+    Cache::put('vani:page:cu', 'html', now()->addMinute());
+    Cache::put('vani:page:moi', 'html', now()->addHour());
+    $this->travel(2)->minutes();
+
+    $this->artisan('vani:cache:prune-durable')->assertSuccessful();
+
+    expect(DB::table('cache')->pluck('key')->all())->toBe([config('cache.prefix').'vani:page:moi']);
+});
+
+it('vani:cache:prune-durable bỏ qua khi không store nào dùng database', function () {
     config(['cache.durable_store' => 'array']);
 
     $this->artisan('vani:cache:prune-durable')->expectsOutputToContain('bỏ qua')->assertSuccessful();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Pricing\Application;
 
 use DateTimeInterface;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Identity\Contracts\AuditLogger;
@@ -38,5 +39,14 @@ final class PriceListScheduler implements PriceListSchedule
             $this->audit->record('pricing.price_list.scheduled', 'price_list', $list->id, ['reason' => $reason, 'active' => $active, 'starts_at' => $startsAt?->format(DATE_ATOM), 'ends_at' => $endsAt?->format(DATE_ATOM)]);
             event(new PriceChanged($list->id, $list->prices()->pluck('variant_id')->all()));
         });
+    }
+
+    public function nextChangeAfter(int $now): ?int
+    {
+        $at = Carbon::createFromTimestamp($now);
+        $active = fn () => PriceList::query()->where('status', 'active');
+        $next = array_filter([$active()->where('starts_at', '>', $at)->min('starts_at'), $active()->where('ends_at', '>', $at)->min('ends_at')]);
+
+        return $next === [] ? null : min(array_map(fn (mixed $value): int => Carbon::parse($value)->getTimestamp(), $next));
     }
 }

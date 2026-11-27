@@ -73,4 +73,5 @@ return [
     'brand_not_found' => 'Không tìm thấy thương hiệu.',
     'category_not_found' => 'Không tìm thấy danh mục.',
     'product_not_found' => 'Không tìm thấy sản phẩm.',
+    'page_cache_cleared' => 'Đã xoá cache trang; trang được dựng lại ở lượt xem kế tiếp.',
 ];

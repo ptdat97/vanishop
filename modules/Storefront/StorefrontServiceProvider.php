@@ -11,12 +11,14 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\View\View as ViewInstance;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
+use Modules\Shared\Events\PageCacheTagsInvalidated;
 use Modules\Shared\Http\RateLimits;
 use Modules\Shared\Http\StorefrontRouteMiddleware;
 use Modules\Shared\Support\ModuleServiceProvider;
@@ -34,6 +36,7 @@ use Modules\Storefront\Application\Links\ProductLinkType;
 use Modules\Storefront\Application\Links\RouteLinkType;
 use Modules\Storefront\Application\Links\UrlLinkType;
 use Modules\Storefront\Application\NativeCustomerSignIn;
+use Modules\Storefront\Application\PageCache\PageCacheStore;
 use Modules\Storefront\Application\PopularSearches;
 use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
@@ -43,6 +46,7 @@ use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Application\Theme\ThemeTranslationLoader;
+use Modules\Storefront\Console\PageCacheTagsCommand;
 use Modules\Storefront\Contracts\CustomerProductPrices;
 use Modules\Storefront\Contracts\CustomerSignIn;
 use Modules\Storefront\Contracts\LinkResolver;
@@ -56,6 +60,7 @@ use Modules\Storefront\Http\Middleware\RequireCheckoutSignIn;
 use Modules\Storefront\Http\Middleware\RequireVisiblePrices;
 use Modules\Storefront\Http\Middleware\StorefrontMaintenance;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
+use Modules\Storefront\Listeners\InvalidatePageCacheOnSettingChange;
 use Modules\Storefront\View\Breadcrumbs;
 use Modules\Storefront\View\Composers\AccountMenuComposer;
 use Modules\Storefront\View\Composers\ImageComposer;
@@ -66,6 +71,7 @@ use Modules\Storefront\View\Composers\ProductFrameComposer;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
+use Modules\Tenancy\Events\SettingChanged;
 
 /**
  * Tầng ghép cho storefront (Storefront API và native storefront): không có bảng riêng,
@@ -207,6 +213,13 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         $this->loadWebRoutes($this->modulePath('Http/routes/storefront-web.php'));
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('storefront', $this->modulePath('Http/routes/admin-workspace.php'));
+        // Cache trang (ADR-051): cấu hình đổi → tag; lô xoá chạy → bỏ bản đang render dở (có thể đã đọc dữ liệu cũ).
+        Event::listen(SettingChanged::class, InvalidatePageCacheOnSettingChange::class);
+        Event::listen(PageCacheTagsInvalidated::class, fn () => $this->app->make(PageCacheStore::class)->advanceGeneration());
+        if ($this->app->runningInConsole()) {
+            $this->commands([PageCacheTagsCommand::class]);
+        }
+
         $this->bootModuleResources();
     }
 }

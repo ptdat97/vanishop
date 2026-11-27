@@ -27,6 +27,12 @@ use Plugin\Cms\Infrastructure\Markdown;
 use Plugin\Cms\Infrastructure\Navigation;
 use Plugin\Cms\Infrastructure\PageLinkType;
 use Plugin\Cms\Infrastructure\ProductExtrasEnricher;
+use Plugin\Cms\Persistence\Category;
+use Plugin\Cms\Persistence\CategoryBanner;
+use Plugin\Cms\Persistence\Content;
+use Plugin\Cms\Persistence\Page;
+use Plugin\Cms\Persistence\Post;
+use Plugin\Cms\Persistence\ProductExtra;
 
 /**
  * Plugin nội dung: trang (/trang/{slug}: giới thiệu, chính sách…) và tin tức (/tin-tuc), soạn bằng Markdown trong
@@ -54,6 +60,8 @@ final class CmsServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        // Dữ liệu hiện trên trang công khai: lưu/xoá → cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
+        $this->pageCacheModels([Category::class, CategoryBanner::class, Content::class, Page::class, Post::class, ProductExtra::class]);
         if ($this->app->runningInConsole() && ! $this->app->isProduction()) {
             $this->contribute(DemoContent::TAG, CmsDemoContent::class);
         }

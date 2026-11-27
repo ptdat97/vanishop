@@ -57,7 +57,7 @@ it('beacon cùng IP phân biệt trình duyệt và chỉ tin viewer_id gửi c�
 });
 
 it('HTML cache CDN dùng chung và beacon cùng nguồn vẫn nhận khách từ phiên đăng nhập', function () {
-    config(['vanishop.storefront.page_cache.enabled' => true]);
+    config(['vanishop.storefront.page_cache.mode' => 'cdn']);
     $customer = H::account();
     $this->post('/tai-khoan/dang-nhap', ['email' => $customer->email, 'password' => H::PASSWORD])->assertRedirect();
     $this->get('/san-pham/'.$this->product->slug)->assertOk()->assertHeaderMissing('Set-Cookie');
@@ -116,4 +116,3 @@ it('đếm lượt xem cả khi cache store là database (increment không tự 
 
     expect(app(ProductViewStatistics::class)->counts([$this->product->id]))->toBe([$this->product->id => 1]);
 });
-

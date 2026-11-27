@@ -54,7 +54,7 @@ beforeEach(function () {
 afterEach(fn () => File::deleteDirectory($this->assets));
 
 it('trang sản phẩm có nút tim + script của plugin; HTML trang cache giống nhau giữa khách vãng lai và khách đăng nhập', function () {
-    config(['vanishop.storefront.page_cache.enabled' => true]);
+    config(['vanishop.storefront.page_cache.mode' => 'cdn']);
     $guest = $this->get('/san-pham/'.$this->product->slug)->assertOk()
         ->assertSee('data-vani-wishlist="'.$this->product->id.'"', false)
         ->assertSee('data-vani-wishlist-script', false)

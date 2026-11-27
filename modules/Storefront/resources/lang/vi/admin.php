@@ -72,6 +72,9 @@ return [
         'unsaved_changes' => 'Có thay đổi chưa lưu',
     ],
     'design_tabs' => [
+        'clear_page_cache' => 'Xoá cache trang',
+        'clear_page_cache_confirm' => 'Xoá cache trang công khai?',
+        'clear_page_cache_message' => 'Mọi trang công khai sẽ được dựng lại ở lượt xem kế tiếp. Thay đổi bình thường tự hiện sau khoảng 1 phút, chỉ cần nút này khi trang vẫn hiển thị nội dung cũ.',
         'builder' => 'Nội dung trang',
         'header_footer' => 'Đầu & chân trang',
         'home_page' => 'Trang chủ',

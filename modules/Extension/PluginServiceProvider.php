@@ -6,6 +6,7 @@ namespace Modules\Extension;
 
 use Closure;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +25,8 @@ use Modules\Extension\Contracts\PluginViews;
 use Modules\Extension\Contracts\SettingPermissions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
+use Modules\Shared\Contracts\PageCacheInvalidator;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Http\StorefrontRouteMiddleware;
 use Modules\Shared\Support\AdminPath;
 use Modules\Shared\Support\StoreLocale;
@@ -103,6 +106,27 @@ abstract class PluginServiceProvider extends ServiceProvider
                 $event->when(fn (): bool => $this->app->make(PluginActivation::class)->isActive($pluginId));
             }
         });
+    }
+
+    /**
+     * Model của plugin có dữ liệu hiện trên trang công khai (trang CMS, bài viết, lookbook, bảng size…): lưu/xoá bản ghi thì
+     * cache trang hết hiệu lực trong lô xoá kế tiếp (~1 phút, ADR-051). Mặc định xoá mọi trang (`PageCacheTags::EVERYTHING`)
+     * — đơn giản, không sót. Plugin muốn xoá hẹp hơn trả tag riêng (tiền tố mã plugin) và tự ghi tag đó khi render
+     * (`PageCacheTags::add`).
+     *
+     *   $this->pageCacheModels([Page::class, Post::class]);
+     *   $this->pageCacheModels([Page::class], fn (Page $page): array => ["vani.cms:page:{$page->id}"]);
+     *
+     * @param  list<class-string<Model>>  $models
+     * @param  (Closure(Model): list<string>)|null  $tags
+     */
+    protected function pageCacheModels(array $models, ?Closure $tags = null): void
+    {
+        foreach ($models as $model) {
+            $invalidate = fn (Model $record) => $this->app->make(PageCacheInvalidator::class)->invalidate(...($tags === null ? [PageCacheTags::EVERYTHING] : $tags($record)));
+            $model::saved($invalidate);
+            $model::deleted($invalidate);
+        }
     }
 
     /**

@@ -25,10 +25,13 @@ use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Product;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\SlugRedirect;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Support\StoreLocale;
 
 /**
- * Hiện thực CatalogReader cho storefront (native và Storefront API).
+ * Hiện thực CatalogReader cho storefront (native và Storefront API). Ghi tag cache trang (ADR-051) cho dữ liệu trả ra:
+ * sản phẩm `product:{id}`, trang danh sách theo danh mục/bộ sưu tập/thương hiệu, `catalog:listing` cho danh sách không cố
+ * định, `catalog:taxonomy` cho mọi thứ hiển thị tên danh mục/thương hiệu/thuộc tính.
  */
 final class StorefrontCatalog implements CatalogReader
 {
@@ -36,22 +39,31 @@ final class StorefrontCatalog implements CatalogReader
         private readonly CategoryTreeQuery $categories,
         private readonly StorefrontProductQuery $products,
         private readonly FacetSettings $facetSettings,
+        private readonly PageCacheTags $pageTags,
     ) {}
 
     public function categoryTree(string $locale): array
     {
+        $this->pageTags->add(PageCacheTags::CATALOG_TAXONOMY);
+
         return vani_filter('vani.service.catalog.category_tree', $this->present($this->categories->tree(activeOnly: true, locale: $locale)), $locale);
     }
 
     public function category(string $slug, string $locale): ?array
     {
-        return $this->find($this->categoryTree($locale), $slug);
+        $category = $this->find($this->categoryTree($locale), $slug);
+        if ($category !== null) {
+            $this->pageTags->add('category:'.$category['id']);
+        }
+
+        return $category;
     }
 
     public function searchProducts(ProductFilters $filters, string $locale): array
     {
         $query = $this->toSearchQuery($filters, $locale);
         $result = $this->products->list($query, $locale);
+        $this->pageTags->products(array_column($result['items'], 'id'));
         $facets = [
             'attributes' => $this->attributeFacets($result['facets']['attribute_values'], $locale),
             'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
@@ -98,6 +110,8 @@ final class StorefrontCatalog implements CatalogReader
 
     public function brands(): array
     {
+        $this->pageTags->add(PageCacheTags::CATALOG_TAXONOMY);
+
         return vani_filter('vani.service.catalog.brands', Brand::query()->where('status', Brand::ACTIVE)->orderBy('position')->orderBy('name')->get()
             ->map(fn (Brand $brand): array => $this->brandView($brand))->all());
     }
@@ -105,6 +119,7 @@ final class StorefrontCatalog implements CatalogReader
     public function brand(string $slug): ?array
     {
         $brand = Brand::query()->where('slug', $slug)->where('status', Brand::ACTIVE)->first();
+        $this->pageTags->add(PageCacheTags::CATALOG_TAXONOMY, ...($brand === null ? [] : ['brand:'.$brand->id]));
 
         return $brand === null ? null : vani_filter('vani.service.catalog.brand', [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description], $slug);
     }
@@ -116,6 +131,9 @@ final class StorefrontCatalog implements CatalogReader
 
     public function productsByIds(array $productIds, string $locale, int $now): array
     {
+        $this->pageTags->add(PageCacheTags::CATALOG_TAXONOMY);
+        $this->pageTags->products($productIds);
+
         return vani_filter('vani.service.catalog.products_by_ids', $this->products->byIds($productIds, $locale, $now), $locale);
     }
 
@@ -152,6 +170,10 @@ final class StorefrontCatalog implements CatalogReader
     public function productDetail(string $slug, string $locale, int $now): ?array
     {
         $detail = $this->products->detail($slug, $locale, $now);
+        $this->pageTags->add(PageCacheTags::CATALOG_TAXONOMY);
+        if ($detail !== null) {
+            $this->pageTags->products([(int) $detail['id']]);
+        }
 
         return $detail === null ? null : vani_filter('vani.service.catalog.product_detail', $detail, $slug, $locale);
     }
@@ -189,6 +211,8 @@ final class StorefrontCatalog implements CatalogReader
             $attributeValueIds[$attribute->id ?? -1] = $ids === [] ? [-1] : $ids;
         }
 
+        $this->tagListing($categoryId, $collectionId, $brandIds);
+
         return new ProductSearchQuery(
             brandIds: $brandIds,
             now: $filters->now,
@@ -203,6 +227,22 @@ final class StorefrontCatalog implements CatalogReader
             priceMax: $filters->priceMax,
             options: $this->optionFilters($filters->options),
         );
+    }
+
+    /**
+     * Tag cache trang cho phạm vi danh sách: sản phẩm mới vào danh mục/bộ sưu tập/thương hiệu làm danh sách đó hết hiệu
+     * lực; không theo phạm vi nào (mới nhất, tìm kiếm, tất cả) thì theo mọi thay đổi sản phẩm (`catalog:listing`).
+     *
+     * @param  list<int>  $brandIds
+     */
+    private function tagListing(?int $categoryId, ?int $collectionId, array $brandIds): void
+    {
+        $scopes = [
+            ...($categoryId !== null && $categoryId > 0 ? ['category:'.$categoryId] : []),
+            ...($collectionId !== null && $collectionId > 0 ? ['collection:'.$collectionId] : []),
+            ...array_map(fn (int $id): string => 'brand:'.$id, array_filter($brandIds, fn (int $id): bool => $id > 0)),
+        ];
+        $this->pageTags->add(PageCacheTags::CATALOG_TAXONOMY, ...($scopes === [] ? [PageCacheTags::CATALOG_LISTING] : $scopes));
     }
 
     /**

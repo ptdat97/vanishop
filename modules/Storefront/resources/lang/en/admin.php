@@ -72,6 +72,9 @@ return [
         'unsaved_changes' => 'Unsaved changes',
     ],
     'design_tabs' => [
+        'clear_page_cache' => 'Clear page cache',
+        'clear_page_cache_confirm' => 'Clear the public page cache?',
+        'clear_page_cache_message' => 'Every public page is rebuilt on its next view. Changes normally show within about a minute; use this only when a page still shows old content.',
         'builder' => 'Page content',
         'header_footer' => 'Header & footer',
         'home_page' => 'Home page',

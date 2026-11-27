@@ -9,8 +9,8 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 
 /*
-| Chế độ mặc định — chưa có CDN (`vanishop.storefront.page_cache.enabled` = false, storefront §5): trang công khai chạy
-| có phiên như mọi trang, phần riêng của khách render sẵn; hiển thị giống chế độ CDN.
+| Chế độ `off` (`vanishop.storefront.page_cache.mode`, mặc định trong test, storefront §5): trang công khai chạy có phiên
+| như mọi trang, phần riêng của khách render sẵn; hiển thị giống chế độ không phiên (`app`/`cdn`).
 */
 
 /**
@@ -32,8 +32,8 @@ beforeEach(function () {
     };
 });
 
-it('mặc định tắt cache CDN: trang công khai có phiên, private no-store, không gọi /_vani/phien; SEO vẫn đầy đủ', function () {
-    expect(config('vanishop.storefront.page_cache.enabled'))->toBeFalse();
+it('chế độ off: trang công khai có phiên, private no-store, không gọi /_vani/phien; SEO vẫn đầy đủ', function () {
+    expect(config('vanishop.storefront.page_cache.mode'))->toBe('off');
 
     $response = $this->get($this->product)->assertOk()->assertHeader('Cache-Control', 'no-store, private');
     expect(collect($response->headers->getCookies())->map->getName()->all())->toContain(config('session.cookie'))
@@ -77,7 +77,7 @@ it('cửa hàng ẩn giá với khách chưa đăng nhập: khách đã đăng n
 });
 
 it('thêm giỏ từ trang tiếng Anh (không token CSRF trong form) chạy ở cả hai chế độ', function (bool $cdn) {
-    config(['vanishop.storefront.page_cache.enabled' => $cdn]);
+    config(['vanishop.storefront.page_cache.mode' => $cdn ? 'cdn' : 'off']);
 
     $this->post('/en/cart', ['variant_id' => $this->s->id, 'quantity' => 1])->assertRedirect(url('/en/cart'));
     $this->getJson('/_vani/phien')->assertJsonPath('cart.count', 1);

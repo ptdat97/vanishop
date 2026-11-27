@@ -6,14 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.100',
+    'version' => '0.5.101',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
     | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
     | requires.extension_api.
     */
-    'extension_api' => '1.44.0',
+    'extension_api' => '1.45.0',
 
     /*
     | Kết nối đọc cho thống kê/báo cáo (OrderStatistics, plugin Reports) — db-refactor G3. Đặt DB_REPORT_CONNECTION=mysql_report
@@ -81,13 +81,26 @@ return [
         'theme' => env('VANI_THEME', 'vani-base'),
         // Nguồn đơn storefront nhận qua header X-Vani-Source (báo cáo theo kênh); giá trị lạ → mục đầu tiên.
         'sources' => ['web', 'app', 'zalo'],
-        // Cache CDN cho trang công khai — TUỲ CHỌN NÂNG CAO khi deploy có CDN (storefront §5). Mặc định tắt: mọi trang
-        // chạy có phiên, render sẵn phần riêng của khách. Bật: trang công khai render không phiên, CDN cache theo
-        // s-maxage, phần riêng của khách (giỏ, đăng nhập, thông báo) lấy bằng JS qua GET /_vani/phien.
+        // Cache trang công khai (ADR-051, storefront §5). `app` (mặc định): trang công khai render không phiên, HTML lưu
+        // trong ứng dụng kèm tag dữ liệu, xoá theo lô mỗi phút; phần riêng của khách (giỏ, đăng nhập, thông báo) lấy bằng
+        // JS qua GET /_vani/phien. `cdn`: như `app` + header cho CDN (s-maxage, danh sách tag). `off`: có phiên, không cache.
         'page_cache' => [
-            'enabled' => (bool) env('VANI_PAGE_CACHE', false),
+            'mode' => env('VANI_PAGE_CACHE', 'app'),
+            // Hạn tối đa của bản trong ứng dụng (lưới an toàn khi sót tag).
+            'ttl' => (int) env('VANI_PAGE_CACHE_APP_TTL', 3600),
+            // Trang ghi quá số tag sản phẩm này thì dùng tag thô `catalog:listing`.
+            'max_product_tags' => 200,
+            // Quá số giá trị lọc trong query thì không lưu (tổ hợp quá nhiều so với lượt trúng).
+            'max_filter_values' => 4,
+            // Tham số theo dõi bỏ khỏi khoá cache (mẫu fnmatch).
+            'ignored_query' => ['utm_*', 'gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid', 'ttclid', 'zarsrc', 'zarsi', '_gl', 'mc_cid', 'mc_eid'],
+            // Chống dồn tải: một request render, request khác cùng trang chờ tối đa lock_wait_ms.
+            'lock_seconds' => 10,
+            'lock_wait_ms' => 3000,
+            // Chế độ `cdn`.
             's_maxage' => (int) env('VANI_PAGE_CACHE_TTL', 300),
             'stale_while_revalidate' => 600,
+            'cdn_tag_header' => env('VANI_PAGE_CACHE_TAG_HEADER', 'Cache-Tag'),
         ],
     ],
 

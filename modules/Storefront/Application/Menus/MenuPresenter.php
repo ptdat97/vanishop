@@ -6,16 +6,19 @@ namespace Modules\Storefront\Application\Menus;
 
 use Modules\Catalog\Contracts\Data\MediaData;
 use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Support\StoreClock;
 use Modules\Storefront\Contracts\Data\LinkTarget;
 use Modules\Storefront\Contracts\Data\ResolvedLink;
 use Modules\Storefront\Contracts\LinkResolver;
+use Modules\Storefront\Contracts\PublicPageExpiry;
 
 /**
  * Menu đã xuất bản để theme render: phân giải mọi link của menu một lần (một truy vấn mỗi loại), bỏ mục tắt, ngoài
  * khung giờ hiển thị, hoặc trỏ tới đối tượng đã xoá/ẩn (kèm cả nhánh con của nó). Ghi nhớ trong request.
  *
- * Mục trả về: `{label, url (null = tiêu đề nhóm), badge, image_url, children}`.
+ * Mục trả về: `{label, url (null = tiêu đề nhóm), badge, image_url, children}`. Cache trang (ADR-051): tag `menu:{vị trí}`,
+ * hạn bản cache tới mốc hiện/ẩn sớm nhất của mục có khung giờ.
  */
 final class MenuPresenter
 {
@@ -26,6 +29,7 @@ final class MenuPresenter
         private readonly MenuRepository $menus,
         private readonly LinkResolver $links,
         private readonly MediaDirectory $media,
+        private readonly PageCacheTags $pageTags,
     ) {}
 
     /**
@@ -33,6 +37,7 @@ final class MenuPresenter
      */
     public function items(string $location, string $locale): ?array
     {
+        $this->pageTags->add('menu:'.$location);
         $key = "{$locale}|{$location}";
         if (array_key_exists($key, $this->memo)) {
             return $this->memo[$key];
@@ -49,7 +54,35 @@ final class MenuPresenter
         $resolved = $this->links->resolveMany($targets, $locale);
         $images = $mediaIds === [] ? [] : $this->media->find(array_values(array_unique($mediaIds)));
 
-        return $this->memo[$key] = $this->present($items, $resolved, $images, $locale, StoreClock::now()->format('Y-m-d\TH:i'));
+        $now = StoreClock::now()->format('Y-m-d\TH:i');
+        $this->limitPageCache($items, $now);
+
+        return $this->memo[$key] = $this->present($items, $resolved, $images, $locale, $now);
+    }
+
+    /**
+     * Mục hẹn giờ hiện/ẩn: bản cache trang hết hạn đúng mốc sớm nhất.
+     *
+     * @param  list<array<string, mixed>>  $items
+     */
+    private function limitPageCache(array $items, string $now): void
+    {
+        $next = null;
+        $walk = function (array $items) use (&$walk, &$next, $now): void {
+            foreach ($items as $item) {
+                foreach (['visible_from', 'visible_to'] as $field) {
+                    $at = $item[$field] ?? null;
+                    if (is_string($at) && $at > $now && ($next === null || $at < $next)) {
+                        $next = $at;
+                    }
+                }
+                $walk((array) ($item['children'] ?? []));
+            }
+        };
+        $walk($items);
+        if ($next !== null) {
+            PublicPageExpiry::limit(request(), StoreClock::fromInput($next));
+        }
     }
 
     /**

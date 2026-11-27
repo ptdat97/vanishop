@@ -12,6 +12,8 @@ use Modules\Storefront\Contracts\StorefrontBlock;
 use Plugin\Lookbook\Infrastructure\LatestLookbooksBlock;
 use Plugin\Lookbook\Infrastructure\LookbookImageSizes;
 use Plugin\Lookbook\Infrastructure\LookbookSitemap;
+use Plugin\Lookbook\Persistence\Lookbook;
+use Plugin\Lookbook\Persistence\LookbookImage;
 
 /**
  * Lookbook (docs/05-plugin/specs/lookbook.md): bộ ảnh thời trang theo mùa/chủ đề — trang danh sách, trang chi tiết,
@@ -28,6 +30,8 @@ final class LookbookServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        // Dữ liệu hiện trên trang công khai: lưu/xoá → cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
+        $this->pageCacheModels([Lookbook::class, LookbookImage::class]);
         $this->translations($this->pluginPath('Resources/lang'), 'vani-lookbook');
         $this->permissions(['lookbook.view' => 'Xem lookbook', 'lookbook.manage' => 'vani-lookbook::texts.lookbook_service_provider.create_edit_delete_lookbooks'], [PermissionRegistry::PRESET_CONTENT]);
         $this->settings([

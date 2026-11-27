@@ -73,4 +73,5 @@ return [
     'brand_not_found' => 'Brand not found.',
     'category_not_found' => 'Category not found.',
     'product_not_found' => 'Product not found.',
+    'page_cache_cleared' => 'Page cache cleared; pages are rebuilt on their next view.',
 ];

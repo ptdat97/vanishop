@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Storefront\Application\Builder;
 
 use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -38,6 +39,8 @@ final class BuilderEngine
      */
     public function blocks(): ?array
     {
+        // Cache trang (ADR-051): lưu Builder chỉ xoá trang có vùng này.
+        app(PageCacheTags::class)->add('builder:'.self::HOME);
         if (! $this->loaded) {
             $blocks = $this->settings->get('core', self::SETTING);
             $this->stored = is_array($blocks) ? array_values($blocks) : null;

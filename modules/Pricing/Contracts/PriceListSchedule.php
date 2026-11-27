@@ -25,4 +25,10 @@ interface PriceListSchedule
      * @throws \InvalidArgumentException bảng giá không tồn tại hoặc là `base`
      */
     public function schedule(int $priceListId, ?DateTimeInterface $startsAt, ?DateTimeInterface $endsAt, bool $active, string $reason): void;
+
+    /**
+     * Mốc bắt đầu/kết thúc sớm nhất sau `$now` của bảng giá đang bật (Unix timestamp) — giá hiệu lực đổi lúc đó. Cache trang
+     * (ADR-051) dùng làm hạn của bản cache.
+     */
+    public function nextChangeAfter(int $now): ?int;
 }

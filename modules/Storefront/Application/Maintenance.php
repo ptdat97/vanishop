@@ -16,13 +16,15 @@ final class Maintenance
 {
     public const COOKIE = 'vani_maintenance_bypass';
 
+    public const SETTING = 'storefront.maintenance';
+
     public const BYPASS_HOURS = 12;
 
     public function __construct(private readonly Settings $settings) {}
 
     public function enabled(): bool
     {
-        return (bool) $this->settings->get('core', 'storefront.maintenance', false);
+        return (bool) $this->settings->get('core', self::SETTING, false);
     }
 
     public function message(): string

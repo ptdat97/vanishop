@@ -16,6 +16,8 @@ use Plugin\Bundles\Infrastructure\BundleAction;
 use Plugin\Bundles\Infrastructure\BundleBlock;
 use Plugin\Bundles\Infrastructure\BundlePresenter;
 use Plugin\Bundles\Infrastructure\BundleRule;
+use Plugin\Bundles\Persistence\Bundle;
+use Plugin\Bundles\Persistence\BundleItem;
 
 /**
  * Combo sản phẩm: mua đủ bộ (vd. áo + váy + túi) giảm theo %. Mỗi combo đồng bộ thành một khuyến mãi của Core
@@ -33,6 +35,8 @@ final class BundlesServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        // Dữ liệu hiện trên trang công khai: lưu/xoá → cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
+        $this->pageCacheModels([Bundle::class, BundleItem::class]);
         if ($this->app->runningInConsole() && ! $this->app->isProduction()) {
             $this->contribute(DemoContent::TAG, BundlesDemoContent::class);
         }

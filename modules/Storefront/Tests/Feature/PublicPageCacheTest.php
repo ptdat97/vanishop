@@ -14,7 +14,7 @@ require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 */
 
 beforeEach(function () {
-    config(['vanishop.storefront.page_cache.enabled' => true]);
+    config(['vanishop.storefront.page_cache.mode' => 'cdn']);
     H::fakeOtp();
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
     $this->product = '/san-pham/'.$this->s->product->slug;

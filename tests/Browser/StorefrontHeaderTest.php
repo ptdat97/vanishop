@@ -9,7 +9,7 @@ require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.
 require_once __DIR__.'/../../modules/Customer/Tests/Feature/CustomerTestHelpers.php';
 
 it('cập nhật giá, tài khoản và số món sau khi khách đăng nhập', function (bool $cachePages) {
-    config(['vanishop.storefront.page_cache.enabled' => $cachePages]);
+    config(['vanishop.storefront.page_cache.mode' => $cachePages ? 'app' : 'off']);
     T::seed(fn () => app(Settings::class)->set('core', 'storefront.price_visibility', 'members'));
     ['s' => $variant] = C::store();
     $customer = H::account('0912345678');

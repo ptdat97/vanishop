@@ -9,10 +9,16 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Factory as ValidationFactory;
+use Modules\Shared\Application\PageCache\BatchedPageCacheInvalidator;
+use Modules\Shared\Application\PageCache\RequestPageTags;
+use Modules\Shared\Console\InvalidatePageCacheCommand;
 use Modules\Shared\Console\PruneIdempotencyKeysCommand;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Contracts\PageCacheInvalidator;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Http\LocalizedValidator;
 use Modules\Shared\Http\Middleware\FirstPartySession;
 use Modules\Shared\Http\Middleware\ResolveStorefrontContext;
@@ -32,6 +38,11 @@ final class SharedServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->scoped(CurrentContext::class);
+        // Cache trang (ADR-051): bộ gom tag theo request, hàng đợi xoá dùng chung.
+        $this->app->scoped(RequestPageTags::class);
+        $this->app->alias(RequestPageTags::class, PageCacheTags::class);
+        $this->app->singleton(BatchedPageCacheInvalidator::class);
+        $this->app->alias(BatchedPageCacheInvalidator::class, PageCacheInvalidator::class);
         $this->app->singleton(MoneyFormatter::class, fn (): MoneyFormatter => MoneyFormatter::fromConfig());
     }
 
@@ -52,12 +63,19 @@ final class SharedServiceProvider extends ModuleServiceProvider
         });
         RateLimiter::for('storefront-api', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, (int) config('vanishop.rate_limits.storefront_api', 240)));
 
+        // Tag cache trang đã gom trong bộ nhớ → hàng đợi, một lần khi request/lệnh/job kết thúc (ADR-051).
+        $flushPageCacheTags = fn () => $this->app->make(BatchedPageCacheInvalidator::class)->flushBuffer();
+        $this->app->terminating($flushPageCacheTags);
+        Queue::after($flushPageCacheTags);
+        Queue::failing($flushPageCacheTags);
+
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:idempotency:prune')->hourly()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:page-cache:invalidate')->everyMinute()->withoutOverlapping()->onOneServer();
         });
 
         if ($this->app->runningInConsole()) {
-            $this->commands([PruneIdempotencyKeysCommand::class]);
+            $this->commands([PruneIdempotencyKeysCommand::class, InvalidatePageCacheCommand::class]);
         }
 
         $this->bootModuleResources();

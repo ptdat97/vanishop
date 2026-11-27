@@ -73,7 +73,7 @@ it('thanh thông báo: tắt → không có HTML; nhiều dòng xoay vòng; Mark
 });
 
 it('giới hạn bản cache CDN theo lịch thông báo', function (string $key, bool $visible, int $minutes) {
-    config(['vanishop.storefront.page_cache.enabled' => true, 'vanishop.storefront.page_cache.s_maxage' => 300, 'vanishop.storefront.page_cache.stale_while_revalidate' => 600]);
+    config(['vanishop.storefront.page_cache.mode' => 'cdn', 'vanishop.storefront.page_cache.s_maxage' => 300, 'vanishop.storefront.page_cache.stale_while_revalidate' => 600]);
     $boundary = now(config('vanishop.locale.timezone'))->addMinutes($minutes)->startOfMinute();
     ($this->set)(['announcement_enabled' => true, 'announcement_lines.vi' => 'Ưu đãi', $key => $boundary->format('Y-m-d H:i')]);
     $before = time();

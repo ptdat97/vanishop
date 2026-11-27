@@ -1,4 +1,4 @@
-Extension API 1.44.0
+Extension API 1.45.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -897,11 +897,29 @@ class Modules\Shared\Contracts\Data\Alert
   const RESOLVED = 'resolved'
   __construct(string $key, string $severity, string $state, string $title, string $detail, DateTimeImmutable $since)
   subject(): string
+interface Modules\Shared\Contracts\PageCacheInvalidator [experimental]
+  invalidate(string ...$tags): void
+  invalidateNow(string ...$tags): void
+  flush(): void
+interface Modules\Shared\Contracts\PageCacheTags [experimental]
+  const CATALOG_LISTING = 'catalog:listing'
+  const CATALOG_TAXONOMY = 'catalog:taxonomy'
+  const EVERYTHING = '*'
+  add(string ...$tags): void
+  products(iterable $productIds): void
+  uncacheable(string $reason): void
 interface Modules\Shared\Contracts\PhoneNumberPolicy
   const TAG = 'vani.phone.policies'
   code(): string
   normalize(string $input): ?string
   national(string $e164): string
+class Modules\Shared\Events\PageCacheTagsInvalidated [experimental]
+  __construct(array $tags)
+  everything(): bool
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
 class Modules\Shared\Support\LocalizedUrls
   static route(string $name, mixed $parameters = array (
 ), ?string $locale = NULL, bool $absolute = true): string

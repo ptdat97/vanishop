@@ -5,6 +5,7 @@ use Modules\Storefront\Http\Controllers\Admin\BuilderController;
 use Modules\Storefront\Http\Controllers\Admin\BuilderDraftController;
 use Modules\Storefront\Http\Controllers\Admin\MaintenancePreviewController;
 use Modules\Storefront\Http\Controllers\Admin\MenuController;
+use Modules\Storefront\Http\Controllers\Admin\PageCacheController;
 use Modules\Storefront\Http\Controllers\Admin\ThemeSettingsController;
 
 // Builder chỉ cho trang chủ; trang khác thêm nội dung bằng code tại slot.
@@ -13,6 +14,7 @@ Route::put('builder/home', [BuilderController::class, 'update'])->name('builder.
 Route::delete('builder/home', [BuilderController::class, 'reset'])->name('builder.reset');
 Route::post('builder/home/{operation}', BuilderDraftController::class)->whereIn('operation', ['preview', 'import'])->middleware('vani.theme')->name('builder.draft');
 Route::get('maintenance-preview', MaintenancePreviewController::class)->name('maintenance.preview');
+Route::post('page-cache/clear', PageCacheController::class)->name('page-cache.clear');
 
 Route::get('menus', [MenuController::class, 'edit'])->name('menus.edit');
 Route::get('menus/links', [MenuController::class, 'links'])->name('menus.links');

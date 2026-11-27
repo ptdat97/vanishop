@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Shared\Contracts\PageCacheInvalidator;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Support\StoreLocale;
 use Plugin\SizeChart\Persistence\SizeChart;
 
@@ -91,6 +93,8 @@ final class SizeCharts
      */
     public function assign(string $target, int $targetId, ?int $chartId): void
     {
+        // Bảng size hiện trên trang sản phẩm: cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
+        app(PageCacheInvalidator::class)->invalidate(PageCacheTags::EVERYTHING);
         if ($chartId === null) {
             DB::table('plg_size_chart_assignments')->where('target_type', $target)->where('target_id', $targetId)->delete();
 

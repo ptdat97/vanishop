@@ -8,6 +8,7 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
 use Modules\Tenancy\Events\SettingChanged;
@@ -34,7 +35,7 @@ final class DatabaseSettings implements Settings
     /** @var array<string, true> namespace đã đổi trong request/job này — đọc thẳng DB */
     private array $changed = [];
 
-    public function __construct(private readonly SettingDefinitions $definitions, private readonly Cache $cache) {}
+    public function __construct(private readonly SettingDefinitions $definitions, private readonly Cache $cache, private readonly PageCacheTags $pageTags) {}
 
     /**
      * Bỏ mọi namespace đang cache (đổi phiên bản). Gọi sau khi dữ liệu bảng `settings` đổi ngoài lớp này (migration).
@@ -100,6 +101,8 @@ final class DatabaseSettings implements Settings
      */
     private function load(string $namespace): array
     {
+        // Trang công khai dùng cấu hình namespace này → cache trang hết hiệu lực khi cấu hình đổi (ADR-051).
+        $this->pageTags->add('settings:'.$namespace);
         if (isset($this->loaded[$namespace])) {
             return $this->loaded[$namespace];
         }

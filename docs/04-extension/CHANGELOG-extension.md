@@ -6,6 +6,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.101 — 2026-11-27 · Extension API 1.45.0
+
+Cache trang công khai trong ứng dụng, xoá theo tag ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md) đợt 1–3, [§6b](../20-roadmap/reference-parity-refactor.md) L62–L65). Thêm vào API cho plugin (tăng minor, đều `experimental`).
+
+- **Mặc định đổi:** `VANI_PAGE_CACHE` nhận `app` (mặc định) | `cdn` | `off` (trước là `true`/`false`). `app`: trang công khai chạy **không phiên** ở mọi cửa hàng (trước chỉ khi bật CDN), HTML lưu trong ứng dụng; phần riêng của khách tải bằng JS qua `/_vani/phien`. Quy tắc "view và slot trên trang công khai không đọc phiên" ([storefront §5](../14-storefront/storefront.md)) nay áp dụng cho mọi cửa hàng. `off` giữ hành vi có phiên cũ.
+- `Shared\Contracts\PageCacheTags` mới (bộ gom tag của request): `add(...$tags)`, `products($ids)`, `uncacheable($reason)`; hằng `CATALOG_LISTING`, `CATALOG_TAXONOMY`, `EVERYTHING`. Khối/slot hiển thị dữ liệu riêng của plugin ghi tag có tiền tố mã plugin; nội dung phụ thuộc request (vị trí, A/B, giờ thực, cookie) gọi `uncacheable()`.
+- `Shared\Contracts\PageCacheInvalidator` mới: `invalidate(...$tags)` (lô kế tiếp, ~1 phút; trong transaction thì sau commit), `invalidateNow(...$tags)`, `flush()`.
+- `Shared\Events\PageCacheTagsInvalidated` mới (`tags`, `everything()`): phát sau mỗi lần xoá — plugin CDN (L4) nghe để xoá ở edge.
+- `PluginServiceProvider::pageCacheModels(array $models, ?Closure $tags = null)` mới: lưu/xoá bản ghi của các model này thì cache trang hết hiệu lực trong lô kế tiếp (mặc định toàn bộ).
+- Core tự ghi tag: `CatalogReader` (sản phẩm, danh mục, bộ sưu tập, thương hiệu, `catalog:listing`, `catalog:taxonomy`), `Settings` (`settings:{namespace}`), Builder (`builder:home`), menu (`menu:{vị trí}`). Plugin đọc dữ liệu Core qua các contract này không cần ghi thêm.
+- `PublicPageExpiry::limit()` nay cũng giới hạn hạn của bản cache trong ứng dụng (trước chỉ header CDN).
+- Plugin cập nhật: `vani.cms` 1.9.0, `vani.lookbook` 1.3.0, `vani.bundles` 1.4.0, `vani.size-chart` 1.2.0 (cần Extension API ^1.45) khai báo model bằng `pageCacheModels`.
+
 ## 0.5.100 — 2026-11-26 · Extension API 1.44.0
 
 Trang chủ chậm, lặp truy vấn: mỗi khối sản phẩm gọi API danh sách đầy đủ (đếm tổng, facet, metadata bộ lọc) rồi nạp lại sản phẩm lần hai để dựng thẻ. Trang chủ dữ liệu demo: 207 → 105 truy vấn, truy vấn trùng hẳn 185 → 2. Thêm vào API cho plugin (tăng minor).

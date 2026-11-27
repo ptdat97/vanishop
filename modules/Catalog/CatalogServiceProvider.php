@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,7 @@ use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
+use Modules\Catalog\Application\Products\ListingPublicationSchedule;
 use Modules\Catalog\Application\Products\ProductIdentifiers;
 use Modules\Catalog\Application\Products\ProductImporter;
 use Modules\Catalog\Application\Products\ProductListPrices;
@@ -42,16 +44,39 @@ use Modules\Catalog\Contracts\ListPrices;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Contracts\ProductViewStatistics;
+use Modules\Catalog\Contracts\PublicationSchedule;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Contracts\VideoDriver;
+use Modules\Catalog\Events\ProductArchived;
+use Modules\Catalog\Events\ProductListingProjected;
+use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Listeners\DeclareSettingMedia;
+use Modules\Catalog\Listeners\QueuePageCacheInvalidation;
+use Modules\Catalog\Persistence\Models\Attribute;
+use Modules\Catalog\Persistence\Models\AttributeTranslation;
+use Modules\Catalog\Persistence\Models\AttributeValue;
+use Modules\Catalog\Persistence\Models\AttributeValueTranslation;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\CategoryTranslation;
+use Modules\Catalog\Persistence\Models\LinkType;
+use Modules\Catalog\Persistence\Models\LinkTypeTranslation;
 use Modules\Catalog\Persistence\Models\Media;
+use Modules\Catalog\Persistence\Models\OptionType;
+use Modules\Catalog\Persistence\Models\OptionTypeTranslation;
+use Modules\Catalog\Persistence\Models\OptionValue;
+use Modules\Catalog\Persistence\Models\OptionValueTranslation;
+use Modules\Catalog\Persistence\Models\ProductCollection;
+use Modules\Catalog\Persistence\Models\ProductCollectionTranslation;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
+use Modules\Inventory\Events\AvailabilityChanged;
+use Modules\Pricing\Events\PriceChanged;
+use Modules\Shared\Contracts\PageCacheInvalidator;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
@@ -77,6 +102,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         ));
 
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
+        $this->app->bind(PublicationSchedule::class, ListingPublicationSchedule::class);
         $this->app->scoped(StorefrontProductQuery::class);
         // Màn hình Admin của module mở cho plugin thêm form/cột/lọc/thao tác/tab (ADR-030).
         $this->app->make(AdminScreen::class)->declareResource('product');
@@ -108,6 +134,9 @@ final class CatalogServiceProvider extends ModuleServiceProvider
     {
         // Ảnh chọn ở cấu hình kiểu `media` là "đang dùng" trong Thư viện ảnh (backlog L22).
         Event::listen(SettingChanged::class, DeclareSettingMedia::class);
+        // Cache trang (ADR-051): sản phẩm, giá, tồn đổi → xoá theo tag trong lô kế tiếp.
+        Event::listen([ProductListingProjected::class, ProductUpdated::class, ProductArchived::class, PriceChanged::class, AvailabilityChanged::class], QueuePageCacheInvalidation::class);
+        $this->invalidatePageCacheOnTaxonomyChange();
 
         if ($this->app->runningInConsole()) {
             $this->commands([MediaCacheCommand::class, RebuildListingCommand::class, FlushViewsCommand::class]);
@@ -158,5 +187,27 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->loadAdminSectionRoutes('catalog', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->loadAdminSectionRoutes('media', $this->modulePath('Http/routes/admin-media.php'));
         $this->bootModuleResources();
+    }
+
+    /**
+     * Danh mục, thương hiệu, bộ sưu tập, thuộc tính, tuỳ chọn, loại liên kết (kể cả bản dịch) hiện ở menu, thẻ, bộ lọc của
+     * hầu hết trang → `catalog:taxonomy` (và tag của chính bản ghi) trong lô xoá kế tiếp.
+     */
+    private function invalidatePageCacheOnTaxonomyChange(): void
+    {
+        $own = [Category::class => 'category', Brand::class => 'brand', ProductCollection::class => 'collection'];
+        $models = [
+            ...array_keys($own), CategoryTranslation::class, ProductCollectionTranslation::class, Attribute::class, AttributeTranslation::class,
+            AttributeValue::class, AttributeValueTranslation::class, OptionType::class, OptionTypeTranslation::class, OptionValue::class,
+            OptionValueTranslation::class, LinkType::class, LinkTypeTranslation::class,
+        ];
+        foreach ($models as $model) {
+            $invalidate = function (Model $record) use ($own): void {
+                $prefix = $own[$record::class] ?? null;
+                $this->app->make(PageCacheInvalidator::class)->invalidate(PageCacheTags::CATALOG_TAXONOMY, ...($prefix === null ? [] : [$prefix.':'.$record->getKey()]));
+            };
+            $model::saved($invalidate);
+            $model::deleted($invalidate);
+        }
     }
 }

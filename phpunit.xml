@@ -75,6 +75,8 @@
         <!-- Cửa hàng chạy một ngôn ngữ; test giữ hai ngôn ngữ để không mất cơ chế đa ngôn ngữ. -->
         <env name="VANI_LOCALES" value="vi,en"/>
         <env name="VANI_HOOKS_TRACE" value="false"/>
+        <!-- Cache trang (ADR-051) tắt mặc định trong test; test riêng bật `app`/`cdn`. -->
+        <env name="VANI_PAGE_CACHE" value="off"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
 </phpunit>

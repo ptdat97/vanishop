@@ -1,11 +1,11 @@
 # ADR-051 — Cache trang có tag, xoá theo sự kiện
 
-- Trạng thái: **Proposed** (chờ Owner duyệt) · Code: chưa làm · Ngày: 2026-11-26 · Người đề xuất: AI agent (vai trò nghiên cứu, [clean-room §7](../01-principles/clean-room-license.md#7-lưu-trữ-mã-nguồn-tham-khảo))
+- Trạng thái: **Accepted** (Owner duyệt 2026-11-27, đợt 1–3) · Code: đợt 1–3 xong ở Core 0.5.101 (Extension API 1.45.0); đợt 4–5 chưa làm · Ngày: 2026-11-26 · Người đề xuất: AI agent (vai trò nghiên cứu, [clean-room §7](../01-principles/clean-room-license.md#7-lưu-trữ-mã-nguồn-tham-khảo))
 - Liên quan: [ADR-025](ADR-025-native-storefront-ssr-slots.md) (SSR-first), [ADR-044](ADR-044-storefront-api-first.md) (HTML là bản khách vãng lai, phần cá nhân tải bằng JS), [storefront §5](../14-storefront/storefront.md), [operations §5](../18-operations/operations.md#5-cache), [§6b](../20-roadmap/reference-parity-refactor.md) L4, L59, L60, L62–L66.
 
 ## Context
 
-- Trang công khai (trang chủ, danh mục, thương hiệu, sản phẩm, trang CMS) đã render **không dùng phiên**: HTML luôn là bản khách vãng lai, giá theo nhóm khách và trạng thái tài khoản tải sau bằng Storefront API (ADR-044). Middleware cache trang hiện có chỉ gửi header cho CDN (`s-maxage`, `stale-while-revalidate`) và **mặc định tắt**.
+- Trang công khai (trang chủ, danh mục, thương hiệu, sản phẩm, trang CMS) **render được không dùng phiên**: HTML là bản khách vãng lai, giá theo nhóm khách và trạng thái tài khoản tải sau bằng Storefront API (ADR-044). Nhưng chế độ không phiên chỉ bật cùng cache CDN (`VANI_PAGE_CACHE=true`, **mặc định tắt**); mặc định trang chạy có phiên và in sẵn phần riêng của khách (nhãn tài khoản, số món, flash, giá thành viên). Middleware cache trang chỉ gửi header cho CDN (`s-maxage`, `stale-while-revalidate`). *(Sửa 2026-11-27: bản đề xuất viết nhầm là HTML luôn là bản vãng lai.)*
 - Không có CDN thì mỗi lượt xem render lại từ đầu. Sau khi sửa ở Core 0.5.100, trang chủ dữ liệu demo vẫn cần ~105 truy vấn, ~115 ms trên dev. Phần lớn đến từ các khối sản phẩm, mỗi khối tự dựng thẻ sản phẩm.
 - Có CDN thì sửa giá, ẩn sản phẩm, đổi menu phải chờ hết `s-maxage`: chưa xoá theo sự kiện (L4).
 - Cache ứng dụng hiện có: số đếm và facet theo phiên bản read model, cài đặt theo phiên bản, vài khối cache theo TTL (L59). Không có cache cả trang.
@@ -47,6 +47,22 @@ Cửa hàng SME thường chạy một VPS, không có CDN. Làm sao để trang
 6. **Chống dồn tải.** Không có cache thì lấy khoá theo khoá trang trong vài giây. Request khác cùng trang thì chờ ngắn rồi đọc lại; chờ quá hạn thì tự render, không lỗi. Mảnh dùng chung đắt (sitemap, khối bán chạy, menu) dùng "phục vụ bản cũ, tính lại nền" (L59).
 7. **CDN và API dùng chung nguồn tag.** Chế độ `cdn` gửi thêm header danh sách tag (tên header cấu hình theo nhà cung cấp). GET công khai của Storefront API (L60) dùng cùng bộ gom tag, chính sách và hàng đợi xoá.
 8. **Quan sát được.** Header `X-Vani-Cache: HIT | MISS | BYPASS` kèm lý do bỏ qua, bộ đếm tỉ lệ trúng trên Pulse, và một lệnh liệt kê tag của một URL để gỡ lỗi.
+
+## Quyết định của Owner (2026-11-27)
+
+- Làm đợt 1–3; đợt 4 (Storefront API, L60) để đợt sau.
+- Mặc định `app`: mọi trang công khai chạy **không phiên** như chế độ CDN cũ, phần riêng của khách tải bằng JS (khách đã đăng nhập thấy nhãn tài khoản, số món hiện chậm một nhịp). `off` giữ hành vi có phiên.
+- Không có cron: request trang công khai thấy lô cuối đã quá 2 phút thì tự chạy lô sau khi trả response (khoá, một request mỗi phút). Health check `scheduler` vẫn cảnh báo.
+
+## Ghi chú triển khai (0.5.101)
+
+- Contract: `Shared\Contracts\PageCacheTags`, `PageCacheInvalidator`, event `Shared\Events\PageCacheTagsInvalidated` (đều `experimental`). Plugin: `PluginServiceProvider::pageCacheModels()`.
+- Nguồn tag: `CatalogReader` (Catalog tự ghi cho dữ liệu nó trả ra), `Settings`, Builder, menu. Bảng event → tag: `Catalog\Listeners\QueuePageCacheInvalidation` (sản phẩm, giá, tồn) + model event của danh mục/thương hiệu/bộ sưu tập/thuộc tính/tuỳ chọn; `Storefront\Listeners\InvalidatePageCacheOnSettingChange` (cài đặt, Builder, menu, xoá ngay).
+- Ngoài §3: hạn bản cache ngắn lại tới mốc **lịch bảng giá** (`PriceListSchedule::nextChangeAfter`), **khung giờ sản phẩm** (`Catalog\Contracts\PublicationSchedule`) và khung giờ mục menu — sale hẹn giờ hiện đúng lúc, không chờ tới 1 giờ.
+- Render bắt đầu trước một lô xoá mà lưu sau lô thì bỏ (khoá "thế hệ" đổi mỗi lần xoá) — tránh lưu HTML đọc dữ liệu cũ với phiên bản tag mới.
+- Tìm kiếm có từ khoá, quá 4 giá trị lọc: không lưu trong ứng dụng; chế độ `cdn` vẫn cho CDN cache như trước.
+- Plugin `vani.cms`, `vani.lookbook`, `vani.bundles`, `vani.size-chart`: lưu bản ghi thì xoá toàn bộ cache trang (lô kế tiếp) — §6b L67.
+- Tag gom trong bộ nhớ, ghi hàng đợi một lần cuối request/lệnh/job: nhập file nghìn sản phẩm chỉ ghi hàng đợi một lần.
 
 ## Alternatives
 

@@ -55,6 +55,7 @@ Module ghi qua `Modules\Shared\Contracts\Metrics` (`increment`, `gauge`), không
 | `integration.outbox_backlog`, `integration.outbox_failed`, `integration.inbox_failed` | gauge | — | như trên |
 | `inventory.reconciliation_open`, `payments.reconciliation_open` | gauge | — | như trên (dòng đối soát chưa xử lý) |
 | `plugin.active_transactions` | gauge | plugin id | như trên (số việc dở dang theo `guardDisable`) |
+| `page_cache.requests` | counter | `hit` / `miss` / `bypass` | `PublicPageCache` (mỗi lượt xem trang công khai, chế độ `app`/`cdn`, [ADR-051](../19-adr/ADR-051-tagged-page-cache.md)) |
 
 Xem tại Admin → Hệ thống → Pulse (quyền `system.monitor`), thẻ "Thương mại" ở đầu dashboard. Thẻ đỏ các counter lỗi khi > 0.
 
