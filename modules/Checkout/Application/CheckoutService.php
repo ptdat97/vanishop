@@ -103,6 +103,7 @@ final class CheckoutService implements Checkout, VoucherPreview
         }
 
         $view = $this->carts->view($cart);
+        $attached = array_map(fn (string $code): string => strtoupper((string) preg_replace('/\s+/', '', $code)), $view->voucherCodes);
         $base = $this->context($view, new CheckoutRequest(
             cart: $cart, contact: null, shippingAddress: null, shippingMethod: null, paymentMethod: null, voucherCodes: [], note: null, expectedTotal: null,
         ), $this->signedInCustomer());
@@ -122,7 +123,7 @@ final class CheckoutService implements Checkout, VoucherPreview
                     $discount += $applied->total->amount;
                 }
             }
-            $results[] = new VoucherPreviewResult($code, Money::of($discount, $totals->currencyCode), $totals->discount, $rejection);
+            $results[] = new VoucherPreviewResult($code, Money::of($discount, $totals->currencyCode), $totals->discount, $rejection, in_array($code, $attached, true));
         }
 
         return $results;

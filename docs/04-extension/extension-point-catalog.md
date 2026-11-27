@@ -80,7 +80,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `VoucherPreview` | Tính thử từng mã một mình trên giỏ (giảm của mã, tổng giảm, lý do từ chối) — ví voucher, chọn mã tốt nhất; không đổi mã của giỏ. **Implemented** (0.5.109) | Checkout |
 | `CategoryDirectory` | Danh mục của product kèm danh mục cha (`idsForProducts`). **Implemented** (0.5.110) | Catalog |
 | `CustomerDirectory` | Tìm khách đang hoạt động, thông tin ngắn theo id, id khách theo nhóm/tag theo lô. **Implemented** (0.5.110) | Customer |
-| `CurrentCart` | Khoá giỏ của người đang mua trong request web (phiên/khách đăng nhập), không tạo giỏ. **Implemented** (0.5.111) | Storefront |
+| `CurrentCart` | Khoá giỏ của người đang mua trong request web (phiên/khách đăng nhập), không tạo giỏ; khách đang đăng nhập (`customerId`, 0.5.113). **Implemented** (0.5.111) | Storefront |
 | `Checkout` | `quote`, `placeOrder` (idempotent). **Implemented** | Checkout |
 | `ShippingAddresses` | Địa chỉ giao hàng theo danh mục địa giới đang dùng (`directory()`, `normalize()`): cùng quy tắc cho checkout, sổ địa chỉ khách, Admin sửa địa chỉ đơn. **Implemented** (0.3.13) | Checkout |
 | `OrderWriter` | Tạo đơn từ bản nháp đã tính (trong transaction PlaceOrder). **Implemented** | Ordering |

@@ -1,4 +1,4 @@
-Extension API 1.48.0
+Extension API 1.49.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -160,7 +160,7 @@ class Modules\Checkout\Contracts\Data\TotalsContext
   missingWeight(): bool
   linesTotal(): Modules\Shared\Domain\Money\Money
 class Modules\Checkout\Contracts\Data\VoucherPreviewResult
-  __construct(string $code, Modules\Shared\Domain\Money\Money $discount, Modules\Shared\Domain\Money\Money $totalDiscount, ?Modules\Promotion\Contracts\Data\VoucherRejection $rejection)
+  __construct(string $code, Modules\Shared\Domain\Money\Money $discount, Modules\Shared\Domain\Money\Money $totalDiscount, ?Modules\Promotion\Contracts\Data\VoucherRejection $rejection, bool $attached = false)
   applicable(): bool
 interface Modules\Checkout\Contracts\ShippingRateProvider
   const TAG = 'vani.checkout.shipping_providers'
@@ -992,6 +992,7 @@ class Modules\Shared\Support\StoreLocale
   static isSupported(string $locale): bool
 interface Modules\Storefront\Contracts\CurrentCart
   currentKey(): ?Modules\Cart\Contracts\Data\CartKey
+  customerId(): ?int
 interface Modules\Storefront\Contracts\CustomerProductPrices
   forCustomer(array $productIds, int $customerId, string $locale): array
 interface Modules\Storefront\Contracts\CustomerSignIn [experimental]

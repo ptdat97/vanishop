@@ -12,7 +12,7 @@ use Modules\Shared\Domain\Money\Money;
 /**
  * Kết quả tính thử một mã ({@see VoucherPreview}). `discount` = phần giảm do chính mã này;
  * `totalDiscount` = tổng giảm của giỏ khi dùng mã này (gồm khuyến mãi tự động — mã độc quyền có thể loại khuyến mãi khác).
- * `rejection` khác null = mã không dùng được (lý do, gợi ý "mua thêm…").
+ * `rejection` khác null = mã không dùng được (lý do, gợi ý "mua thêm…"). `attached` (0.5.113) = mã đang gắn với giỏ.
  */
 #[PluginApi]
 final readonly class VoucherPreviewResult
@@ -22,6 +22,7 @@ final readonly class VoucherPreviewResult
         public Money $discount,
         public Money $totalDiscount,
         public ?VoucherRejection $rejection,
+        public bool $attached = false,
     ) {}
 
     public function applicable(): bool

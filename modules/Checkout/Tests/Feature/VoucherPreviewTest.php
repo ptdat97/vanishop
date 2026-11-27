@@ -25,10 +25,10 @@ it('tính thử từng mã một mình trên giỏ, kèm khuyến mãi tự đ�
 
     $results = app(VoucherPreview::class)->forCart($this->cart, ['giam50', 'DOCQUYEN', 'KHONGCO', 'GIAM50', ' ']);
 
-    expect(array_map(fn ($result) => [$result->code, $result->discount->amount, $result->totalDiscount->amount, $result->rejection?->reason, $result->applicable()], $results))->toBe([
-        ['GIAM50', 50_000, 30_000 + 50_000, null, true],
+    expect(array_map(fn ($result) => [$result->code, $result->discount->amount, $result->totalDiscount->amount, $result->rejection?->reason, $result->applicable(), $result->attached], $results))->toBe([
+        ['GIAM50', 50_000, 30_000 + 50_000, null, true, true],
         // Mã độc quyền ưu tiên cao loại khuyến mãi tự động.
-        ['DOCQUYEN', 60_000, 60_000, null, true],
-        ['KHONGCO', 0, 30_000, 'not_found', false],
+        ['DOCQUYEN', 60_000, 60_000, null, true, false],
+        ['KHONGCO', 0, 30_000, 'not_found', false, false],
     ])->and($this->carts->view($this->cart)->voucherCodes)->toBe(['GIAM50']);
 });

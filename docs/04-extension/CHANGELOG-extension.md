@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.113 — 2026-11-27 · Extension API 1.49.0
+
+Hai bổ sung cho ví voucher của `vani.coupon-code` (Owner duyệt 2026-11-27):
+
+- `Storefront\Contracts\CurrentCart::customerId()` — khách đang đăng nhập của request storefront (null = vãng lai), cho slot/trang web của plugin.
+- `Checkout\Contracts\Data\VoucherPreviewResult::$attached` (named, mặc định false) — mã đang gắn với giỏ.
+
 ## 0.5.112 — 2026-11-27 · Extension API 1.48.0
 
 - Storefront API: schema `cart-vouchers.json` và `quote.v1.json` khai báo trường `message` của `rejected_vouchers[]` (đã trả từ 0.5.109, schema thiếu). Không đổi hành vi.

@@ -110,7 +110,7 @@ final class NativeCart implements CurrentCart
         $this->session->forget(self::SESSION_KEY);
     }
 
-    private function customerId(): ?int
+    public function customerId(): ?int
     {
         if (! $this->context->has()) {
             return null;
