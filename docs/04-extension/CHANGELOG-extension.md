@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.115 — 2026-11-28 · Extension API 1.51.0
+
+Đợt 3 của kế hoạch `vani.pricing-campaign` — B1 (Owner duyệt 2026-11-27):
+
+- Contract mới `Pricing\Contracts\ManagedPriceLists` (`sync`, `remove`, `lists`) + DTO `ManagedPriceList` (tên, `sale`/`member`, bật/tắt, giá theo variant, ưu tiên, nhóm khách, lịch, route sửa): plugin đồng bộ bảng giá của mình qua cùng đường ghi với Admin (lịch sử giá, audit, `PriceChanged`, cache trang). Giá thấp hơn mức trần giảm so với giá niêm yết bị từ chối. Mã bảng giá cố định theo (plugin, khoá), vd. `vani-pricing-campaign-7`.
+- `price_lists.managed_by/managed_key/managed_route`. Admin → Bảng giá: nhãn "Plugin", bấm dòng mở màn hình của plugin, trang làm việc chỉ xem; sửa/xoá/đổi giá/áp hàng loạt bị chặn. Bảng giá của plugin không hiện ở "Đưa vào bảng giá…" và không gắn được vào Campaign (`PriceListSchedule::schedulable`).
+
 ## 0.5.114 — 2026-11-27 · Extension API 1.50.0
 
 Đăng ký tài khoản khách có cài đặt xác minh (Admin → Cài đặt → Bán hàng & thuế → "Xác minh khi khách đăng ký": Không / Email / OTP) — [customer](../03-domains/customer.md).

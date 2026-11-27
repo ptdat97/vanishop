@@ -21,6 +21,7 @@ use Modules\Pricing\Application\Listeners\CopyDuplicatedPrices;
 use Modules\Pricing\Application\Listeners\ProductListPrices;
 use Modules\Pricing\Application\Listeners\SyncListPrices;
 use Modules\Pricing\Application\Listeners\SyncPriceVariantIndex;
+use Modules\Pricing\Application\ManagedPriceListService;
 use Modules\Pricing\Application\NoCustomerGroups;
 use Modules\Pricing\Application\PricedVariants;
 use Modules\Pricing\Application\PriceListPriorityStrategy;
@@ -30,6 +31,7 @@ use Modules\Pricing\Application\VariantPriceFields;
 use Modules\Pricing\Console\SyncListPricesCommand;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Contracts\Data\DiscountCap;
+use Modules\Pricing\Contracts\ManagedPriceLists;
 use Modules\Pricing\Contracts\PriceImporter;
 use Modules\Pricing\Contracts\PriceListSchedule;
 use Modules\Pricing\Contracts\PriceResolver;
@@ -59,6 +61,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->requires(PricingStrategy::TAG, Requirement::ExactlyOne, 'pricing::texts.pricing_service_provider.price_selection_strategy');
         $this->app->bind(PriceImporter::class, BasePriceImporter::class);
         $this->app->bind(PriceListSchedule::class, PriceListScheduler::class);
+        $this->app->bind(ManagedPriceLists::class, ManagedPriceListService::class);
         $this->app->bindIf(CustomerGroupDirectory::class, NoCustomerGroups::class); // module Customer ghi đè
         $this->app->bind(PriceResolver::class, fn ($app): StrategyPriceResolver => new StrategyPriceResolver(
             $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.pricing.strategy', 'price_list_priority'), $app->make(CustomerGroupDirectory::class),

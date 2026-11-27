@@ -61,6 +61,7 @@ return [
         'use' => 'In use',
     ],
     'price_lists_index' => [
+        'managed' => 'Plugin',
         'active_period' => 'Active period',
         'add_price_list' => 'Add price list',
         'click_price_list_view_edit' => 'Click a price list to view and edit its prices. Higher-priority lists win; the list price is shown as the compare-at price during a discount.',
@@ -91,6 +92,8 @@ return [
         'warnings_running_prices' => 'Warnings on running prices',
     ],
     'price_lists_prices' => [
+        'open_plugin_screen' => 'Open plugin screen',
+        'managed_by_plugin' => 'This price list is managed by plugin :owner: prices, schedule and status are edited on the plugin screen.',
         'paste_price_rows' => 'Or paste from Excel, including the SKU, Price and optional Compare price headers',
         'add_count_products_name' => 'Add :count products to ":name"',
         'add_count_skus_name' => 'Add :count SKUs to ":name"',

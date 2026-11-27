@@ -74,6 +74,7 @@ final class PriceListController
                     'starts_at' => StoreClock::format($list->starts_at),
                     'ends_at' => StoreClock::format($list->ends_at),
                     'prices_count' => $list->prices_count,
+                    'managed' => $list->isManaged() ? ['owner' => $list->managed_by, 'url' => $list->managedUrl()] : null,
                 ])->all(),
             'canManage' => Gate::allows('pricing.manage'),
             // Dữ liệu cũ: bảng loại niêm yết ngoài bảng chính (mã `base`) — cần đổi sang Sale/Thành viên hoặc xoá.
@@ -108,15 +109,20 @@ final class PriceListController
         return redirect()->route('admin.pricing.price-lists.prices', ['priceList' => $list->id])->with('success', __('pricing::messages.created'));
     }
 
-    public function edit(PriceList $priceList): Response
+    public function edit(PriceList $priceList): Response|RedirectResponse
     {
         Gate::authorize('pricing.manage');
+        // Do plugin quản lý: sửa ở màn hình của plugin; plugin tắt → trang làm việc chỉ xem.
+        if ($priceList->isManaged()) {
+            return redirect()->to($priceList->managedUrl() ?? route('admin.pricing.price-lists.prices', $priceList));
+        }
 
         return $this->form($priceList);
     }
 
     public function update(PriceList $priceList, PriceListRequest $request, PriceListService $service): RedirectResponse
     {
+        $this->ensureNotManaged($priceList);
         $service->save($request->toData(), $priceList, (int) $request->validated('lock_version'));
 
         return back()->with('success', __('pricing::messages.saved'));
@@ -125,6 +131,7 @@ final class PriceListController
     public function destroy(PriceList $priceList, PriceListService $service): RedirectResponse
     {
         Gate::authorize('pricing.manage');
+        $this->ensureNotManaged($priceList);
         $service->delete($priceList);
 
         return redirect()->route('admin.pricing.price-lists.index')->with('success', __('pricing::messages.deleted'));
@@ -157,7 +164,8 @@ final class PriceListController
             'summary' => $workspace->summary($priceList),
             'capPercent' => intdiv($workspace->capBasisPoints(), 100),
             // Giá niêm yết sửa ở sản phẩm (form, ma trận, danh sách sản phẩm) — trang bảng giá chỉ xem.
-            'readOnly' => $priceList->type === PriceListType::Base,
+            'readOnly' => $priceList->type === PriceListType::Base || $priceList->isManaged(),
+            'managed' => $priceList->isManaged() ? ['owner' => $priceList->managed_by, 'url' => $priceList->managedUrl()] : null,
             'productsUrl' => route('admin.catalog.products.index'),
             // Cột/lọc/thao tác/công cụ của plugin theo SKU (EP v3 X1) — vd. cột giá vốn/biên lợi nhuận.
             'extensions' => $screen->listProps('price_list_item', array_column($page->items(), 'variant_id'), $extensionFilters),
@@ -182,7 +190,7 @@ final class PriceListController
         Gate::authorize('pricing.manage');
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
-            'price_list_id' => ['required', 'integer', Rule::exists('price_lists', 'id')->whereNot('type', PriceListType::Base->value)],
+            'price_list_id' => ['required', 'integer', Rule::exists('price_lists', 'id')->whereNot('type', PriceListType::Base->value)->whereNull('managed_by')],
         ]);
 
         return redirect()->route('admin.pricing.price-lists.prices', ['priceList' => (int) $data['price_list_id'], 'add' => implode(',', array_unique(array_map('intval', $data['ids'])))]);
@@ -336,6 +344,15 @@ final class PriceListController
     {
         if ($list->type === PriceListType::Base) {
             throw ValidationException::withMessages(['business' => __('pricing::messages.base_read_only')]);
+        }
+        $this->ensureNotManaged($list);
+    }
+
+    /** Bảng giá do plugin quản lý (ManagedPriceLists): Admin chỉ xem. */
+    private function ensureNotManaged(PriceList $list): void
+    {
+        if ($list->isManaged()) {
+            throw ValidationException::withMessages(['business' => __('pricing::messages.managed_read_only')]);
         }
     }
 

@@ -61,6 +61,7 @@ return [
         'use' => 'Đang dùng',
     ],
     'price_lists_index' => [
+        'managed' => 'Plugin',
         'active_period' => 'Hiệu lực',
         'add_price_list' => 'Thêm bảng giá',
         'click_price_list_view_edit' => 'Bấm vào bảng giá để xem và sửa giá. Bảng giá ưu tiên cao hơn thắng; giá niêm yết làm giá gạch khi đang giảm.',
@@ -91,6 +92,8 @@ return [
         'warnings_running_prices' => 'Cảnh báo trên giá đang chạy',
     ],
     'price_lists_prices' => [
+        'open_plugin_screen' => 'Mở màn hình của plugin',
+        'managed_by_plugin' => 'Bảng giá này do plugin :owner quản lý: giá, lịch và trạng thái sửa ở màn hình của plugin.',
         'paste_price_rows' => 'Hoặc dán từ Excel, gồm dòng tiêu đề SKU, Giá và Giá gạch (nếu có)',
         'add_count_products_name' => 'Đưa :count sản phẩm vào ":name"',
         'add_count_skus_name' => 'Thêm :count SKU vào ":name"',

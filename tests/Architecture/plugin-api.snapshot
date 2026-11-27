@@ -1,4 +1,4 @@
-Extension API 1.50.0
+Extension API 1.51.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -818,10 +818,18 @@ interface Modules\Pricing\Contracts\BulkPriceMode [experimental]
   label(): string
   hint(): string
   compute(array $variantIds, float $value, array $listAmounts): array
+class Modules\Pricing\Contracts\Data\ManagedPriceList
+  const TYPE_SALE = 'sale'
+  const TYPE_MEMBER = 'member'
+  __construct(string $name, string $type, bool $active, array $prices, int $priority = 10, ?int $customerGroupId = NULL, ?int $startsAt = NULL, ?int $endsAt = NULL, ?string $editRoute = NULL)
 class Modules\Pricing\Contracts\Data\PricingContext
   __construct(int $now, ?int $customerGroupId = NULL, ?int $customerId = NULL)
 class Modules\Pricing\Contracts\Data\ResolvedPrice
   __construct(int $variantId, Modules\Shared\Domain\Money\Money $amount, ?Modules\Shared\Domain\Money\Money $compareAt, ?int $discountPercent, string $priceListCode)
+interface Modules\Pricing\Contracts\ManagedPriceLists
+  sync(string $owner, string $key, Modules\Pricing\Contracts\Data\ManagedPriceList $list): int
+  remove(string $owner, string $key): void
+  lists(string $owner): array
 interface Modules\Pricing\Contracts\PriceResolver
   forVariants(array $variantIds, Modules\Pricing\Contracts\Data\PricingContext $context): array
 interface Modules\Pricing\Contracts\PriceRounding [experimental]

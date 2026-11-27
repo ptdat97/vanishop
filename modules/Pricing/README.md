@@ -25,6 +25,7 @@ Bảng giá niêm yết/sale/thành viên theo lịch và ưu tiên, áp giá h�
 |---|---|---|
 | `BulkPriceMode` | interface | tag `vani.pricing.bulk_modes`, plugin (experimental) |
 | `CustomerGroupDirectory` | interface | giữa module |
+| `ManagedPriceLists` | interface | plugin (0.5.115) |
 | `PriceImporter` | interface | giữa module |
 | `PriceListSchedule` | interface | giữa module |
 | `PriceResolver` | interface | giữa module |

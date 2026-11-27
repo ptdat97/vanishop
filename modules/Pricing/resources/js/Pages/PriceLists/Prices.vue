@@ -70,6 +70,8 @@ const props = defineProps<{
     canManage: boolean;
     /** Bảng giá niêm yết: chỉ xem — giá niêm yết sửa ở sản phẩm. */
     readOnly: boolean;
+    /** Do plugin quản lý (ManagedPriceLists): chỉ xem, sửa ở màn hình của plugin. */
+    managed: { owner: string; url: string | null } | null;
     productsUrl: string;
     /** Từ danh sách sản phẩm "Đưa vào bảng giá…": mở sẵn hộp thoại cách tính giá cho các sản phẩm này. */
     addProductIds: number[];
@@ -235,14 +237,18 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? t('p
     <p class="mb-2 text-sm text-slate-500"><Link :href="baseUrl" class="hover:underline">{{ t('pricing::admin.price_lists_prices.price_lists') }}</Link></p>
     <PageHeader :title="priceList.name" :subtitle="`${labels.price_list_type[priceList.type] ?? priceList.type} · ${priceList.starts_at || priceList.ends_at ? `${priceList.starts_at ?? '—'} → ${priceList.ends_at ?? '—'}` : t('pricing::admin.price_lists_prices.no_time_limit')}`">
         <StatusBadge :label="labels.price_list_state[priceList.state] ?? priceList.state" :tone="stateTone(priceList.state)" class="self-center" />
-        <Link v-if="canManage" :href="`${listUrl}/edit`" :class="secondaryButton">{{ t('pricing::admin.price_lists_prices.price_list_details') }}</Link>
+        <Link v-if="managed?.url" :href="managed.url" :class="primaryButton" data-managed-link>{{ t('pricing::admin.price_lists_prices.open_plugin_screen') }}</Link>
+        <Link v-if="canManage && !managed" :href="`${listUrl}/edit`" :class="secondaryButton">{{ t('pricing::admin.price_lists_prices.price_list_details') }}</Link>
         <button v-if="editable" type="button" :class="primaryButton" data-add-products @click="addOpen = true">{{ t('pricing::admin.price_lists_prices.add_product') }}</button>
         <a :href="`${listUrl}/export`" :class="secondaryButton" data-export>{{ t('pricing::admin.price_lists_prices.export_file') }}</a>
         <button v-if="editable" type="button" :class="secondaryButton" data-import @click="importOpen = true">{{ t('pricing::admin.price_lists_prices.import_prices') }}</button>
-        <Link v-if="readOnly" :href="productsUrl" :class="primaryButton">{{ t('pricing::admin.price_lists_prices.edit_prices_product_list') }}</Link>
+        <Link v-if="readOnly && !managed" :href="productsUrl" :class="primaryButton">{{ t('pricing::admin.price_lists_prices.edit_prices_product_list') }}</Link>
     </PageHeader>
 
-    <div v-if="readOnly" class="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600" data-read-only>
+    <div v-if="managed" class="mb-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900" data-read-only>
+        {{ t('pricing::admin.price_lists_prices.managed_by_plugin', { owner: managed.owner }) }}
+    </div>
+    <div v-else-if="readOnly" class="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600" data-read-only>
         {{ t('pricing::admin.price_lists_prices.store_s_regular_selling_price') }}
     </div>
     <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600" data-summary>

@@ -85,7 +85,7 @@ final class ProductListPrices
             return [];
         }
 
-        $lists = PriceList::query()->where('type', '!=', PriceListType::Base)->orderByDesc('id')->get();
+        $lists = PriceList::query()->where('type', '!=', PriceListType::Base)->whereNull('managed_by')->orderByDesc('id')->get();
         $addToList = $lists->isEmpty() ? [] : [$this->applyListAction($lists->all())];
 
         return [...$addToList, [

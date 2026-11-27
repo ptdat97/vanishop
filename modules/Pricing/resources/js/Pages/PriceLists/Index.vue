@@ -31,6 +31,7 @@ const props = defineProps<{
         starts_at: string | null;
         ends_at: string | null;
         prices_count: number;
+        managed: { owner: string; url: string | null } | null;
     }>;
     canManage: boolean;
     /** Bảng loại niêm yết ngoài bảng chính (dữ liệu cũ) — cần đổi sang Sale/Thành viên hoặc xoá. */
@@ -104,10 +105,11 @@ const columns = [
         <strong>Sale</strong> {{ t('pricing::admin.price_lists_index.text') }} <strong>{{ t('pricing::admin.price_lists_index.member') }}</strong>{{ t('pricing::admin.price_lists_index.delete_them_if_unused') }}
         <span v-for="(list, index) in extraBaseLists" :key="list.id"><template v-if="index">, </template><Link :href="`${baseUrl}/${list.id}/edit`" class="font-medium underline">{{ list.name }}</Link></span>.
     </div>
-    <DataTable :columns="columns" :rows="priceLists" :row-label="(list) => list.name" :row-click="(list) => router.visit(`${props.baseUrl}/${list.id}/prices`)" :empty-text="t('pricing::admin.price_lists_index.no_price_lists_yet')">
+    <DataTable :columns="columns" :rows="priceLists" :row-label="(list) => list.name" :row-click="(list) => router.visit(list.managed?.url ?? `${props.baseUrl}/${list.id}/prices`)" :empty-text="t('pricing::admin.price_lists_index.no_price_lists_yet')">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="font-mono text-xs text-slate-400">{{ row.code }}</div>
+            <StatusBadge v-if="row.managed" :label="t('pricing::admin.price_lists_index.managed')" tone="info" />
         </template>
         <template #cell-state="{ row }"><StatusBadge :label="labels.price_list_state[row.state] ?? row.state" :tone="stateTone(row.state)" /></template>
         <template #cell-type="{ row }">
@@ -119,7 +121,7 @@ const columns = [
             <span v-else class="text-slate-400">{{ t('pricing::admin.price_lists_index.unlimited') }}</span>
         </template>
         <template #cell-actions="{ row }">
-            <Link v-if="canManage" :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline" @click.stop>{{ t('pricing::admin.price_lists_index.information') }}</Link>
+            <Link v-if="canManage && !row.managed" :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline" @click.stop>{{ t('pricing::admin.price_lists_index.information') }}</Link>
         </template>
     </DataTable>
 </template>

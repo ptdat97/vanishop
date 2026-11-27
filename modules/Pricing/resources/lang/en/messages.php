@@ -28,4 +28,9 @@ return [
     'import_row_invalid' => 'Row :line (:sku): invalid price.',
     'import_row_compare' => 'Row :line (:sku): compare-at price must be greater than the price.',
     'import_row_sku' => 'Row :line: SKU ":sku" not found.',
+    'managed_type_invalid' => 'Plugin-managed price lists can only be sale or member lists.',
+    'managed_group_required' => 'A member price list needs a customer group.',
+    'amount_invalid' => 'Invalid price.',
+    'below_discount_cap' => 'The price is below the maximum discount of :percent% from the list price.',
+    'managed_read_only' => 'This price list is managed by a plugin — edit it on the plugin screen.',
 ];

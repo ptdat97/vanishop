@@ -28,4 +28,9 @@ return [
     'import_row_invalid' => 'Dòng :line (:sku): giá không hợp lệ — nhập số đồng, vd. 199000 hoặc 199.000.',
     'import_row_compare' => 'Dòng :line (:sku): giá gạch phải lớn hơn giá.',
     'import_row_sku' => 'Dòng :line: không có SKU ":sku".',
+    'managed_type_invalid' => 'Bảng giá do plugin quản lý chỉ là bảng giá khuyến mãi hoặc thành viên.',
+    'managed_group_required' => 'Bảng giá thành viên cần nhóm khách.',
+    'amount_invalid' => 'Giá không hợp lệ.',
+    'below_discount_cap' => 'Giá thấp hơn mức giảm tối đa :percent% so với giá niêm yết.',
+    'managed_read_only' => 'Bảng giá này do plugin quản lý — sửa ở màn hình của plugin.',
 ];

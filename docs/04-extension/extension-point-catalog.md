@@ -66,6 +66,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `CatalogImporter` | Nhập sản phẩm (`upsertProduct(ProductImport)`): idempotent theo mã sản phẩm, tạo thương hiệu/danh mục/màu/size còn thiếu, ảnh từ file local qua thư viện media, sinh variant; không ghi đè nội dung đã sửa. **Implemented** (0.3.27), dùng bởi `database/seeders/Demo/CatalogSeeder` (trước: plugin `vani.demo-catalog`, đã gỡ 2026-11-05) | Catalog |
 | `PriceResolver` | Giải giá hiệu lực theo variant và `PricingContext` (nhóm khách/khách hàng nếu có). **Implemented** | Pricing |
 | `PriceImporter` | Đặt giá niêm yết (bảng `base`) theo SKU. **Implemented** (0.3.27) | Pricing |
+| `ManagedPriceLists` | Plugin đồng bộ bảng giá sale/thành viên của mình (giá theo variant, lịch, ưu tiên, nhóm khách); kiểm trần giảm; Admin chỉ xem, liên kết sang plugin. **Implemented** (0.5.115) | Pricing |
 | `InventoryReservation` | `reserve`, `release`, `commit` (**Implemented**) | Inventory |
 | `LocationRegistry` | Đọc/tạo/sửa kho (`LocationData`), audit + optimistic lock, mã trùng → ValidationException. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Catalog/Inventory |
 | `StockMovements` | `transferOut`/`transferIn` tại một kho do VaniShop quản lý: khoá dòng tồn, sổ biến động, `AvailabilityChanged`; chạy trong transaction của bên gọi; từ chối → `StockMovementRejected`. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Inventory |

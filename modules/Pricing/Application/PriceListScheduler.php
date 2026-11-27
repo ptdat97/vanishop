@@ -20,7 +20,7 @@ final class PriceListScheduler implements PriceListSchedule
 
     public function schedulable(): array
     {
-        return PriceList::query()->where('type', '!=', PriceListType::Base->value)->orderByDesc('priority')->orderBy('code')->get()
+        return PriceList::query()->where('type', '!=', PriceListType::Base->value)->whereNull('managed_by')->orderByDesc('priority')->orderBy('code')->get()
             ->map(fn (PriceList $list): array => ['id' => $list->id, 'code' => $list->code, 'name' => $list->name, 'type' => $list->type->value, 'status' => $list->status])->all();
     }
 
