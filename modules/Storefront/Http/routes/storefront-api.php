@@ -14,21 +14,24 @@ use Modules\Storefront\Http\Controllers\Api\ProductController;
 use Modules\Storefront\Http\Controllers\Api\ProductViewController;
 use Modules\Storefront\Http\Controllers\Api\StoreController;
 
-Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
-Route::get('categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
-Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
-Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
+// `vani.api-cache`: GET công khai dùng chung cache trang cho khách vãng lai (ADR-051 đợt 4).
+Route::middleware('vani.api-cache')->group(function () {
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
+    Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
+    Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
+});
 // Khách đăng nhập (Bearer) thấy giá khi cửa hàng ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`).
 Route::middleware('vani.customer:optional')->group(function () {
-    Route::get('collections/{slug}', [CollectionController::class, 'show'])->name('collections.show');
-    Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('collections/{slug}', [CollectionController::class, 'show'])->middleware('vani.api-cache')->name('collections.show');
+    Route::get('products', [ProductController::class, 'index'])->middleware('vani.api-cache')->name('products.index');
     // Beacon lượt xem PDP (miễn CSRF — chỉ cộng lượt xem, đã lọc trùng; StorefrontServiceProvider).
     Route::post('products/views', ProductViewController::class)->middleware('throttle:120,1')->name('products.views');
     Route::get('search/suggestions', [ProductController::class, 'suggestions'])->name('search.suggestions');
-    Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
+    Route::get('products/{slug}', [ProductController::class, 'show'])->middleware('vani.api-cache')->name('products.show');
 });
 // "Vỏ" trang (ADR-044 đợt A2): thông tin cửa hàng, menu theo vị trí, trang chủ dựng bằng khối.
-Route::middleware('vani.customer:optional')->group(function () {
+Route::middleware(['vani.customer:optional', 'vani.api-cache'])->group(function () {
     Route::get('store', [StoreController::class, 'show'])->name('store.show');
     Route::get('menus/{location}', [StoreController::class, 'menu'])->where('location', '[a-z0-9_]{1,32}')->name('menus.show');
     Route::get('pages/home', [StoreController::class, 'home'])->name('pages.home');

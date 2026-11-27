@@ -1,6 +1,6 @@
 # ADR-051 — Cache trang có tag, xoá theo sự kiện
 
-- Trạng thái: **Accepted** (Owner duyệt 2026-11-27, đợt 1–3) · Code: đợt 1–3 xong ở Core 0.5.101 (Extension API 1.45.0); đợt 4–5 chưa làm · Ngày: 2026-11-26 · Người đề xuất: AI agent (vai trò nghiên cứu, [clean-room §7](../01-principles/clean-room-license.md#7-lưu-trữ-mã-nguồn-tham-khảo))
+- Trạng thái: **Accepted** (Owner duyệt 2026-11-27, đợt 1–3) · Code: đợt 1–3 xong ở Core 0.5.101 (Extension API 1.45.0), đợt 4 ở 0.5.102; đợt 5 chưa làm · Ngày: 2026-11-26 · Người đề xuất: AI agent (vai trò nghiên cứu, [clean-room §7](../01-principles/clean-room-license.md#7-lưu-trữ-mã-nguồn-tham-khảo))
 - Liên quan: [ADR-025](ADR-025-native-storefront-ssr-slots.md) (SSR-first), [ADR-044](ADR-044-storefront-api-first.md) (HTML là bản khách vãng lai, phần cá nhân tải bằng JS), [storefront §5](../14-storefront/storefront.md), [operations §5](../18-operations/operations.md#5-cache), [§6b](../20-roadmap/reference-parity-refactor.md) L4, L59, L60, L62–L66.
 
 ## Context
@@ -53,6 +53,14 @@ Cửa hàng SME thường chạy một VPS, không có CDN. Làm sao để trang
 - Làm đợt 1–3; đợt 4 (Storefront API, L60) để đợt sau.
 - Mặc định `app`: mọi trang công khai chạy **không phiên** như chế độ CDN cũ, phần riêng của khách tải bằng JS (khách đã đăng nhập thấy nhãn tài khoản, số món hiện chậm một nhịp). `off` giữ hành vi có phiên.
 - Không có cron: request trang công khai thấy lô cuối đã quá 2 phút thì tự chạy lô sau khi trả response (khoá, một request mỗi phút). Health check `scheduler` vẫn cảnh báo.
+
+## Đợt 4 — Storefront API (Owner duyệt 2026-11-27, 0.5.102)
+
+- Chỉ cache **khách vãng lai**: có `Authorization` hoặc khách đăng nhập qua phiên cùng nguồn → `BYPASS` (`authorized`, `signed_in`), `private, no-store`. Khi ẩn giá, khách đã đăng nhập thấy giá nên không dùng bản chung.
+- Endpoint: `categories`, `brands`, `collections/{slug}`, `products`, `products/{slug}`, `store`, `menus/{location}`, `pages/home` (middleware `vani.api-cache`). Không: `search/suggestions`, `products?q=` (như trang tìm kiếm HTML).
+- `ETag` theo nội dung + `304`; `Vary: Accept-Encoding, X-Vani-Locale`. Giữ cookie phiên cùng nguồn trên response sống (bản lưu chỉ có nội dung).
+- Chế độ `cdn`: header public + `Cache-Tag` **chỉ khi giá công khai** — CDN không phân biệt phiên, nên khi ẩn giá API chỉ cache trong ứng dụng.
+- Luồng cache dùng chung `Storefront\Application\PageCache\CachedResponses` cho cả HTML và API.
 
 ## Ghi chú triển khai (0.5.101)
 

@@ -6,6 +6,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.102 — 2026-11-27 · Extension API 1.45.0
+
+Storefront API dùng chung cache trang ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md) đợt 4, [§6b](../20-roadmap/reference-parity-refactor.md) L60). Không đổi API cho plugin; hợp đồng Storefront API giữ nguyên trường, chỉ thêm header.
+
+- GET `categories`, `brands`, `collections/{slug}`, `products`, `products/{slug}`, `store`, `menus/{location}`, `pages/home`: khách vãng lai nhận bản cache (cùng tag với trang HTML, xoá theo lô ~1 phút), header `X-Vani-Cache`, `ETag` (gửi `If-None-Match` → `304`), `Vary: Accept-Encoding, X-Vani-Locale`. Có `Authorization` hoặc khách đăng nhập qua phiên cùng nguồn: không dùng bản chung.
+- `VANI_PAGE_CACHE=cdn`: thêm `Cache-Control: public, s-maxage` + `Cache-Tag` khi giá công khai.
+- Plugin enricher trên `product`/`product_card`: dữ liệu trả về được cache cho mọi khách vãng lai — không trả dữ liệu theo khách (đã là quy tắc của trang HTML).
+
 ## 0.5.101 — 2026-11-27 · Extension API 1.45.0
 
 Cache trang công khai trong ứng dụng, xoá theo tag ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md) đợt 1–3, [§6b](../20-roadmap/reference-parity-refactor.md) L62–L65). Thêm vào API cho plugin (tăng minor, đều `experimental`).

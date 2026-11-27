@@ -55,6 +55,7 @@ use Modules\Storefront\Contracts\PageSeo;
 use Modules\Storefront\Contracts\ProductCards;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Http\LocalizedPaths;
+use Modules\Storefront\Http\Middleware\PublicApiCache;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
 use Modules\Storefront\Http\Middleware\RequireCheckoutSignIn;
 use Modules\Storefront\Http\Middleware\RequireVisiblePrices;
@@ -123,6 +124,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
         $router->aliasMiddleware('vani.page-cache', PublicPageCache::class);
+        $router->aliasMiddleware('vani.api-cache', PublicApiCache::class);
         // Thêm vào giỏ từ trang đã cache CDN (không có token CSRF trong HTML, storefront §5), mọi ngôn ngữ. An toàn: cookie
         // phiên SameSite=Lax nên form chéo trang không mang phiên theo — không đụng được giỏ của nạn nhân.
         // Beacon lượt xem PDP (§3.5-2): navigator.sendBeacon không gửi được header CSRF.
