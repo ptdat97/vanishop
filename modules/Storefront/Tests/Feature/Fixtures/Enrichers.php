@@ -54,3 +54,22 @@ final class CartNoteEnricher implements StorefrontEnricher
         return [$items[0]['id'] => ['freeship_remaining' => max(0, 500_000 - $items[0]['subtotal']['amount'])]];
     }
 }
+
+/** Thẻ sản phẩm: độ dài tên — implementation mẫu đúng hợp đồng (chạy StorefrontEnricherContract). */
+final class NameLengthEnricher implements StorefrontEnricher
+{
+    public function resource(): string
+    {
+        return 'product_card';
+    }
+
+    public function enrich(array $items, string $locale): array
+    {
+        $result = [];
+        foreach ($items as $item) {
+            $result[$item['id']] = ['name_length' => mb_strlen((string) ($item['name'] ?? ''))];
+        }
+
+        return $result;
+    }
+}
