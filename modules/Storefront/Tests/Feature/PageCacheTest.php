@@ -48,9 +48,9 @@ it('lượt đầu MISS, lượt sau HIT cùng HTML, không truy vấn DB; khôn
 });
 
 it('tham số theo dõi không tạo bản cache riêng; query khác thứ tự dùng chung một bản', function () {
-    $this->get('/thuong-hieu?a=1&b=2')->assertHeader('X-Vani-Cache', 'MISS');
+    $this->get('/thuong-hieu?page=1&sort=newest')->assertHeader('X-Vani-Cache', 'MISS');
 
-    $this->get('/thuong-hieu?b=2&a=1&utm_source=zalo&fbclid=x')->assertHeader('X-Vani-Cache', 'HIT');
+    $this->get('/thuong-hieu?sort=newest&page=1&utm_source=zalo&fbclid=x')->assertHeader('X-Vani-Cache', 'HIT');
 });
 
 it('không lưu: tìm kiếm có từ khoá, quá nhiều giá trị lọc, 404, link xem trước, khối đánh dấu không cache', function () {

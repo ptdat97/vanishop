@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Vite;
 use Modules\Extension\Application\Plugins\PluginDoctor;
+use Modules\Storefront\Http\Middleware\PublicPageCache;
 use Throwable;
 
 final class ProductionCheckCommand extends Command
@@ -29,6 +30,7 @@ final class ProductionCheckCommand extends Command
                 : ['status' => 'fail', 'detail' => 'Chạy vani:security:check để xem lỗi cấu hình.']),
             'plugins' => $this->probe(fn (): array => $this->plugins($doctor)),
             'assets' => $this->probe($this->assets(...)),
+            'page_cache' => $this->probe($this->pageCache(...)),
         ];
 
         foreach ($health->run()['checks'] as $name => $check) {
@@ -104,6 +106,24 @@ final class ProductionCheckCommand extends Command
         }
 
         return $this->passed();
+    }
+
+    /**
+     * Cache trang (ADR-051) cần store dùng chung: store `file`/`array` thì mỗi server một bản cache và lô xoá chỉ đổi phiên
+     * bản tag trên server chạy scheduler — server khác phục vụ trang cũ tới hết hạn (1 giờ).
+     *
+     * @return array{status: string, detail: string}
+     */
+    private function pageCache(): array
+    {
+        if (PublicPageCache::mode() === PublicPageCache::MODE_OFF) {
+            return $this->passed();
+        }
+        $driver = (string) config('cache.stores.'.config('cache.default').'.driver');
+
+        return in_array($driver, ['file', 'array'], true)
+            ? ['status' => 'warning', 'detail' => "Cache trang dùng store {$driver}: chỉ đúng khi chạy một server. Nhiều server cần CACHE_STORE=redis hoặc database."]
+            : $this->passed();
     }
 
     /** @return array{status: string, detail: string} */

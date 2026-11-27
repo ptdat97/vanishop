@@ -10,6 +10,7 @@ use Modules\Shared\Contracts\PageCacheInvalidator;
 use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Events\PageCacheTagsInvalidated;
 use Modules\Shared\Support\DurableCache;
+use Throwable;
 
 /**
  * Hàng đợi tag cần xoá ở store `durable` (không mất khi `cache:clear` hay LRU), lô xoá mỗi phút (ADR-051 §4). Tag gom trong
@@ -60,7 +61,15 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
     {
         $tags = $this->clean($tags);
         if ($tags !== []) {
-            DB::afterCommit(fn () => $this->apply($tags));
+            DB::afterCommit(function () use ($tags): void {
+                try {
+                    $this->apply($tags);
+                } catch (Throwable $exception) {
+                    // Store lỗi: không làm hỏng thao tác vừa commit; để lô kế tiếp xoá lại.
+                    report($exception);
+                    $this->buffer += array_fill_keys($tags, true);
+                }
+            });
         }
     }
 
@@ -70,21 +79,21 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
     }
 
     /**
-     * Chạy lô: lấy hết hàng đợi, đổi phiên bản, phát event. Trả số tag đã xoá.
+     * Chạy lô: đổi phiên bản các tag đang chờ, phát event, rồi mới gỡ chúng khỏi hàng đợi — lỗi giữa chừng (store, plugin
+     * CDN) thì tag vẫn còn để lô sau xoá lại, không mất. Tag thêm vào trong lúc chạy được giữ lại. Trả số tag đã xoá.
      */
     public function process(): int
     {
         $this->flushBuffer();
         $store = DurableCache::store();
-        $pending = $store->lock(self::PENDING_LOCK, 10)->block(5, function () use ($store): array {
-            $pending = (array) $store->get(self::PENDING_KEY, []);
-            if ($pending !== []) {
-                $store->forget(self::PENDING_KEY);
-            }
-
-            return array_map('strval', array_keys($pending));
-        });
+        $pending = array_map('strval', array_keys((array) $store->get(self::PENDING_KEY, [])));
         $this->apply($pending);
+        if ($pending !== []) {
+            $store->lock(self::PENDING_LOCK, 10)->block(5, function () use ($store, $pending): void {
+                $remaining = array_diff_key((array) $store->get(self::PENDING_KEY, []), array_flip($pending));
+                $remaining === [] ? $store->forget(self::PENDING_KEY) : $store->put(self::PENDING_KEY, $remaining, self::PENDING_TTL_SECONDS);
+            });
+        }
         $this->cache->put(self::PROCESSED_AT_KEY, time(), self::STALE_AFTER_SECONDS * 10);
 
         return count($pending);
@@ -109,7 +118,8 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
     }
 
     /**
-     * Ghi tag đã gom vào hàng đợi (cuối request, lệnh, job).
+     * Ghi tag đã gom vào hàng đợi (cuối request, lệnh, job). Store lỗi: giữ lại trong bộ nhớ, báo lỗi, không làm hỏng
+     * request/job (lần ghi sau thử lại; tiến trình kết thúc thì trang cũ tối đa tới hết hạn bản cache).
      */
     public function flushBuffer(): void
     {
@@ -118,11 +128,16 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
         }
         $tags = array_keys($this->buffer);
         $this->buffer = [];
-        $store = DurableCache::store();
-        $store->lock(self::PENDING_LOCK, 10)->block(5, function () use ($store, $tags): void {
-            $pending = (array) $store->get(self::PENDING_KEY, []);
-            $store->put(self::PENDING_KEY, $pending + array_fill_keys($tags, true), self::PENDING_TTL_SECONDS);
-        });
+        try {
+            $store = DurableCache::store();
+            $store->lock(self::PENDING_LOCK, 10)->block(5, function () use ($store, $tags): void {
+                $pending = (array) $store->get(self::PENDING_KEY, []);
+                $store->put(self::PENDING_KEY, $pending + array_fill_keys($tags, true), self::PENDING_TTL_SECONDS);
+            });
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->buffer += array_fill_keys(array_map('strval', $tags), true);
+        }
     }
 
     /**

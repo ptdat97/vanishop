@@ -18,6 +18,7 @@ use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Contracts\PublicPageExpiry;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 /**
  * Luồng cache dùng chung của trang HTML công khai và GET công khai của Storefront API (ADR-051 §1–§7): khoá, đọc bản còn
@@ -44,6 +45,7 @@ final class CachedResponses
     public function respond(Request $request, Closure $next, ?string $bypass = null, bool $api = false): Response
     {
         $this->tags->reset();
+        $this->keys->withoutTracking($request);
         $reason = $bypass ?? $this->bypassReason($request);
         if ($reason !== null) {
             return $this->finish($request, $this->render($request, $next, $api), 'BYPASS', $reason, false, $api);
@@ -58,8 +60,18 @@ final class CachedResponses
         }
 
         $entry = $this->store->get($key, $schedulerStale);
+        if ($this->store->failed()) {
+            // Store cache lỗi (Redis mất kết nối…): vẫn phục vụ trang, chỉ không cache.
+            return $this->finish($request, $this->render($request, $next, $api), 'BYPASS', 'cache_error', false, $api);
+        }
         if ($schedulerStale) {
-            app()->terminating(fn () => app(BatchedPageCacheInvalidator::class)->processWhenStale());
+            app()->terminating(function (): void {
+                try {
+                    app(BatchedPageCacheInvalidator::class)->processWhenStale();
+                } catch (Throwable $exception) {
+                    report($exception);
+                }
+            });
         }
         if ($entry !== null) {
             return $this->finish($request, $this->fromEntry($entry), 'HIT', null, true, $api, $entry['tags'], $entry['expires_at']);
@@ -101,6 +113,7 @@ final class CachedResponses
         );
         $reason = match (true) {
             $stored => null,
+            $this->store->failed() => 'cache_error',
             ! $owner => 'busy',
             $ttl <= 0 => 'expired',
             default => 'stale_render',

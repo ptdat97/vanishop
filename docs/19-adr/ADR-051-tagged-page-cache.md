@@ -62,6 +62,22 @@ Cửa hàng SME thường chạy một VPS, không có CDN. Làm sao để trang
 - Chế độ `cdn`: header public + `Cache-Tag` **chỉ khi giá công khai** — CDN không phân biệt phiên, nên khi ẩn giá API chỉ cache trong ứng dụng.
 - Luồng cache dùng chung `Storefront\Application\PageCache\CachedResponses` cho cả HTML và API.
 
+## Củng cố theo tình huống vận hành (0.5.107)
+
+| Tình huống | Xử lý |
+|---|---|
+| Bật/tắt/nâng cấp plugin | Xoá ngay toàn bộ (`PluginManager`) |
+| Deploy sửa view/cấu hình không đổi version | `optimize`, `view:*`, `config:*`, `cache:clear` từ CLI xoá ngay |
+| Plugin lỗi hoặc bị ngắt khi render | Trang không lưu (`PluginBreaker`) — khối hiện lại ngay khi plugin chạy lại |
+| Query tuỳ ý (bot, phá cache, đầu độc HTML) | Chỉ lưu khi query thuộc `query_params`; tham số theo dõi gỡ khỏi request trước khi render |
+| Proxy để lọt http | Scheme trong khoá |
+| API `products?ids=` | Không lưu |
+| Store cache lỗi | Phục vụ không cache (`cache_error`) |
+| Lô xoá lỗi giữa chừng | Tag gỡ khỏi hàng đợi chỉ sau khi áp dụng; lỗi ghi hàng đợi giữ trong bộ nhớ, báo lỗi |
+| Nhiều server, store `file` | `vani:production:check` cảnh báo |
+
+Chưa xử lý (chấp nhận): Octane chưa thử; tồn đổi hiện sau tối đa ~1 phút (giỏ/checkout vẫn kiểm tồn thật); ảnh đổi điểm lấy nét theo hạn bản cache.
+
 ## Ghi chú triển khai (0.5.101)
 
 - Contract: `Shared\Contracts\PageCacheTags`, `PageCacheInvalidator`, event `Shared\Events\PageCacheTagsInvalidated` (đều `experimental`). Plugin: `PluginServiceProvider::pageCacheModels()`.

@@ -227,7 +227,7 @@ server {
 
 ### Cache trang công khai (0.5.101, [ADR-051](../19-adr/ADR-051-tagged-page-cache.md)) và CDN (tuỳ chọn nâng cao)
 
-Mặc định `VANI_PAGE_CACHE=app`: trang công khai chạy không phiên, HTML cache trong ứng dụng (không cần CDN), phần riêng của khách tải bằng JS qua `/_vani/phien`. Cần **cron `schedule:run` mỗi phút** để thay đổi hiện sau ~1 phút (thiếu cron thì request tự chạy lô xoá, health check `scheduler` báo `degraded`). `VANI_PAGE_CACHE=off`: mọi trang chạy có phiên, render sẵn theo khách, không cache. Khi đặt CDN trước app: `VANI_PAGE_CACHE=cdn`, cấu hình CDN theo các mục dưới, rồi `php artisan config:cache`. Hiển thị cho khách như nhau ở ba chế độ.
+Mặc định `VANI_PAGE_CACHE=app`: trang công khai chạy không phiên, HTML cache trong ứng dụng (không cần CDN), phần riêng của khách tải bằng JS qua `/_vani/phien`. Cần **cron `schedule:run` mỗi phút** để thay đổi hiện sau ~1 phút (thiếu cron thì request tự chạy lô xoá, health check `scheduler` báo `degraded`). Nhiều server: cache trang cần store dùng chung (`CACHE_STORE=redis` hoặc `database`) — `vani:production:check` cảnh báo khi dùng `file`. `VANI_PAGE_CACHE=off`: mọi trang chạy có phiên, render sẵn theo khách, không cache. Khi đặt CDN trước app: `VANI_PAGE_CACHE=cdn`, cấu hình CDN theo các mục dưới, rồi `php artisan config:cache`. Hiển thị cho khách như nhau ở ba chế độ.
 
 
 - Khi bật: trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm, CMS trả `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=600` và không `Set-Cookie`. Cấu hình CDN **tôn trọng header gốc** (không ép cache mọi thứ), khoá cache theo URL đầy đủ (gồm query cho tìm kiếm/lọc), không cache response có `Set-Cookie` hoặc `private`.

@@ -12,6 +12,7 @@ use Modules\Extension\Domain\Plugin\PluginManifest;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Shared\Contracts\PageCacheInvalidator;
 use Throwable;
 
 /**
@@ -421,6 +422,8 @@ final class PluginManager
         PluginActivation::forgetCache();
         $this->activation->flush();
         $this->rebuildCache();
+        // Khối, slot, enricher của plugin xuất hiện/biến mất trên trang công khai: xoá ngay cache trang (ADR-051).
+        app(PageCacheInvalidator::class)->flush();
     }
 
     private function runMigrations(PluginManifest $manifest): void

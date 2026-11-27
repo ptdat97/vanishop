@@ -83,3 +83,13 @@ it('runtime yêu cầu scheduler và Horizon đang hoạt động', function () 
     expect($online['checks']['scheduler']['status'])->toBe('ok')
         ->and($online['checks']['horizon']['status'])->toBe('ok');
 });
+
+it('cảnh báo cache trang dùng store file (mỗi server một bản, lô xoá chỉ chạy một server)', function () {
+    config(['vanishop.storefront.page_cache.mode' => 'app', 'cache.default' => 'file']);
+
+    Artisan::call('vani:production:check', ['--json' => true]);
+    $report = json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($report['checks']['page_cache']['status'])->toBe('warning')
+        ->and($report['checks']['page_cache']['detail'])->toContain('CACHE_STORE=redis');
+});

@@ -6,6 +6,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.107 — 2026-11-27 · Extension API 1.45.0
+
+Củng cố cache trang theo tình huống vận hành ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md)). Không đổi API cho plugin hay hợp đồng Storefront API.
+
+- Bật/tắt/nâng cấp/gỡ plugin và lệnh deploy (`optimize`, `view:*`, `config:*`, `cache:clear` từ CLI) xoá ngay cache trang.
+- Plugin lỗi hoặc đang bị ngắt (circuit breaker) khi render: trang không được lưu.
+- Chỉ lưu trang có query thuộc `vanishop.storefront.page_cache.query_params`. **Plugin có trang công khai dùng tham số query riêng** cần thêm tham số vào cấu hình này, nếu không trang có tham số đó không được cache. Tham số theo dõi (`utm_*`…) bị gỡ khỏi request trước khi render.
+- Khoá cache phân biệt http/https; API `products?ids=` không lưu.
+- Store cache lỗi: trang vẫn phục vụ (`cache_error`). Lô xoá lỗi giữa chừng không mất tag.
+- `vani:production:check`: cảnh báo cache trang dùng store `file`/`array`.
+
 ## 0.5.106 — 2026-11-27 · Extension API 1.45.0
 
 Trang giỏ dựng giỏ một lần mỗi request: trang giỏ, xem trước mã giảm giá và báo giá checkout trước đây mỗi nơi dựng lại giỏ (dòng, biến thể, giá, tồn, ảnh) — 3 lần trên dev (71 truy vấn, 54 trùng). `Carts::view()`/`forCustomer()` ghi nhớ giỏ đã dựng theo `lock_version` (mọi thay đổi giỏ đều tăng) + trạng thái + khách + ngôn ngữ + phút; sửa giỏ và khoá giỏ để đặt hàng vẫn dựng mới. Không đổi API cho plugin hay hợp đồng Storefront API.

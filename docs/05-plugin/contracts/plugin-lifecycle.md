@@ -114,7 +114,7 @@ MySQL không rollback DDL: migration lỗi giữa chừng → plugin `failed`; s
 - [ ] Chỉ dùng `Contracts`, `Events`, hook public, `Shared\Domain` (arch test R5)
 - [ ] Bảng `plg_<plugin>_*`, migration idempotent, `down()` dọn sạch
 - [ ] Cấu hình chỉnh trong Admin qua `settings()`; secret khai báo type `secret` (mã hoá)
-- [ ] Dữ liệu của plugin hiện trên trang công khai (khối, slot, enricher, trang riêng): khai báo model bằng `pageCacheModels()` hoặc ghi tag `PageCacheTags::add('<mã plugin>:…')` + xoá bằng `PageCacheInvalidator`; nội dung theo request (vị trí, A/B, giờ thực, cookie) gọi `PageCacheTags::uncacheable()` ([ADR-051](../../19-adr/ADR-051-tagged-page-cache.md)). Ghi DB không qua Eloquent thì tự gọi `invalidate()`
+- [ ] Dữ liệu của plugin hiện trên trang công khai (khối, slot, enricher, trang riêng): khai báo model bằng `pageCacheModels()` hoặc ghi tag `PageCacheTags::add('<mã plugin>:…')` + xoá bằng `PageCacheInvalidator`; nội dung theo request (vị trí, A/B, giờ thực, cookie) gọi `PageCacheTags::uncacheable()` ([ADR-051](../../19-adr/ADR-051-tagged-page-cache.md)). Ghi DB không qua Eloquent thì tự gọi `invalidate()`. Trang công khai của plugin dùng tham số query riêng thì thêm vào `vanishop.storefront.page_cache.query_params`, nếu không trang có tham số đó không được cache
 - [ ] Unit + feature + **contract test** của contract mình implement
 - [ ] README đặc tả; tuân thủ [clean-room](../../01-principles/clean-room-license.md)
 

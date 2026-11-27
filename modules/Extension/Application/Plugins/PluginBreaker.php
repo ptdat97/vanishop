@@ -6,6 +6,7 @@ namespace Modules\Extension\Application\Plugins;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Modules\Shared\Contracts\PageCacheTags;
 
 /**
  * Circuit breaker theo plugin cho luồng **không giao dịch** (đọc/hiển thị): `Extensions::call`, slot UI, filter
@@ -32,10 +33,17 @@ final class PluginBreaker
         }
         $now = now()->getTimestamp();
         if (isset($this->memo[$plugin]) && $this->memo[$plugin][1] > $now) {
+            if ($this->memo[$plugin][0]) {
+                self::skipPageCache('plugin_breaker_open');
+            }
+
             return $this->memo[$plugin][0];
         }
         $open = Cache::has(self::key($plugin).':open');
         $this->memo[$plugin] = [$open, $now + self::MEMO_SECONDS];
+        if ($open) {
+            self::skipPageCache('plugin_breaker_open');
+        }
 
         return $open;
     }
@@ -45,6 +53,7 @@ final class PluginBreaker
         if ($plugin === null) {
             return;
         }
+        self::skipPageCache('plugin_error');
         $key = self::key($plugin);
         Cache::add("{$key}:failures", 0, now()->addMinute());
         if (Cache::increment("{$key}:failures") >= $this->threshold) {
@@ -60,6 +69,15 @@ final class PluginBreaker
         Cache::forget(self::key($plugin).':open');
         Cache::forget(self::key($plugin).':failures');
         unset($this->memo[$plugin]);
+    }
+
+    /**
+     * Trang đang render thiếu phần của plugin (lỗi hoặc đang bị ngắt): không lưu cache trang, để khối hiện lại ngay khi plugin
+     * chạy lại thay vì chờ hết hạn bản cache (ADR-051).
+     */
+    private static function skipPageCache(string $reason): void
+    {
+        app(PageCacheTags::class)->uncacheable($reason);
     }
 
     public function cooldownSeconds(): int

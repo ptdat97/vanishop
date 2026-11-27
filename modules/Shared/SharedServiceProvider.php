@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Modules\Shared;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
@@ -27,9 +29,13 @@ use Modules\Shared\Support\ExternalCalls;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Shared\Support\MoneyFormatter;
 use Psr\Http\Message\RequestInterface;
+use Throwable;
 
 final class SharedServiceProvider extends ModuleServiceProvider
 {
+    /** Lệnh deploy/bảo trì làm cache trang hết hiệu lực (ADR-051). */
+    public const PAGE_CACHE_FLUSHING_COMMANDS = ['optimize', 'optimize:clear', 'view:cache', 'view:clear', 'config:cache', 'config:clear', 'cache:clear'];
+
     protected function moduleName(): string
     {
         return 'Shared';
@@ -68,6 +74,19 @@ final class SharedServiceProvider extends ModuleServiceProvider
         $this->app->terminating($flushPageCacheTags);
         Queue::after($flushPageCacheTags);
         Queue::failing($flushPageCacheTags);
+
+        // Deploy (`optimize`, `view:cache`…) có thể đổi view/cấu hình mà không đổi version hay asset: xoá ngay cache trang và
+        // báo CDN. Bảng cache chưa có (cài mới, chạy optimize trước migrate) thì bỏ qua, không làm hỏng lệnh deploy.
+        Event::listen(CommandFinished::class, function (CommandFinished $event): void {
+            if ($event->exitCode !== 0 || ! in_array($event->command, self::PAGE_CACHE_FLUSHING_COMMANDS, true)) {
+                return;
+            }
+            try {
+                $this->app->make(PageCacheInvalidator::class)->flush();
+            } catch (Throwable) {
+                // Chưa có store/bảng cache: không có gì để xoá.
+            }
+        });
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:idempotency:prune')->hourly()->withoutOverlapping()->onOneServer();

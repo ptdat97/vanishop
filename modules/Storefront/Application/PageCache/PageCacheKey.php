@@ -10,8 +10,11 @@ use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\Theme\Themes;
 
 /**
- * Khoá cache trang (ADR-051 §5): đường dẫn, query đã sắp xếp và bỏ tham số theo dõi, ngôn ngữ, chế độ hiện giá, theme
- * đang dùng, mã bản build (deploy mới thì dùng khoá mới). `null` = không lưu trang này (lý do ở `$reason`).
+ * Khoá cache trang (ADR-051 §5): scheme, host, đường dẫn, query đã sắp xếp và bỏ tham số theo dõi, ngôn ngữ, chế độ hiện
+ * giá, theme đang dùng, mã bản build (deploy mới thì dùng khoá mới). `null` = không lưu trang này (lý do ở `$reason`).
+ *
+ * Chỉ lưu khi query chỉ gồm tham số đã biết (`page_cache.query_params`): `?x=…` tuỳ ý (bot, link quảng cáo, cố tình phá
+ * cache) không tạo thêm bản cache, và giá trị lạ không lọt vào HTML dùng chung (vd. link đổi ngôn ngữ giữ query).
  */
 final class PageCacheKey
 {
@@ -34,6 +37,17 @@ final class PageCacheKey
 
             return null;
         }
+        // Danh sách id do JS gửi theo từng khách (sản phẩm đã xem): gần như không trúng lại.
+        if (isset($query['ids'])) {
+            $reason = 'ids';
+
+            return null;
+        }
+        if (array_diff(array_map('strval', array_keys($query)), (array) config('vanishop.storefront.page_cache.query_params', [])) !== []) {
+            $reason = 'query';
+
+            return null;
+        }
         $filters = array_diff_key($query, array_flip(['page', 'sort']));
         if (self::values($filters) > (int) config('vanishop.storefront.page_cache.max_filter_values', 4)) {
             $reason = 'filters';
@@ -42,6 +56,8 @@ final class PageCacheKey
         }
 
         return 'vani:page:'.sha1((string) json_encode([
+            // Proxy cấu hình sai để lọt request http: URL tuyệt đối http:// không được phục vụ cho khách https.
+            $request->getScheme(),
             $request->getHost(),
             $request->getPathInfo(),
             $query,
@@ -50,6 +66,20 @@ final class PageCacheKey
             $this->themes->active()->name,
             self::build(),
         ]));
+    }
+
+    /**
+     * Gỡ tham số theo dõi (`utm_*`, `gclid`…) khỏi request trước khi render trang dùng chung: HTML không mang giá trị theo
+     * dõi của khách đầu tiên sang khách khác. Script đo lường đọc tham số từ URL trên trình duyệt nên không mất dữ liệu.
+     */
+    public function withoutTracking(Request $request): void
+    {
+        $kept = $this->query($request);
+        if (count($kept) === count($request->query->all())) {
+            return;
+        }
+        $request->query->replace($kept);
+        $request->server->set('QUERY_STRING', http_build_query($kept));
     }
 
     /**

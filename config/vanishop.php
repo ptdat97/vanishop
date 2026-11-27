@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.106',
+    'version' => '0.5.107',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
@@ -92,7 +92,10 @@ return [
             'max_product_tags' => 200,
             // Quá số giá trị lọc trong query thì không lưu (tổ hợp quá nhiều so với lượt trúng).
             'max_filter_values' => 4,
-            // Tham số theo dõi bỏ khỏi khoá cache (mẫu fnmatch).
+            // Tham số query được lưu cache (trang danh sách, sản phẩm, API). Có tham số khác → không lưu (`X-Vani-Cache-Reason:
+            // query`). Plugin có trang công khai dùng tham số riêng thì thêm vào đây.
+            'query_params' => ['page', 'per_page', 'sort', 'category', 'collection', 'brand', 'opt', 'attr', 'price_min', 'price_max', 'sku', 'q'],
+            // Tham số theo dõi bỏ khỏi khoá cache và khỏi request trước khi render (mẫu fnmatch).
             'ignored_query' => ['utm_*', 'gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid', 'ttclid', 'zarsrc', 'zarsi', '_gl', 'mc_cid', 'mc_eid'],
             // Chống dồn tải: một request render, request khác cùng trang chờ tối đa lock_wait_ms.
             'lock_seconds' => 10,
