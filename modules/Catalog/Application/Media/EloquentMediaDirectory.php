@@ -15,12 +15,12 @@ use Modules\Catalog\Persistence\Models\Mediable;
  */
 final class EloquentMediaDirectory implements MediaDirectory
 {
-    public function __construct(private readonly ImageCache $cache) {}
+    public function __construct(private readonly ImageCache $cache, private readonly MediaModels $models) {}
 
     public function find(array $ids): array
     {
         $result = [];
-        foreach (Media::query()->whereKey(array_values(array_unique($ids)))->get() as $media) {
+        foreach ($this->models->get($ids) as $media) {
             $variants = [];
             foreach ($this->cache->variantsFor($media) as $size) {
                 $variants[$size->width] = $media->url($size->width);

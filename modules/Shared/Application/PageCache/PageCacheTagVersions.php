@@ -34,15 +34,19 @@ final class PageCacheTagVersions
         $values = $this->cache->many([...$keys, ...$extraKeys]);
 
         $versions = [];
+        $missing = [];
         foreach ($tags as $tag) {
             $version = $values[self::PREFIX.$tag] ?? null;
             if (! is_string($version)) {
                 $version = Str::random(12);
-                if (! $this->cache->add(self::PREFIX.$tag, $version, self::TTL_SECONDS)) {
-                    $version = (string) $this->cache->get(self::PREFIX.$tag, $version);
-                }
+                $missing[self::PREFIX.$tag] = $version;
             }
             $versions[$tag] = $version;
+        }
+        // Tag chưa có phiên bản (sau `cache:clear`, tag mới): ghi một lần cho cả trang. Hai request cùng ghi thì bản sau
+        // thắng — bản cache lưu với phiên bản của request trước chỉ thành MISS, không bao giờ phục vụ dữ liệu cũ.
+        if ($missing !== []) {
+            $this->cache->putMany($missing, self::TTL_SECONDS);
         }
 
         return [$versions, array_intersect_key($values, array_flip($extraKeys))];

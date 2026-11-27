@@ -44,6 +44,9 @@ final class StorefrontProductQuery
     /** @var array<int, OptionType> */
     private array $optionTypes = [];
 
+    /** @var array<int, OptionValue> giá trị tuỳ chọn (kèm bản dịch) đã nạp trong request — các khối sản phẩm dùng chung */
+    private array $optionValues = [];
+
     public function __construct(
         private readonly ProductSearch $search,
         private readonly ProductLinkService $links,
@@ -207,12 +210,13 @@ final class StorefrontProductQuery
      */
     private static function summaryRelations(): array
     {
-        return ['translations', 'options', 'optionValues.value.translations',
+        return ['translations', 'options', 'optionValues',
             'variants' => fn ($query) => $query->where('status', 'active')->with(['optionValues', 'gallery.media.poster'])];
     }
 
     /**
-     * Gắn `brand` và `options.type` từ bộ nhớ của request (chỉ tra id chưa có).
+     * Gắn `brand`, `options.type` và `optionValues.value` (kèm bản dịch) từ bộ nhớ của request (chỉ tra id chưa có): trang
+     * chủ nhiều khối sản phẩm không tra lại cùng thương hiệu, loại và giá trị tuỳ chọn.
      *
      * @param  EloquentCollection<int, Product>  $products
      * @return EloquentCollection<int, Product>
@@ -233,6 +237,14 @@ final class StorefrontProductQuery
         }
         foreach ($options as $option) {
             $option->setRelation('type', $this->optionTypes[(int) $option->option_type_id] ?? null);
+        }
+        $rows = $products->flatMap(fn (Product $product) => $product->optionValues);
+        $valueIds = array_diff(array_unique($rows->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all()), array_keys($this->optionValues));
+        if ($valueIds !== []) {
+            $this->optionValues += OptionValue::query()->with('translations')->whereIn('id', $valueIds)->get()->keyBy('id')->all();
+        }
+        foreach ($rows as $row) {
+            $row->setRelation('value', $this->optionValues[(int) $row->option_value_id] ?? null);
         }
 
         return $products;

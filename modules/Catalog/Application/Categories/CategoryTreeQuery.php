@@ -10,16 +10,33 @@ use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Mediable;
 
 /**
- * Đọc cây danh mục của cửa hàng (1 truy vấn + eager load, dựng cây trong bộ nhớ).
+ * Đọc cây danh mục của cửa hàng (1 truy vấn + eager load, dựng cây trong bộ nhớ). Scoped: cây đã đọc được nhớ trong
+ * request (layout và trang cùng cần cây); lưu/xoá danh mục thì `forget()` (CatalogServiceProvider).
  *
  * @phpstan-type CategoryNode array{id: int, parent_id: int|null, slug: string, name: string|null, description: string|null, meta_title: string|null, meta_description: string|null, status: string, position: int, depth: int, image_url: string|null, children: list<mixed>}
  */
 final class CategoryTreeQuery
 {
+    /** @var array<string, list<CategoryNode>> */
+    private array $memo = [];
+
+    public function forget(): void
+    {
+        $this->memo = [];
+    }
+
     /**
      * @return list<CategoryNode>
      */
     public function tree(bool $activeOnly = false, ?string $locale = null): array
+    {
+        return $this->memo[($activeOnly ? 'active' : 'all').'|'.$locale] ??= $this->load($activeOnly, $locale);
+    }
+
+    /**
+     * @return list<CategoryNode>
+     */
+    private function load(bool $activeOnly, ?string $locale): array
     {
         $categories = Category::query()
             ->with(['translations', 'media.media'])

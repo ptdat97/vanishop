@@ -175,6 +175,9 @@ it('phân giải theo lô: số truy vấn không tăng theo số link cùng lo�
     $queries = function (int $count) use ($categories): int {
         $this->put("{$this->url}/header", ['items' => $categories->take($count)->map(fn ($category) => ($this->item)(['link' => ['type' => 'category', 'value' => (string) $category->id]]))->values()->all()]);
         $this->post("{$this->url}/header/publish");
+        // Mỗi lần đo như một request mới (cây danh mục, ảnh ghi nhớ trong request), sau một lượt làm nóng cache cài đặt.
+        app(MenuPresenter::class)->items('header', 'vi');
+        app()->forgetScopedInstances();
         DB::enableQueryLog();
         app(MenuPresenter::class)->items('header', 'vi');
         $count = count(DB::getQueryLog());

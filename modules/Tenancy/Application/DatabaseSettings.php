@@ -35,6 +35,9 @@ final class DatabaseSettings implements Settings
     /** @var array<string, true> namespace đã đổi trong request/job này — đọc thẳng DB */
     private array $changed = [];
 
+    /** Phiên bản cache đã đọc trong request/job này: nạp nhiều namespace chỉ đọc khoá phiên bản một lần. */
+    private ?string $version = null;
+
     public function __construct(private readonly SettingDefinitions $definitions, private readonly Cache $cache, private readonly PageCacheTags $pageTags) {}
 
     /**
@@ -122,11 +125,12 @@ final class DatabaseSettings implements Settings
     private function cachedRows(string $namespace): array
     {
         try {
-            $version = $this->cache->get(self::VERSION_KEY);
+            $version = $this->version ?? $this->cache->get(self::VERSION_KEY);
             if (! is_string($version)) {
                 $this->cache->add(self::VERSION_KEY, Str::random(16));
                 $version = (string) $this->cache->get(self::VERSION_KEY);
             }
+            $this->version = $version;
 
             return $this->cache->remember("vani:settings:{$version}:{$namespace}", self::TTL_SECONDS, fn (): array => $this->rows($namespace));
         } catch (Throwable) {
@@ -148,6 +152,7 @@ final class DatabaseSettings implements Settings
     {
         unset($this->loaded[$namespace]);
         $this->changed[$namespace] = true;
+        $this->version = null;
         DB::afterCommit(fn () => self::invalidate($this->cache));
     }
 }

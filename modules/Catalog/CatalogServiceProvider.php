@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
+use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Collections\EloquentCollectionDirectory;
 use Modules\Catalog\Application\Collections\EloquentCollectionPages;
 use Modules\Catalog\Application\EloquentCatalogLookup;
@@ -20,6 +21,7 @@ use Modules\Catalog\Application\Media\EloquentMediaUrls;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Application\Media\MediaLibrary;
+use Modules\Catalog\Application\Media\MediaModels;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
 use Modules\Catalog\Application\Products\ListingPublicationSchedule;
 use Modules\Catalog\Application\Products\ProductIdentifiers;
@@ -104,6 +106,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
         $this->app->bind(PublicationSchedule::class, ListingPublicationSchedule::class);
         $this->app->scoped(StorefrontProductQuery::class);
+        $this->app->scoped(CategoryTreeQuery::class);
+        $this->app->scoped(MediaModels::class);
         // Màn hình Admin của module mở cho plugin thêm form/cột/lọc/thao tác/tab (ADR-030).
         $this->app->make(AdminScreen::class)->declareResource('product');
         $this->app->make(AdminScreen::class)->declareResource('category');
@@ -137,6 +141,14 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         // Cache trang (ADR-051): sản phẩm, giá, tồn đổi → xoá theo tag trong lô kế tiếp.
         Event::listen([ProductListingProjected::class, ProductUpdated::class, ProductArchived::class, PriceChanged::class, AvailabilityChanged::class], QueuePageCacheInvalidation::class);
         $this->invalidatePageCacheOnTaxonomyChange();
+        // Ảnh đã nhớ trong request không còn đúng sau khi lưu/xoá (điểm lấy nét, poster, thay file).
+        $forgetMedia = function (): void {
+            if ($this->app->resolved(MediaModels::class)) {
+                $this->app->make(MediaModels::class)->forget();
+            }
+        };
+        Media::saved($forgetMedia);
+        Media::deleted($forgetMedia);
 
         if ($this->app->runningInConsole()) {
             $this->commands([MediaCacheCommand::class, RebuildListingCommand::class, FlushViewsCommand::class]);
@@ -205,6 +217,10 @@ final class CatalogServiceProvider extends ModuleServiceProvider
             $invalidate = function (Model $record) use ($own): void {
                 $prefix = $own[$record::class] ?? null;
                 $this->app->make(PageCacheInvalidator::class)->invalidate(PageCacheTags::CATALOG_TAXONOMY, ...($prefix === null ? [] : [$prefix.':'.$record->getKey()]));
+                // Cây danh mục đã nhớ trong request này không còn đúng.
+                if ($this->app->resolved(CategoryTreeQuery::class)) {
+                    $this->app->make(CategoryTreeQuery::class)->forget();
+                }
             };
             $model::saved($invalidate);
             $model::deleted($invalidate);

@@ -6,6 +6,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.105 — 2026-11-27 · Extension API 1.45.0
+
+Bớt truy vấn trùng khi trang công khai chưa có cache. Trang chủ dữ liệu demo, store `database`: ngay sau "Xoá cache" 221 → 142 truy vấn (trùng 113 → 6); lượt MISS thường 136 → 123 (trùng 8 → 1). Không đổi API cho plugin hay hợp đồng Storefront API.
+
+- Phiên bản tag cache trang chưa có (sau xoá cache, tag mới): ghi một lần cho cả trang thay cho một `insert` + một `select` mỗi tag.
+- Cài đặt: khoá phiên bản cache đọc một lần mỗi request, không mỗi namespace.
+- Trong một request: cây danh mục (layout + trang danh mục), giá trị tuỳ chọn kèm bản dịch (các khối sản phẩm), model ảnh (`MediaUrls` và `MediaDirectory` dùng chung) chỉ tra một lần; lưu/xoá danh mục hoặc ảnh thì quên bản đã nhớ.
+
 ## 0.5.104 — 2026-11-27 · Extension API 1.45.0
 
 Nút **Xoá cache** ở Admin → Cài đặt (quyền `settings.manage`): xoá store cache mặc định như `cache:clear`, giữ store `durable`, báo CDN xoá toàn bộ cache trang ([operations §5](../18-operations/operations.md)). Không đổi API cho plugin hay hợp đồng Storefront API.

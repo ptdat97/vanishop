@@ -16,10 +16,8 @@ final class EloquentMediaUrls implements MediaUrls
         private readonly ImageCache $cache,
         private readonly Settings $settings,
         private readonly ImageSizes $sizes,
+        private readonly MediaModels $models,
     ) {}
-
-    /** @var array<int, Media|null> ghi nhớ trong request: một trang gọi vani_image() nhiều lần cho cùng ảnh */
-    private array $loaded = [];
 
     public function url(int $mediaId, int|string|null $size = null, ?string $group = null): ?string
     {
@@ -66,15 +64,8 @@ final class EloquentMediaUrls implements MediaUrls
      */
     private function load(array $ids): array
     {
-        $missing = array_values(array_diff(array_unique($ids), array_keys($this->loaded)));
-        if ($missing !== []) {
-            $this->loaded += array_fill_keys($missing, null);
-            foreach (Media::query()->whereKey($missing)->get() as $media) {
-                $this->loaded[$media->id] = $media;
-            }
-        }
-
-        return array_filter(array_intersect_key($this->loaded, array_flip($ids)));
+        // Ghi nhớ trong request, dùng chung với MediaDirectory: một trang gọi vani_image() nhiều lần cho cùng ảnh.
+        return $this->models->get($ids);
     }
 
     public function poster(int $videoMediaId, int|string|null $size = null, ?string $group = null): ?string
