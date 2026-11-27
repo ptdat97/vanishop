@@ -63,6 +63,7 @@ Cửa hàng SME thường chạy một VPS, không có CDN. Làm sao để trang
 - Tìm kiếm có từ khoá, quá 4 giá trị lọc: không lưu trong ứng dụng; chế độ `cdn` vẫn cho CDN cache như trước.
 - Plugin `vani.cms`, `vani.lookbook`, `vani.bundles`, `vani.size-chart`: lưu bản ghi thì xoá toàn bộ cache trang (lô kế tiếp) — §6b L67.
 - Tag gom trong bộ nhớ, ghi hàng đợi một lần cuối request/lệnh/job: nhập file nghìn sản phẩm chỉ ghi hàng đợi một lần.
+- Đo 2026-11-27 (dữ liệu demo, store `database`, dev): HIT 4 truy vấn bảng `cache`, 2–4 ms; MISS trang chủ 137 truy vấn/180 ms, sản phẩm 66/40 ms ([§6b](../20-roadmap/reference-parity-refactor.md) L68).
 
 ## Alternatives
 
