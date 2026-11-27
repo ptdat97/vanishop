@@ -1,4 +1,4 @@
-Extension API 1.47.0
+Extension API 1.48.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -990,6 +990,8 @@ class Modules\Shared\Support\StoreLocale
   static supported(): array
   static options(): array
   static isSupported(string $locale): bool
+interface Modules\Storefront\Contracts\CurrentCart
+  currentKey(): ?Modules\Cart\Contracts\Data\CartKey
 interface Modules\Storefront\Contracts\CustomerProductPrices
   forCustomer(array $productIds, int $customerId, string $locale): array
 interface Modules\Storefront\Contracts\CustomerSignIn [experimental]

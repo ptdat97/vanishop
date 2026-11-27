@@ -35,6 +35,7 @@ use Modules\Storefront\Application\Links\LinkRegistry;
 use Modules\Storefront\Application\Links\ProductLinkType;
 use Modules\Storefront\Application\Links\RouteLinkType;
 use Modules\Storefront\Application\Links\UrlLinkType;
+use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\NativeCustomerSignIn;
 use Modules\Storefront\Application\PageCache\PageCacheStore;
 use Modules\Storefront\Application\PopularSearches;
@@ -47,6 +48,7 @@ use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Application\Theme\ThemeTranslationLoader;
 use Modules\Storefront\Console\PageCacheTagsCommand;
+use Modules\Storefront\Contracts\CurrentCart;
 use Modules\Storefront\Contracts\CustomerProductPrices;
 use Modules\Storefront\Contracts\CustomerSignIn;
 use Modules\Storefront\Contracts\LinkResolver;
@@ -99,6 +101,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         $this->app->bind(ProductCards::class, ProductViews::class);
         $this->app->bind(CustomerProductPrices::class, ProductViews::class);
         $this->app->bind(CustomerSignIn::class, NativeCustomerSignIn::class);
+        $this->app->bind(CurrentCart::class, NativeCart::class);
         // Không chia sẻ instance: ghi nhớ phân giải link/menu chỉ trong một lượt render (một instance), không sống qua
         // request — kể cả khi tiến trình phục vụ nhiều request (Octane, queue) — để đổi slug thấy ngay.
         $this->app->bind(LinkResolver::class, LinkRegistry::class);

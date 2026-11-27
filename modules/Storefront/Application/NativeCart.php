@@ -11,13 +11,14 @@ use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Cart\Contracts\Data\CartView;
 use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Storefront\Contracts\CurrentCart;
 
 /**
  * Giỏ của native storefront. Khách vãng lai: khoá giỏ (id công khai + token) giữ trong phiên web thay cho header
  * X-Vani-Cart-Token. Khách đã đăng nhập: giỏ của khách (`Carts::forCustomer`, truy cập theo actor, không cần token).
  * Cùng contract `Carts` nên hành vi giống hệt Storefront API.
  */
-final class NativeCart
+final class NativeCart implements CurrentCart
 {
     private const SESSION_KEY = 'vani.cart';
 
@@ -37,6 +38,11 @@ final class NativeCart
         $stored = $this->session->get(self::SESSION_KEY);
 
         return is_array($stored) && isset($stored['id'], $stored['token']) ? new CartKey((string) $stored['id'], (string) $stored['token']) : null;
+    }
+
+    public function currentKey(): ?CartKey
+    {
+        return $this->current() === null ? null : $this->key();
     }
 
     /**

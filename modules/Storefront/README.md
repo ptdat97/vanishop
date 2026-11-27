@@ -21,6 +21,7 @@ Tầng ghép storefront: Storefront API v1 + Blade, theme, menu, block trang ch�
 | Contract | Loại | Ghi chú |
 |---|---|---|
 | `BuilderSurface` | interface | tag `vani.storefront.builder_surfaces`, plugin |
+| `CurrentCart` | interface | plugin (0.5.111) |
 | `CustomerSignIn` | interface | plugin (experimental) |
 | `LinkResolver` | interface | plugin |
 | `LinkType` | interface | tag `vani.storefront.link_types`, plugin |

@@ -6,6 +6,10 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.111 — 2026-11-27 · Extension API 1.48.0
+
+- `Storefront\Contracts\CurrentCart::currentKey()` — khoá giỏ của người đang mua trong request web (phiên khách vãng lai hoặc giỏ của khách đăng nhập); null khi chưa có giỏ dùng được, không tạo giỏ. Cho slot/trang web của plugin cần tính trên giỏ (ví voucher `vani.coupon-code`). Owner duyệt 2026-11-27.
+
 ## 0.5.110 — 2026-11-27 · Extension API 1.47.0
 
 Hai contract đọc cho `vani.coupon-code` (Owner duyệt 2026-11-27). Không đổi hành vi hiện có.
