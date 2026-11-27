@@ -16,18 +16,21 @@ require_once __DIR__.'/CustomerTestHelpers.php';
 
 beforeEach(function () {
     ['s' => $this->s] = C::store();
-    $this->register = fn (string $email = 'lan@example.com', string $password = 'mat-khau-123') => $this->postJson(H::API.'/auth/register', [
-        'full_name' => 'Nguyễn Thị Lan', 'email' => $email, 'password' => $password, 'password_confirmation' => $password,
+    // SĐT riêng theo email (bắt buộc từ 0.5.114) để hai lần đăng ký khác email không trùng SĐT.
+    $this->register = fn (string $email = 'lan@example.com', string $password = 'mat-khau-123', ?string $phone = null) => $this->postJson(H::API.'/auth/register', [
+        'full_name' => 'Nguyễn Thị Lan', 'email' => $email, 'phone' => $phone ?? '098'.str_pad((string) (crc32($email) % 10_000_000), 7, '0', STR_PAD_LEFT),
+        'password' => $password, 'password_confirmation' => $password,
     ], H::CHANNEL);
 });
 
 it('đăng ký: 202 + link xác minh qua email, chưa tạo tài khoản; bấm link → tài khoản + token; /me; đăng xuất thu hồi token', function () {
     Event::fake([CustomerRegistered::class]);
-    ($this->register)('Lan@Example.com')->assertStatus(202)->assertJsonPath('data.email', 'lan@example.com')->assertJsonPath('data.expires_in', 86_400);
+    ($this->register)('Lan@Example.com', phone: '0912 345 678')->assertStatus(202)->assertJsonPath('data.status', 'verify_email')
+        ->assertJsonPath('data.email', 'lan@example.com')->assertJsonPath('data.phone', '+84912345678')->assertJsonPath('data.expires_in', 86_400);
     expect(Customer::query()->count())->toBe(0);
 
     $response = $this->postJson(H::API.'/auth/register/verify', ['token' => H::mailedToken('lan@example.com')], H::CHANNEL)->assertOk()
-        ->assertJsonPath('data.email', 'lan@example.com')->assertJsonPath('data.phone', null)->assertJsonPath('data.registered', true)
+        ->assertJsonPath('data.email', 'lan@example.com')->assertJsonPath('data.phone', '+84912345678')->assertJsonPath('data.registered', true)
         ->assertJsonPath('data.has_password', true)->assertJsonPath('meta.token_type', 'Bearer');
     $token = $response->json('meta.token');
     expect(Customer::query()->sole())->email_verified_at->not->toBeNull()->full_name->toBe('Nguyễn Thị Lan');

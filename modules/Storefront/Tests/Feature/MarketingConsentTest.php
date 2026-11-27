@@ -28,7 +28,7 @@ beforeEach(function () {
 
 it('đăng ký có tích "Nhận ưu đãi qua email": đồng ý chỉ ghi khi bấm link xác minh; không tích thì không có', function () {
     $this->get('/tai-khoan/dang-ky')->assertOk()->assertSee('name="marketing_email"', false);
-    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'lan@example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123', 'marketing_email' => '1'])
+    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'lan@example.com', 'phone' => '0987100001', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123', 'marketing_email' => '1'])
         ->assertRedirect('/tai-khoan/dang-ky');
     expect(DB::table('customer_consents')->count())->toBe(0);
 
@@ -37,7 +37,7 @@ it('đăng ký có tích "Nhận ưu đãi qua email": đồng ý chỉ ghi khi 
     expect(($this->consent)($lan->id))->toBeTrue()->and(($this->source)($lan->id))->toBe('storefront:register');
 
     $this->post('/tai-khoan/dang-xuat');
-    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Mai', 'email' => 'mai@example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123']);
+    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Mai', 'email' => 'mai@example.com', 'phone' => '0987100002', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123']);
     $this->get(H::mailedLink('mai@example.com'));
     expect(($this->consent)(Customer::query()->where('email', 'mai@example.com')->value('id')))->toBeFalse();
 });

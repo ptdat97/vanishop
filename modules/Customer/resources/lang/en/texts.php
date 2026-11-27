@@ -25,4 +25,11 @@ return [
         'no_notes_yet' => 'No notes yet',
         'note_customer_pick_up_after' => 'Note (e.g. customer will pick up after 6pm)',
     ],
+    'registration_verification' => [
+        'label' => 'Verification when customers sign up',
+        'none' => 'None — create the account once all details are filled in',
+        'email' => 'Email — send a verification link',
+        'otp' => 'OTP — send a code to the phone number (needs an SMS/Zalo ZNS plugin)',
+        'help' => 'Customers enter name, email, phone and password. If the email or phone matches a customer who already ordered, verification is always required before the order history is claimed. Choosing OTP without a plugin that can reach phones falls back to the email link.',
+    ],
 ];

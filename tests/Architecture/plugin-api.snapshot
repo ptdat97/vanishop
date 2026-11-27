@@ -1,4 +1,4 @@
-Extension API 1.49.0
+Extension API 1.50.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -216,6 +216,7 @@ class Modules\Customer\Contracts\Data\ExternalIdentity
 enum Modules\Customer\Contracts\Data\OtpPurpose
   const Login = \Modules\Customer\Contracts\Data\OtpPurpose::Login
   const DeleteAccount = \Modules\Customer\Contracts\Data\OtpPurpose::DeleteAccount
+  const Register = \Modules\Customer\Contracts\Data\OtpPurpose::Register
   static cases(): array
   static from(string|int $value): static
   static tryFrom(string|int $value): ?static

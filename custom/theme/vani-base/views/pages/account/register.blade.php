@@ -26,6 +26,11 @@
                     @error('email')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
+                    <label for="phone" class="block text-sm">{{ __('theme::common.phone_number') }}</label>
+                    <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" value="{{ old('phone') }}" required maxlength="20" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                    @error('phone')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
                     <label for="password" class="block text-sm">{{ __('theme::account.password_at_least_8_characters') }}</label>
                     <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
                     @error('password')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror

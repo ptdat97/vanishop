@@ -76,6 +76,11 @@ return [
     'sign_in' => 'Sign in',
     'sign_out' => 'Sign out',
     'sign_up' => 'Sign up',
+    'register_otp_title' => 'Enter verification code',
+    'register_otp_sent' => 'We sent a verification code to :phone.',
+    'register_otp_code' => 'Verification code',
+    'register_otp_submit' => 'Finish sign-up',
+    'register_otp_restart' => 'No code received? Sign up again',
     'verification_sent' => 'We have sent a verification link to :email. Open the link in the email to finish signing up.',
     'view_orders' => 'view your orders',
 ];

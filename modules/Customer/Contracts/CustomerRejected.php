@@ -107,6 +107,18 @@ final class CustomerRejected extends BusinessRuleViolation
         return new self(__('customer::messages.email_taken'), 'customer.email_taken', 409);
     }
 
+    /** SĐT đã là tài khoản (đăng ký, 0.5.114) — đăng nhập hoặc dùng SĐT khác. */
+    public static function phoneTaken(): self
+    {
+        return new self(__('customer::messages.phone_taken'), 'customer.phone_taken', 409);
+    }
+
+    /** Hết hạn xác minh đăng ký bằng OTP (0.5.114) — đăng ký lại. */
+    public static function registrationExpired(): self
+    {
+        return new self(__('customer::messages.registration_expired'), 'customer.registration_expired', 422);
+    }
+
     public static function addressLimit(int $max): self
     {
         return new self(__('customer::messages.address_limit', ['max' => $max]), 'customer.address_limit', 422, ['max' => $max]);

@@ -15,6 +15,7 @@ use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Requests\ForgotPasswordRequest;
 use Modules\Customer\Contracts\Requests\LoginRequest;
+use Modules\Customer\Contracts\Requests\RegisterOtpRequest;
 use Modules\Customer\Contracts\Requests\RegisterRequest;
 use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
 
@@ -29,13 +30,31 @@ final class AuthController
     public function __construct(private readonly CustomerSessions $auth) {}
 
     /**
-     * Gửi link xác minh tới email (202); tài khoản chỉ tạo khi bấm link (`POST /auth/register/verify`).
+     * Đăng ký (0.5.114) theo cài đặt xác minh của cửa hàng: tạo ngay → 201 + phiên (như đăng nhập, `meta.status = registered`);
+     * cần xác minh → 202 `data.status` = `verify_email` (đã gửi link, `POST /auth/register/verify`) hoặc `verify_otp` (đã gửi mã
+     * tới SĐT, `POST /auth/register/verify-otp`).
      */
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, Carts $carts): JsonResponse
+    {
+        $data = $request->validated();
+        $result = $this->auth->register($data['email'], $data['password'], $data['full_name'], $data['phone'], (bool) ($data['marketing_email'] ?? false), (string) $request->ip(), $data['device'] ?? null);
+        if ($result['session'] !== null) {
+            return $this->respond($result['session'], $request, $carts, $data['cart_id'] ?? null, ['status' => 'registered'], 201);
+        }
+
+        return response()->json(['data' => [
+            'status' => $result['status'], 'email' => $result['email'], 'phone' => $result['phone'], 'expires_in' => $result['expires_in'], 'channel' => $result['channel'],
+        ]], 202);
+    }
+
+    /**
+     * Mã OTP đăng ký (0.5.114) → tài khoản + phiên.
+     */
+    public function verifyRegistrationOtp(RegisterOtpRequest $request, Carts $carts): JsonResponse
     {
         $data = $request->validated();
 
-        return response()->json(['data' => $this->auth->register($data['email'], $data['password'], $data['full_name'], (bool) ($data['marketing_email'] ?? false))], 202);
+        return $this->respond($this->auth->verifyRegistrationOtp((string) ($data['phone'] ?? ''), $data['code'], $data['device'] ?? null), $request, $carts, $data['cart_id'] ?? null);
     }
 
     /**
@@ -138,15 +157,16 @@ final class AuthController
 
     /**
      * @param  array{customer: CustomerData, token: string}  $session
+     * @param  array<string, string>  $extraMeta
      */
-    private function respond(array $session, Request $request, Carts $carts, ?string $cartId): JsonResponse
+    private function respond(array $session, Request $request, Carts $carts, ?string $cartId, array $extraMeta = [], int $status = 200): JsonResponse
     {
-        $meta = ['token' => $session['token'], 'token_type' => 'Bearer'];
+        $meta = [...$extraMeta, 'token' => $session['token'], 'token_type' => 'Bearer'];
         if ($cartId !== null) {
             $cart = $carts->attachToCustomer(new CartKey($cartId, (string) $request->header('X-Vani-Cart-Token', '')), $session['customer']->id);
             $meta['cart_id'] = $cart->id;
         }
 
-        return response()->json(['data' => $session['customer']->toArray(), 'meta' => $meta]);
+        return response()->json(['data' => $session['customer']->toArray(), 'meta' => $meta], $status);
     }
 }

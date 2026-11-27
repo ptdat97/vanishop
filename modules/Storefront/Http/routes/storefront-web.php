@@ -83,6 +83,8 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::post($p('account.login'), [AccountController::class, 'authenticate'])->name('account.authenticate');
                 Route::post($p('account.register'), [AccountController::class, 'storeRegistration'])->name('account.register.store');
                 Route::get($p('account.register.verify'), [AccountController::class, 'verifyRegistration'])->name('account.register.verify');
+                Route::get($p('account.register.otp'), [AccountController::class, 'registerOtp'])->name('account.register.otp');
+                Route::post($p('account.register.otp'), [AccountController::class, 'verifyRegistrationOtp'])->name('account.register.otp.verify');
                 // Link xác minh email sau khi đổi email (0.5.32): mở được trên máy khác, không cần đăng nhập — token đủ.
                 Route::get($p('account.email.verify'), [AccountSettingsController::class, 'verifyEmail'])->name('account.email.verify');
                 Route::post($p('account.password.forgot'), [AccountController::class, 'sendPasswordReset'])->name('account.password.email');

@@ -13,6 +13,7 @@ use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Requests\ForgotPasswordRequest;
 use Modules\Customer\Contracts\Requests\LoginRequest;
+use Modules\Customer\Contracts\Requests\RegisterOtpRequest;
 use Modules\Customer\Contracts\Requests\RegisterRequest;
 use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
 use Modules\Ordering\Contracts\CustomerOrders;
@@ -32,6 +33,8 @@ use Modules\Storefront\Http\Requests\CancelOrderRequest;
  */
 final class AccountController
 {
+    private const REGISTER_OTP_PHONE = 'vani.register_otp_phone';
+
     private const TOKEN = NativeCustomerSignIn::TOKEN;
 
     public function __construct(
@@ -72,14 +75,53 @@ final class AccountController
     }
 
     /**
-     * Gửi link xác minh; trang đăng ký chuyển sang thông báo "kiểm tra email".
+     * Đăng ký theo cài đặt xác minh của cửa hàng (0.5.114): tạo ngay → đăng nhập; link email → thông báo "kiểm tra email";
+     * mã OTP → trang nhập mã.
      */
     public function storeRegistration(RegisterRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $result = $this->sessions->register($data['email'], $data['password'], $data['full_name'], (bool) ($data['marketing_email'] ?? false));
+        $result = $this->sessions->register($data['email'], $data['password'], $data['full_name'], $data['phone'], (bool) ($data['marketing_email'] ?? false), (string) $request->ip(), 'web');
 
-        return redirect()->to(LocalizedUrls::route('storefront.account.register'))->with('vani.register_sent_to', $result['email']);
+        if ($result['session'] !== null) {
+            return redirect()->to($this->signIn->signIn($request, $result['session']['token'], $result['session']['customer']->id))->with('status', __('storefront::messages.registered'));
+        }
+
+        return match ($result['status']) {
+            'verify_otp' => redirect()->to(LocalizedUrls::route('storefront.account.register.otp'))->with(self::REGISTER_OTP_PHONE, $result['phone']),
+            default => redirect()->to(LocalizedUrls::route('storefront.account.register'))->with('vani.register_sent_to', $result['email']),
+        };
+    }
+
+    /** Trang nhập mã OTP đăng ký (0.5.114). SĐT lấy từ bước đăng ký; không có thì về trang đăng ký. */
+    public function registerOtp(Request $request): View|RedirectResponse
+    {
+        $phone = $request->session()->get(self::REGISTER_OTP_PHONE);
+        if (! is_string($phone)) {
+            return redirect()->to(LocalizedUrls::route('storefront.account.register'));
+        }
+        $request->session()->keep([self::REGISTER_OTP_PHONE]);
+
+        return view('theme::pages.account.register-otp', ['phone' => $phone]);
+    }
+
+    public function verifyRegistrationOtp(RegisterOtpRequest $request): RedirectResponse
+    {
+        $phone = $request->session()->get(self::REGISTER_OTP_PHONE);
+        if (! is_string($phone)) {
+            return redirect()->to(LocalizedUrls::route('storefront.account.register'));
+        }
+        $data = $request->validated();
+        try {
+            $session = $this->sessions->verifyRegistrationOtp($phone, $data['code'], 'web');
+        } catch (CustomerRejected $exception) {
+            $request->session()->keep([self::REGISTER_OTP_PHONE]);
+
+            return back()->withErrors(['code' => $exception->getMessage()]);
+        }
+        $request->session()->forget(self::REGISTER_OTP_PHONE);
+
+        return redirect()->to($this->signIn->signIn($request, $session['token'], $session['customer']->id))->with('status', __('storefront::messages.registered'));
     }
 
     /**

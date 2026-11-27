@@ -76,6 +76,11 @@ return [
     'sign_in' => 'Đăng nhập',
     'sign_out' => 'Đăng xuất',
     'sign_up' => 'Đăng ký',
+    'register_otp_title' => 'Nhập mã xác minh',
+    'register_otp_sent' => 'Chúng tôi đã gửi mã xác minh tới số :phone.',
+    'register_otp_code' => 'Mã xác minh',
+    'register_otp_submit' => 'Hoàn tất đăng ký',
+    'register_otp_restart' => 'Không nhận được mã? Đăng ký lại',
     'verification_sent' => 'Chúng tôi đã gửi link xác minh tới :email. Bấm vào link trong email để hoàn tất đăng ký.',
     'view_orders' => 'xem đơn hàng',
 ];

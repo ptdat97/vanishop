@@ -6,6 +6,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.114 — 2026-11-27 · Extension API 1.50.0
+
+Đăng ký tài khoản khách có cài đặt xác minh (Admin → Cài đặt → Bán hàng & thuế → "Xác minh khi khách đăng ký": Không / Email / OTP) — [customer](../03-domains/customer.md).
+
+- **Phá vỡ:** `CustomerSessions::register(email, password, fullName, phone, marketingEmail, ip, device)` — thêm SĐT (bắt buộc), trả `status` (`registered` kèm `session` | `verify_email` | `verify_otp`), `phone`, `channel`. Mới: `CustomerSessions::verifyRegistrationOtp(phone, code, device)`.
+- `RegisterRequest` bắt buộc `phone`. `OtpPurpose::Register`. `CustomerRejected::phoneTaken()` (`customer.phone_taken`, 409), `registrationExpired()` (`customer.registration_expired`, 422).
+- Storefront API: `POST /auth/register` trả **201** + phiên khi tự chấp nhận (`meta.status = registered`), **202** `data.status` = `verify_email` | `verify_otp`; mới `POST /auth/register/verify-otp`. Blade: ô SĐT ở form đăng ký, trang nhập mã `/tai-khoan/dang-ky/nhap-ma` (`/en/account/register/code`).
+- Plugin gửi OTP (`OtpSender`): nhận thêm mục đích `register`; Core chỉ dùng kênh tới được SĐT cho mục đích này (gọi với `CustomerContact` không có email).
+- Hồ sơ khách vãng lai trùng email/SĐT chỉ được nhận khi khách đã chứng minh đúng thứ đó (cả ở chế độ "Không").
+
 ## 0.5.113 — 2026-11-27 · Extension API 1.49.0
 
 Hai bổ sung cho ví voucher của `vani.coupon-code` (Owner duyệt 2026-11-27):

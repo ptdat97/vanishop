@@ -8,7 +8,9 @@ use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Customer\Application\AuthService;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as Cu;
+use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
@@ -20,6 +22,7 @@ use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Support\StoreClock;
+use Modules\Tenancy\Contracts\Settings;
 use Tests\Support\JsonSchemaSubset;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -181,8 +184,19 @@ it('khách vãng lai: vỏ trang, catalog, địa chỉ, giỏ, checkout, đơn,
     assertStorefrontContract($this->postJson("{$this->api}/orders/{$order}/cancel", ['reason' => 'Đổi ý'], $orderHeaders)->assertOk(), '/orders/{order}/cancel', 'POST');
 });
 
+it('đăng ký tự chấp nhận (201) và qua mã OTP tới SĐT (0.5.114)', function () {
+    $register = fn (string $email, string $phone): array => ['full_name' => 'Lan', 'email' => $email, 'phone' => $phone, 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'];
+    app(Settings::class)->set('core', AuthService::VERIFICATION_SETTING, AuthService::VERIFY_NONE);
+    assertStorefrontContract($this->postJson("{$this->api}/auth/register", $register('lan@example.com', '0987200001'))->assertCreated(), '/auth/register', 'POST');
+
+    Cu::fakeOtp();
+    app(Settings::class)->set('core', AuthService::VERIFICATION_SETTING, AuthService::VERIFY_OTP);
+    assertStorefrontContract($this->postJson("{$this->api}/auth/register", $register('mai@example.com', '0987200002'))->assertStatus(202), '/auth/register', 'POST');
+    assertStorefrontContract($this->postJson("{$this->api}/auth/register/verify-otp", ['phone' => '0987200002', 'code' => FakeOtpSender::$codes['+84987200002|register']])->assertOk(), '/auth/register/verify-otp', 'POST');
+});
+
 it('khách: đăng ký (link email), hồ sơ, mật khẩu, sổ địa chỉ, đồng ý nhận tin, đơn, giỏ, giá, xuất dữ liệu, quên mật khẩu, xoá tài khoản', function () {
-    $register = ['full_name' => 'Lan', 'email' => 'lan@example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'];
+    $register = ['full_name' => 'Lan', 'email' => 'lan@example.com', 'phone' => '0987100001', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'];
     assertStorefrontContract($this->postJson("{$this->api}/auth/register", $register)->assertStatus(202), '/auth/register', 'POST');
     $verify = $this->postJson("{$this->api}/auth/register/verify", ['token' => Cu::mailedToken('lan@example.com')])->assertOk();
     assertStorefrontContract($verify, '/auth/register/verify', 'POST');
@@ -193,12 +207,12 @@ it('khách: đăng ký (link email), hồ sơ, mật khẩu, sổ địa chỉ, 
     $call('GET', '/me', '/me');
     $call('PATCH', '/me', '/me', ['full_name' => 'Lan']);
     // L40: đổi email → email mới chưa xác minh, tự gửi link; gửi lại; bấm link → đã xác minh.
-    expect($call('PATCH', '/me', '/me', ['full_name' => 'Lan', 'email' => 'lan.moi@example.com'])->json('data.email_verified'))->toBeFalse();
+    expect($call('PATCH', '/me', '/me', ['full_name' => 'Lan', 'email' => 'lan.moi@example.com', 'phone' => '0987100002'])->json('data.email_verified'))->toBeFalse();
     assertStorefrontContract($this->postJson("{$this->api}/me/email/verification", [], $auth)->assertStatus(202), '/me/email/verification', 'POST');
     assertStorefrontContract($this->postJson("{$this->api}/auth/email/verify", ['token' => Cu::mailedToken('lan.moi@example.com')])->assertOk(), '/auth/email/verify', 'POST')
         ->assertJsonPath('data.email_verified', true);
     $this->postJson("{$this->api}/me/email/verification", [], $auth)->assertStatus(409);
-    $this->patchJson("{$this->api}/me", ['full_name' => 'Lan', 'email' => 'lan@example.com'], $auth)->assertOk();
+    $this->patchJson("{$this->api}/me", ['full_name' => 'Lan', 'email' => 'lan@example.com', 'phone' => '0987100003'], $auth)->assertOk();
     $call('PUT', '/me/password', '/me/password', ['current_password' => 'mat-khau-123', 'password' => 'mat-khau-moi-123', 'password_confirmation' => 'mat-khau-moi-123']);
     $address = $call('POST', '/me/addresses', '/me/addresses', [
         'full_name' => 'Lan', 'phone' => '0912345678', 'province_code' => '29', 'province_name' => 'Thành phố Hồ Chí Minh',

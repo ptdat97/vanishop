@@ -8,6 +8,7 @@ use Modules\Customer\Http\Controllers\Api\AuthController;
 Route::middleware('throttle:vani-customer-auth')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register'])->name('auth.register');
     Route::post('auth/register/verify', [AuthController::class, 'verifyRegistration'])->name('auth.register.verify');
+    Route::post('auth/register/verify-otp', [AuthController::class, 'verifyRegistrationOtp'])->name('auth.register.verify-otp');
     Route::post('auth/email/verify', [AuthController::class, 'verifyEmail'])->name('auth.email.verify');
     Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
     Route::post('auth/password/forgot', [AuthController::class, 'forgotPassword'])->name('auth.password.forgot');

@@ -22,6 +22,10 @@
                 },
                 "token_type": {
                     "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "description": "`registered` khi POST /auth/register tạo tài khoản ngay (0.5.114)"
                 }
             }
         }

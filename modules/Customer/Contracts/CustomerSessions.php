@@ -19,12 +19,14 @@ interface CustomerSessions
     public const REQUEST_ATTRIBUTE = 'customer';
 
     /**
-     * Đăng ký: gửi link xác minh tới email; tài khoản chỉ được tạo khi bấm link. `$marketingEmail` = khách tích "Nhận ưu đãi
-     * qua email"; đồng ý chỉ được ghi khi xác minh xong.
+     * Đăng ký (0.5.114): họ tên, email, SĐT, mật khẩu. Cài đặt cửa hàng `customer.registration_verification` quyết định:
+     * `registered` (tạo ngay, kèm `session`), `verify_email` (đã gửi link, gọi `verifyRegistration`), `verify_otp` (đã gửi mã tới
+     * SĐT, gọi `verifyRegistrationOtp`). Email/SĐT trùng hồ sơ khách vãng lai đã đặt hàng luôn phải xác minh trước khi nhận lịch sử
+     * đơn. `$marketingEmail` = khách tích "Nhận ưu đãi qua email"; đồng ý chỉ ghi khi tài khoản được tạo.
      *
-     * @return array{email: string, expires_in: int}
+     * @return array{status: 'registered'|'verify_email'|'verify_otp', email: string, phone: string, expires_in: int|null, channel: string|null, session: array{customer: CustomerData, token: string}|null}
      */
-    public function register(string $email, string $password, string $fullName, bool $marketingEmail = false): array;
+    public function register(string $email, string $password, string $fullName, string $phone, bool $marketingEmail = false, string $ip = '', ?string $device = null): array;
 
     /**
      * Bấm link xác minh → tạo tài khoản (hoặc nhận hồ sơ khách vãng lai cùng email) và đăng nhập.
@@ -32,6 +34,13 @@ interface CustomerSessions
      * @return array{customer: CustomerData, token: string}
      */
     public function verifyRegistration(string $token, ?string $device = null): array;
+
+    /**
+     * Mã OTP đăng ký gửi tới SĐT (0.5.114) → tạo tài khoản (hoặc nhận hồ sơ khách vãng lai cùng SĐT) và đăng nhập.
+     *
+     * @return array{customer: CustomerData, token: string}
+     */
+    public function verifyRegistrationOtp(string $phone, string $code, ?string $device = null): array;
 
     /**
      * @return array{customer: CustomerData, token: string}

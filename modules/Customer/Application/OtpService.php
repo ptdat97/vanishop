@@ -44,6 +44,28 @@ final class OtpService
     }
 
     /**
+     * Mã gửi riêng tới SĐT (0.5.114, xác minh đăng ký): chỉ kênh tới được SĐT (SMS/ZNS của plugin) — mã qua email không
+     * chứng minh khách giữ SĐT.
+     *
+     * @return array{channel: string, expires_in: int}
+     */
+    public function requestToPhone(string $e164, OtpPurpose $purpose, string $ip): array
+    {
+        return $this->issue($e164, new CustomerContact($e164, null, null, null), $purpose, $ip);
+    }
+
+    /** Có kênh gửi mã tới SĐT không (plugin SMS/ZNS đang bật). */
+    public function canReachPhone(string $e164): bool
+    {
+        return $this->senders(new CustomerContact($e164, null, null, null)) !== [];
+    }
+
+    public function ttlSeconds(): int
+    {
+        return $this->ttlSeconds;
+    }
+
+    /**
      * Mã cho khách đã đăng nhập (xác nhận thao tác nhạy cảm — xoá tài khoản, L40): liên hệ lấy từ hồ sơ; khoá mã là SĐT, khách
      * chỉ có email dùng `c:<id>` (cùng giới hạn tần suất và số lần thử).
      *

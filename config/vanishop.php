@@ -6,14 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.113',
+    'version' => '0.5.114',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
     | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
     | requires.extension_api.
     */
-    'extension_api' => '1.49.0',
+    'extension_api' => '1.50.0',
 
     /*
     | Kết nối đọc cho thống kê/báo cáo (OrderStatistics, plugin Reports) — db-refactor G3. Đặt DB_REPORT_CONNECTION=mysql_report
@@ -229,6 +229,7 @@ return [
                 'account.login' => 'tai-khoan/dang-nhap',
                 'account.register' => 'tai-khoan/dang-ky',
                 'account.register.verify' => 'tai-khoan/dang-ky/xac-minh/{token}',
+                'account.register.otp' => 'tai-khoan/dang-ky/nhap-ma',
                 'account.password.forgot' => 'tai-khoan/quen-mat-khau',
                 'account.password.reset' => 'tai-khoan/dat-lai-mat-khau/{token}',
                 'account.orders' => 'tai-khoan/don-hang',
@@ -276,6 +277,7 @@ return [
                 'account.login' => 'account/login',
                 'account.register' => 'account/register',
                 'account.register.verify' => 'account/register/verify/{token}',
+                'account.register.otp' => 'account/register/code',
                 'account.password.forgot' => 'account/forgot-password',
                 'account.password.reset' => 'account/reset-password/{token}',
                 'account.orders' => 'account/orders',

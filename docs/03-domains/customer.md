@@ -29,6 +29,11 @@
 
 - **Một tài khoản cho cả cửa hàng** (một website). Trang tài khoản ở `/tai-khoan`; lịch sử đơn gồm sản phẩm mọi brand.
 - **Đăng nhập mặc định bằng email + mật khẩu** (0.5.12). Đăng ký chỉ gửi link xác minh (cache, chưa ghi DB); bấm link mới tạo tài khoản — hoặc biến hồ sơ khách vãng lai cùng email thành tài khoản, giữ lịch sử đơn — nên không ai chiếm được lịch sử của email không thuộc mình. `customers.email_verified_at`: đổi email trong hồ sơ thì bỏ dấu xác minh (link đặt lại mật khẩu xác minh lại).
+- **Xác minh khi đăng ký (0.5.114)** — Admin → Cài đặt → Bán hàng & thuế → "Xác minh khi khách đăng ký" (`core.customer.registration_verification`): form đăng ký gồm họ tên, email, **SĐT** (bắt buộc), mật khẩu.
+  - **Không** — tạo tài khoản và đăng nhập ngay khi điền đủ thông tin (email, SĐT chưa xác minh; khách xác minh email sau ở Hồ sơ).
+  - **Email** (mặc định) — link xác minh như trên.
+  - **OTP** — mã gửi tới SĐT qua kênh của plugin tới được SĐT (SMS/Zalo ZNS; mã qua email không tính vì không chứng minh SĐT), nhập ở `/tai-khoan/dang-ky/nhap-ma` hoặc `POST /auth/register/verify-otp`. Không có kênh tới SĐT → dùng link email.
+  - **An toàn lịch sử đơn:** email hoặc SĐT trùng hồ sơ khách vãng lai (đã đặt hàng) thì luôn phải chứng minh trước khi nhận hồ sơ — email trùng → link email; chỉ SĐT trùng → OTP (không có kênh → link email). Chỉ hồ sơ khớp thứ đã chứng minh được nhận; hồ sơ nhận lại giữ SĐT đặt hàng của nó; SĐT đang thuộc hồ sơ khác chưa chứng minh thì tài khoản chưa có SĐT. Email/SĐT đã là tài khoản → `customer.email_taken` / `customer.phone_taken`.
 - SĐT (chuẩn hoá E.164 `+84…`) vẫn duy nhất trên khách đang hoạt động và là khoá của hồ sơ khách vãng lai: khách vãng lai đặt hàng → tạo **profile ẩn** theo SĐT. SĐT chưa có hồ sơ mà email liên hệ là email **đã xác minh** của một tài khoản → đơn vào lịch sử tài khoản đó (không ghi SĐT vào tài khoản).
 - Plugin `vani.phone-otp-login` thêm đăng nhập bằng mã OTP qua SĐT: SĐT chưa có hồ sơ → tạo tài khoản (không email); hồ sơ khách vãng lai cùng SĐT → thành tài khoản, giữ lịch sử đơn.
 - Dữ liệu khách từ POS (nếu có SĐT) đổ về qua [Integration](../11-integration/integration-platform.md), vào cùng hồ sơ.

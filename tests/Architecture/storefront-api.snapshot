@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.113
+Storefront API v1 — VaniShop 0.5.114
 GET /address/provinces security[]
   200
     $: object
@@ -73,6 +73,7 @@ POST /auth/login security[]
     $.data.preferred_locale: string|null
     $.data.registered: boolean
     $.meta: object
+    $.meta.status: string optional
     $.meta.token: string
     $.meta.token_type: string
   401
@@ -141,11 +142,31 @@ POST /auth/password/reset security[]
     $.error.details: object|array optional
     $.error.message: string
 POST /auth/register security[]
+  201
+    $: object
+    $.data: object
+    $.data.birth_date: string|null
+    $.data.email: string|null
+    $.data.email_verified: boolean optional
+    $.data.full_name: string|null
+    $.data.gender: string|null
+    $.data.has_password: boolean
+    $.data.id: string
+    $.data.phone: string|null
+    $.data.preferred_locale: string|null
+    $.data.registered: boolean
+    $.meta: object
+    $.meta.status: string optional
+    $.meta.token: string
+    $.meta.token_type: string
   202
     $: object
     $.data: object
+    $.data.channel: string|null
     $.data.email: string (email)
-    $.data.expires_in: integer
+    $.data.expires_in: integer|null
+    $.data.phone: string
+    $.data.status: string enum[verify_email,verify_otp]
   409
     $: object closed
     $.error: object closed
@@ -182,6 +203,46 @@ POST /auth/register/verify security[]
     $.data.preferred_locale: string|null
     $.data.registered: boolean
     $.meta: object
+    $.meta.status: string optional
+    $.meta.token: string
+    $.meta.token_type: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /auth/register/verify-otp security[]
+  200
+    $: object
+    $.data: object
+    $.data.birth_date: string|null
+    $.data.email: string|null
+    $.data.email_verified: boolean optional
+    $.data.full_name: string|null
+    $.data.gender: string|null
+    $.data.has_password: boolean
+    $.data.id: string
+    $.data.phone: string|null
+    $.data.preferred_locale: string|null
+    $.data.registered: boolean
+    $.meta: object
+    $.meta.status: string optional
     $.meta.token: string
     $.meta.token_type: string
   409
@@ -231,6 +292,7 @@ POST /auth/social/{provider}/complete security[]
     $.data.preferred_locale: string|null
     $.data.registered: boolean
     $.meta: object
+    $.meta.status: string optional
     $.meta.token: string
     $.meta.token_type: string
   401

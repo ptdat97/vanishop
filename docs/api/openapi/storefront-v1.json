@@ -1221,10 +1221,20 @@
                 "tags": [
                     "Tài khoản"
                 ],
-                "summary": "Đăng ký bằng email — gửi link xác minh (tài khoản tạo khi bấm link)",
+                "summary": "Đăng ký (họ tên, email, SĐT, mật khẩu) — tạo ngay hoặc xác minh qua email/OTP theo cài đặt cửa hàng",
                 "responses": {
+                    "201": {
+                        "description": "Cửa hàng tự chấp nhận đăng ký: khách + token Bearer (meta.status = registered).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/customer-session.json"
+                                }
+                            }
+                        }
+                    },
                     "202": {
-                        "description": "Đã gửi link xác minh tới email; thời hạn link.",
+                        "description": "Cần xác minh: đã gửi link tới email (verify_email) hoặc mã tới SĐT (verify_otp).",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1251,6 +1261,35 @@
                     "Tài khoản"
                 ],
                 "summary": "Xác minh email (token trong link) → tạo tài khoản, đăng nhập",
+                "responses": {
+                    "200": {
+                        "description": "Khách + token Bearer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/customer-session.json"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/auth/register/verify-otp": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Xác minh SĐT (mã OTP đăng ký) → tạo tài khoản, đăng nhập",
                 "responses": {
                     "200": {
                         "description": "Khách + token Bearer.",

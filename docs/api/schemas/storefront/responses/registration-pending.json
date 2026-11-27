@@ -9,16 +9,41 @@
         "data": {
             "type": "object",
             "required": [
+                "status",
                 "email",
-                "expires_in"
+                "phone",
+                "expires_in",
+                "channel"
             ],
             "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "verify_email",
+                        "verify_otp"
+                    ],
+                    "description": "verify_email: đã gửi link (POST /auth/register/verify); verify_otp: đã gửi mã tới SĐT (POST /auth/register/verify-otp)"
+                },
                 "email": {
                     "type": "string",
                     "format": "email"
                 },
+                "phone": {
+                    "type": "string",
+                    "description": "SĐT đã chuẩn hoá E.164"
+                },
                 "expires_in": {
-                    "type": "integer"
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "channel": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Kênh gửi mã OTP (sms, zns…); null khi gửi link email"
                 }
             }
         }

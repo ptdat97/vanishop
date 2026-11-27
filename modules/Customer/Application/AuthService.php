@@ -23,6 +23,7 @@ use Modules\Shared\Support\CacheLocks;
 use Modules\Shared\Support\DurableCache;
 use Modules\Shared\Support\Phones;
 use Modules\Shared\Support\StoreLocale;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Đăng nhập khách. Mặc định của Core (0.5.12): **email + mật khẩu** — đăng ký chờ xác minh qua link email, tài khoản chỉ tạo
@@ -33,6 +34,17 @@ use Modules\Shared\Support\StoreLocale;
 final class AuthService
 {
     private const REGISTRATION_KEY = 'vani:customer-registration:';
+
+    private const REGISTRATION_OTP_KEY = 'vani:customer-registration-otp:';
+
+    /** Cài đặt cửa hàng: xác minh khi đăng ký — `none` (tạo ngay) | `email` (link, mặc định) | `otp` (mã qua SĐT, cần plugin). */
+    public const VERIFICATION_SETTING = 'customer.registration_verification';
+
+    public const VERIFY_NONE = 'none';
+
+    public const VERIFY_EMAIL = 'email';
+
+    public const VERIFY_OTP = 'otp';
 
     private const RESET_KEY = 'vani:customer-password-reset:';
 
@@ -46,37 +58,75 @@ final class AuthService
         private readonly CustomerService $customers,
         private readonly AccountEmails $emails,
         private readonly ConsentService $consents,
+        private readonly Settings $settings,
         private readonly int $tokenTtlDays = 90,
         private readonly int $verifyTtlHours = 24,
         private readonly int $resetTtlMinutes = 60,
     ) {}
 
     /**
-     * Đăng ký bằng email: chưa ghi gì vào DB — giữ yêu cầu (mật khẩu đã băm) trong cache và gửi link xác minh. Email đã là tài
-     * khoản → `customer.email_taken`. Gửi quá nhiều link tới một địa chỉ → `customer.too_many_attempts`.
+     * Đăng ký (0.5.114): họ tên, email, SĐT, mật khẩu. Theo cài đặt `customer.registration_verification`:
+     * - `none`: tạo tài khoản và đăng nhập ngay — trừ khi email/SĐT trùng hồ sơ khách vãng lai đã đặt hàng: khi đó phải xác minh
+     *   (email trùng → link email; chỉ SĐT trùng → OTP nếu có kênh gửi tới SĐT, không thì link email) rồi mới nhận lịch sử đơn;
+     * - `email`: giữ yêu cầu trong cache, gửi link xác minh (như trước);
+     * - `otp`: gửi mã tới SĐT qua kênh của plugin (SMS/ZNS); không có kênh tới SĐT, hoặc email trùng hồ sơ đã có đơn → link email.
+     * Email/SĐT đã là tài khoản → `customer.email_taken` / `customer.phone_taken`.
      *
-     * @return array{email: string, expires_in: int}
+     * @return array{status: 'registered'|'verify_email'|'verify_otp', email: string, phone: string, expires_in: int|null, channel: string|null, session: array{customer: CustomerData, token: string}|null}
      */
-    public function register(string $email, string $password, string $fullName, bool $marketingEmail = false): array
+    public function register(string $email, string $password, string $fullName, string $phone, bool $marketingEmail = false, string $ip = '', ?string $device = null): array
     {
         $email = self::normalizeEmail($email);
-        if ($this->activeByEmail($email)?->isRegistered() === true) {
+        $e164 = Phones::parse($phone)->e164 ?? throw CustomerRejected::phoneInvalid();
+        $byEmail = $this->activeByEmail($email);
+        if ($byEmail?->isRegistered() === true) {
             throw CustomerRejected::emailTaken();
         }
-        $this->throttleEmails("customer-register:{$email}");
+        $byPhone = $this->customers->activeByPhone($e164);
+        if ($byPhone?->isRegistered() === true) {
+            throw CustomerRejected::phoneTaken();
+        }
 
+        $pending = [
+            'email' => $email, 'phone' => $e164, 'password' => Hash::make($password), 'full_name' => trim($fullName),
+            'locale' => App::getLocale(), 'marketing_email' => $marketingEmail,
+        ];
+        $mode = $this->verificationMode();
+        $result = ['email' => $email, 'phone' => $e164, 'expires_in' => null, 'channel' => null, 'session' => null];
+
+        if ($mode === self::VERIFY_NONE && $byEmail === null && $byPhone === null) {
+            $session = $this->completeRegistration($pending, null, $device);
+
+            return ['status' => 'registered', ...$result, 'session' => ['customer' => $session['customer'], 'token' => $session['token']]];
+        }
+
+        $useOtp = $byEmail === null && ($mode === self::VERIFY_OTP || $mode === self::VERIFY_NONE) && $this->otp->canReachPhone($e164);
+        if ($useOtp) {
+            DurableCache::store()->put(self::REGISTRATION_OTP_KEY.hash('sha256', $e164), $pending, now()->addSeconds($this->otp->ttlSeconds() * 2));
+            $sent = $this->otp->requestToPhone($e164, OtpPurpose::Register, $ip);
+
+            return ['status' => 'verify_otp', ...$result, 'expires_in' => $sent['expires_in'], 'channel' => $sent['channel']];
+        }
+
+        $this->throttleEmails("customer-register:{$email}");
         $token = Str::random(64);
-        DurableCache::store()->put(self::REGISTRATION_KEY.hash('sha256', $token), [
-            'email' => $email, 'password' => Hash::make($password), 'full_name' => trim($fullName), 'locale' => App::getLocale(), 'marketing_email' => $marketingEmail,
-        ], now()->addHours($this->verifyTtlHours));
+        DurableCache::store()->put(self::REGISTRATION_KEY.hash('sha256', $token), $pending, now()->addHours($this->verifyTtlHours));
         $this->emails->sendVerification($email, trim($fullName), $token, $this->verifyTtlHours);
 
-        return ['email' => $email, 'expires_in' => $this->verifyTtlHours * 3600];
+        return ['status' => 'verify_email', ...$result, 'expires_in' => $this->verifyTtlHours * 3600];
+    }
+
+    /** Cách xác minh đang dùng; `otp` khi cửa hàng không có kênh gửi tới SĐT vẫn đi qua email (xem register). */
+    public function verificationMode(): string
+    {
+        $mode = (string) $this->settings->get('core', self::VERIFICATION_SETTING, self::VERIFY_EMAIL);
+
+        return in_array($mode, [self::VERIFY_NONE, self::VERIFY_EMAIL, self::VERIFY_OTP], true) ? $mode : self::VERIFY_EMAIL;
     }
 
     /**
-     * Bấm link xác minh → tạo tài khoản và đăng nhập. Hồ sơ khách vãng lai cùng email (đã đặt hàng) thành tài khoản, giữ lịch
-     * sử đơn. Link dùng một lần; sai/hết hạn → `customer.registration_link_invalid`.
+     * Bấm link xác minh → tạo tài khoản (hoặc nhận hồ sơ khách vãng lai cùng email — email đã được chứng minh) và đăng nhập.
+     * Link dùng một lần; sai/hết hạn → `customer.registration_link_invalid`.
      *
      * @return array{customer: CustomerData, token: string, customer_id: int}
      */
@@ -87,28 +137,90 @@ final class AuthService
             throw CustomerRejected::registrationLinkInvalid();
         }
 
+        return $this->completeRegistration($pending, 'email', $device);
+    }
+
+    /**
+     * Mã OTP gửi tới SĐT lúc đăng ký (0.5.114) → tạo tài khoản (hoặc nhận hồ sơ khách vãng lai cùng SĐT) và đăng nhập.
+     * Sai mã → `customer.otp_invalid`; hết hạn yêu cầu → `customer.registration_expired`.
+     *
+     * @return array{customer: CustomerData, token: string, customer_id: int}
+     */
+    public function verifyRegistrationOtp(string $phone, string $code, ?string $device = null): array
+    {
+        $e164 = Phones::parse($phone)->e164 ?? throw CustomerRejected::phoneInvalid();
+        $key = self::REGISTRATION_OTP_KEY.hash('sha256', $e164);
+        if (! is_array(DurableCache::store()->get($key))) {
+            throw CustomerRejected::registrationExpired();
+        }
+        $this->otp->verify($e164, OtpPurpose::Register, $code);
+        $pending = DurableCache::store()->pull($key);
+        if (! is_array($pending) || ! isset($pending['email'], $pending['password'])) {
+            throw CustomerRejected::registrationExpired();
+        }
+
+        return $this->completeRegistration($pending, 'phone', $device);
+    }
+
+    /**
+     * Tạo tài khoản từ yêu cầu đăng ký. `$proof`: thứ khách đã chứng minh sở hữu — `email` (link), `phone` (OTP), null (tự chấp
+     * nhận). Chỉ hồ sơ khách vãng lai khớp thứ đã chứng minh mới được nhận (giữ lịch sử đơn); SĐT chưa chứng minh mà đang thuộc
+     * hồ sơ khác thì tài khoản chưa có SĐT (khách thêm sau / đăng nhập OTP).
+     *
+     * @param  array<string, mixed>  $pending
+     * @param  'email'|'phone'|null  $proof
+     * @return array{customer: CustomerData, token: string, customer_id: int}
+     */
+    private function completeRegistration(array $pending, ?string $proof, ?string $device): array
+    {
         try {
-            return DB::transaction(function () use ($pending, $device): array {
-                $guestProfile = Customer::query()->where('email_normalized', $pending['email'])->lockForUpdate()->first();
-                if ($guestProfile?->isRegistered() === true) {
+            return DB::transaction(function () use ($pending, $proof, $device): array {
+                $email = (string) $pending['email'];
+                $phone = isset($pending['phone']) ? (string) $pending['phone'] : null;
+                $byEmail = Customer::query()->where('email_normalized', $email)->lockForUpdate()->first();
+                $byPhone = $phone === null ? null : Customer::query()->where('phone_active', $phone)->lockForUpdate()->first();
+                if ($byEmail?->isRegistered() === true) {
                     throw CustomerRejected::emailTaken();
                 }
-                $locale = StoreLocale::isSupported((string) ($pending['locale'] ?? '')) ? (string) $pending['locale'] : null;
-                $attributes = ['password' => $pending['password'], 'registered_at' => now(), 'email_verified_at' => now()];
+                if ($byPhone?->isRegistered() === true) {
+                    throw CustomerRejected::phoneTaken();
+                }
 
-                if ($guestProfile !== null) {
-                    $guestProfile->update($attributes + (($guestProfile->full_name ?? '') === '' && $pending['full_name'] !== '' ? ['full_name' => $pending['full_name']] : []));
-                    $customer = $guestProfile;
+                $target = match ($proof) {
+                    'email' => $byEmail,
+                    'phone' => $byPhone,
+                    default => null,
+                };
+                if ($byEmail !== null && $byEmail->id !== $target?->id) {
+                    // Email thuộc hồ sơ khác chưa được chứng minh (vd. vừa có đơn sau lúc đăng ký): không lấy email của người khác.
+                    throw CustomerRejected::emailTaken();
+                }
+                if ($proof === null && $byPhone !== null) {
+                    throw CustomerRejected::phoneTaken();
+                }
+
+                $locale = StoreLocale::isSupported((string) ($pending['locale'] ?? '')) ? (string) $pending['locale'] : null;
+                $fullName = (string) ($pending['full_name'] ?? '');
+                $attributes = ['password' => $pending['password'], 'registered_at' => now()]
+                    + ($proof === 'email' ? ['email_verified_at' => now()] : [])
+                    + ($proof === 'phone' ? ['phone_verified_at' => now()] : [])
+                    // SĐT: hồ sơ nhận lại đã có SĐT (SĐT đặt hàng) thì giữ; SĐT đang thuộc hồ sơ khác chưa chứng minh thì bỏ.
+                    + ($phone !== null && ($target->phone ?? null) === null && ($byPhone === null || $byPhone->id === $target?->id) ? ['phone' => $phone] : []);
+
+                if ($target !== null) {
+                    $target->update($attributes + ['email' => $target->email ?? $email]
+                        + (($target->full_name ?? '') === '' && $fullName !== '' ? ['full_name' => $fullName] : []));
+                    $customer = $target;
                 } else {
                     $customer = Customer::query()->create($attributes + [
-                        'public_id' => (string) Str::ulid(), 'email' => $pending['email'], 'status' => CustomerStatus::Active,
-                        'full_name' => $pending['full_name'] === '' ? null : $pending['full_name'], 'preferred_locale' => $locale,
+                        'public_id' => (string) Str::ulid(), 'email' => $email, 'status' => CustomerStatus::Active,
+                        'full_name' => $fullName === '' ? null : $fullName, 'preferred_locale' => $locale,
                     ]);
                 }
                 if (($pending['marketing_email'] ?? false) === true) {
                     $this->consents->set($customer->id, 'email', 'marketing', true, 'storefront:register');
                 }
-                event(new CustomerRegistered($customer->id, $customer->public_id, claimedGuestProfile: $guestProfile !== null));
+                event(new CustomerRegistered($customer->id, $customer->public_id, claimedGuestProfile: $target !== null));
 
                 return $this->startSession($customer, $device);
             });

@@ -47,6 +47,9 @@ use Modules\Ordering\Events\OrderPlaced;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Shared\Http\RateLimits;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Khách hàng hợp nhất toàn Owner ("Vani ID"): hồ sơ, xác thực OTP/mật khẩu, sổ địa chỉ, consent, merge, ẩn danh hoá.
@@ -86,6 +89,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         ));
         $this->app->bind(AuthService::class, fn ($app): AuthService => new AuthService(
             $app->make(OtpService::class), $app->make(CustomerService::class), $app->make(AccountEmails::class), $app->make(ConsentService::class),
+            $app->make(Settings::class),
             (int) config('vanishop.customer.token_ttl_days', 90),
             (int) config('vanishop.customer.email_auth.verify_ttl_hours', 24),
             (int) config('vanishop.customer.email_auth.reset_ttl_minutes', 60),
@@ -99,6 +103,17 @@ final class CustomerServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, Router $router): void
     {
+        // Xác minh khi khách tự đăng ký (0.5.114): Admin → Cài đặt → Bán hàng & thuế.
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', AuthService::VERIFICATION_SETTING, 'customer::texts.registration_verification.label', 'select', AuthService::VERIFY_EMAIL,
+            options: [
+                AuthService::VERIFY_NONE => 'customer::texts.registration_verification.none',
+                AuthService::VERIFY_EMAIL => 'customer::texts.registration_verification.email',
+                AuthService::VERIFY_OTP => 'customer::texts.registration_verification.otp',
+            ],
+            help: 'customer::texts.registration_verification.help',
+            group: SettingGroup::Sales,
+        ));
         $permissions->register('customers.view', 'customer::texts.customer_service_provider.view_customers_owner_level', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_MARKETING, PermissionRegistry::PRESET_ANALYST]);
         $permissions->register('customers.merge', 'customer::texts.customer_service_provider.merge_duplicate_customers', [PermissionRegistry::PRESET_ORDER_OPS]);
         $permissions->register('customers.anonymize', 'customer::texts.customer_service_provider.anonymise_customers_deletion_requests');

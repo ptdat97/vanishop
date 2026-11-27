@@ -41,9 +41,9 @@ it('đăng ký: gửi link xác minh (chưa tạo tài khoản), bấm link → 
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1]);
     $this->get('/tai-khoan/dang-ky')->assertOk()->assertSee('name="full_name"', false);
 
-    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'lan@example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'khac'])
+    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'lan@example.com', 'phone' => '0987100001', 'password' => 'mat-khau-123', 'password_confirmation' => 'khac'])
         ->assertSessionHasErrors('password');
-    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'Lan@Example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'])
+    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'Lan@Example.com', 'phone' => '0987100002', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'])
         ->assertRedirect('/tai-khoan/dang-ky');
     $this->get('/tai-khoan/dang-ky')->assertSee('Kiểm tra hộp thư của bạn')->assertSee('lan@example.com');
     expect(Customer::query()->count())->toBe(0);
@@ -57,7 +57,7 @@ it('đăng ký: gửi link xác minh (chưa tạo tài khoản), bấm link → 
 
     $this->post('/tai-khoan/dang-xuat');
     $this->get($link)->assertRedirect('/tai-khoan/dang-ky')->assertSessionHasErrors(['business' => 'Link xác minh không đúng hoặc đã hết hạn. Vui lòng đăng ký lại.']);
-    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'lan@example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'])
+    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'lan@example.com', 'phone' => '0987100003', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'])
         ->assertSessionHasErrors(['business' => 'Email đã được dùng cho tài khoản khác.']);
 });
 

@@ -11,6 +11,8 @@ return [
     'otp_body' => 'Your verification code is :code (valid for 5 minutes). Do not share it with anyone.',
     'invalid_credentials' => 'Incorrect email or password.',
     'email_taken' => 'This email is used by another account.',
+    'phone_taken' => 'This phone number already has an account — sign in or use another number.',
+    'registration_expired' => 'Your sign-up has expired — please sign up again.',
     'phone_invalid' => 'Invalid phone number.',
     'address_invalid' => 'Invalid province or ward. Please choose again from the current administrative list.',
     'address_limit' => 'The address book holds at most :max addresses.',

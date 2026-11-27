@@ -25,4 +25,11 @@ return [
         'no_notes_yet' => 'Chưa có ghi chú',
         'note_customer_pick_up_after' => 'Ghi chú (vd. khách hẹn nhận sau 18h)',
     ],
+    'registration_verification' => [
+        'label' => 'Xác minh khi khách đăng ký',
+        'none' => 'Không — tạo tài khoản ngay khi điền đủ thông tin',
+        'email' => 'Email — gửi link xác minh',
+        'otp' => 'OTP — gửi mã tới số điện thoại (cần plugin SMS/Zalo ZNS)',
+        'help' => 'Khách điền họ tên, email, SĐT, mật khẩu. Email hoặc SĐT trùng khách đã đặt hàng thì luôn phải xác minh trước khi nhận lịch sử đơn. Chọn OTP mà chưa có plugin gửi mã tới SĐT thì dùng link email.',
+    ],
 ];

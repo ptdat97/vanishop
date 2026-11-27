@@ -35,6 +35,7 @@ const STOREFRONT_API_PAIRS = [
     'storefront.order.returns.cancel' => ['api.storefront.v1.orders.returns.cancel'],
     'storefront.account.authenticate' => ['api.storefront.v1.auth.login'],
     'storefront.account.register.store' => ['api.storefront.v1.auth.register'],
+    'storefront.account.register.otp.verify' => ['api.storefront.v1.auth.register.verify-otp'],
     'storefront.account.password.email' => ['api.storefront.v1.auth.password.forgot'],
     'storefront.account.password.update-forgotten' => ['api.storefront.v1.auth.password.reset'],
     'storefront.account.logout' => ['api.storefront.v1.auth.logout'],
@@ -73,7 +74,7 @@ const STOREFRONT_SHARED_INPUT = [
     'storefront.cart.add', 'storefront.cart.update', 'storefront.cart.select', 'storefront.cart.voucher',
     'storefront.checkout.store', 'storefront.order.returns.store',
     'storefront.account.profile.update', 'storefront.account.password.update', 'storefront.account.marketing.update',
-    'storefront.account.register.store', 'storefront.account.password.update-forgotten',
+    'storefront.account.register.store', 'storefront.account.register.otp.verify', 'storefront.account.password.update-forgotten',
     'storefront.account.addresses.store', 'storefront.account.addresses.update',
     'storefront.order.received', 'storefront.order.returns.shipped', 'storefront.order.returns.photos',
     'storefront.account.authenticate', 'storefront.account.password.email', 'storefront.account.order.cancel',
@@ -262,6 +263,8 @@ const STOREFRONT_CHANNEL_HELPERS = [
 const STOREFRONT_SERVICE_DIFFERENCES = [
     'storefront.checkout.store' => 'form checkout Blade có ô mã giảm giá ghi vào giỏ (CartVoucher) — app gọi PUT /carts/{id}/vouchers riêng; đặt hàng/báo giá cùng Checkout',
     'storefront.account.authenticate' => 'gộp giỏ vãng lai vào khách: Blade theo giỏ trong phiên (CustomerSignIn → NativeCart), API theo cart_id + token (Carts::attachToCustomer); đăng nhập cùng CustomerSessions',
+    'storefront.account.register.store' => 'tự chấp nhận đăng ký (0.5.114) đăng nhập ngay: gộp giỏ như đăng nhập — Blade CustomerSignIn, API Carts::attachToCustomer; đăng ký cùng CustomerSessions',
+    'storefront.account.register.otp.verify' => 'như đăng nhập: gộp giỏ — Blade CustomerSignIn, API Carts::attachToCustomer; xác minh cùng CustomerSessions',
 ];
 
 /**
@@ -402,6 +405,7 @@ const STOREFRONT_WEB_ONLY_PAGES = [
     'storefront.sitemap.page' => 'trình bày web (SEO)',
     'storefront.account.login' => 'form thuần; app gọi POST /auth/login (và GET /auth/social cho nút đăng nhập mạng xã hội)',
     'storefront.account.register' => 'form thuần; app gọi POST /auth/register',
+    'storefront.account.register.otp' => 'form nhập mã thuần (SĐT trong phiên); app gọi POST /auth/register/verify-otp',
     'storefront.account.password.forgot' => 'form thuần; app gọi POST /auth/password/forgot',
     'storefront.account.password.reset' => 'link trong email mở form; app gọi POST /auth/password/reset',
     'storefront.account.register.verify' => 'link trong email; app gọi POST /auth/register/verify',
