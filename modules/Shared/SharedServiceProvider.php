@@ -7,6 +7,7 @@ namespace Modules\Shared;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
@@ -18,6 +19,7 @@ use Modules\Shared\Application\PageCache\BatchedPageCacheInvalidator;
 use Modules\Shared\Application\PageCache\RequestPageTags;
 use Modules\Shared\Console\InvalidatePageCacheCommand;
 use Modules\Shared\Console\PruneIdempotencyKeysCommand;
+use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Contracts\PageCacheInvalidator;
 use Modules\Shared\Contracts\PageCacheTags;
@@ -71,6 +73,11 @@ final class SharedServiceProvider extends ModuleServiceProvider
 
         // Tag cache trang đã gom trong bộ nhớ → hàng đợi, một lần khi request/lệnh/job kết thúc (ADR-051).
         $flushPageCacheTags = fn () => $this->app->make(BatchedPageCacheInvalidator::class)->flushBuffer();
+        // Request web xong (trước khi gửi response): thao tác nhỏ của nhân viên xoá ngay, còn lại vào hàng đợi.
+        Event::listen(RequestHandled::class, function (): void {
+            $context = $this->app->make(CurrentContext::class);
+            $this->app->make(BatchedPageCacheInvalidator::class)->finishRequest($context->has() && $context->actor()->type === ActorType::Staff);
+        });
         $this->app->terminating($flushPageCacheTags);
         Queue::after($flushPageCacheTags);
         Queue::failing($flushPageCacheTags);

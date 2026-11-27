@@ -54,6 +54,10 @@ Cửa hàng SME thường chạy một VPS, không có CDN. Làm sao để trang
 - Mặc định `app`: mọi trang công khai chạy **không phiên** như chế độ CDN cũ, phần riêng của khách tải bằng JS (khách đã đăng nhập thấy nhãn tài khoản, số món hiện chậm một nhịp). `off` giữ hành vi có phiên.
 - Không có cron: request trang công khai thấy lô cuối đã quá 2 phút thì tự chạy lô sau khi trả response (khoá, một request mỗi phút). Health check `scheduler` vẫn cảnh báo.
 
+## Sửa đổi §4 (Owner duyệt 2026-11-27, 0.5.108)
+
+Gom theo lô làm người vận hành tưởng lỗi: sửa giá hay kéo thả Builder rồi tải lại trang vẫn thấy bản cũ (~1 phút có cron, hơn 2 phút khi không có cron). Nay **request web của nhân viên (actor `staff`) gom ≤ `page_cache.immediate_max_tags` (200) tag thì xoá ngay**, trước khi gửi response (trang mở ngay sau redirect không trúng bản cũ). Vẫn gom theo lô: thao tác Admin nhiều tag (sửa hàng loạt, nhập file lớn), job, lệnh console, request của khách (đặt hàng làm đổi tồn).
+
 ## Đợt 4 — Storefront API (Owner duyệt 2026-11-27, 0.5.102)
 
 - Chỉ cache **khách vãng lai**: có `Authorization` hoặc khách đăng nhập qua phiên cùng nguồn → `BYPASS` (`authorized`, `signed_in`), `private, no-store`. Khi ẩn giá, khách đã đăng nhập thấy giá nên không dùng bản chung.

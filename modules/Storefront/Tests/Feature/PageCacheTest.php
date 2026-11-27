@@ -98,6 +98,22 @@ it('lưu Builder trang chủ: chỉ trang chủ render lại, trang sản phẩm
     $this->get($this->product)->assertHeader('X-Vani-Cache', 'HIT');
 });
 
+it('nhân viên lưu trong Admin (ít tag): trang mới ngay khi tải lại, không chờ lô hay cron; sửa nhiều thì vẫn theo lô', function () {
+    $staff = StaffUser::factory()->withPermissions(['admin.access', 'storefront.manage'])->create();
+    $save = fn (string $body) => $this->actingAs($staff, 'staff')
+        ->put('/admin/storefront/builder/home', ['blocks' => [['type' => 'rich_text', 'config' => ['body' => $body]]]])->assertSessionHasNoErrors();
+    $this->get('/');
+
+    $save('Khối ngay lập tức');
+    $this->get('/')->assertHeader('X-Vani-Cache', 'MISS')->assertSee('Khối ngay lập tức');
+
+    config(['vanishop.storefront.page_cache.immediate_max_tags' => 0]);
+    $save('Khối chờ lô');
+    $this->get('/')->assertHeader('X-Vani-Cache', 'HIT')->assertDontSee('Khối chờ lô');
+    ($this->runBatch)();
+    $this->get('/')->assertHeader('X-Vani-Cache', 'MISS')->assertSee('Khối chờ lô');
+});
+
 it('bảng giá hẹn giờ: bản cache hết hạn đúng lúc sale bắt đầu', function () {
     P::priceList(['type' => 'sale', 'priority' => 10, 'starts_at' => now()->addMinutes(10)], [$this->s->id => [250_000]]);
     $this->get($this->product)->assertHeader('X-Vani-Cache', 'MISS')->assertDontSee('250.000');

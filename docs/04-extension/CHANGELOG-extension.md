@@ -6,6 +6,10 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.108 — 2026-11-27 · Extension API 1.45.0
+
+Sửa giá, kéo thả Builder và các thao tác Admin nhỏ khác làm mới cache trang **ngay** (trước: chờ lô mỗi phút, hoặc hơn 2 phút khi không có cron). Request web của nhân viên gom ≤ 200 tag thì xoá ngay trước khi gửi response; sửa hàng loạt, job, lệnh, request của khách vẫn theo lô ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md) sửa đổi §4). Không đổi API cho plugin hay hợp đồng Storefront API.
+
 ## 0.5.107 — 2026-11-27 · Extension API 1.45.0
 
 Củng cố cache trang theo tình huống vận hành ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md)). Không đổi API cho plugin hay hợp đồng Storefront API.

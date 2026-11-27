@@ -118,6 +118,30 @@ final class BatchedPageCacheInvalidator implements PageCacheInvalidator
     }
 
     /**
+     * Cuối request web của nhân viên (Admin sửa giá, kéo thả Builder…): ít tag thì xoá ngay — tải lại trang là thấy, không
+     * chờ lô hay cron. Nhiều tag (sửa hàng loạt) hoặc request khác (khách đặt hàng làm đổi tồn) thì vẫn gom theo lô. Gọi
+     * trước khi gửi response để trang mở ngay sau đó (redirect) không trúng bản cũ.
+     */
+    public function finishRequest(bool $staff): void
+    {
+        $limit = (int) config('vanishop.storefront.page_cache.immediate_max_tags', 200);
+        if (! $staff || $this->buffer === [] || count($this->buffer) > $limit) {
+            $this->flushBuffer();
+
+            return;
+        }
+        $tags = array_map('strval', array_keys($this->buffer));
+        $this->buffer = [];
+        try {
+            $this->apply($tags);
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->buffer += array_fill_keys($tags, true);
+            $this->flushBuffer();
+        }
+    }
+
+    /**
      * Ghi tag đã gom vào hàng đợi (cuối request, lệnh, job). Store lỗi: giữ lại trong bộ nhớ, báo lỗi, không làm hỏng
      * request/job (lần ghi sau thử lại; tiến trình kết thúc thì trang cũ tối đa tới hết hạn bản cache).
      */
