@@ -96,6 +96,11 @@ return [
         'yes' => 'Yes',
     ],
     'settings_index' => [
+        'cache' => 'Cache',
+        'cache_hint' => 'Clears the page cache, settings, counts, menus and sitemap. Everything is rebuilt on its next view, so pages are slightly slower for a moment. Orders, carts, sign-in sessions, tokens and thumbnails are not affected. Changes normally show within about a minute — use this only when a page still shows old content.',
+        'clear_cache' => 'Clear cache',
+        'clear_cache_confirm' => 'Clear the whole cache?',
+        'clear_cache_message' => 'The store rebuilds pages and data on their next view.',
         'choose_group_view_edit_settings' => 'Choose a group to view and edit.',
         'count_customized' => ':count customised|:count customised',
         'count_settings' => ':count setting|:count settings',

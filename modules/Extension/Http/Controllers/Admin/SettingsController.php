@@ -6,11 +6,13 @@ namespace Modules\Extension\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Settings\SettingsAdmin;
 use Modules\Extension\Contracts\SettingActions;
+use Modules\Extension\Contracts\SettingPermissions;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
 
 /**
@@ -41,6 +43,8 @@ final class SettingsController
                 ...$this->pluginLink($namespace),
                 ...$this->admin->summary($namespace),
             ], $this->manageablePlugins()),
+            // Nút "Xoá cache" (CacheController) — chỉ quyền cài đặt cao nhất.
+            'clearCacheUrl' => Gate::allows(SettingPermissions::ALL) ? route('admin.settings.cache.clear') : null,
         ]);
     }
 

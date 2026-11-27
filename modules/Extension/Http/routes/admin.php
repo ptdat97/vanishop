@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Http\Controllers\Admin\AdminActionController;
 use Modules\Extension\Http\Controllers\Admin\AdminToolController;
+use Modules\Extension\Http\Controllers\Admin\CacheController;
 use Modules\Extension\Http\Controllers\Admin\PluginController;
 use Modules\Extension\Http\Controllers\Admin\ReportController;
 use Modules\Extension\Http\Controllers\Admin\SettingsController;
@@ -24,6 +25,7 @@ Route::get('settings', [SettingsController::class, 'index'])->name('settings.ind
 Route::get('settings/system/{group}', [SettingsController::class, 'system'])->where('group', '[a-z]+')->name('settings.system');
 Route::get('settings/{namespace}', [SettingsController::class, 'show'])->where('namespace', '[A-Za-z0-9._-]+')->name('settings.show');
 Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+Route::post('settings/cache/clear', CacheController::class)->name('settings.cache.clear');
 Route::post('extensions/{resource}/tools/{plugin}/{key}', AdminToolController::class)
     ->where(['resource' => '[a-z_]+', 'plugin' => '[a-z0-9.-]+', 'key' => '[a-z0-9_.-]+'])
     ->name('extensions.tool');

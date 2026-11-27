@@ -96,6 +96,11 @@ return [
         'yes' => 'Có',
     ],
     'settings_index' => [
+        'cache' => 'Bộ nhớ đệm',
+        'cache_hint' => 'Xoá cache trang, cài đặt, số đếm, menu, sitemap. Mọi thứ được dựng lại ở lượt xem kế tiếp nên trang chậm hơn một chút. Không ảnh hưởng đơn hàng, giỏ, phiên đăng nhập, token và ảnh thu nhỏ. Thay đổi bình thường tự hiện sau khoảng 1 phút — chỉ cần nút này khi trang vẫn hiển thị nội dung cũ.',
+        'clear_cache' => 'Xoá cache',
+        'clear_cache_confirm' => 'Xoá toàn bộ cache?',
+        'clear_cache_message' => 'Cửa hàng sẽ dựng lại trang và dữ liệu ở lượt xem kế tiếp.',
         'choose_group_view_edit_settings' => 'Chọn một nhóm để xem và chỉnh sửa.',
         'count_customized' => ':count mục đã chỉnh',
         'count_settings' => ':count mục',

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { t, tc } from '@admin/i18n';
 import PageHeader from '@admin/Components/PageHeader.vue';
-import { inputClass } from '@admin/styles';
-import { Head, Link } from '@inertiajs/vue3';
+import { inputClass, secondaryButton } from '@admin/styles';
+import { confirmAction } from '@admin/confirm';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import SettingGroupIcon from '../../Components/SettingGroupIcon.vue';
 
@@ -13,7 +14,7 @@ type PluginCard = { code: string; namespace: string; title: string; url: string;
  * Admin → Cài đặt: "Cài đặt hệ thống" (nhóm nhỏ — Cửa hàng, Giao diện, SEO…) và "Cài đặt Plugin" (mỗi plugin một thẻ).
  * Ô tìm lọc theo tên nhóm/plugin và tên từng mục cấu hình.
  */
-const props = defineProps<{ system: SystemGroup[]; plugins: PluginCard[] }>();
+const props = defineProps<{ system: SystemGroup[]; plugins: PluginCard[]; clearCacheUrl: string | null }>();
 
 const query = ref('');
 const normalize = (text: string): string => text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase();
@@ -23,6 +24,21 @@ const matches = (...texts: string[]): boolean => {
 };
 const system = computed(() => props.system.filter((group) => matches(group.title, group.description, ...group.labels)));
 const plugins = computed(() => props.plugins.filter((plugin) => matches(plugin.title, plugin.namespace)));
+const clearing = ref(false);
+
+async function clearCache(): Promise<void> {
+    if (props.clearCacheUrl === null || clearing.value) return;
+    const confirmed = await confirmAction({
+        title: t('extension::admin.settings_index.clear_cache_confirm'),
+        message: t('extension::admin.settings_index.clear_cache_message'),
+        confirmLabel: t('extension::admin.settings_index.clear_cache'),
+    });
+    if (confirmed === false) return;
+
+    clearing.value = true;
+    router.post(props.clearCacheUrl, {}, { preserveScroll: true, onFinish: () => (clearing.value = false) });
+}
+
 const preview = (labels: string[]): string => labels.slice(0, 3).join(' · ') + (labels.length > 3 ? ' …' : '');
 </script>
 
@@ -96,6 +112,22 @@ const preview = (labels: string[]): string => labels.slice(0, 3).join(' · ') + 
             <p v-else-if="props.plugins.length" class="mt-4 text-sm text-slate-500">{{ t('extension::admin.settings_index.no_matching_settings') }}</p>
             <div v-else class="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
                 {{ t('extension::admin.settings_index.no_plugin_settings') }}
+            </div>
+        </section>
+
+        <section v-if="props.clearCacheUrl" aria-labelledby="settings-cache" data-settings-section="cache">
+            <h2 id="settings-cache" class="text-base font-semibold text-slate-900">{{ t('extension::admin.settings_index.cache') }}</h2>
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 text-sm shadow-xs">
+                <p class="max-w-2xl text-slate-600">{{ t('extension::admin.settings_index.cache_hint') }}</p>
+                <button
+                    type="button"
+                    :class="secondaryButton"
+                    :disabled="clearing"
+                    data-clear-cache
+                    @click="clearCache"
+                >
+                    {{ t('extension::admin.settings_index.clear_cache') }}
+                </button>
             </div>
         </section>
     </div>
