@@ -28,11 +28,24 @@ return [
         'customer_group_not_found' => 'Nhóm khách không tồn tại: ',
     ],
     'min_order_subtotal_rule' => [
+        'buy_more' => 'Mua thêm :amount để dùng ưu đãi.',
         'min_subtotal_must_positive_number' => 'Cần khai báo "min_subtotal" là số dương.',
         'minimum_order_value' => 'Giá trị đơn tối thiểu',
     ],
     'min_quantity_rule' => [
+        'buy_more' => 'Mua thêm :count sản phẩm để dùng ưu đãi.',
         'min_quantity_must_positive_integer' => 'Cần khai báo "min_quantity" là số nguyên dương.',
         'minimum_product_quantity' => 'Số lượng sản phẩm tối thiểu',
+    ],
+    'in_products_rule' => [
+        'product' => 'Thuộc sản phẩm',
+        'product_ids_required' => 'Chọn ít nhất một sản phẩm (product_ids).',
+    ],
+    'in_categories_rule' => [
+        'category' => 'Thuộc danh mục',
+        'category_ids_required' => 'Chọn ít nhất một danh mục (category_ids).',
+    ],
+    'exclude_on_sale_rule' => [
+        'exclude_on_sale' => 'Không áp cho hàng đang giảm giá',
     ],
 ];

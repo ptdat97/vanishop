@@ -6,13 +6,17 @@ namespace Plugin\PromotionRules\Domain\Rules;
 
 use Modules\Promotion\Contracts\CartContentRule;
 use Modules\Promotion\Contracts\Data\Eligibility;
+use Modules\Promotion\Contracts\Data\Ineligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
+use Modules\Promotion\Contracts\ExplainsIneligibility;
+use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\MoneyFormatter;
 
 /**
  * Rule: giá trị giỏ hàng (tổng tiền các dòng ứng viên) phải đạt tối thiểu min_subtotal.
  * Cấu hình: {"min_subtotal": 500000}
  */
-final class MinOrderSubtotalRule implements CartContentRule
+final class MinOrderSubtotalRule implements CartContentRule, ExplainsIneligibility
 {
     public const TYPE = 'min_order_subtotal';
 
@@ -36,6 +40,17 @@ final class MinOrderSubtotalRule implements CartContentRule
         return [];
     }
 
+    public function explain(PromotionContext $context, array $config, Eligibility $candidates): ?Ineligibility
+    {
+        $shortfall = (int) ($config['min_subtotal'] ?? 0) - $this->candidateSubtotal($context, $candidates);
+        if ($shortfall <= 0) {
+            return null;
+        }
+        $money = Money::of($shortfall, $context->currencyCode);
+
+        return new Ineligibility(__('vani-promotion-rules::texts.min_order_subtotal_rule.buy_more', ['amount' => app(MoneyFormatter::class)->format($money)]), $money);
+    }
+
     public function evaluate(PromotionContext $context, array $config, Eligibility $candidates): Eligibility
     {
         $threshold = (int) ($config['min_subtotal'] ?? 0);
@@ -43,14 +58,16 @@ final class MinOrderSubtotalRule implements CartContentRule
             return $candidates;
         }
 
-        $candidateSubtotal = 0;
+        return $this->candidateSubtotal($context, $candidates) >= $threshold ? $candidates : Eligibility::none();
+    }
+
+    private function candidateSubtotal(PromotionContext $context, Eligibility $candidates): int
+    {
+        $subtotal = 0;
         foreach ($candidates->keys as $key) {
-            $line = $context->line($key);
-            if ($line !== null) {
-                $candidateSubtotal += $line->subtotal->amount;
-            }
+            $subtotal += $context->line($key)?->subtotal->amount ?? 0;
         }
 
-        return $candidateSubtotal >= $threshold ? $candidates : Eligibility::none();
+        return $subtotal;
     }
 }

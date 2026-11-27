@@ -2,6 +2,8 @@
 
 use Modules\Catalog\Contracts\CollectionDirectory;
 use Modules\Catalog\Persistence\Models\Brand;
+use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Customer\Application\CustomerSegmentService;
 use Modules\Customer\Contracts\Customers;
 use Modules\Customer\Persistence\Models\Customer;
@@ -17,10 +19,13 @@ use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
 use Plugin\PromotionRules\Domain\Rules\CustomerHasTagsRule;
+use Plugin\PromotionRules\Domain\Rules\ExcludeOnSaleRule;
 use Plugin\PromotionRules\Domain\Rules\FirstOrderOnlyRule;
 use Plugin\PromotionRules\Domain\Rules\InBrandsRule;
+use Plugin\PromotionRules\Domain\Rules\InCategoriesRule;
 use Plugin\PromotionRules\Domain\Rules\InCollectionsRule;
 use Plugin\PromotionRules\Domain\Rules\InCustomerGroupsRule;
+use Plugin\PromotionRules\Domain\Rules\InProductsRule;
 use Plugin\PromotionRules\Domain\Rules\MinOrderSubtotalRule;
 use Plugin\PromotionRules\Domain\Rules\MinQuantityRule;
 use Plugin\PromotionRules\PromotionRulesServiceProvider;
@@ -188,6 +193,39 @@ it('InCustomerGroupsRule / CustomerHasTagsRule: nhắm theo nhóm khách và tag
         ->and($tags->evaluate(makeContext($lines, null), ['tags' => ['kol']], $all)->keys)->toBe([]);
 });
 
+it('InProductsRule / ExcludeOnSaleRule: lọc theo sản phẩm; bỏ dòng đang bán dưới giá gốc', function () {
+    $sale = new PromotionLine(3, null, 30, 1, Money::vnd(150_000), Money::vnd(150_000), compareAt: Money::vnd(200_000));
+    $lines = [makeLine(1, null, 10, 1, 100_000), makeLine(2, null, 20, 2, 50_000), $sale];
+    $all = new Eligibility([1, 2, 3]);
+
+    expect(app(InProductsRule::class)->evaluate(makeContext($lines), ['product_ids' => [20, 30]], $all)->keys)->toBe([2, 3])
+        ->and(app(ExcludeOnSaleRule::class)->evaluate(makeContext($lines), [], $all)->keys)->toBe([1, 2]);
+});
+
+it('InCategoriesRule: dòng thuộc danh mục chỉ định hoặc danh mục con', function () {
+    [$dresses, $party, $bags] = T::seed(function () {
+        $dresses = Category::factory()->create(['slug' => 'dam']);
+
+        return [$dresses, Category::factory()->create(['slug' => 'dam-tiec', 'parent_id' => $dresses->id]), Category::factory()->create(['slug' => 'tui'])];
+    });
+    $dress = T::product(null, ['product_code' => 'DAM01', 'category_ids' => [$party->id], 'primary_category_id' => $party->id]);
+    $bag = T::product(null, ['product_code' => 'TUI01', 'category_ids' => [$bags->id], 'primary_category_id' => $bags->id]);
+    $lines = [makeLine(1, null, $dress->id, 1, 100_000), makeLine(2, null, $bag->id, 1, 100_000)];
+
+    expect(app(InCategoriesRule::class)->evaluate(makeContext($lines), ['category_ids' => [$dresses->id]], new Eligibility([1, 2]))->keys)->toBe([1]);
+});
+
+it('MinOrderSubtotalRule / MinQuantityRule giải thích phần còn thiếu trên các dòng đang xét', function () {
+    installPromotionRules();
+    $lines = [makeLine(1, null, 10, 1, 300_000), makeLine(2, null, 20, 1, 100_000)];
+    $subtotal = (new MinOrderSubtotalRule)->explain(makeContext($lines), ['min_subtotal' => 500_000], new Eligibility([1]));
+
+    expect($subtotal?->shortfall?->amount)->toBe(200_000)
+        ->and($subtotal?->message)->toContain('200.000')
+        ->and((new MinOrderSubtotalRule)->explain(makeContext($lines), ['min_subtotal' => 300_000], new Eligibility([1])))->toBeNull()
+        ->and((new MinQuantityRule)->explain(makeContext($lines), ['min_quantity' => 3], new Eligibility([1, 2]))?->message)->toBe('Mua thêm 1 sản phẩm để dùng ưu đãi.');
+});
+
 it('tích hợp: plugin đăng ký rule vào PromotionRegistry chỉ khi được bật', function () {
     $types = function (): array {
         app(PluginActivation::class)->flush();
@@ -199,5 +237,5 @@ it('tích hợp: plugin đăng ký rule vào PromotionRegistry chỉ khi đượ
     expect($types())->not->toContain('min_order_subtotal', 'min_quantity', 'in_collections', 'first_order_only', 'in_brands');
 
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->enable('vani.promotion-rules'));
-    expect($types())->toContain('min_order_subtotal', 'min_quantity', 'in_collections', 'first_order_only', 'in_brands');
+    expect($types())->toContain('min_order_subtotal', 'min_quantity', 'in_collections', 'first_order_only', 'in_brands', 'in_products', 'in_categories', 'exclude_on_sale');
 });

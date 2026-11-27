@@ -28,11 +28,24 @@ return [
         'customer_group_not_found' => 'Customer group not found:',
     ],
     'min_order_subtotal_rule' => [
+        'buy_more' => 'Add :amount more to use this offer.',
         'min_subtotal_must_positive_number' => '"min_subtotal" must be a positive number.',
         'minimum_order_value' => 'Minimum order value',
     ],
     'min_quantity_rule' => [
+        'buy_more' => 'Add :count more items to use this offer.',
         'min_quantity_must_positive_integer' => '"min_quantity" must be a positive integer.',
         'minimum_product_quantity' => 'Minimum product quantity',
+    ],
+    'in_products_rule' => [
+        'product' => 'In products',
+        'product_ids_required' => 'Choose at least one product (product_ids).',
+    ],
+    'in_categories_rule' => [
+        'category' => 'In categories',
+        'category_ids_required' => 'Choose at least one category (category_ids).',
+    ],
+    'exclude_on_sale_rule' => [
+        'exclude_on_sale' => 'Exclude items already on sale',
     ],
 ];

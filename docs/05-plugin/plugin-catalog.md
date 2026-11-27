@@ -29,7 +29,7 @@ Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Co
 
 | Plugin | Thư mục | Contract | Chứng minh được |
 |---|---|---|---|
-| `vani.promotion-rules` | `custom/plugin/PromotionRules` | `PromotionRule` (tag `PromotionRule::TAG`) | Rule nghiệp vụ cắm vào engine của Core: `min_order_subtotal`, `min_quantity`, `in_collections` (qua `CollectionDirectory`), `first_order_only` (qua `OrderReader`) |
+| `vani.promotion-rules` | `custom/plugin/PromotionRules` | `PromotionRule` (tag `PromotionRule::TAG`) | Rule nghiệp vụ cắm vào engine của Core: `min_order_subtotal`, `min_quantity`, `in_collections` (qua `CollectionDirectory`), `first_order_only` (qua `OrderReader`), `in_brands`, `in_customer_groups`, `customer_has_tags`; 0.5.0: `in_products`, `in_categories` (qua `CategoryDirectory`), `exclude_on_sale`, gợi ý "mua thêm" (`ExplainsIneligibility`) |
 | `vani.vietqr` | `custom/plugin/VietQr` | `PaymentGateway` (tag `PaymentGateway::TAG`) | Cổng QR động (payload QR theo số tiền/số đơn), IPN HMAC qua route chung `/api/payments/vietqr/callback` (`ReceivesCallbacks`; chỉ khả dụng khi có khoá ký `VIETQR_SECRET`), không hoàn qua cổng (hoàn tay/`RefundPayout`), cấu hình tài khoản theo pháp nhân |
 | `vani.zalo-zns` | `custom/plugin/ZaloZns` | `NotificationChannel` (`zns`) + `OtpSender` | ZNS theo template đã duyệt (tham số render từ biến), tự làm mới access token (refresh token xoay vòng), OTP ưu tiên ZNS rồi dự phòng SMS |
 
