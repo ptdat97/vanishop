@@ -76,7 +76,7 @@ Cửa hàng SME thường chạy một VPS, không có CDN. Làm sao để trang
 | Lô xoá lỗi giữa chừng | Tag gỡ khỏi hàng đợi chỉ sau khi áp dụng; lỗi ghi hàng đợi giữ trong bộ nhớ, báo lỗi |
 | Nhiều server, store `file` | `vani:production:check` cảnh báo |
 
-Chưa xử lý (chấp nhận): Octane chưa thử; tồn đổi hiện sau tối đa ~1 phút (giỏ/checkout vẫn kiểm tồn thật); ảnh đổi điểm lấy nét theo hạn bản cache.
+Chưa xử lý (chấp nhận): không hỗ trợ Octane — dự án không dùng Octane ([operations §2](../18-operations/operations.md)); bộ gom tag ghi hàng đợi khi request/lệnh/job kết thúc theo vòng đời PHP-FPM; tồn đổi hiện sau tối đa ~1 phút (giỏ/checkout vẫn kiểm tồn thật); ảnh đổi điểm lấy nét theo hạn bản cache.
 
 ## Ghi chú triển khai (0.5.101)
 

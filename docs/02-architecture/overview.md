@@ -48,7 +48,7 @@ Hệ thống ngoài kết nối theo hai cách ([integration-platform](../11-int
 
 ```mermaid
 flowchart LR
-    CDN[CDN + WAF] --> WEB[Web nodes<br/>PHP-FPM / Octane]
+    CDN[CDN + WAF] --> WEB[Web nodes<br/>PHP-FPM]
     WEB --> DB[(MySQL 8.4)]
     WEB --> R[(Redis<br/>cache · session · lock · queue)]
     WEB --> OBJ[(Object storage)]

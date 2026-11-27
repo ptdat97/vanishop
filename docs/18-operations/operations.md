@@ -19,7 +19,7 @@ Không bao giờ copy dữ liệu khách production xuống môi trường thấ
 flowchart TB
     U([Người dùng]) --> CDN[CDN + WAF<br/>cache trang public, ảnh]
     CDN --> LB[Load Balancer]
-    LB --> W1[Web node 1<br/>PHP-FPM / Octane]
+    LB --> W1[Web node 1<br/>PHP-FPM]
     LB --> W2[Web node N]
     W1 & W2 --> PG[(MySQL 8.4<br/>primary + replica)]
     W1 & W2 --> RD[(Redis<br/>cache, session, queue, lock)]
@@ -33,7 +33,7 @@ flowchart TB
 - Triển khai bằng container (Docker), hạ tầng mô tả bằng mã (Terraform/Ansible) để có thể đổi nhà cung cấp.
 - Backup khác vùng: 2 DC (Hà Nội ↔ TP.HCM).
 - Web node **stateless**; session/cache ở Redis; file ở object storage.
-- Cân nhắc **Laravel Octane** cho storefront API khi tải cao (sau khi đo đạc).
+- **Không dùng Laravel Octane** (Owner, 2026-11-27): web chạy Nginx + PHP-FPM, mỗi request một tiến trình sạch. Tải cao thì tăng web node, cache trang trong ứng dụng ([ADR-051](../19-adr/ADR-051-tagged-page-cache.md)) và CDN tuỳ chọn. Code vẫn giữ trạng thái theo request (scoped) đúng cho tiến trình phục vụ nhiều việc như queue worker, nhưng không thiết kế hay kiểm thử cho Octane.
 
 ## 3. Queue
 
