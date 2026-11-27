@@ -34,7 +34,8 @@ const t = (key, replace = {}) => Object.entries(replace).reduce((text, [name, va
  *   vani.cart.applyVoucher(code) · removeVoucher() · open(state?) · close()
  *   vani.auth.login(email, password) · logout()
  *   vani.search.suggest(q) · listing(url)        vani.request(method, url, data)
- * Sự kiện: `vani:cart` (detail = trạng thái giỏ), `vani:cart-updated` (thay đổi, 0.3.43), `vani:content-updated` (đã thay HTML).
+ * Sự kiện: `vani:session` (có thể nhiều lần), `vani:cart` (detail = trạng thái giỏ), `vani:cart-updated` (mỗi thay đổi đúng một
+ * lần, 0.3.43), `vani:content-updated` (đã thay HTML, detail.element). Hợp đồng đầy đủ: docs/14-storefront/storefront.md §5.
  */
 const urls = (() => {
     try {
