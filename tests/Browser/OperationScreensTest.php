@@ -2,7 +2,10 @@
 
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
-use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Application\Admin\AdminExtensions;
+use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Domain\Plugin\PluginStatus;
+use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -12,33 +15,33 @@ use Modules\Returns\Domain\ReturnStatus;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
-use Plugin\HelloWorld\HelloWorldServiceProvider;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 /*
-| EP v3 X1 trên trình duyệt thật: sáu màn vận hành mở cho plugin (vani.hello-world bật) — trang mở được, bộ lọc / công cụ
-| tải file của plugin hiện, không lỗi JS.
+| EP v3 X1 trên trình duyệt thật: màn vận hành mở cho plugin — công cụ tải file của plugin hiện và mở được, không lỗi JS.
+| Plugin thử `test.screens` (bản ghi plugin đang bật + công cụ đăng ký thẳng vào registry Admin), không cần plugin thật.
 */
 
 beforeEach(function () {
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
-        app(PluginManager::class)->install('vani.hello-world');
-        app(PluginManager::class)->enable('vani.hello-world');
-    });
-    app()->register(HelloWorldServiceProvider::class);
     ['s' => $this->s, 'm' => $this->m] = C::store(stock: 5);
-    $this->actingAs(T::staff(['admin.access', 'hello-world.view', 'fulfillment.view', 'returns.view', 'payments.view', 'promotion.view', 'inventory.view', 'inventory.adjust']), 'staff');
+    $this->actingAs(T::staff(['admin.access', 'fulfillment.view', 'returns.view', 'payments.view', 'promotion.view', 'inventory.view', 'inventory.adjust']), 'staff');
 });
 
-it('sáu màn vận hành hiện bộ lọc và công cụ của plugin, không lỗi JS', function (string $url) {
-    visit($url)->assertSee('Nhập đánh dấu Hello')->click('Nhập đánh dấu Hello')->assertSee('mỗi dòng một id ở cột đầu')->assertNoJavaScriptErrors();
+it('màn vận hành hiện công cụ nhập file của plugin và mở được hộp thoại, không lỗi JS', function (string $url, string $resource) {
+    PluginRecord::query()->create(['id' => 'test.screens', 'version' => '1.0.0', 'status' => PluginStatus::Enabled, 'installed_at' => now()]);
+    PluginActivation::forgetCache();
+    app(PluginActivation::class)->flush();
+    app(AdminExtensions::class)->tool($resource, 'test.screens', 'import_flags', 'Nhập đánh dấu thử', 'admin.access',
+        handle: fn (): string => 'Đã nhập.', help: 'File .csv/.xlsx: mỗi dòng một id ở cột đầu.');
+
+    visit($url)->assertSee('Nhập đánh dấu thử')->click('Nhập đánh dấu thử')->assertSee('mỗi dòng một id ở cột đầu')->assertNoJavaScriptErrors();
 })->with([
-    'vận đơn' => '/admin/fulfillment/shipments',
-    'đổi trả' => '/admin/returns/returns',
-    'thanh toán' => '/admin/payment/payments',
-    'khuyến mãi' => '/admin/promotion/promotions',
-    'tồn kho' => '/admin/inventory/stock',
+    'vận đơn' => ['/admin/fulfillment/shipments', 'shipment'],
+    'đổi trả' => ['/admin/returns/returns', 'return'],
+    'thanh toán' => ['/admin/payment/payments', 'payment'],
+    'khuyến mãi' => ['/admin/promotion/promotions', 'promotion'],
+    'tồn kho' => ['/admin/inventory/stock', 'stock'],
 ]);
 
 it('chọn hai dòng đối soát rồi đánh dấu cả hai bằng một ghi chú', function () {
