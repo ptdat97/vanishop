@@ -1,4 +1,4 @@
-Extension API 1.52.0
+Extension API 1.53.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -821,7 +821,15 @@ interface Modules\Pricing\Contracts\BulkPriceMode [experimental]
 class Modules\Pricing\Contracts\Data\ManagedPriceList
   const TYPE_SALE = 'sale'
   const TYPE_MEMBER = 'member'
-  __construct(string $name, string $type, bool $active, array $prices, int $priority = 10, ?int $customerGroupId = NULL, ?int $startsAt = NULL, ?int $endsAt = NULL, ?string $editRoute = NULL, ?Modules\Shared\Domain\Schedule\WeeklySchedule $recurrence = NULL)
+  __construct(string $name, string $type, bool $active, array $prices, int $priority = 10, ?int $customerGroupId = NULL, ?int $startsAt = NULL, ?int $endsAt = NULL, ?string $editRoute = NULL, ?Modules\Shared\Domain\Schedule\WeeklySchedule $recurrence = NULL, ?array $quotas = NULL)
+class Modules\Pricing\Contracts\Data\PriceQuotaRule
+  const SCOPE_LIST = 'list'
+  const SCOPE_PRODUCT = 'product'
+  const SCOPE_VARIANT = 'variant'
+  __construct(string $scope, int $scopeId, ?int $limit, ?int $perCustomerLimit = NULL)
+class Modules\Pricing\Contracts\Data\PriceQuotaStatus
+  __construct(string $scope, int $scopeId, ?int $limit, int $sold, ?int $perCustomerLimit)
+  remaining(): ?int
 class Modules\Pricing\Contracts\Data\PricingContext
   __construct(int $now, ?int $customerGroupId = NULL, ?int $customerId = NULL)
 class Modules\Pricing\Contracts\Data\ResolvedPrice
@@ -830,6 +838,13 @@ interface Modules\Pricing\Contracts\ManagedPriceLists
   sync(string $owner, string $key, Modules\Pricing\Contracts\Data\ManagedPriceList $list): int
   remove(string $owner, string $key): void
   lists(string $owner): array
+interface Modules\Pricing\Contracts\PriceQuotas
+  define(int $priceListId, array $rules): void
+  status(int $priceListId): array
+  check(array $lines, ?int $customerId): array
+  consume(int $orderId, ?int $customerId, array $lines): void
+  revert(int $orderId): void
+  release(int $orderId, array $quantities): void
 interface Modules\Pricing\Contracts\PriceResolver
   forVariants(array $variantIds, Modules\Pricing\Contracts\Data\PricingContext $context): array
 interface Modules\Pricing\Contracts\PriceRounding [experimental]

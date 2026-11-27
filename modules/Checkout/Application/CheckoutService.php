@@ -38,6 +38,9 @@ use Modules\Ordering\Contracts\Data\PlacedOrder;
 use Modules\Ordering\Contracts\OrderWriter;
 use Modules\Payment\Contracts\Data\PaymentView;
 use Modules\Payment\Contracts\Payments;
+use Modules\Pricing\Contracts\Data\QuotaLine;
+use Modules\Pricing\Contracts\Data\QuotaViolation;
+use Modules\Pricing\Contracts\PriceQuotas;
 use Modules\Promotion\Contracts\Data\PromotionResult;
 use Modules\Promotion\Contracts\Data\VoucherRejection;
 use Modules\Promotion\Contracts\PromotionEngine;
@@ -77,6 +80,7 @@ final class CheckoutService implements Checkout, VoucherPreview
         private readonly ShippingAddresses $addresses,
         private readonly Metrics $metrics,
         private readonly Settings $settings,
+        private readonly PriceQuotas $quotas,
     ) {}
 
     public function quote(CheckoutRequest $request): CheckoutQuote
@@ -173,7 +177,7 @@ final class CheckoutService implements Checkout, VoucherPreview
                 $context = $this->context($cart, $request, $customerId);
                 $totals = $this->pipeline->run($context);
 
-                $this->validate($request, $totals, $cart->isCheckoutReady());
+                $this->validate($request, $totals, $cart->isCheckoutReady(), $this->quotaIssues($totals, $customerId));
                 if ($request->expectedTotal !== null && $request->expectedTotal !== $totals->grandTotal->amount) {
                     throw CheckoutRejected::totalsChanged($request->expectedTotal, $totals->grandTotal->amount, $totals->currencyCode);
                 }
@@ -192,6 +196,8 @@ final class CheckoutService implements Checkout, VoucherPreview
                 $placed = $this->orders->create($this->draft($publicId, $reservationKey, $cart, $request, $totals, $customerId, $this->orderMeta($request, $totals)));
                 $payment = $this->paymentService->createForOrder($placed, (string) $request->paymentMethod, $request->clientIp);
                 $this->promotions->recordUsage($placed->id, $customerId, $totals->currencyCode, $totals->promotions ?? new PromotionResult([], []));
+                // Suất giá (0.5.117): trừ bằng UPDATE có điều kiện; vừa hết suất → PriceQuotaExceeded, đơn rollback.
+                $this->quotas->consume($placed->id, $customerId, $this->quotaLines($totals));
                 Hook::action('vani.order.after_create', $placed);
                 // Dòng đã vào đơn rời giỏ; dòng chưa chọn ở lại (giỏ chỉ đóng khi hết dòng).
                 $this->carts->markOrdered($request->cart, $publicId, array_map(fn (CartLineView $line): int => $line->id, $cart->selectedLines()));
@@ -308,9 +314,12 @@ final class CheckoutService implements Checkout, VoucherPreview
         return array_map(fn (int $variantId, int $quantity): ReservationLine => new ReservationLine($variantId, $quantity), array_keys($quantities), $quantities);
     }
 
-    private function validate(CheckoutRequest $request, Totals $totals, bool $cartReady): void
+    /**
+     * @param  list<CheckoutIssue>  $extraIssues
+     */
+    private function validate(CheckoutRequest $request, Totals $totals, bool $cartReady, array $extraIssues = []): void
     {
-        $issues = array_map(fn (mixed $message): CheckoutIssue => new CheckoutIssue('rule', (string) $message), Hook::collect('vani.checkout.before_validate', $request));
+        $issues = [...$extraIssues, ...array_map(fn (mixed $message): CheckoutIssue => new CheckoutIssue('rule', (string) $message), Hook::collect('vani.checkout.before_validate', $request))];
 
         foreach ($this->extensions->tagged(CheckoutValidator::TAG) as $validator) {
             if ($validator instanceof CheckoutValidator) {
@@ -326,6 +335,25 @@ final class CheckoutService implements Checkout, VoucherPreview
         // Mã giảm giá không dùng được không chặn đặt hàng (ADR-044 §6, mọi kênh): mã bị từ chối vốn không được tính vào tổng,
         // nên đơn đặt theo tổng không có mã đó; mã bị bỏ trả về trong `dropped_vouchers`. Nếu khách đã thấy tổng CÓ giảm
         // (mã hết lượt sau khi xem) thì `expected_total` lệch → `checkout.totals_changed`: không bao giờ tính hơn số khách thấy.
+    }
+
+    /**
+     * Giỏ vượt suất giá ưu đãi / giới hạn mỗi khách (flash sale) → chặn đặt đơn, báo số tối đa còn mua được (0.5.117).
+     *
+     * @return list<CheckoutIssue>
+     */
+    private function quotaIssues(Totals $totals, ?int $customerId): array
+    {
+        return array_map(fn (QuotaViolation $violation): CheckoutIssue => new CheckoutIssue('price_quota', $violation->message),
+            $this->quotas->check($this->quotaLines($totals), $customerId));
+    }
+
+    /**
+     * @return list<QuotaLine>
+     */
+    private function quotaLines(Totals $totals): array
+    {
+        return array_map(fn (TotalsLine $line): QuotaLine => new QuotaLine($line->variantId, $line->productId, $line->quantity, $line->priceListCode), $totals->lines);
     }
 
     /**

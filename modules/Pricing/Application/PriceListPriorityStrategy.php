@@ -22,6 +22,8 @@ use Modules\Shared\Support\StoreClock;
  */
 final class PriceListPriorityStrategy implements PricingStrategy
 {
+    public function __construct(private readonly PriceQuotaService $quotas) {}
+
     public function code(): string
     {
         return 'price_list_priority';
@@ -55,6 +57,18 @@ final class PriceListPriorityStrategy implements PricingStrategy
 
             return $inWindow[$row->list_id] ??= (WeeklySchedule::fromArray(json_decode((string) $row->recurrence, true))?->isOpenAt($context->now, StoreClock::zone()) ?? true);
         });
+
+        // Suất giá (0.5.117): hết suất hoặc khách đã dùng hết lượt → mức giá không tham gia (giá về giá thường).
+        $variantsByList = [];
+        foreach ($rows as $row) {
+            if ((string) $row->type !== PriceListType::Base->value) {
+                $variantsByList[(int) $row->list_id][] = (int) $row->variant_id;
+            }
+        }
+        $exhausted = $this->quotas->exhausted($variantsByList, $context->customerId);
+        if ($exhausted !== []) {
+            $rows = $rows->reject(fn (object $row): bool => isset($exhausted[$row->list_id.':'.$row->variant_id]));
+        }
 
         $resolved = [];
         foreach ($rows->groupBy('variant_id') as $variantId => $group) {

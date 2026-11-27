@@ -6,14 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.116',
+    'version' => '0.5.117',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
     | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
     | requires.extension_api.
     */
-    'extension_api' => '1.52.0',
+    'extension_api' => '1.53.0',
 
     /*
     | Kết nối đọc cho thống kê/báo cáo (OrderStatistics, plugin Reports) — db-refactor G3. Đặt DB_REPORT_CONNECTION=mysql_report

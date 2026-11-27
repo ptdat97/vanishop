@@ -33,4 +33,8 @@ return [
     'amount_invalid' => 'Invalid price.',
     'below_discount_cap' => 'The price is below the maximum discount of :percent% from the list price.',
     'managed_read_only' => 'This price list is managed by a plugin — edit it on the plugin screen.',
+    'quota_exceeded' => 'The deal price just sold out — please review your cart.',
+    'quota_invalid' => 'Invalid price quota.',
+    'quota_customer_limit' => 'Each customer can buy at most :limit items at the deal price — you can still buy :allowed.',
+    'quota_sold_out' => 'Only :allowed left at the deal price — please reduce the quantity.',
 ];

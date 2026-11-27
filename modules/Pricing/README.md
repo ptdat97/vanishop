@@ -18,6 +18,9 @@ Bảng giá niêm yết/sale/thành viên theo lịch và ưu tiên, áp giá h�
 - `prices`
 - `price_history`
 - `price_variant_index`
+- `price_quotas`
+- `price_quota_customers`
+- `price_quota_usages`
 
 ## Contract công bố
 
@@ -28,6 +31,8 @@ Bảng giá niêm yết/sale/thành viên theo lịch và ưu tiên, áp giá h�
 | `ManagedPriceLists` | interface | plugin (0.5.115) |
 | `PriceImporter` | interface | giữa module |
 | `PriceListSchedule` | interface | giữa module |
+| `PriceQuotaExceeded` | class | plugin (0.5.117) |
+| `PriceQuotas` | interface | plugin (0.5.117) |
 | `PriceResolver` | interface | giữa module |
 | `PriceRounding` | interface | tag `vani.pricing.roundings`, plugin (experimental) |
 | `PricingStrategy` | interface | tag `vani.pricing.strategies`, plugin |

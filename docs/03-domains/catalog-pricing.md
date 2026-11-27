@@ -146,3 +146,10 @@ Core dùng strategy được cấu hình cho cửa hàng; giá trả về vẫn 
 
 - Import Excel theo mẫu (sản phẩm, variant, giá, thuộc tính), chạy qua queue, có **dry-run** báo lỗi từng dòng.
 - Export feed: Google Merchant, Meta Catalog, TikTok Catalog (trường `brand` lấy từ brand catalog).
+
+## Bảng giá do plugin quản lý, lịch lặp, suất giá (0.5.115–0.5.117)
+
+- **`ManagedPriceLists`**: plugin (vd. `vani.pricing-campaign`) đồng bộ bảng giá sale/thành viên của mình; Admin → Bảng giá chỉ xem, liên kết sang plugin; giá thấp hơn trần giảm bị từ chối.
+- **Lịch lặp theo tuần** (`WeeklySchedule`, `price_lists.recurrence`): bảng giá chỉ tham gia giải giá trong khung; trạng thái "Ngoài khung giờ"; cache trang hết hạn đúng mốc mở/đóng.
+- **Suất giá** (`PriceQuotas`): suất tổng và giới hạn mỗi khách theo cả bảng / sản phẩm / variant. Hết suất → giá về giá thường; vượt giới hạn → chặn ở checkout kèm số còn mua được; trừ suất trong transaction đặt hàng, huỷ đơn hoàn lại.
+

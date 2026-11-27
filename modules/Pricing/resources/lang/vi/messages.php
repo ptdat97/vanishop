@@ -33,4 +33,8 @@ return [
     'amount_invalid' => 'Giá không hợp lệ.',
     'below_discount_cap' => 'Giá thấp hơn mức giảm tối đa :percent% so với giá niêm yết.',
     'managed_read_only' => 'Bảng giá này do plugin quản lý — sửa ở màn hình của plugin.',
+    'quota_exceeded' => 'Vừa hết suất giá ưu đãi — vui lòng xem lại giỏ hàng.',
+    'quota_invalid' => 'Suất giá không hợp lệ.',
+    'quota_customer_limit' => 'Mỗi khách tối đa :limit sản phẩm giá ưu đãi — bạn còn mua được :allowed.',
+    'quota_sold_out' => 'Chỉ còn :allowed suất giá ưu đãi — vui lòng giảm số lượng.',
 ];

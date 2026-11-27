@@ -6,6 +6,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.117 — 2026-11-28 · Extension API 1.53.0
+
+Đợt 3 B3 — suất giá (flash sale N suất, mỗi khách tối đa M):
+
+- Contract mới `Pricing\Contracts\PriceQuotas` (`define`, `status`, `check`, `consume`, `revert`, `release`) + DTO `PriceQuotaRule` (phạm vi `list` / `product` / `variant`, suất tổng, giới hạn mỗi khách), `PriceQuotaStatus`; `QuotaLine`, `QuotaViolation` (giữa module); lỗi `PriceQuotaExceeded` (`pricing.quota_exceeded`, 409).
+- Bảng `price_quotas`, `price_quota_customers`, `price_quota_usages`. Hết suất, hoặc khách đã mua đủ giới hạn → mức giá đó không tham gia giải giá (giá về giá thường).
+- Checkout: giỏ vượt suất còn lại / giới hạn mỗi khách → chặn đặt đơn (issue `price_quota`, câu báo số còn mua được); trừ suất bằng UPDATE có điều kiện trong transaction đặt hàng (vừa hết → rollback). Huỷ đơn hoàn suất, huỷ một phần hoàn theo số lượng (Pricing nghe `OrderCancelled`, `OrderLinesCancelled`).
+- `ManagedPriceList::$quotas` (null = giữ suất hiện có): `ManagedPriceLists::sync` định nghĩa suất; suất cùng phạm vi giữ số đã bán.
+
 ## 0.5.116 — 2026-11-28 · Extension API 1.52.0
 
 Đợt 3 B2 — lịch lặp theo tuần (sale cuối tuần, khung giờ vàng):

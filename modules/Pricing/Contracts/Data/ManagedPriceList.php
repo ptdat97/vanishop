@@ -26,6 +26,7 @@ final readonly class ManagedPriceList
      * @param  int|null  $customerGroupId  bắt buộc với `member`
      * @param  string|null  $editRoute  route Admin của plugin để sửa, nhận một tham số là khoá của plugin
      * @param  WeeklySchedule|null  $recurrence  lịch lặp theo tuần (0.5.116) — sale cuối tuần, khung giờ vàng
+     * @param  list<PriceQuotaRule>|null  $quotas  suất giá (0.5.117); null = giữ suất hiện có, [] = bỏ hết
      */
     public function __construct(
         public string $name,
@@ -38,5 +39,6 @@ final readonly class ManagedPriceList
         public ?int $endsAt = null,
         public ?string $editRoute = null,
         public ?WeeklySchedule $recurrence = null,
+        public ?array $quotas = null,
     ) {}
 }

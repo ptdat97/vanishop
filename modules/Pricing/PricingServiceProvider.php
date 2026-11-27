@@ -16,9 +16,12 @@ use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
+use Modules\Ordering\Events\OrderCancelled;
+use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Pricing\Application\BasePriceImporter;
 use Modules\Pricing\Application\Listeners\CopyDuplicatedPrices;
 use Modules\Pricing\Application\Listeners\ProductListPrices;
+use Modules\Pricing\Application\Listeners\ReturnPriceQuotas;
 use Modules\Pricing\Application\Listeners\SyncListPrices;
 use Modules\Pricing\Application\Listeners\SyncPriceVariantIndex;
 use Modules\Pricing\Application\ManagedPriceListService;
@@ -26,6 +29,7 @@ use Modules\Pricing\Application\NoCustomerGroups;
 use Modules\Pricing\Application\PricedVariants;
 use Modules\Pricing\Application\PriceListPriorityStrategy;
 use Modules\Pricing\Application\PriceListScheduler;
+use Modules\Pricing\Application\PriceQuotaService;
 use Modules\Pricing\Application\StrategyPriceResolver;
 use Modules\Pricing\Application\VariantPriceFields;
 use Modules\Pricing\Console\SyncListPricesCommand;
@@ -34,6 +38,7 @@ use Modules\Pricing\Contracts\Data\DiscountCap;
 use Modules\Pricing\Contracts\ManagedPriceLists;
 use Modules\Pricing\Contracts\PriceImporter;
 use Modules\Pricing\Contracts\PriceListSchedule;
+use Modules\Pricing\Contracts\PriceQuotas;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Pricing\Contracts\PricingStrategy;
 use Modules\Pricing\Events\PriceChanged;
@@ -62,6 +67,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
         $this->app->bind(PriceImporter::class, BasePriceImporter::class);
         $this->app->bind(PriceListSchedule::class, PriceListScheduler::class);
         $this->app->bind(ManagedPriceLists::class, ManagedPriceListService::class);
+        $this->app->bind(PriceQuotas::class, PriceQuotaService::class);
         $this->app->bindIf(CustomerGroupDirectory::class, NoCustomerGroups::class); // module Customer ghi đè
         $this->app->bind(PriceResolver::class, fn ($app): StrategyPriceResolver => new StrategyPriceResolver(
             $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.pricing.strategy', 'price_list_priority'), $app->make(CustomerGroupDirectory::class),
@@ -94,6 +100,8 @@ final class PricingServiceProvider extends ModuleServiceProvider
         Event::listen(PriceChanged::class, SyncListPrices::class);
         Event::listen(ProductDuplicated::class, CopyDuplicatedPrices::class);
         Event::listen(ProductListingProjected::class, SyncPriceVariantIndex::class);
+        Event::listen(OrderCancelled::class, [ReturnPriceQuotas::class, 'cancelled']);
+        Event::listen(OrderLinesCancelled::class, [ReturnPriceQuotas::class, 'linesCancelled']);
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:pricing:sync-list-prices')->dailyAt('03:10')->withoutOverlapping()->onOneServer();
         });

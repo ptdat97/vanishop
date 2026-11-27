@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\Pricing\Contracts\Data\DiscountCap;
 use Modules\Pricing\Contracts\Data\ManagedPriceList;
 use Modules\Pricing\Contracts\ManagedPriceLists;
+use Modules\Pricing\Contracts\PriceQuotas;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceList;
@@ -21,6 +22,7 @@ final class ManagedPriceListService implements ManagedPriceLists
     public function __construct(
         private readonly PriceListService $lists,
         private readonly Settings $settings,
+        private readonly PriceQuotas $quotas,
     ) {}
 
     public function sync(string $owner, string $key, ManagedPriceList $list): int
@@ -65,6 +67,9 @@ final class ManagedPriceListService implements ManagedPriceLists
             }
             if ($rows !== []) {
                 $this->lists->setPrices($saved, $rows);
+            }
+            if ($list->quotas !== null) {
+                $this->quotas->define($saved->id, $list->quotas);
             }
 
             return $saved->id;
