@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.111
+Storefront API v1 — VaniShop 0.5.112
 GET /address/provinces security[]
   200
     $: object
@@ -894,6 +894,7 @@ PUT /carts/{cart}/vouchers security[cartToken,customerBearer,firstPartySession]
     $.meta.rejected_vouchers: array
     $.meta.rejected_vouchers[]: object
     $.meta.rejected_vouchers[].code: string
+    $.meta.rejected_vouchers[].message: string optional
     $.meta.rejected_vouchers[].reason: string
   403
     $: object closed
@@ -1101,6 +1102,7 @@ POST /checkout/{cart}/quote security[cartToken,customerBearer,firstPartySession]
     $.data.rejected_vouchers: array
     $.data.rejected_vouchers[]: object
     $.data.rejected_vouchers[].code: string
+    $.data.rejected_vouchers[].message: string optional
     $.data.rejected_vouchers[].reason: string
     $.data.shipping: object|null
     $.data.shipping.code: string

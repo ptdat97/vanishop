@@ -30,6 +30,10 @@
                             },
                             "reason": {
                                 "type": "string"
+                            },
+                            "message": {
+                                "type": "string",
+                                "description": "Câu cho khách (gợi ý của rule nếu có, 0.5.109)"
                             }
                         }
                     }
