@@ -57,6 +57,7 @@ Sản phẩm, SKU (variant) theo 1–3 trục tuỳ chọn, danh mục, bộ sư
 | `CatalogImporter` | interface | giữa module |
 | `CatalogLookup` | interface | plugin |
 | `CatalogReader` | interface | plugin |
+| `CategoryDirectory` | interface | plugin (0.5.110) |
 | `CollectionDirectory` | interface | plugin |
 | `ImageFormat` | interface | tag `catalog.image-format`, plugin |
 | `ImageSizeProvider` | interface | tag `vani.catalog.image_sizes`, plugin |

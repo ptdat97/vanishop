@@ -78,6 +78,8 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `ManagedPromotions` | Plugin đồng bộ nội dung của mình thành khuyến mãi của Core (`sync`/`remove`/`ids` theo plugin + khoá): dùng chung lịch, ngân sách, lượt dùng, báo cáo; Admin Khuyến mãi chỉ xem, có liên kết sang màn hình plugin. **Implemented** (tham chiếu `vani.bundles`) | Promotion |
 | `Vouchers` | Tạo/đọc voucher của khuyến mãi: mã cụ thể, sinh hàng loạt, mã riêng gán khách (`customerId`), theo khách, bật/tắt, gỡ. **Implemented** (0.5.109) | Promotion |
 | `VoucherPreview` | Tính thử từng mã một mình trên giỏ (giảm của mã, tổng giảm, lý do từ chối) — ví voucher, chọn mã tốt nhất; không đổi mã của giỏ. **Implemented** (0.5.109) | Checkout |
+| `CategoryDirectory` | Danh mục của product kèm danh mục cha (`idsForProducts`). **Implemented** (0.5.110) | Catalog |
+| `CustomerDirectory` | Tìm khách đang hoạt động, thông tin ngắn theo id, id khách theo nhóm/tag theo lô. **Implemented** (0.5.110) | Customer |
 | `Checkout` | `quote`, `placeOrder` (idempotent). **Implemented** | Checkout |
 | `ShippingAddresses` | Địa chỉ giao hàng theo danh mục địa giới đang dùng (`directory()`, `normalize()`): cùng quy tắc cho checkout, sổ địa chỉ khách, Admin sửa địa chỉ đơn. **Implemented** (0.3.13) | Checkout |
 | `OrderWriter` | Tạo đơn từ bản nháp đã tính (trong transaction PlaceOrder). **Implemented** | Ordering |

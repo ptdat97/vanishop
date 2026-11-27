@@ -6,6 +6,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.110 — 2026-11-27 · Extension API 1.47.0
+
+Hai contract đọc cho `vani.coupon-code` (Owner duyệt 2026-11-27). Không đổi hành vi hiện có.
+
+- `Catalog\Contracts\CategoryDirectory::idsForProducts(productIds)` — id danh mục của từng product kèm mọi danh mục cha, một truy vấn cho cả giỏ (rule `in_categories` của `vani.promotion-rules`).
+- `Customer\Contracts\CustomerDirectory` — `search(query)` (SĐT chuẩn hoá / email / tên, khách đang hoạt động), `summaries(ids)`, `customerIds(groupId?, tag?, afterId, limit)` theo lô keyset (phát mã riêng cho nhóm/tag) + DTO `CustomerSummary`.
+
 ## 0.5.109 — 2026-11-27 · Extension API 1.46.0
 
 Nâng Promotion cho mã giảm giá của plugin (`vani.coupon-code`, [đặc tả](../05-plugin/specs/coupon-code.md)). **Đổi hành vi:** trần giảm (Cài đặt → Bán hàng & thuế, VN 50%) tính theo **giá gốc** của dòng — dòng đang bán giá sale/thành viên (có giá gạch) đã dùng một phần trần, khuyến mãi chỉ giảm thêm tới trần (trước: tính trên giá đang bán, flash sale −50% + mã −50% = −75%).

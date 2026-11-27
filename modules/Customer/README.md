@@ -33,6 +33,7 @@ Tài khoản khách hợp nhất (email là cách đăng nhập mặc định: �
 | `AuthProvider` | interface | tag `vani.customer.auth_providers`, plugin |
 | `AuthProviderFailed` | class | plugin |
 | `CustomerAccounts` | interface | giữa module |
+| `CustomerDirectory` | interface | plugin (0.5.110) |
 | `CustomerNotes` | interface | plugin (experimental) |
 | `CustomerRejected` | class | giữa module |
 | `CustomerSegments` | interface | plugin |

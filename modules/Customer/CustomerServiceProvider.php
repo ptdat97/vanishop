@@ -13,6 +13,7 @@ use Modules\Customer\Application\AccountEmails;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerAccountService;
+use Modules\Customer\Application\CustomerDirectoryService;
 use Modules\Customer\Application\CustomerNoteService;
 use Modules\Customer\Application\CustomerSegmentService;
 use Modules\Customer\Application\CustomerService;
@@ -25,6 +26,7 @@ use Modules\Customer\Application\OtpSenders\LogOtpSender;
 use Modules\Customer\Application\OtpService;
 use Modules\Customer\Application\PhoneOtpLoginService;
 use Modules\Customer\Contracts\CustomerAccounts;
+use Modules\Customer\Contracts\CustomerDirectory;
 use Modules\Customer\Contracts\CustomerNotes;
 use Modules\Customer\Contracts\Customers;
 use Modules\Customer\Contracts\CustomerSegments;
@@ -61,6 +63,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(Customers::class, CustomerService::class);
+        $this->app->bind(CustomerDirectory::class, CustomerDirectoryService::class);
         // Màn hình Admin của module mở cho plugin thêm form/cột/lọc/thao tác/tab (ADR-030).
         $this->app->make(AdminScreen::class)->declareResource('customer');
         // Phân khúc khách: một instance mỗi request (cache nhóm khách khi tính giá nhiều lần).
