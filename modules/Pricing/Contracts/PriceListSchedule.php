@@ -21,6 +21,14 @@ interface PriceListSchedule
     public function schedulable(): array;
 
     /**
+     * Bảng giá theo id (0.5.118) — mã và plugin quản lý (null = Admin).
+     *
+     * @param  list<int>  $ids
+     * @return array<int, array{id: int, code: string, managed_by: ?string}>
+     */
+    public function describe(array $ids): array;
+
+    /**
      * Đặt khung giờ + lịch lặp theo tuần (0.5.116, null = không lặp) + bật/tắt. Ghi audit, phát PriceChanged.
      *
      * @throws \InvalidArgumentException bảng giá không tồn tại hoặc là `base`

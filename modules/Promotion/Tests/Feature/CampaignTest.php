@@ -1,13 +1,19 @@
 <?php
 
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Pricing\Contracts\Data\ManagedPriceList;
 use Modules\Pricing\Contracts\Data\PricingContext;
+use Modules\Pricing\Contracts\ManagedPriceLists;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
+use Modules\Promotion\Contracts\Campaigns;
+use Modules\Promotion\Contracts\Data\ManagedCampaign;
 use Modules\Promotion\Persistence\Models\Campaign;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -117,4 +123,31 @@ it('lịch lặp cuối tuần của campaign ghi xuống khuyến mãi và bả
 
     $this->put("{$this->base}/{$campaign->id}", [...($this->payload)(['recurrence' => [['days' => [9], 'from' => '00:00', 'to' => '00:00']]]), 'lock_version' => $campaign->fresh()->lock_version])
         ->assertSessionHasErrors('recurrence');
+});
+
+it('campaign do plugin quản lý: sync ghi lịch xuống bảng giá của plugin, báo cáo có mã bảng giá; Admin chỉ xem, sửa/kích hoạt/xoá bị chặn', function () {
+    Route::get('/admin/test-plugin/deals/{key}', fn () => 'ok')->name('test.deals.edit');
+    app('router')->getRoutes()->refreshNameLookups();
+    $listId = app(ManagedPriceLists::class)->sync('vani.pricing-campaign', '3', new ManagedPriceList(
+        'Flash sale', 'sale', true, [$this->s->id => 200_000],
+    ));
+    $campaigns = app(Campaigns::class);
+    $id = $campaigns->sync('vani.pricing-campaign', '3', new ManagedCampaign(
+        'Flash sale 12.12', 'active', now()->addDay()->getTimestamp(), now()->addDays(2)->getTimestamp(), priceListIds: [$listId], editRoute: 'test.deals.edit',
+    ));
+
+    expect(PriceList::query()->find($listId)->starts_at->getTimestamp())->toBe(now()->addDay()->getTimestamp())
+        ->and($campaigns->usage($id)?->priceListCodes)->toBe(['vani-pricing-campaign-3'])
+        ->and($campaigns->ids('vani.pricing-campaign'))->toBe([3 => $id])
+        // Bảng giá của plugin khác không gắn được.
+        ->and(fn () => $campaigns->sync('vani.khac', '1', new ManagedCampaign('X', 'active', now()->getTimestamp(), now()->addDay()->getTimestamp(), priceListIds: [$listId])))
+        ->toThrow(ValidationException::class);
+
+    $this->get("{$this->base}/{$id}/edit")->assertRedirect('/admin/test-plugin/deals/3');
+    $this->post("{$this->base}/{$id}/stop")->assertSessionHasErrors('campaign');
+    $this->delete("{$this->base}/{$id}")->assertSessionHasErrors('campaign');
+    $this->get($this->base)->assertInertia(fn (Assert $page) => $page->where('campaigns.0.managed', true)->where('campaigns.0.edit_url', url('/admin/test-plugin/deals/3')));
+
+    $campaigns->remove('vani.pricing-campaign', '3');
+    expect(Campaign::query()->whereKey($id)->exists())->toBeFalse();
 });

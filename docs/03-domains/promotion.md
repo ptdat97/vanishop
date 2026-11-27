@@ -123,6 +123,10 @@ Campaign gói **khuyến mãi + bảng giá sale/thành viên** chạy chung m�
 
 Khuyến mãi, bảng giá sale/thành viên và campaign có thêm **lịch lặp** (`WeeklySchedule`): tối đa 3 khung, mỗi khung là các ngày trong tuần + giờ bắt đầu/kết thúc theo giờ cửa hàng, luôn nằm trong khoảng bắt đầu–kết thúc của đối tượng. Ví dụ "Sale cuối tuần tháng 12" = 01/12–31/12 + khung T7, CN 00:00–00:00; "Giờ vàng" = khung mọi ngày 12:00–14:00. Campaign ghi lịch lặp xuống thành viên. Cache trang hết hạn ở mốc mở/đóng kế tiếp.
 
+## 5.4 Campaign do plugin quản lý (Implemented, 0.5.118)
+
+`Campaigns::sync(owner, key, ManagedCampaign)`: plugin (vd. `vani.pricing-campaign`) tạo campaign của mình, thành viên gồm bảng giá do plugin quản lý (`ManagedPriceLists`). Admin → Campaign hiện chỉ xem, liên kết sang plugin; báo cáo campaign dùng chung.
+
 ## 6. Ví dụ plugin rule
 
 ```php

@@ -1,4 +1,4 @@
-Extension API 1.53.0
+Extension API 1.54.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -864,6 +864,9 @@ class Modules\Pricing\Events\PriceChanged
   static broadcast(...$arguments)
 interface Modules\Promotion\Contracts\Campaigns [experimental]
   usage(int $campaignId): ?Modules\Promotion\Contracts\Data\CampaignUsage
+  sync(string $owner, string $key, Modules\Promotion\Contracts\Data\ManagedCampaign $campaign): int
+  remove(string $owner, string $key): void
+  ids(string $owner): array
 interface Modules\Promotion\Contracts\CartContentRule
 interface Modules\Promotion\Contracts\ContextualPromotionAction
   applyInContext(Modules\Promotion\Contracts\Data\PromotionContext $context, array $remaining, array $config): array
@@ -876,6 +879,13 @@ class Modules\Promotion\Contracts\Data\Eligibility
   intersect(self $other): self
 class Modules\Promotion\Contracts\Data\Ineligibility
   __construct(string $message, ?Modules\Shared\Domain\Money\Money $shortfall = NULL)
+class Modules\Promotion\Contracts\Data\ManagedCampaign [experimental]
+  const DRAFT = 'draft'
+  const ACTIVE = 'active'
+  const STOPPED = 'stopped'
+  __construct(string $name, string $status, int $startsAt, int $endsAt, array $priceListIds = array (
+), array $promotionIds = array (
+), ?Modules\Shared\Domain\Schedule\WeeklySchedule $recurrence = NULL, ?string $description = NULL, ?string $editRoute = NULL)
 class Modules\Promotion\Contracts\Data\ManagedPromotion
   __construct(string $name, bool $active, string $actionType, array $actionConfig, array $rules = array (
 ), ?int $startsAt = NULL, ?int $endsAt = NULL, int $priority = 100, bool $exclusive = false, ?int $usageLimit = NULL, ?int $budgetAmount = NULL, ?string $editRoute = NULL, bool $requiresVoucher = false, ?int $usageLimitPerCustomer = NULL, ?Modules\Shared\Domain\Schedule\WeeklySchedule $recurrence = NULL)

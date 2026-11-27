@@ -41,6 +41,8 @@ final class CampaignController
                 'ends_at' => StoreClock::format($campaign->ends_at),
                 'promotions_count' => (int) $campaign->getAttribute('promotions_count'),
                 'price_lists_count' => count($campaigns->priceListIds($campaign)),
+                'managed' => $campaign->isManaged(),
+                'edit_url' => $campaign->managedUrl() ?? route('admin.promotion.campaigns.edit', $campaign->id),
             ])->all(),
             'canManage' => Gate::allows('promotion.manage'),
         ]);
@@ -62,9 +64,13 @@ final class CampaignController
         return redirect()->route('admin.promotion.campaigns.edit', ['campaign' => $campaign->id])->with('success', __('promotion::messages.saved'));
     }
 
-    public function edit(Campaign $campaign, PriceListSchedule $priceLists, CampaignService $campaigns): Response
+    public function edit(Campaign $campaign, PriceListSchedule $priceLists, CampaignService $campaigns): Response|RedirectResponse
     {
         Gate::authorize('promotion.view');
+        // Do plugin quản lý: sửa ở màn hình của plugin; plugin tắt → form chỉ xem.
+        if ($campaign->isManaged() && $campaign->managedUrl() !== null) {
+            return redirect()->to((string) $campaign->managedUrl());
+        }
 
         return $this->form($campaign, $priceLists, $campaigns);
     }
@@ -120,7 +126,7 @@ final class CampaignController
             'extensions' => ['tabs' => $campaign === null ? [] : app(AdminScreen::class)->tabs('campaign', $campaign->id)],
             'promotions' => $this->queries->promotionsForCampaign($campaign?->id)->map(fn (Promotion $promotion): array => ['id' => $promotion->id, 'name' => $promotion->name, 'requires_voucher' => $promotion->requires_voucher])->all(),
             'priceLists' => $priceLists->schedulable(),
-            'can' => ['manage' => Gate::allows('promotion.manage'), 'price_lists' => Gate::allows('pricing.manage')],
+            'can' => ['manage' => Gate::allows('promotion.manage') && $campaign?->isManaged() !== true, 'price_lists' => Gate::allows('pricing.manage')],
         ]);
     }
 

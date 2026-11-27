@@ -6,11 +6,13 @@ namespace Modules\Promotion\Application;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Pricing\Contracts\PriceListSchedule;
 use Modules\Promotion\Contracts\Campaigns;
 use Modules\Promotion\Contracts\Data\CampaignUsage;
+use Modules\Promotion\Contracts\Data\ManagedCampaign;
 use Modules\Promotion\Persistence\Models\Campaign;
 use Modules\Promotion\Persistence\Models\Promotion;
 use Modules\Shared\Domain\Schedule\WeeklySchedule;
@@ -42,6 +44,7 @@ final class CampaignService implements Campaigns
         if ($endsAt->lte($startsAt)) {
             throw ValidationException::withMessages(['ends_at' => __('promotion::messages.campaign_window_invalid')]);
         }
+        $this->ensureNotManaged($campaign);
         if ($campaign?->status === Campaign::STOPPED) {
             throw ValidationException::withMessages(['campaign' => __('promotion::messages.campaign_stopped')]);
         }
@@ -87,6 +90,7 @@ final class CampaignService implements Campaigns
      */
     public function delete(Campaign $campaign): void
     {
+        $this->ensureNotManaged($campaign);
         if ($campaign->status !== Campaign::DRAFT) {
             throw ValidationException::withMessages(['campaign' => __('promotion::messages.campaign_not_draft')]);
         }
@@ -123,7 +127,7 @@ final class CampaignService implements Campaigns
             promotionOrderIds: (clone $usages)->distinct()->pluck('order_id')->map(fn ($id): int => (int) $id)->values()->all(),
             promotionDiscount: (int) (clone $usages)->sum('discount_amount'),
             usages: (clone $usages)->count(),
-            priceListCodes: array_values(array_map(fn (array $list): string => $list['code'], array_filter($this->priceLists->schedulable(), fn (array $list): bool => in_array($list['id'], $listIds, true)))),
+            priceListCodes: array_values(array_map(fn (array $list): string => $list['code'], $this->priceLists->describe($listIds))),
         );
     }
 
@@ -132,6 +136,7 @@ final class CampaignService implements Campaigns
      */
     private function transition(Campaign $campaign, string $to, array $from, string $reason): void
     {
+        $this->ensureNotManaged($campaign);
         DB::transaction(function () use ($campaign, $to, $from, $reason): void {
             $locked = Campaign::query()->whereKey($campaign->id)->lockForUpdate()->firstOrFail();
             if (! in_array($locked->status, $from, true)) {
@@ -173,12 +178,87 @@ final class CampaignService implements Campaigns
         Promotion::query()->whereKey($promotionIds)->update(['campaign_id' => $campaign->id]);
     }
 
+    public function sync(string $owner, string $key, ManagedCampaign $managed): int
+    {
+        if (! in_array($managed->status, [ManagedCampaign::DRAFT, ManagedCampaign::ACTIVE, ManagedCampaign::STOPPED], true)) {
+            throw ValidationException::withMessages(['status' => __('promotion::messages.campaign_transition_invalid')]);
+        }
+        if ($managed->endsAt <= $managed->startsAt) {
+            throw ValidationException::withMessages(['ends_at' => __('promotion::messages.campaign_window_invalid')]);
+        }
+
+        return DB::transaction(function () use ($owner, $key, $managed): int {
+            $campaign = Campaign::query()->where('managed_by', $owner)->where('managed_key', $key)->lockForUpdate()->first()
+                ?? new Campaign(['code' => $this->managedCode($owner, $key), 'managed_by' => $owner, 'managed_key' => $key]);
+            $campaign->fill([
+                'name' => $managed->name, 'description' => $managed->description, 'managed_route' => $managed->editRoute,
+                'starts_at' => Carbon::createFromTimestamp($managed->startsAt), 'ends_at' => Carbon::createFromTimestamp($managed->endsAt),
+                'recurrence' => $managed->recurrence?->toArray(), 'status' => $managed->status,
+                'stopped_at' => $managed->status === ManagedCampaign::STOPPED ? ($campaign->stopped_at ?? now()) : null,
+                'lock_version' => ($campaign->lock_version ?? 0) + 1,
+            ])->save();
+
+            $this->syncPromotions($campaign, $managed->promotionIds);
+            $this->syncPriceLists($campaign, $managed->priceListIds, $owner);
+            $this->apply($campaign, 'campaign_synced');
+            $this->audit->record($campaign->wasRecentlyCreated ? 'promotion.campaign.created' : 'promotion.campaign.updated', 'campaign', $campaign->id, ['code' => $campaign->code, 'owner' => $owner]);
+
+            return $campaign->id;
+        });
+    }
+
+    public function remove(string $owner, string $key): void
+    {
+        DB::transaction(function () use ($owner, $key): void {
+            $campaign = Campaign::query()->where('managed_by', $owner)->where('managed_key', $key)->lockForUpdate()->first();
+            if ($campaign === null) {
+                return;
+            }
+            Promotion::query()->where('campaign_id', $campaign->id)->update(['campaign_id' => null]);
+            $campaign->delete();
+            $this->audit->record('promotion.campaign.deleted', 'campaign', $campaign->id, ['code' => $campaign->code, 'owner' => $owner]);
+        });
+    }
+
+    public function ids(string $owner): array
+    {
+        return Campaign::query()->where('managed_by', $owner)->whereNotNull('managed_key')->pluck('id', 'managed_key')->map(fn ($id): int => (int) $id)->all();
+    }
+
+    /** Campaign của plugin (`sync`): chỉ plugin sửa, Admin chỉ xem. */
+    private function ensureNotManaged(?Campaign $campaign): void
+    {
+        if ($campaign?->isManaged() === true) {
+            throw ValidationException::withMessages(['campaign' => __('promotion::messages.campaign_managed')]);
+        }
+    }
+
+    private function managedCode(string $owner, string $key): string
+    {
+        $base = Str::limit(Str::slug(str_replace('.', '-', $owner).'-'.$key), 56, '');
+        $code = $base;
+        for ($suffix = 2; Campaign::query()->where('code', $code)->exists(); $suffix++) {
+            $code = "{$base}-{$suffix}";
+        }
+
+        return $code;
+    }
+
     /**
+     * Bảng giá thành viên: bảng giá sale/thành viên của Admin, hoặc của chính plugin quản lý campaign (`$owner`).
+     *
      * @param  list<int>  $priceListIds
      */
-    private function syncPriceLists(Campaign $campaign, array $priceListIds): void
+    private function syncPriceLists(Campaign $campaign, array $priceListIds, ?string $owner = null): void
     {
         $allowed = array_column($this->priceLists->schedulable(), 'id');
+        if ($owner !== null) {
+            foreach ($this->priceLists->describe($priceListIds) as $list) {
+                if ($list['managed_by'] === $owner) {
+                    $allowed[] = $list['id'];
+                }
+            }
+        }
         if (array_diff($priceListIds, $allowed) !== []) {
             throw ValidationException::withMessages(['price_list_ids' => __('promotion::messages.campaign_price_list_invalid')]);
         }

@@ -19,4 +19,5 @@ return [
     'campaign_price_list_invalid' => 'Chỉ gắn được bảng giá sale/member (không gắn bảng giá base).',
     'campaign_activated' => 'Đã kích hoạt campaign — khuyến mãi và bảng giá chạy theo lịch.',
     'campaign_stopped_now' => 'Đã dừng campaign — mọi khuyến mãi và bảng giá của campaign đã tắt.',
+    'campaign_managed' => 'Campaign này do plugin quản lý — sửa ở màn hình của plugin.',
 ];

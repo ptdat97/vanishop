@@ -26,6 +26,12 @@ final class PriceListScheduler implements PriceListSchedule
             ->map(fn (PriceList $list): array => ['id' => $list->id, 'code' => $list->code, 'name' => $list->name, 'type' => $list->type->value, 'status' => $list->status])->all();
     }
 
+    public function describe(array $ids): array
+    {
+        return PriceList::query()->whereKey($ids)->get(['id', 'code', 'managed_by'])
+            ->mapWithKeys(fn (PriceList $list): array => [$list->id => ['id' => $list->id, 'code' => $list->code, 'managed_by' => $list->managed_by]])->all();
+    }
+
     public function schedule(int $priceListId, ?DateTimeInterface $startsAt, ?DateTimeInterface $endsAt, bool $active, string $reason, ?WeeklySchedule $recurrence = null): void
     {
         DB::transaction(function () use ($priceListId, $startsAt, $endsAt, $active, $reason, $recurrence): void {

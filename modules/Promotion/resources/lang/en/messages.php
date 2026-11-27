@@ -19,4 +19,5 @@ return [
     'campaign_price_list_invalid' => 'Only sale/member price lists can be attached (not the base price list).',
     'campaign_activated' => 'Campaign activated — its promotions and price lists run on schedule.',
     'campaign_stopped_now' => 'Campaign stopped — all of its promotions and price lists are off.',
+    'campaign_managed' => 'This campaign is managed by a plugin — edit it on the plugin screen.',
 ];

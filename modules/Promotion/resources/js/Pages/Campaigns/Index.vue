@@ -7,11 +7,11 @@ import { primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { campaignStateTone, type PromotionLabels } from '../../labels';
 
-const props = defineProps<{
+defineProps<{
     baseUrl: string;
     labels: PromotionLabels;
     promotionsUrl: string;
-    campaigns: Array<{ id: number; code: string; name: string; state: string; starts_at: string; ends_at: string; promotions_count: number; price_lists_count: number }>;
+    campaigns: Array<{ id: number; code: string; name: string; state: string; starts_at: string; ends_at: string; promotions_count: number; price_lists_count: number; managed: boolean; edit_url: string }>;
     canManage: boolean;
 }>();
 
@@ -29,10 +29,11 @@ const columns = [
         <Link :href="promotionsUrl" :class="secondaryButton">{{ t('promotion::admin.campaigns_index.promotion') }}</Link>
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">{{ t('promotion::admin.campaigns_index.add_campaign') }}</Link>
     </PageHeader>
-    <DataTable :columns="columns" :rows="campaigns" :row-label="(campaign) => campaign.code" :row-click="(campaign) => router.visit(`${props.baseUrl}/${campaign.id}/edit`)" :empty-text="t('promotion::admin.campaigns_index.no_campaigns_yet')">
+    <DataTable :columns="columns" :rows="campaigns" :row-label="(campaign) => campaign.code" :row-click="(campaign) => router.visit(campaign.edit_url)" :empty-text="t('promotion::admin.campaigns_index.no_campaigns_yet')">
         <template #cell-name="{ row }">
             <span class="font-medium">{{ row.name }}</span>
             <div class="font-mono text-xs text-slate-400">{{ row.code }}</div>
+            <StatusBadge v-if="row.managed" :label="t('promotion::admin.promotions_index.managed')" tone="info" />
         </template>
         <template #cell-state="{ row }"><StatusBadge :label="labels.campaign_state[row.state] ?? row.state" :tone="campaignStateTone(row.state)" /></template>
         <template #cell-period="{ row }">{{ row.starts_at }} → {{ row.ends_at }}</template>

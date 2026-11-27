@@ -7,6 +7,7 @@ namespace Modules\Promotion\Persistence\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
 
 /**
  * @property int $id
@@ -15,6 +16,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $description
  * @property Carbon $starts_at
  * @property Carbon $ends_at
+ * @property string|null $managed_by
+ * @property string|null $managed_key
+ * @property string|null $managed_route
  * @property list<array{days: list<int>, from: string, to: string}>|null $recurrence lịch lặp theo tuần (0.5.116), ghi xuống thành viên
  * @property string $status draft | active | stopped
  * @property Carbon|null $stopped_at
@@ -28,11 +32,24 @@ final class Campaign extends Model
 
     public const STOPPED = 'stopped';
 
-    protected $fillable = ['code', 'name', 'description', 'starts_at', 'ends_at', 'recurrence', 'status', 'stopped_at', 'lock_version'];
+    protected $fillable = ['code', 'name', 'description', 'starts_at', 'ends_at', 'recurrence', 'status', 'stopped_at', 'lock_version', 'managed_by', 'managed_key', 'managed_route'];
 
     protected function casts(): array
     {
         return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'recurrence' => 'array', 'stopped_at' => 'datetime', 'lock_version' => 'integer'];
+    }
+
+    /** Do plugin quản lý qua `Campaigns::sync` (0.5.118): Admin chỉ xem. */
+    public function isManaged(): bool
+    {
+        return $this->managed_by !== null;
+    }
+
+    public function managedUrl(): ?string
+    {
+        return $this->managed_route !== null && $this->managed_key !== null && Route::has($this->managed_route)
+            ? route($this->managed_route, [$this->managed_key])
+            : null;
     }
 
     /**
