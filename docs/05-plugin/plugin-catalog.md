@@ -65,6 +65,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | Plugin | Contract / điểm mở rộng | Đợt |
 |---|---|---|
 | `vani.promotion-rules` ✅ | `PromotionRule`, `PromotionAction` | P1 |
+| `vani.coupon-code` ✅ 0.1.0 (mã giảm giá sản phẩm: form gọn, giảm %/số tiền + tối đa, đơn tối thiểu, phạm vi, lượt mỗi khách; mã mẫu → mã riêng cho khách/nhóm/tag; ví voucher giỏ/checkout, mã ở PDP, trang tài khoản; [đặc tả](specs/coupon-code.md)) | `ManagedPromotions`, `Vouchers`, `VoucherPreview`, `CurrentCart`, `CustomerDirectory`; rule của `vani.promotion-rules` | P1 |
 | `vani.promotion-advanced` (BxGy, quà tặng, flash sale, mua kèm khác brand) | `PromotionRule`, `PromotionAction` | P3 |
 | `vani.cod-risk-guard` ✅ (danh sách đen SĐT, ngưỡng hoàn về → tín hiệu rủi ro; chặn xác nhận SĐT danh sách đen; đơn hoàn về → nhãn `bom-hang` + ghi chú CSKH) | `OrderRiskSignal`, hook `vani.order.before_confirm`, `CustomerSegments`, `CustomerNotes` | **Implemented** 2026-11-15 (1.0.0, EP v3 X2); 1.1.0 2026-11-16 (X6) |
 | `vani.abandoned-cart` ✅ (email nhắc giỏ bỏ quên cho khách đã đồng ý nhận ưu đãi qua email, có link huỷ) | Event `CartAbandoned`, `NotificationCatalog`, `Notifier` | P2 |

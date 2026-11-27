@@ -1,6 +1,6 @@
 # Đặc tả: Mã giảm giá sản phẩm (`vani.coupon-code`)
 
-> Trạng thái: **Designed** (2026-11-27, Owner duyệt kế hoạch). Nguồn: plugin CouponCode 1.1.0 của VaniCommerce (Owner — [ADR-036](../../19-adr/ADR-036-service-result-hooks.md): chỉ kiểm kê tính năng, phần gọi lõi cũ viết lại trên contract VaniShop). Cần Core đợt 1 (A1–A7, §5) và `vani.promotion-rules` 0.5.0.
+> Trạng thái: **Implemented** (plugin 0.1.0, Core ≥ 0.5.113, 2026-11-27). Nguồn: plugin CouponCode 1.1.0 của VaniCommerce (Owner — [ADR-036](../../19-adr/ADR-036-service-result-hooks.md): chỉ kiểm kê tính năng, phần gọi lõi cũ viết lại trên contract VaniShop). Cần Core đợt 1 (A1–A7, §5) và `vani.promotion-rules` 0.5.0.
 
 ## 1. Mục tiêu
 
@@ -23,7 +23,7 @@ Ngoài phạm vi: mã giảm **phí vận chuyển** (cần action nhắm phí g
 
 ## 3. Dữ liệu
 
-- `plg_coupons`: id, `promotion_id` (id khuyến mãi Core do `ManagedPromotions` trả, không FK), `kind` (`shared` mã dùng chung | `template` mã mẫu), tên nội bộ, mô tả cho khách, `public` (hiện trong ví/PDP), cấu hình form (JSON — loại giảm, giá trị, giảm tối đa, đơn tối thiểu, phạm vi), `lock_version`, timestamps.
+- `plg_coupons`: id, `promotion_id` (id khuyến mãi Core do `ManagedPromotions` trả, không FK), `kind` (`shared` mã dùng chung | `template` mã mẫu), mã chính / tiền tố mã riêng, tên nội bộ, mô tả cho khách theo ngôn ngữ, loại và mức giảm, giảm tối đa, đơn tối thiểu, một phạm vi (`scope_type` + id; slug bộ sưu tập/thương hiệu lúc lưu), bỏ hàng đang giảm giá, nhóm khách, lượt tổng/mỗi khách, số ngày hiệu lực mã riêng, lịch, bật/tắt, độc quyền, `public`, `lock_version`.
 - Không có bảng lượt dùng/mã riêng: voucher, lượt dùng, lượt mỗi khách nằm ở Core (`vouchers`, `promotion_usages`).
 
 ## 4. Hành vi
@@ -56,6 +56,8 @@ Ngoài phạm vi: mã giảm **phí vận chuyển** (cần action nhắm phí g
 | A5 | `PromotionLine::$compareAt`, `$priceListCode`; trần giảm tính theo giá niêm yết |
 | A6 | `VoucherPreview::forCart(CartKey, codes)` |
 | A7 | `ExplainsIneligibility` cho rule (số tiền/số lượng còn thiếu) |
+| 2a (0.5.110) | `CategoryDirectory::idsForProducts`, `CustomerDirectory` (tìm khách, id theo nhóm/tag) |
+| 2b (0.5.111–0.5.113) | `CurrentCart` (`currentKey`, `customerId`), `VoucherPreviewResult::$attached` |
 
 ## 6. Tiêu chí chấp nhận
 

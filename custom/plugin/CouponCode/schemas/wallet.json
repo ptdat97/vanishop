@@ -1,0 +1,101 @@
+{
+    "type": "object",
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "title",
+                    "description",
+                    "conditions",
+                    "expires_at",
+                    "remaining",
+                    "personal",
+                    "applicable",
+                    "applied",
+                    "discount",
+                    "message"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "conditions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "expires_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "remaining": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "personal": {
+                        "type": "boolean"
+                    },
+                    "applicable": {
+                        "type": "boolean"
+                    },
+                    "applied": {
+                        "type": "boolean"
+                    },
+                    "discount": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "message": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            }
+        },
+        "meta": {
+            "type": "object",
+            "required": [
+                "best"
+            ],
+            "properties": {
+                "best": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,55 @@
+{
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "title",
+                    "description",
+                    "conditions",
+                    "expires_at",
+                    "remaining",
+                    "personal"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "conditions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "expires_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "remaining": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "personal": {
+                        "type": "boolean"
+                    }
+                }
+            }
+        }
+    }
+}

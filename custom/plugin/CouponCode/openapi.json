@@ -1,0 +1,105 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "vani.coupon-code — Storefront API",
+        "version": "0.1.0"
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1/x/vani-coupon-code"
+        }
+    ],
+    "paths": {
+        "/products/{product}": {
+            "get": {
+                "summary": "Mã công khai đang chạy áp cho sản phẩm",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "product",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mã, ưu đãi, điều kiện, hạn dùng.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/offers.json"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/carts/{cart}/wallet": {
+            "get": {
+                "summary": "Ví voucher của giỏ",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "cart",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "X-Vani-Cart-Token",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mã công khai + mã riêng của khách đăng nhập, mỗi mã tính thử trên giỏ; meta.best = mã dùng được giảm nhiều nhất.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/wallet.json"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mine": {
+            "get": {
+                "summary": "Mã riêng của khách đăng nhập",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Nhóm theo dùng được / đã dùng / hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/mine.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa đăng nhập (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        }
+    }
+}
