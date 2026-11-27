@@ -1,5 +1,7 @@
 export function createSession({ urls, cartPage, t }) {
     let csrfToken = null;
+    /** Phiên đã áp dụng gần nhất: vùng DOM thay sau (`vani:content-updated`) dùng lại để điền phần riêng của khách. */
+    let current = null;
     let sessionLoaded;
     const sessionReady = new Promise((resolve) => {
         sessionLoaded = resolve;
@@ -75,26 +77,8 @@ export function createSession({ urls, cartPage, t }) {
             status.textContent = session.flash.status;
             status.hidden = false;
         }
-        // Cửa hàng ẩn giá với khách chưa đăng nhập: HTML cache luôn là bản "Đăng nhập để xem giá" → điền giá cho khách đã đăng nhập.
-        const hiddenPrices = [...document.querySelectorAll('[data-vani-price-for]')];
-        if (session.signed_in && hiddenPrices.length && session.prices_url) {
-            const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['product_ids[]', id]));
-            // Storefront API bằng phiên cùng nguồn (ADR-044): trình duyệt gửi Sec-Fetch-Site: same-origin.
-            fetch(`${session.prices_url}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-                .then((response) => (response.ok ? response.json() : null))
-                .then((json) => {
-                    const data = json?.data;
-                    hiddenPrices.forEach((el) => {
-                        const price = data?.products?.[el.dataset.vaniPriceFor];
-                        if (!price) return;
-                        const span = document.createElement('span');
-                        span.className = 'font-semibold text-primary';
-                        span.textContent = price.max.amount !== price.min.amount ? `${price.min.formatted} – ${price.max.formatted}` : price.min.formatted;
-                        el.replaceWith(span);
-                    });
-                })
-                .catch(() => {});
-        }
+        current = session;
+        fillHiddenPrices(document);
         const memberPrice = document.querySelector('[data-vani-member-price]');
         const variantIds = [...document.querySelectorAll('input[name="variant_id"], select[name="variant_id"] option')].map((input) => input.value);
         if (session.signed_in && memberPrice && variantIds.length) {
@@ -120,7 +104,37 @@ export function createSession({ urls, cartPage, t }) {
         });
     }
 
+    /**
+     * Cửa hàng ẩn giá với khách chưa đăng nhập: HTML cache luôn là bản "Đăng nhập để xem giá" → điền giá cho khách đã đăng
+     * nhập trong `root`. Gọi lại cho vùng DOM thay sau (lọc danh sách, giỏ mini, plugin) qua `vani:content-updated`.
+     */
+    function fillHiddenPrices(root) {
+        const session = current;
+        if (!session?.signed_in || !session.prices_url || !(root instanceof Element || root instanceof Document)) return;
+        const hiddenPrices = [...root.querySelectorAll('[data-vani-price-for]:not([data-vani-price-loading])')];
+        if (!hiddenPrices.length) return;
+        hiddenPrices.forEach((el) => el.setAttribute('data-vani-price-loading', ''));
+        const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['product_ids[]', id]));
+        // Storefront API bằng phiên cùng nguồn (ADR-044): trình duyệt gửi Sec-Fetch-Site: same-origin.
+        fetch(`${session.prices_url}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((json) => {
+                const data = json?.data;
+                hiddenPrices.forEach((el) => {
+                    const price = data?.products?.[el.dataset.vaniPriceFor];
+                    el.removeAttribute('data-vani-price-loading');
+                    if (!price) return;
+                    const span = document.createElement('span');
+                    span.className = 'font-semibold text-primary';
+                    span.textContent = price.max.amount !== price.min.amount ? `${price.min.formatted} – ${price.max.formatted}` : price.min.formatted;
+                    el.replaceWith(span);
+                });
+            })
+            .catch(() => hiddenPrices.forEach((el) => el.removeAttribute('data-vani-price-loading')));
+    }
+
     function mount({ updateCartCount, dispatchCartChange }) {
+        document.addEventListener('vani:content-updated', (event) => fillHiddenPrices(event.detail?.element));
         const apply = (session) => applySession(session, updateCartCount, dispatchCartChange);
         const inlineSession = document.querySelector('script[data-vani-session-state]');
         if (inlineSession) {

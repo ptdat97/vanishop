@@ -38,6 +38,35 @@ it('cập nhật giá, tài khoản và số món sau khi khách đăng nhập',
         ->assertNoJavaScriptErrors();
 })->with(['phiên nhúng' => false, 'phiên tải qua JSON' => true]);
 
+it('ẩn giá với khách chưa đăng nhập: vùng DOM thay sau (lọc danh sách, giỏ mini, plugin) cũng được điền giá cho khách đã đăng nhập', function () {
+    config(['vanishop.storefront.page_cache.mode' => 'app']);
+    T::seed(fn () => app(Settings::class)->set('core', 'storefront.price_visibility', 'members'));
+    ['s' => $variant] = C::store();
+    $customer = H::account('0912345678');
+    $productId = $variant->product_id;
+
+    $page = visit('/tai-khoan/dang-nhap')
+        ->fill('email', $customer->email)->fill('password', H::PASSWORD)
+        ->click('form[data-vani-login] button[type="submit"]')
+        ->assertPathIs('/tai-khoan')
+        ->navigate('/')
+        ->assertScript('window.vaniSession.signed_in', true);
+
+    $page->script(<<<JS
+        () => {
+            const box = document.createElement('div');
+            box.id = 'vani-test-replaced';
+            box.innerHTML = '<span data-vani-price-for="{$productId}">Đăng nhập để xem giá</span>';
+            document.body.append(box);
+            document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: box } }));
+        }
+    JS);
+    $page->waitForText('200.000')
+        ->assertSeeIn('#vani-test-replaced', '300.000')
+        ->assertMissing('#vani-test-replaced [data-vani-price-for]')
+        ->assertNoJavaScriptErrors();
+});
+
 it('Escape giữ hộp gợi ý ẩn khi phản hồi đến chậm, đóng modal trả focus về nút tìm kiếm', function () {
     C::store();
     $opener = '[data-vani-search-open]';
