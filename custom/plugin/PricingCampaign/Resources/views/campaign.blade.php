@@ -13,7 +13,7 @@
         @endif
     </div>
     @if ($campaign['content'] !== '')
-        <p class="text-sm text-slate-600">{{ $campaign['content'] }}</p>
+        <div class="prose prose-sm max-w-none text-slate-600">{!! \Illuminate\Support\Str::markdown($campaign['content'], ['html_input' => 'strip', 'allow_unsafe_links' => false, 'max_nesting_level' => 20]) !!}</div>
     @endif
     @if ($campaign['products'] !== [])
         @include('theme::partials.product-grid', ['products' => $campaign['products']])

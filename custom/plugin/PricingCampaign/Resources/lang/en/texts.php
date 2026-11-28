@@ -40,5 +40,12 @@ return [
         'hour' => 'h',
         'minute' => 'm',
         'second' => 's',
+        'filter_all' => 'All',
+        'filter_running' => 'Running',
+        'filter_upcoming' => 'Upcoming',
+        'sort_label' => 'Sort',
+        'sort_default' => 'Default',
+        'sort_ending_soon' => 'Ending soon',
+        'sort_low_stock' => 'Low stock',
     ],
 ];

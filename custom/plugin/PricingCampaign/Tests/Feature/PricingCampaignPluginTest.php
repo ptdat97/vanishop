@@ -3,6 +3,7 @@
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as Catalog;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as Checkout;
+use Modules\Customer\Persistence\Models\CustomerGroup;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Testing\StorefrontApiContract;
@@ -108,4 +109,48 @@ it('storefront: trang sản phẩm có đếm ngược và suất còn lại, tr
         ->assertSessionHasNoErrors();
     expect(($this->price)($this->s))->toBe(300_000)
         ->and($campaign->fresh()->state(now()->getTimestamp()))->toBe('waiting');
+});
+
+it('trang Ưu đãi lọc đang chạy / sắp chạy, sắp xếp và render Markdown an toàn', function () {
+    $this->post($this->base, ($this->payload)([
+        'name' => 'Đang chạy', 'label' => 'Đang chạy',
+        'content' => "**Giảm sâu**\n<script>alert(1)</script>",
+        'ends_at' => now()->addHours(5)->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i'),
+    ]))->assertSessionHasNoErrors();
+
+    $this->post($this->base, ($this->payload)([
+        'name' => 'Sắp chạy', 'label' => 'Sắp chạy',
+        'starts_at' => now()->addHours(2)->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i'),
+        'ends_at' => now()->addHours(6)->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i'),
+    ]))->assertSessionHasNoErrors();
+
+    auth('staff')->logout();
+
+    $this->get('/uu-dai')->assertOk()
+        ->assertSee('<strong>Giảm sâu</strong>', false)
+        ->assertDontSee('<script>alert(1)</script>', false)
+        ->assertSee('Đang chạy')
+        ->assertSee('Sắp chạy');
+
+    $this->get('/uu-dai?status=running')->assertOk()->assertSee('Đang chạy')->assertDontSee('Sắp chạy');
+    $this->get('/uu-dai?status=upcoming')->assertOk()->assertSee('Sắp chạy')->assertDontSee('Đang chạy');
+    $this->getJson('/api/storefront/v1/x/vani-pricing-campaign/campaigns?status=running&sort=low_stock')
+        ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.label', 'Đang chạy');
+});
+
+it('giá thành viên chỉ áp dụng cho khách thuộc nhóm khách hàng đã chọn', function () {
+    $group = Catalog::seed(fn () => CustomerGroup::query()->create([
+        'code' => 'vip', 'name' => 'VIP',
+    ]));
+
+    $this->post($this->base, ($this->payload)([
+        'template' => 'member', 'name' => 'Giá VIP', 'customer_group_id' => $group->id,
+    ]))->assertSessionHasNoErrors();
+
+    // Khách công khai không thấy giá VIP.
+    expect(($this->price)($this->s))->toBe(300_000);
+
+    // Khách thuộc nhóm VIP thấy giá 240.000.
+    $memberPrice = app(PriceResolver::class)->forVariants([$this->s->id], new PricingContext(now()->getTimestamp(), customerGroupId: $group->id))[$this->s->id]->amount->amount;
+    expect($memberPrice)->toBe(240_000);
 });

@@ -60,13 +60,34 @@ final class CampaignPresenter
     }
 
     /**
-     * Trang Ưu đãi / API: chiến dịch đang chạy và sắp chạy, kèm thẻ sản phẩm.
+     * Trang Ưu đãi / API: chiến dịch đang chạy và sắp chạy, kèm thẻ sản phẩm. Hỗ trợ lọc (running|upcoming) và sắp xếp
+     * (default|ending_soon|low_stock).
      *
      * @return list<array<string, mixed>>
      */
-    public function listing(string $locale, int $now): array
+    public function listing(string $locale, int $now, ?string $status = null, string $sort = 'default'): array
     {
-        return array_map(fn (PricingCampaign $campaign): array => $this->campaign($campaign, $locale, $now), $this->active($now));
+        $campaigns = $this->active($now);
+        if ($status === 'running') {
+            $campaigns = array_values(array_filter($campaigns, fn (PricingCampaign $c): bool => $c->isRunningAt($now)));
+        } elseif ($status === 'upcoming') {
+            $campaigns = array_values(array_filter($campaigns, fn (PricingCampaign $c): bool => ! $c->isRunningAt($now)));
+        }
+
+        $items = array_map(fn (PricingCampaign $campaign): array => $this->campaign($campaign, $locale, $now), $campaigns);
+
+        if ($sort === 'ending_soon') {
+            usort($items, fn (array $a, array $b): int => strcmp((string) $a['ends_at'], (string) $b['ends_at']));
+        } elseif ($sort === 'low_stock') {
+            usort($items, function (array $a, array $b): int {
+                $ra = $a['remaining'] ?? PHP_INT_MAX;
+                $rb = $b['remaining'] ?? PHP_INT_MAX;
+
+                return $ra <=> $rb;
+            });
+        }
+
+        return $items;
     }
 
     /**

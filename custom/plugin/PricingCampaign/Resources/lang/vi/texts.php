@@ -40,5 +40,12 @@ return [
         'hour' => 'giờ',
         'minute' => 'phút',
         'second' => 'giây',
+        'filter_all' => 'Tất cả',
+        'filter_running' => 'Đang diễn ra',
+        'filter_upcoming' => 'Sắp diễn ra',
+        'sort_label' => 'Sắp xếp',
+        'sort_default' => 'Mặc định',
+        'sort_ending_soon' => 'Sắp kết thúc',
+        'sort_low_stock' => 'Sắp hết hàng',
     ],
 ];

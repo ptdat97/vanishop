@@ -94,7 +94,7 @@ return [
             'max_filter_values' => 4,
             // Tham số query được lưu cache (trang danh sách, sản phẩm, API). Có tham số khác → không lưu (`X-Vani-Cache-Reason:
             // query`). Plugin có trang công khai dùng tham số riêng thì thêm vào đây.
-            'query_params' => ['page', 'per_page', 'sort', 'category', 'collection', 'brand', 'opt', 'attr', 'price_min', 'price_max', 'sku', 'q'],
+            'query_params' => ['page', 'per_page', 'sort', 'status', 'category', 'collection', 'brand', 'opt', 'attr', 'price_min', 'price_max', 'sku', 'q'],
             // Tham số theo dõi bỏ khỏi khoá cache và khỏi request trước khi render (mẫu fnmatch).
             'ignored_query' => ['utm_*', 'gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid', 'ttclid', 'zarsrc', 'zarsi', '_gl', 'mc_cid', 'mc_eid'],
             // Request của nhân viên (Admin) gom tối đa số tag này thì xoá ngay khi request xong; nhiều hơn → theo lô mỗi phút.
