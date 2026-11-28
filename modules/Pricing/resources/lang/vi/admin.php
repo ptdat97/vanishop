@@ -93,6 +93,7 @@ return [
     ],
     'price_lists_prices' => [
         'open_plugin_screen' => 'Mở màn hình của plugin',
+        'deactivate_managed' => 'Tắt bảng giá',
         'managed_by_plugin' => 'Bảng giá này do plugin :owner quản lý: giá, lịch và trạng thái sửa ở màn hình của plugin.',
         'paste_price_rows' => 'Hoặc dán từ Excel, gồm dòng tiêu đề SKU, Giá và Giá gạch (nếu có)',
         'add_count_products_name' => 'Đưa :count sản phẩm vào ":name"',

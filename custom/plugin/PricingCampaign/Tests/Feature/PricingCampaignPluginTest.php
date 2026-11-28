@@ -154,3 +154,23 @@ it('giá thành viên chỉ áp dụng cho khách thuộc nhóm khách hàng đ�
     $memberPrice = app(PriceResolver::class)->forVariants([$this->s->id], new PricingContext(now()->getTimestamp(), customerGroupId: $group->id))[$this->s->id]->amount->amount;
     expect($memberPrice)->toBe(240_000);
 });
+
+it('badge trên thẻ sản phẩm chỉ hiện khi bảng giá chiến dịch đang thắng giá (L79)', function () {
+    $this->post($this->base, ($this->payload)(['priority' => 10]))->assertSessionHasNoErrors();
+
+    // Tạo bảng giá sale ưu tiên cao hơn (priority 50) với giá thấp hơn → thẻ sản phẩm dùng bảng giá đó, không hiện badge chiến dịch.
+    Catalog::seed(function () {
+        $list = PriceList::query()->create([
+            'code' => 'higher-sale', 'name' => 'Higher Sale', 'type' => 'sale', 'priority' => 50,
+            'starts_at' => now()->subHour(), 'ends_at' => now()->addDay(), 'status' => 'active',
+        ]);
+        app(PriceListService::class)->setPrices($list, [
+            ['variant_id' => $this->s->id, 'amount' => 180_000, 'compare_at_amount' => null],
+            ['variant_id' => $this->m->id, 'amount' => 120_000, 'compare_at_amount' => null],
+        ]);
+    });
+
+    auth('staff')->logout();
+
+    $this->get('/uu-dai')->assertOk()->assertDontSee('data-vani-campaign-badge', false);
+});

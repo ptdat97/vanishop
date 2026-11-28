@@ -70,8 +70,8 @@ const props = defineProps<{
     canManage: boolean;
     /** Bảng giá niêm yết: chỉ xem — giá niêm yết sửa ở sản phẩm. */
     readOnly: boolean;
-    /** Do plugin quản lý (ManagedPriceLists): chỉ xem, sửa ở màn hình của plugin. */
-    managed: { owner: string; url: string | null } | null;
+    /** Do plugin quản lý (ManagedPriceLists): chỉ xem, sửa ở màn hình của plugin (hoặc tắt khi plugin đang tắt). */
+    managed: { owner: string; url: string | null; plugin_enabled?: boolean } | null;
     productsUrl: string;
     /** Từ danh sách sản phẩm "Đưa vào bảng giá…": mở sẵn hộp thoại cách tính giá cho các sản phẩm này. */
     addProductIds: number[];
@@ -238,6 +238,7 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? t('p
     <PageHeader :title="priceList.name" :subtitle="`${labels.price_list_type[priceList.type] ?? priceList.type} · ${priceList.starts_at || priceList.ends_at ? `${priceList.starts_at ?? '—'} → ${priceList.ends_at ?? '—'}` : t('pricing::admin.price_lists_prices.no_time_limit')}`">
         <StatusBadge :label="labels.price_list_state[priceList.state] ?? priceList.state" :tone="stateTone(priceList.state)" class="self-center" />
         <Link v-if="managed?.url" :href="managed.url" :class="primaryButton" data-managed-link>{{ t('pricing::admin.price_lists_prices.open_plugin_screen') }}</Link>
+        <button v-if="managed && !managed.plugin_enabled && priceList.state !== 'inactive' && canManage" type="button" :class="secondaryButton" data-deactivate-managed @click="router.post(`${listUrl}/deactivate`, {}, { preserveScroll: true })">{{ t('pricing::admin.price_lists_prices.deactivate_managed') }}</button>
         <Link v-if="canManage && !managed" :href="`${listUrl}/edit`" :class="secondaryButton">{{ t('pricing::admin.price_lists_prices.price_list_details') }}</Link>
         <button v-if="editable" type="button" :class="primaryButton" data-add-products @click="addOpen = true">{{ t('pricing::admin.price_lists_prices.add_product') }}</button>
         <a :href="`${listUrl}/export`" :class="secondaryButton" data-export>{{ t('pricing::admin.price_lists_prices.export_file') }}</a>

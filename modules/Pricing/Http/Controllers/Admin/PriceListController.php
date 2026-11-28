@@ -14,6 +14,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Extension\Contracts\PluginDirectory;
 use Modules\Pricing\Application\AdminQueries;
 use Modules\Pricing\Application\BulkBasePrice;
 use Modules\Pricing\Application\ListPriceSync;
@@ -137,11 +138,23 @@ final class PriceListController
         return redirect()->route('admin.pricing.price-lists.index')->with('success', __('pricing::messages.deleted'));
     }
 
+    /** Cho Admin tắt bảng giá của plugin đang tắt (L79). */
+    public function deactivate(PriceList $priceList, PluginDirectory $plugins): RedirectResponse
+    {
+        Gate::authorize('pricing.manage');
+        if (! $priceList->isManaged() || ($plugins->find((string) $priceList->managed_by)?->enabled ?? false)) {
+            abort(403);
+        }
+        $priceList->forceFill(['status' => 'inactive'])->save();
+
+        return back()->with('success', __('pricing::messages.deactivated'));
+    }
+
     /**
      * Trang làm việc của bảng giá (đợt 1): mọi SKU trong bảng (tìm, phân trang), sửa giá trong ô, chọn nhiều để áp giá
      * hàng loạt hoặc gỡ; thêm sản phẩm. `?product=` (đường dẫn cũ) được hiểu như ô tìm.
      */
-    public function prices(PriceList $priceList, Request $request, PriceListWorkspace $workspace, AdminScreen $screen): Response
+    public function prices(PriceList $priceList, Request $request, PriceListWorkspace $workspace, AdminScreen $screen, PluginDirectory $plugins): Response
     {
         Gate::authorize('pricing.view');
         $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
@@ -165,7 +178,11 @@ final class PriceListController
             'capPercent' => intdiv($workspace->capBasisPoints(), 100),
             // Giá niêm yết sửa ở sản phẩm (form, ma trận, danh sách sản phẩm) — trang bảng giá chỉ xem.
             'readOnly' => $priceList->type === PriceListType::Base || $priceList->isManaged(),
-            'managed' => $priceList->isManaged() ? ['owner' => $priceList->managed_by, 'url' => $priceList->managedUrl()] : null,
+            'managed' => $priceList->isManaged() ? [
+                'owner' => $priceList->managed_by,
+                'url' => $priceList->managedUrl(),
+                'plugin_enabled' => $plugins->find((string) $priceList->managed_by)?->enabled ?? false,
+            ] : null,
             'productsUrl' => route('admin.catalog.products.index'),
             // Cột/lọc/thao tác/công cụ của plugin theo SKU (EP v3 X1) — vd. cột giá vốn/biên lợi nhuận.
             'extensions' => $screen->listProps('price_list_item', array_column($page->items(), 'variant_id'), $extensionFilters),

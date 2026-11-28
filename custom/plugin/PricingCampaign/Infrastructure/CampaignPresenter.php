@@ -8,11 +8,13 @@ use Illuminate\Support\Carbon;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Pricing\Contracts\Data\PriceQuotaRule;
 use Modules\Pricing\Contracts\Data\PriceQuotaStatus;
+use Modules\Pricing\Contracts\ManagedPriceLists;
 use Modules\Pricing\Contracts\PriceQuotas;
 use Modules\Shared\Support\StoreClock;
 use Modules\Storefront\Contracts\ProductCards;
 use Plugin\PricingCampaign\Persistence\PricingCampaign;
 use Plugin\PricingCampaign\Persistence\PricingCampaignItem;
+use Plugin\PricingCampaign\PricingCampaignServiceProvider;
 
 /**
  * Dữ liệu storefront của chiến dịch giá (Blade, block Builder, Storefront API dùng chung). Một instance mỗi request (scoped):
@@ -31,18 +33,25 @@ final class CampaignPresenter
     /** @var array<int, list<PriceQuotaStatus>> */
     private array $quotas = [];
 
+    /** @var array<int, string>|null */
+    private ?array $listCodes = null;
+
     public function __construct(
         private readonly PriceQuotas $priceQuotas,
         private readonly ProductCards $cards,
         private readonly MediaDirectory $media,
+        private readonly ManagedPriceLists $managedPriceLists,
     ) {}
 
     /**
      * Chiến dịch đang chạy (ưu tiên cao nhất) có sản phẩm này; không có thì chiến dịch sắp chạy gần nhất.
+     * Khi truyền `$priceListCodes` (từ `ResolvedPrice::$priceListCode`), chiến dịch đang chạy chỉ khớp nếu bảng giá của nó
+     * nằm trong các bảng giá đang thắng giá.
      *
+     * @param  list<string>|null  $priceListCodes
      * @return Offer|null
      */
-    public function forProduct(int $productId, string $locale, int $now): ?array
+    public function forProduct(int $productId, string $locale, int $now, ?array $priceListCodes = null): ?array
     {
         $upcoming = null;
         foreach ($this->active($now) as $campaign) {
@@ -51,12 +60,28 @@ final class CampaignPresenter
                 continue;
             }
             if ($campaign->isRunningAt($now)) {
+                if ($priceListCodes !== null && ! in_array($this->listCode($campaign), $priceListCodes, true)) {
+                    continue;
+                }
+
                 return $this->offer($campaign, $item, $locale, $now);
             }
             $upcoming ??= $this->offer($campaign, $item, $locale, $now);
         }
 
         return $upcoming;
+    }
+
+    private function listCode(PricingCampaign $campaign): ?string
+    {
+        if ($this->listCodes === null) {
+            $this->listCodes = [];
+            foreach ($this->managedPriceLists->lists(PricingCampaignServiceProvider::ID) as $info) {
+                $this->listCodes[$info['id']] = $info['code'];
+            }
+        }
+
+        return $campaign->price_list_id === null ? null : ($this->listCodes[$campaign->price_list_id] ?? null);
     }
 
     /**

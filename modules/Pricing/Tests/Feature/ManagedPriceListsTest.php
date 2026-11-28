@@ -78,6 +78,15 @@ it('lịch lặp khung giờ vàng: giá chỉ có trong khung; mốc đổi gi�
         ->and(app(PriceListSchedule::class)->nextChangeAfter(now()->getTimestamp()))->toBe(CarbonImmutable::parse('2026-12-01 14:00', 'Asia/Ho_Chi_Minh')->getTimestamp());
 });
 
+it('Admin có thể tắt bảng giá của plugin đang tắt nhưng bị chặn nếu plugin còn bật (L79)', function () {
+    $id = ($this->sync)([$this->s->id => 200_000]);
+    $this->actingAs(T::staff(['admin.access', 'pricing.view', 'pricing.manage']), 'staff');
+
+    // Plugin vani.pricing-campaign chưa bật ở test này → Admin tắt được bảng giá.
+    $this->post("/admin/pricing/price-lists/{$id}/deactivate")->assertRedirect();
+    expect(T::seed(fn () => PriceList::query()->findOrFail($id))->status)->toBe('inactive');
+});
+
 it('ListPriceReader: giá niêm yết theo variant, không lẫn giá sale đang áp', function () {
     ($this->sync)([$this->s->id => 150_000]);
     $reader = app(ListPriceReader::class);

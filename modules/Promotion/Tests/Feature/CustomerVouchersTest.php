@@ -118,6 +118,24 @@ it('giảm % có mức tối đa: tổng giảm của khuyến mãi bằng mức
     expect($this->engine->evaluate(($this->context)())->discountByLine())->toBe([$this->s->id => 30_000, $this->m->id => 40_000]);
 });
 
+it('CustomerMerged: chuyển voucher riêng và cộng lượt đã dùng mỗi khách sang hồ sơ được giữ (L75)', function () {
+    $promotion = C::promotion(['usage_limit_per_customer' => 2], ['CHUNG' => null]);
+    $vouchers = app(Vouchers::class);
+    $vouchers->create($promotion->id, 'RIENG-SRC', 1, null, 101);
+
+    // Hồ sơ nguồn dùng 1 lượt, hồ sơ đích dùng 1 lượt → sau gộp tổng lượt là 2 (chạm trần 2).
+    DB::transaction(fn () => $this->engine->recordUsage(3001, 101, 'VND', $this->engine->evaluate(($this->context)(['CHUNG'], 101))));
+    DB::transaction(fn () => $this->engine->recordUsage(3002, 202, 'VND', $this->engine->evaluate(($this->context)(['CHUNG'], 202))));
+
+    event(new \Modules\Customer\Events\CustomerMerged(101, 202, 1));
+
+    expect($vouchers->forCustomer(101))->toBe([])
+        ->and(collect($vouchers->forCustomer(202))->pluck('code')->all())->toBe(['RIENG-SRC'])
+        ->and(DB::table('promotion_customer_usages')->where(['promotion_id' => $promotion->id, 'customer_id' => 202])->value('used_count'))->toEqual(2)
+        ->and(DB::table('promotion_customer_usages')->where('customer_id', 101)->exists())->toBeFalse()
+        ->and($this->engine->evaluate(($this->context)(['CHUNG'], 202))->rejectedVouchers[0]->reason)->toBe('customer_limit');
+});
+
 it('trần giảm tính theo giá gốc: dòng đã giảm 50% bằng bảng giá không được giảm thêm, dòng giảm ít hơn chỉ giảm tới trần', function () {
     C::promotion(['requires_voucher' => false, 'action_config' => ['basis_points' => 4000]]);
 

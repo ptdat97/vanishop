@@ -54,7 +54,12 @@ final class PricingCampaignServiceProvider extends PluginServiceProvider
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: ['vi' => 'uu-dai', 'en' => 'deals'], cacheable: true);
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
 
-        $offer = fn (array $product): ?array => $this->app->make(CampaignPresenter::class)->forProduct((int) ($product['id'] ?? 0), App::getLocale(), now()->getTimestamp());
+        $offer = fn (array $product): ?array => $this->app->make(CampaignPresenter::class)->forProduct(
+            (int) ($product['id'] ?? 0),
+            App::getLocale(),
+            now()->getTimestamp(),
+            is_array($product['price']['price_list_codes'] ?? null) ? $product['price']['price_list_codes'] : null,
+        );
         $this->onSlot('vani.storefront.plp.card_badges', function (array $product) use ($offer): ?SlotView {
             $deal = $offer($product);
 

@@ -16,6 +16,7 @@ return [
     'stale' => 'Bảng giá đã được người khác cập nhật. Vui lòng tải lại trang.',
     'saved' => 'Đã lưu.',
     'deleted' => 'Đã xoá.',
+    'deactivated' => 'Đã tắt bảng giá.',
     'prices_saved' => 'Đã cập nhật :count giá.',
     'amount_negative' => 'Giá không được âm.',
     'bulk_applied' => 'Đã cập nhật giá :count SKU.',

@@ -16,6 +16,7 @@ return [
     'stale' => 'This price list was changed by someone else. Reload the page.',
     'saved' => 'Saved.',
     'deleted' => 'Deleted.',
+    'deactivated' => 'Price list deactivated.',
     'prices_saved' => 'Updated :count prices.',
     'amount_negative' => 'Price cannot be negative.',
     'bulk_applied' => 'Updated prices of :count SKUs.',

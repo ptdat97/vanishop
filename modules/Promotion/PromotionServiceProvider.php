@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Promotion;
 
+use Illuminate\Support\Facades\Event;
+use Modules\Customer\Events\CustomerMerged;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AdminNavigation;
@@ -12,6 +14,7 @@ use Modules\Pricing\Contracts\Data\DiscountCap;
 use Modules\Promotion\Application\Actions\AmountOffAction;
 use Modules\Promotion\Application\Actions\PercentOffAction;
 use Modules\Promotion\Application\CampaignService;
+use Modules\Promotion\Application\Listeners\MergeCustomerPromotions;
 use Modules\Promotion\Application\ManagedPromotionService;
 use Modules\Promotion\Application\PromotionEvaluator;
 use Modules\Promotion\Application\PromotionRegistry;
@@ -60,5 +63,7 @@ final class PromotionServiceProvider extends ModuleServiceProvider
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('promotion', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
+
+        Event::listen(CustomerMerged::class, MergeCustomerPromotions::class);
     }
 }

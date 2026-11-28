@@ -93,6 +93,7 @@ return [
     ],
     'price_lists_prices' => [
         'open_plugin_screen' => 'Open plugin screen',
+        'deactivate_managed' => 'Deactivate price list',
         'managed_by_plugin' => 'This price list is managed by plugin :owner: prices, schedule and status are edited on the plugin screen.',
         'paste_price_rows' => 'Or paste from Excel, including the SKU, Price and optional Compare price headers',
         'add_count_products_name' => 'Add :count products to ":name"',

@@ -333,6 +333,7 @@ final class ProductViews implements CustomerProductPrices, ProductCards
             'max' => $this->money->toArray($max->amount),
             'compare_at' => $min->compareAt === null ? null : $this->money->toArray($min->compareAt),
             'discount_percent' => max(array_map(fn (ResolvedPrice $price): int => $price->discountPercent ?? 0, $prices)) ?: null,
+            'price_list_codes' => array_values(array_unique(array_map(fn (ResolvedPrice $price): string => $price->priceListCode, $prices))),
         ];
     }
 
