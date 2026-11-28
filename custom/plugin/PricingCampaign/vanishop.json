@@ -1,0 +1,31 @@
+{
+    "id": "vani.pricing-campaign",
+    "name": {
+        "vi": "Chiến dịch giá",
+        "en": "Pricing campaigns"
+    },
+    "description": {
+        "vi": "Một màn hình cho flash sale, hot deal, giá thành viên, sale cuối tuần, khung giờ vàng: chọn sản phẩm, đồng giá / giảm % / giảm tiền, suất và giới hạn mỗi khách. Badge, đếm ngược, thanh suất ở storefront, trang Ưu đãi, block cho Builder.",
+        "en": "One screen for flash sales, hot deals, member prices, weekend sales and golden hours: pick products, fixed price / percent / amount off, quotas and per-customer limits. Badges, countdowns, stock bars on the storefront, a Deals page and a Builder block."
+    },
+    "version": "0.1.0",
+    "kind": "promotion",
+    "provider": "Plugin\\PricingCampaign\\PricingCampaignServiceProvider",
+    "requires": {
+        "extension_api": "^1.55",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": ["pricing_campaign.view", "pricing_campaign.manage"],
+    "author": "VaniShop Team",
+    "assets": "public",
+    "data": {
+        "owned": ["plg_pricing_campaigns", "plg_pricing_campaign_items"],
+        "references": {
+            "plg_pricing_campaigns.price_list_id": "price_lists.id",
+            "plg_pricing_campaigns.campaign_id": "campaigns.id",
+            "plg_pricing_campaigns.banner_media_id": "media.id",
+            "plg_pricing_campaign_items.product_id": "products.id"
+        }
+    }
+}

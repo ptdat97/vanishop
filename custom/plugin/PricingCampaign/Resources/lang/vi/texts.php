@@ -1,0 +1,44 @@
+<?php
+
+// Chuỗi hiển thị từ server (ADR-049): __('vani-pricing-campaign::texts.<khoá>').
+
+return [
+    'menu' => 'Chiến dịch giá',
+    'permission_view' => 'Xem chiến dịch giá',
+    'permission_manage' => 'Tạo, sửa chiến dịch giá',
+    'price_list_name' => 'Chiến dịch giá: :name',
+    'saved' => 'Đã lưu chiến dịch giá.',
+    'deleted' => 'Đã xoá chiến dịch giá.',
+    'stale' => 'Chiến dịch vừa được người khác sửa — tải lại trang rồi lưu lại.',
+    'ends_after_starts' => 'Thời gian kết thúc phải sau thời gian bắt đầu.',
+    'hidden' => ' (đang ẩn)',
+    'unknown_product' => 'Sản phẩm không tồn tại.',
+    'items_required' => 'Thêm ít nhất một sản phẩm.',
+    'percent_range' => 'Phần trăm giảm từ 1 đến 99.',
+    'recurrence_invalid' => 'Lịch lặp không hợp lệ: chọn ít nhất một ngày, giờ dạng HH:MM, tối đa 3 khung.',
+    'not_below_list_price' => 'Giá sau giảm không thấp hơn giá niêm yết (hoặc sản phẩm chưa có giá niêm yết).',
+    'warning_quota_over_stock' => ':name: suất :quota lớn hơn tồn bán được (:stock) — khách có thể không đặt được hàng.',
+    'warning_overlap' => 'Có sản phẩm đang ở chiến dịch khác chạy cùng thời gian: :names (giá theo ưu tiên cao hơn).',
+    'block' => [
+        'label' => 'Chiến dịch giá',
+        'title' => 'Tiêu đề (để trống = nhãn chiến dịch)',
+        'campaign' => 'Chiến dịch',
+        'auto' => 'Tự động — chiến dịch đang chạy ưu tiên cao nhất',
+        'limit' => 'Số sản phẩm',
+        'limit_help' => '1–24, mặc định 8.',
+    ],
+    'storefront' => [
+        'page_title' => 'Ưu đãi',
+        'page_empty' => 'Hiện chưa có chương trình ưu đãi nào.',
+        'ends_in' => 'Kết thúc sau',
+        'starts_in' => 'Bắt đầu sau',
+        'remaining' => 'Còn :count suất',
+        'remaining_short' => 'còn :count',
+        'sold_out' => 'Đã hết suất giá ưu đãi',
+        'per_customer' => 'Mỗi khách tối đa :count sản phẩm giá ưu đãi',
+        'day' => 'ngày',
+        'hour' => 'giờ',
+        'minute' => 'phút',
+        'second' => 'giây',
+    ],
+];

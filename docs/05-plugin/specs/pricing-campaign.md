@@ -1,6 +1,6 @@
 # Đặc tả: Chiến dịch giá (`vani.pricing-campaign`)
 
-> Trạng thái: **Designed** (2026-11-27, Owner duyệt kế hoạch). Nguồn: plugin PricingCampaign 1.1.6 của VaniCommerce (Owner — [ADR-036](../../19-adr/ADR-036-service-result-hooks.md): chỉ kiểm kê tính năng, phần gọi lõi cũ viết lại trên contract VaniShop). Cần Core đợt 3 (B1–B4, §5).
+> Trạng thái: **Implemented** (plugin 0.1.0, Core ≥ 0.5.119, 2026-11-28). Nguồn: plugin PricingCampaign 1.1.6 của VaniCommerce (Owner — [ADR-036](../../19-adr/ADR-036-service-result-hooks.md): chỉ kiểm kê tính năng, phần gọi lõi cũ viết lại trên contract VaniShop). Cần Core đợt 3 (B1–B4, §5).
 
 ## 1. Mục tiêu
 
@@ -58,6 +58,7 @@ Một màn hình để chạy mọi loại **chiến dịch giá**: flash sale, 
 | B2 | `WeeklySchedule` (Shared): ngày trong tuần + khung giờ theo múi giờ cửa hàng, cho bảng giá, khuyến mãi, Campaign; chiến lược giá và `nextChangeAfter` hiểu lịch lặp |
 | B3 | `PriceQuotas`: suất theo bảng giá / sản phẩm / variant + giới hạn/khách; hết suất → bộ giải giá bỏ mức giá đó; trừ trong transaction đặt đơn (UPDATE có điều kiện), hoàn khi huỷ, trả khi huỷ một phần; kiểm giới hạn/khách ở checkout; đọc tình trạng |
 | B4 | `campaigns.managed_by` + `Campaigns::sync`: chiến dịch của plugin hiện chỉ xem ở Admin → Campaign, dùng lại báo cáo `CampaignUsage` |
+| (0.5.119) | `ListPriceReader`: giá niêm yết theo variant để plugin tính giá chiến dịch (Owner duyệt 2026-11-28) |
 
 ## 6. Tiêu chí chấp nhận
 

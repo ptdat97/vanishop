@@ -1,0 +1,58 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "vani.pricing-campaign — Storefront API",
+        "version": "0.1.0"
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1/x/vani-pricing-campaign"
+        }
+    ],
+    "paths": {
+        "/campaigns": {
+            "get": {
+                "summary": "Chiến dịch đang chạy và sắp chạy, kèm thẻ sản phẩm",
+                "responses": {
+                    "200": {
+                        "description": "Nhãn, badge, đếm ngược, suất, sản phẩm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/campaigns.json"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{product}": {
+            "get": {
+                "summary": "Chiến dịch của một sản phẩm (số suất còn lại đọc trực tiếp, không cache)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "product",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chiến dịch đang chạy (hoặc sắp chạy) có sản phẩm; null nếu không có.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/offer.json"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

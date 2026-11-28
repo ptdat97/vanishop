@@ -1,0 +1,111 @@
+{
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "required": [
+                "campaign_id",
+                "label",
+                "badge",
+                "badge_style",
+                "accent_color",
+                "running",
+                "starts_at",
+                "ends_at",
+                "ends_at_ts",
+                "starts_at_ts",
+                "show_countdown",
+                "show_stock",
+                "limit",
+                "sold",
+                "remaining",
+                "sold_percent",
+                "per_customer",
+                "badge_class"
+            ],
+            "properties": {
+                "campaign_id": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "badge": {
+                    "type": "string"
+                },
+                "badge_style": {
+                    "type": "string"
+                },
+                "accent_color": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "running": {
+                    "type": "boolean"
+                },
+                "starts_at": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "ends_at_ts": {
+                    "type": "integer"
+                },
+                "starts_at_ts": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "show_countdown": {
+                    "type": "boolean"
+                },
+                "show_stock": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "sold": {
+                    "type": "integer"
+                },
+                "remaining": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "sold_percent": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "per_customer": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "badge_class": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,100 @@
+{
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "label",
+                    "badge",
+                    "badge_style",
+                    "accent_color",
+                    "content",
+                    "banner_url",
+                    "running",
+                    "starts_at",
+                    "ends_at",
+                    "show_countdown",
+                    "show_stock",
+                    "limit",
+                    "sold",
+                    "remaining",
+                    "products"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "badge": {
+                        "type": "string"
+                    },
+                    "badge_style": {
+                        "type": "string"
+                    },
+                    "accent_color": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "banner_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "running": {
+                        "type": "boolean"
+                    },
+                    "starts_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ends_at": {
+                        "type": "string"
+                    },
+                    "show_countdown": {
+                        "type": "boolean"
+                    },
+                    "show_stock": {
+                        "type": "boolean"
+                    },
+                    "limit": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "sold": {
+                        "type": "integer"
+                    },
+                    "remaining": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "products": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "../../../../docs/api/schemas/storefront/product-card.v1.json"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
