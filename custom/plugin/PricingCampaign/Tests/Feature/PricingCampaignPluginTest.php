@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as Catalog;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as Checkout;
@@ -10,11 +11,13 @@ use Modules\Extension\Testing\StorefrontApiContract;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Pricing\Application\PriceListService;
 use Modules\Pricing\Contracts\Data\PricingContext;
+use Modules\Pricing\Contracts\Data\QuotaLine;
 use Modules\Pricing\Contracts\PriceQuotas;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Promotion\Persistence\Models\Campaign;
 use Plugin\PricingCampaign\Infrastructure\CampaignBlock;
+use Plugin\PricingCampaign\Infrastructure\CampaignPresenter;
 use Plugin\PricingCampaign\Persistence\PricingCampaign;
 use Plugin\PricingCampaign\PricingCampaignServiceProvider;
 
@@ -153,6 +156,50 @@ it('giá thành viên chỉ áp dụng cho khách thuộc nhóm khách hàng đ�
     // Khách thuộc nhóm VIP thấy giá 240.000.
     $memberPrice = app(PriceResolver::class)->forVariants([$this->s->id], new PricingContext(now()->getTimestamp(), customerGroupId: $group->id))[$this->s->id]->amount->amount;
     expect($memberPrice)->toBe(240_000);
+
+    auth('staff')->logout();
+    $this->getJson('/api/storefront/v1/x/vani-pricing-campaign/campaigns')->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson("/api/storefront/v1/x/vani-pricing-campaign/products/{$this->s->product_id}")->assertOk()->assertJsonPath('data', null);
+    $this->get(route('storefront.product', $this->s->product->slug))->assertOk()->assertDontSee('data-vani-campaign-offer', false);
+});
+
+it('trang sản phẩm hiển thị giá dự kiến của chiến dịch mở gần nhất và giữ giá hiện tại tới giờ bắt đầu', function () {
+    foreach ([[4, 100, 30], [2, 20, 25]] as [$hours, $priority, $discount]) {
+        $this->post($this->base, ($this->payload)([
+            'name' => "Sale sau {$hours} giờ",
+            'starts_at' => now()->addHours($hours)->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i'),
+            'priority' => $priority,
+        ], ['value' => $discount]))->assertSessionHasNoErrors();
+    }
+
+    auth('staff')->logout();
+    $this->get(route('storefront.product', $this->s->product->slug))->assertOk()
+        ->assertSee('Bắt đầu sau')->assertSee('Giá dự kiến: 150.000 ₫ – 225.000 ₫');
+    $this->getJson("/api/storefront/v1/x/vani-pricing-campaign/products/{$this->s->product_id}")->assertOk()
+        ->assertJsonPath('data.running', false)->assertJsonPath('data.expected_price', '150.000 ₫ – 225.000 ₫');
+    expect(($this->price)($this->s))->toBe(300_000);
+});
+
+it('trang sản phẩm báo hết suất khi suất chung đã hết dù suất sản phẩm vẫn còn', function () {
+    $this->post($this->base, ($this->payload)(['quota_total' => 1, 'per_customer_total' => 1]))->assertSessionHasNoErrors();
+    $campaign = PricingCampaign::query()->sole();
+    $code = PriceList::query()->findOrFail($campaign->price_list_id)->code;
+    $url = "/api/storefront/v1/x/vani-pricing-campaign/products/{$this->s->product_id}";
+    auth('staff')->logout();
+
+    $this->getJson("{$url}?campaign_id={$campaign->id}")->assertOk()
+        ->assertJsonPath('data.remaining', 1)->assertJsonPath('data.per_customer', 1);
+
+    DB::transaction(fn () => app(PriceQuotas::class)->consume(9001, null, [new QuotaLine($this->s->id, $this->s->product_id, 1, $code)]));
+    app()->forgetInstance(CampaignPresenter::class);
+
+    expect(($this->price)($this->s))->toBe(300_000);
+    $this->get(route('storefront.product', $this->s->product->slug))->assertOk()->assertSee('Đã hết suất giá ưu đãi');
+    $this->get('/uu-dai')->assertOk()->assertDontSee('data-vani-campaign-badge', false);
+    $this->getJson("{$url}?campaign_id={$campaign->id}")->assertOk()
+        ->assertJsonPath('data.remaining', 0)->assertJsonPath('data.sold_percent', 100);
+    $this->getJson("{$url}?campaign_id=0")->assertUnprocessable()
+        ->assertJsonPath('error.code', 'validation.failed')->assertJsonPath('error.details.0.field', 'campaign_id');
 });
 
 it('badge trên thẻ sản phẩm chỉ hiện khi bảng giá chiến dịch đang thắng giá (L79)', function () {

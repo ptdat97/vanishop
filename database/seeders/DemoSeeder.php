@@ -6,7 +6,9 @@ namespace Database\Seeders;
 
 use Database\Seeders\Demo\CatalogSeeder;
 use Database\Seeders\Demo\ContentSeeder;
+use Database\Seeders\Demo\CouponCodeSeeder;
 use Database\Seeders\Demo\OrderSeeder;
+use Database\Seeders\Demo\PricingCampaignSeeder;
 use Database\Seeders\Demo\PromotionSeeder;
 use Database\Seeders\Demo\StorefrontSeeder;
 use Database\Seeders\Demo\StoreSeeder;
@@ -19,6 +21,8 @@ use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Plugin\CouponCode\CouponCodeServiceProvider;
+use Plugin\PricingCampaign\PricingCampaignServiceProvider;
 use RuntimeException;
 
 /**
@@ -33,8 +37,12 @@ use RuntimeException;
  */
 final class DemoSeeder extends Seeder
 {
-    /** Plugin nội dung/giao diện (không gọi dịch vụ ngoài) — cài + bật nếu chưa. */
-    public const PLUGINS = ['vani.cms', 'vani.lookbook', 'vani.size-chart', 'vani.storefront-extras', 'vani.scarcity-signals', 'vani.wishlist', 'vani.media-webp', 'vani.reports', 'vani.bundles'];
+    /** Plugin dùng cho dữ liệu demo, không gọi dịch vụ ngoài. */
+    public const PLUGINS = [
+        'vani.cms', 'vani.lookbook', 'vani.size-chart', 'vani.storefront-extras', 'vani.scarcity-signals',
+        'vani.wishlist', 'vani.media-webp', 'vani.reports', 'vani.bundles', 'vani.promotion-rules',
+        PricingCampaignServiceProvider::ID, CouponCodeServiceProvider::ID,
+    ];
 
     public function run(CurrentContext $context, PluginManager $plugins, ManifestRepository $manifests): void
     {
@@ -45,6 +53,12 @@ final class DemoSeeder extends Seeder
         $context->runAs(ContextScope::system('demo seeder'), function () use ($plugins, $manifests): void {
             $this->enablePlugins($plugins, $manifests);
             $this->call([StoreSeeder::class, CatalogSeeder::class, PromotionSeeder::class, ContentSeeder::class, StorefrontSeeder::class, OrderSeeder::class]);
+            if ($manifests->find(PricingCampaignServiceProvider::ID) !== null) {
+                $this->call(PricingCampaignSeeder::class);
+            }
+            if ($manifests->find(CouponCodeServiceProvider::ID) !== null) {
+                $this->call(CouponCodeSeeder::class);
+            }
         });
 
         // Tài nguyên tĩnh của plugin (JS thanh thông báo, trình chiếu…) + cache trạng thái plugin.
@@ -59,7 +73,8 @@ final class DemoSeeder extends Seeder
     {
         $bundled = $plugins->installBundled()['installed'];
         foreach ([...$bundled, ...self::PLUGINS] as $id) {
-            if ($manifests->find($id) === null) {
+            $manifest = $manifests->find($id);
+            if ($manifest === null) {
                 continue; // plugin không có trong mã nguồn
             }
             $record = PluginRecord::query()->find($id);
@@ -71,9 +86,8 @@ final class DemoSeeder extends Seeder
                 $plugins->enable($id);
             }
             // Provider của plugin vừa bật chưa nạp trong tiến trình này (cấu hình, slot, dịch vụ).
-            $provider = $manifests->find($id)?->provider;
-            if ($provider !== null && app()->getProviders($provider) === []) {
-                $this->container->register($provider);
+            if (app()->getProviders($manifest->provider) === []) {
+                $this->container->register($manifest->provider);
             }
         }
     }

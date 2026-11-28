@@ -32,6 +32,7 @@ return [
         'page_empty' => 'Hiện chưa có chương trình ưu đãi nào.',
         'ends_in' => 'Kết thúc sau',
         'starts_in' => 'Bắt đầu sau',
+        'expected_price' => 'Giá dự kiến: :price',
         'remaining' => 'Còn :count suất',
         'remaining_short' => 'còn :count',
         'sold_out' => 'Đã hết suất giá ưu đãi',

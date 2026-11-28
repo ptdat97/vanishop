@@ -27,7 +27,8 @@
                 "remaining",
                 "sold_percent",
                 "per_customer",
-                "badge_class"
+                "badge_class",
+                "expected_price"
             ],
             "properties": {
                 "campaign_id": {
@@ -104,6 +105,12 @@
                 },
                 "badge_class": {
                     "type": "string"
+                },
+                "expected_price": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
                 }
             }
         }

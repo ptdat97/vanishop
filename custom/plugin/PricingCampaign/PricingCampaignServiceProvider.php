@@ -54,23 +54,24 @@ final class PricingCampaignServiceProvider extends PluginServiceProvider
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: ['vi' => 'uu-dai', 'en' => 'deals'], cacheable: true);
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
 
-        $offer = fn (array $product): ?array => $this->app->make(CampaignPresenter::class)->forProduct(
+        $offer = fn (array $product, bool $includeUpcoming): ?array => $this->app->make(CampaignPresenter::class)->forProduct(
             (int) ($product['id'] ?? 0),
             App::getLocale(),
             now()->getTimestamp(),
             is_array($product['price']['price_list_codes'] ?? null) ? $product['price']['price_list_codes'] : null,
+            includeUpcoming: $includeUpcoming,
         );
         $this->onSlot('vani.storefront.plp.card_badges', function (array $product) use ($offer): ?SlotView {
-            $deal = $offer($product);
+            $deal = $offer($product, false);
 
-            return $deal === null || ! $deal['running'] ? null : new SlotView('vani-pricing-campaign::badge', ['offer' => $deal]);
+            return $deal === null || ! $deal['running'] || $deal['remaining'] === 0 ? null : new SlotView('vani-pricing-campaign::badge', ['offer' => $deal]);
         });
         $this->onSlot('vani.storefront.pdp.after_price', function (array $product) use ($offer): ?SlotView {
-            $deal = $offer($product);
+            $deal = $offer($product, true);
 
             return $deal === null ? null : new SlotView('vani-pricing-campaign::pdp', [
                 'offer' => $deal, 'productId' => (int) $product['id'], 'scriptSrc' => vani_asset(self::ID, 'campaigns.js'),
-                'liveUrl' => route('api.storefront.x.vani-pricing-campaign.product', (int) $product['id']),
+                'liveUrl' => route('api.storefront.x.vani-pricing-campaign.product', ['product' => (int) $product['id'], 'campaign_id' => $deal['campaign_id']]),
             ]);
         });
     }

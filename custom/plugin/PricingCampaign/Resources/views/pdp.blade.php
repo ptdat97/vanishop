@@ -7,6 +7,9 @@
             @include('vani-pricing-campaign::countdown', ['at' => $offer['running'] ? $offer['ends_at'] : $offer['starts_at']])
         </p>
     @endif
+    @if ($offer['expected_price'] !== null)
+        <p>{{ __('vani-pricing-campaign::texts.storefront.expected_price', ['price' => $offer['expected_price']]) }}</p>
+    @endif
     @if ($offer['running'] && $offer['show_stock'] && $offer['limit'] !== null)
         <div class="h-2 overflow-hidden rounded bg-slate-200" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $offer['sold_percent'] ?? 0 }}">
             <div class="h-full bg-red-600" style="width: {{ $offer['sold_percent'] ?? 0 }}%" data-vani-campaign-progress></div>

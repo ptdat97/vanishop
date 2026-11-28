@@ -35,13 +35,14 @@
             .then((json) => {
                 const offer = json?.data;
                 const remaining = box.querySelector('[data-vani-campaign-remaining]');
-                if (!offer || offer.remaining === null || !remaining) {
+                if (!offer?.running || offer.remaining === null || !remaining) {
                     return;
                 }
                 remaining.textContent = offer.remaining === 0 ? script.dataset.soldOut : script.dataset.remaining.replace(':count', offer.remaining);
                 const bar = box.querySelector('[data-vani-campaign-progress]');
                 if (bar && offer.sold_percent !== null) {
                     bar.style.width = `${offer.sold_percent}%`;
+                    bar.parentElement.setAttribute('aria-valuenow', offer.sold_percent);
                 }
             })
             .catch(() => {});

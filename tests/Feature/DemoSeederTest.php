@@ -68,6 +68,7 @@ it('DemoSeeder dựng cả cửa hàng (catalog có ảnh, kho, nội dung, tran
         'products' => DB::table('products')->count(), 'media' => DB::table('mediables')->where('role', 'gallery')->count(),
         'locations' => DB::table('locations')->count(), 'orders' => DB::table('orders')->count(), 'posts' => DB::table('plg_cms_posts')->count(),
         'lookbooks' => DB::table('plg_lookbooks')->count(), 'collections' => DB::table('collections')->count(), 'promotions' => DB::table('promotions')->count(),
+        'pricing_campaigns' => DB::table('plg_pricing_campaigns')->count(), 'coupons' => DB::table('plg_coupons')->count(), 'vouchers' => DB::table('vouchers')->count(),
     ];
 
     // Catalog: danh mục con của "Nữ" theo tên + "Hàng mới về", ảnh, giá, sale, bộ sưu tập, tồn ở kho online + cửa hàng.
@@ -80,7 +81,23 @@ it('DemoSeeder dựng cả cửa hàng (catalog có ảnh, kho, nội dung, tran
         ->and(DB::table('locations')->pluck('code')->sort()->values()->all())->toBe(['CH-Q1', 'KHO-CHINH'])
         ->and(DB::table('stock_levels')->count())->toBe(12)
         ->and(DB::table('collections')->count())->toBeGreaterThan(0)
-        ->and(DB::table('promotions')->count())->toBe(2);
+        ->and(DB::table('promotions')->whereNull('managed_by')->count())->toBe(2);
+
+    $flashSale = DB::table('plg_pricing_campaigns')->where('template', 'flash_sale')->first();
+    $sharedCoupon = DB::table('plg_coupons')->where('code', 'VANIDEMO10')->first();
+    $privateCoupon = DB::table('plg_coupons')->where('kind', 'template')->first();
+    $customerId = DB::table('customers')->where('email', 'lan.nguyen@example.com')->value('id');
+    expect($flashSale)->not->toBeNull()
+        ->and($sharedCoupon)->not->toBeNull()
+        ->and($privateCoupon)->not->toBeNull()
+        ->and($customerId)->not->toBeNull();
+
+    $this->assertDatabaseHas('price_lists', ['id' => $flashSale->price_list_id, 'managed_by' => 'vani.pricing-campaign']);
+    $this->assertDatabaseHas('campaigns', ['id' => $flashSale->campaign_id, 'managed_by' => 'vani.pricing-campaign']);
+    $this->assertDatabaseHas('price_quotas', ['price_list_id' => $flashSale->price_list_id, 'scope' => 'list', 'quota_limit' => 10]);
+    $this->assertDatabaseHas('promotions', ['id' => $sharedCoupon->promotion_id, 'managed_by' => 'vani.coupon-code']);
+    $this->assertDatabaseHas('vouchers', ['promotion_id' => $sharedCoupon->promotion_id, 'code' => 'VANIDEMO10']);
+    $this->assertDatabaseHas('vouchers', ['promotion_id' => $privateCoupon->promotion_id, 'customer_id' => $customerId, 'usage_limit' => 1]);
 
     // Nội dung (plugin bật sẵn), giao diện.
     expect(DB::table('plg_cms_pages')->where('status', 'published')->count())->toBe(4)
@@ -104,7 +121,8 @@ it('DemoSeeder dựng cả cửa hàng (catalog có ảnh, kho, nội dung, tran
     // Storefront hiển thị được.
     $this->get('/')->assertOk()->assertSee('Hàng mới về');
     $this->get('/danh-muc/dam')->assertOk()->assertSee('data-vani-cms-category-banner', false);
-    $this->get('/san-pham/'.$product->slug)->assertOk();
+    $this->get('/san-pham/'.$product->slug)->assertOk()->assertSee('VANIDEMO30K');
+    $this->get('/uu-dai')->assertOk()->assertSee('Flash sale Vani Studio')->assertSee('Hot deal sắp mở');
     $this->get('/bo-suu-tap/thu-dong-2026')->assertOk()
         ->assertSeeInOrder(['data-collection-banner', 'Thu Đông 2026', 'Len, dạ và lụa cho mùa se lạnh.', 'data-vani-listing'], false);
     $this->get(route('storefront.brands'))->assertOk();

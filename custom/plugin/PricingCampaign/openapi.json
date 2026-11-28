@@ -2,7 +2,7 @@
     "openapi": "3.1.0",
     "info": {
         "title": "vani.pricing-campaign — Storefront API",
-        "version": "0.1.0"
+        "version": "0.1.1"
     },
     "servers": [
         {
@@ -38,6 +38,15 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "in": "query",
+                        "name": "campaign_id",
+                        "description": "Đọc suất của đúng chiến dịch đang hiển thị trên trang sản phẩm.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -50,6 +59,9 @@
                                 }
                             }
                         }
+                    },
+                    "422": {
+                        "description": "campaign_id không hợp lệ (lỗi error.v1 của Core)."
                     }
                 }
             }

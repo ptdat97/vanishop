@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace Plugin\PricingCampaign\Infrastructure;
 
 use Illuminate\Support\Carbon;
+use Modules\Catalog\Contracts\Data\VariantData;
 use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Pricing\Contracts\Data\PriceQuotaRule;
 use Modules\Pricing\Contracts\Data\PriceQuotaStatus;
+use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\ManagedPriceLists;
 use Modules\Pricing\Contracts\PriceQuotas;
+use Modules\Pricing\Contracts\PriceResolver;
+use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;
 use Modules\Storefront\Contracts\ProductCards;
 use Plugin\PricingCampaign\Persistence\PricingCampaign;
@@ -20,7 +25,7 @@ use Plugin\PricingCampaign\PricingCampaignServiceProvider;
  * Dữ liệu storefront của chiến dịch giá (Blade, block Builder, Storefront API dùng chung). Một instance mỗi request (scoped):
  * chiến dịch đang bật nạp một lần cho mọi thẻ sản phẩm trên trang.
  *
- * @phpstan-type Offer array{campaign_id: int, label: string, badge: string, badge_style: string, badge_class: string, accent_color: ?string, running: bool, starts_at: ?string, ends_at: string, ends_at_ts: int, starts_at_ts: ?int, show_countdown: bool, show_stock: bool, limit: ?int, sold: int, remaining: ?int, sold_percent: ?int, per_customer: ?int}
+ * @phpstan-type Offer array{campaign_id: int, label: string, badge: string, badge_style: string, badge_class: string, accent_color: ?string, running: bool, starts_at: ?string, ends_at: string, ends_at_ts: int, starts_at_ts: ?int, show_countdown: bool, show_stock: bool, limit: ?int, sold: int, remaining: ?int, sold_percent: ?int, per_customer: ?int, expected_price: ?string}
  */
 final class CampaignPresenter
 {
@@ -41,35 +46,56 @@ final class CampaignPresenter
         private readonly ProductCards $cards,
         private readonly MediaDirectory $media,
         private readonly ManagedPriceLists $managedPriceLists,
+        private readonly VariantDirectory $variants,
+        private readonly PriceResolver $prices,
+        private readonly MoneyFormatter $money,
     ) {}
 
     /**
-     * Chiến dịch đang chạy (ưu tiên cao nhất) có sản phẩm này; không có thì chiến dịch sắp chạy gần nhất.
+     * Chọn chiến dịch công khai đang thắng giá, rồi đến chiến dịch đã hết suất hoặc sắp mở gần nhất.
      * Khi truyền `$priceListCodes` (từ `ResolvedPrice::$priceListCode`), chiến dịch đang chạy chỉ khớp nếu bảng giá của nó
      * nằm trong các bảng giá đang thắng giá.
      *
      * @param  list<string>|null  $priceListCodes
      * @return Offer|null
      */
-    public function forProduct(int $productId, string $locale, int $now, ?array $priceListCodes = null): ?array
+    public function forProduct(int $productId, string $locale, int $now, ?array $priceListCodes = null, ?int $campaignId = null, bool $includeUpcoming = true): ?array
     {
         $upcoming = null;
+        $soldOut = null;
         foreach ($this->active($now) as $campaign) {
+            if ($campaignId !== null && $campaign->id !== $campaignId) {
+                continue;
+            }
             $item = $campaign->items->firstWhere('product_id', $productId);
             if (! $item instanceof PricingCampaignItem) {
                 continue;
             }
             if ($campaign->isRunningAt($now)) {
+                $offer = $this->offer($campaign, $item, $locale, $now, null);
+                if ($offer['remaining'] === 0) {
+                    if ($offer['show_stock']) {
+                        $soldOut ??= $offer;
+                    }
+
+                    continue;
+                }
                 if ($priceListCodes !== null && ! in_array($this->listCode($campaign), $priceListCodes, true)) {
                     continue;
                 }
 
-                return $this->offer($campaign, $item, $locale, $now);
+                return $offer;
             }
-            $upcoming ??= $this->offer($campaign, $item, $locale, $now);
+            if (! $includeUpcoming) {
+                continue;
+            }
+            $start = $campaign->nextStartAt($now);
+            if ($start !== null && ($upcoming === null || $start < $upcoming[2])) {
+                $upcoming = [$campaign, $item, $start];
+            }
         }
 
-        return $upcoming;
+        return $soldOut ?? ($upcoming === null ? null : $this->offer($upcoming[0], $upcoming[1], $locale, $now, $upcoming[2]));
     }
 
     private function listCode(PricingCampaign $campaign): ?string
@@ -164,14 +190,18 @@ final class CampaignPresenter
     /**
      * @return Offer
      */
-    private function offer(PricingCampaign $campaign, PricingCampaignItem $item, string $locale, int $now): array
+    private function offer(PricingCampaign $campaign, PricingCampaignItem $item, string $locale, int $now, ?int $start): array
     {
-        $running = $campaign->isRunningAt($now);
-        $start = $running ? null : $campaign->nextStartAt($now);
+        $running = $start === null;
         $end = $running ? $campaign->currentEndAt($now) : $campaign->ends_at->getTimestamp();
-        $quota = $this->productQuota($campaign, $item) ?? $this->listQuota($campaign);
+        $quota = $this->productQuota($campaign, $item);
+        $listQuota = $this->listQuota($campaign);
+        if ($listQuota !== null && ($quota === null || $listQuota->remaining() < $quota->remaining())) {
+            $quota = $listQuota;
+        }
         $limit = $quota?->limit;
         $sold = $quota === null ? 0 : $quota->sold;
+        $customerLimits = array_filter([$item->per_customer, $campaign->per_customer_total], fn (?int $limit): bool => $limit !== null);
 
         return [
             'campaign_id' => $campaign->id,
@@ -191,8 +221,36 @@ final class CampaignPresenter
             'sold' => $sold,
             'remaining' => $quota?->remaining(),
             'sold_percent' => $limit === null || $limit === 0 ? null : min(100, intdiv($sold * 100, $limit)),
-            'per_customer' => $item->per_customer ?? $campaign->per_customer_total,
+            'per_customer' => $customerLimits === [] ? null : min($customerLimits),
+            'expected_price' => $start === null ? null : $this->expectedPrice($campaign, $item, $start),
         ];
+    }
+
+    private function expectedPrice(PricingCampaign $campaign, PricingCampaignItem $item, int $start): ?string
+    {
+        $code = $this->listCode($campaign);
+        if ($code === null) {
+            return null;
+        }
+
+        $variants = $this->variants->ofProducts([$item->product_id])[$item->product_id] ?? [];
+        $ids = array_map(fn (VariantData $variant): int => $variant->id, $variants);
+        $amounts = [];
+        foreach ($this->prices->forVariants($ids, new PricingContext($start)) as $price) {
+            if ($price->priceListCode === $code) {
+                $amounts[] = $price->amount->amount;
+            }
+        }
+        if ($amounts === []) {
+            return null;
+        }
+
+        $currency = (string) config('vanishop.currency');
+        $minimum = min($amounts);
+        $maximum = max($amounts);
+        $from = $this->money->formatAmount($minimum, $currency);
+
+        return $minimum === $maximum ? $from : $from.' – '.$this->money->formatAmount($maximum, $currency);
     }
 
     private function productQuota(PricingCampaign $campaign, PricingCampaignItem $item): ?PriceQuotaStatus
@@ -226,13 +284,14 @@ final class CampaignPresenter
     }
 
     /**
-     * Chiến dịch đang bật, chưa kết thúc, còn lượt chạy (đang chạy hoặc sắp tới) — ưu tiên cao trước.
+     * Chiến dịch công khai đang bật, còn lượt chạy (đang chạy hoặc sắp tới) — ưu tiên cao trước.
      *
      * @return list<PricingCampaign>
      */
     private function active(int $now): array
     {
         return $this->active ??= PricingCampaign::query()->where('status', 'active')->where('ends_at', '>', Carbon::createFromTimestamp($now))
+            ->whereNull('customer_group_id')
             ->with('items')->orderByDesc('priority')->orderBy('starts_at')->get()
             ->filter(fn (PricingCampaign $campaign): bool => $campaign->isRunningAt($now) || $campaign->nextStartAt($now) !== null)
             ->values()->all();

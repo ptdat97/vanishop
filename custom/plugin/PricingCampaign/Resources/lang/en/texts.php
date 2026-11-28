@@ -32,6 +32,7 @@ return [
         'page_empty' => 'There are no deals right now.',
         'ends_in' => 'Ends in',
         'starts_in' => 'Starts in',
+        'expected_price' => 'Expected price: :price',
         'remaining' => ':count left',
         'remaining_short' => ':count left',
         'sold_out' => 'The deal price is sold out',
