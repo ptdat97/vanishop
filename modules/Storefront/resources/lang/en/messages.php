@@ -35,6 +35,7 @@ return [
     'cart_line_removed' => 'Item removed from cart.',
     'signed_in' => 'Signed in successfully.',
     'registered' => 'Your account is ready. Welcome!',
+    'registered_verify_email' => 'Your account is ready. Open your profile to request an email verification link.',
     'password_reset_sent' => 'If this email is registered, we have sent a password reset link. Please check your inbox.',
     'password_reset_done' => 'Your new password is set. Please sign in again.',
     'order_cancelled' => 'Order cancelled.',

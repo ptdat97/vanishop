@@ -57,6 +57,24 @@ beforeEach(function () {
     ], $overrides));
 });
 
+it('ẩn lookbook cập nhật danh sách và trang chi tiết, trang chi tiết khác vẫn trúng cache', function () {
+    config(['vanishop.storefront.page_cache.mode' => 'app']);
+    $first = ($this->save)();
+    $second = ($this->save)(['slug' => 'mua-he']);
+    $this->artisan('vani:page-cache:invalidate')->assertSuccessful();
+    foreach (['/lookbook', '/lookbook/'.$first->slug, '/lookbook/'.$second->slug] as $path) {
+        $this->get($path)->assertOk();
+        $this->get($path)->assertHeader('X-Vani-Cache', 'HIT');
+    }
+
+    $first->update(['active' => false]);
+    $this->artisan('vani:page-cache:invalidate')->assertSuccessful();
+
+    $this->get('/lookbook')->assertHeader('X-Vani-Cache', 'MISS')->assertDontSee('/lookbook/'.$first->slug);
+    $this->get('/lookbook/'.$first->slug)->assertNotFound();
+    $this->get('/lookbook/'.$second->slug)->assertHeader('X-Vani-Cache', 'HIT');
+});
+
 it('Admin: tạo lookbook (slug tự sinh từ tên, trùng thì báo lỗi), danh sách, sửa, xoá bỏ khai báo ảnh', function () {
     $media = lookbookMedia('c.jpg');
     $this->post($this->admin, ['translations' => ['vi' => ['name' => '']]])->assertSessionHasErrors('translations.vi.name');

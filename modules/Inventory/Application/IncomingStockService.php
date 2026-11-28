@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Inventory\Contracts\Data\IncomingStockData;
 use Modules\Inventory\Contracts\IncomingStock;
+use Modules\Inventory\Events\AvailabilityChanged;
 
 /**
  * Hàng đang về theo SKU (bảng `incoming_stock`, ADR-047).
@@ -17,7 +18,9 @@ final class IncomingStockService implements IncomingStock
     public function set(int $variantId, int $quantity, ?string $expectedOn, string $source): void
     {
         if ($quantity <= 0) {
-            DB::table('incoming_stock')->where('variant_id', $variantId)->delete();
+            if (DB::table('incoming_stock')->where('variant_id', $variantId)->delete() > 0) {
+                event(new AvailabilityChanged([$variantId]));
+            }
 
             return;
         }
@@ -31,6 +34,7 @@ final class IncomingStockService implements IncomingStock
             ['variant_id'],
             ['quantity', 'expected_on', 'source', 'updated_at'],
         );
+        event(new AvailabilityChanged([$variantId]));
     }
 
     public function forVariants(array $variantIds): array

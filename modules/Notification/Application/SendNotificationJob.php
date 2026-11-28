@@ -39,6 +39,12 @@ final class SendNotificationJob implements ShouldQueue
         if ($log === null || $log->status !== NotificationLog::QUEUED) {
             return;
         }
+        $reason = app(NotificationService::class)->skipReason($log->category, $log->channel, $log->customer_id, $log->recipient);
+        if ($reason !== null) {
+            $log->update(['status' => NotificationLog::SKIPPED, 'error' => $reason]);
+
+            return;
+        }
 
         $channel = $channels->all()[$log->channel] ?? null;
         $attempt = $log->attempts + 1;

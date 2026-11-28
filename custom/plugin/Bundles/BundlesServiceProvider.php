@@ -36,7 +36,7 @@ final class BundlesServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         // Dữ liệu hiện trên trang công khai: lưu/xoá → cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
-        $this->pageCacheModels([Bundle::class, BundleItem::class]);
+        $this->pageCacheModels([Bundle::class, BundleItem::class], fn (): array => [self::ID.':offers']);
         if ($this->app->runningInConsole() && ! $this->app->isProduction()) {
             $this->contribute(DemoContent::TAG, BundlesDemoContent::class);
         }

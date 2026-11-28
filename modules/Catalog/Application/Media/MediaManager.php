@@ -14,6 +14,7 @@ use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Persistence\Models\Mediable;
 use Modules\Catalog\Persistence\Models\MediaFolder;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Shared\Contracts\PageCacheInvalidator;
 
 /**
  * Thư viện ảnh dùng chung (Admin): thư mục ảo, tải lên, đổi tên, chuyển thư mục, xoá ảnh không còn dùng.
@@ -35,6 +36,7 @@ final class MediaManager
     public function __construct(
         private readonly MediaLibrary $library,
         private readonly AuditLogger $audit,
+        private readonly PageCacheInvalidator $pageCache,
     ) {}
 
     /**
@@ -179,6 +181,7 @@ final class MediaManager
         $media->forceFill(['focal_x' => $center ? null : $x, 'focal_y' => $center ? null : $y]);
         if ($media->isDirty(['focal_x', 'focal_y'])) {
             $media->save();
+            $this->pageCache->invalidate('media:'.$media->id);
             $this->audit->record('catalog.media.focal_point_changed', 'media', $media->id, ['focal_point' => $media->focalPoint()]);
         }
     }

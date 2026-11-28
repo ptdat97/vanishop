@@ -95,31 +95,27 @@ final class Coupons
      */
     public function issue(Coupon $coupon, array $customerIds, int $now): int
     {
-        if ($coupon->kind !== Coupon::KIND_TEMPLATE || $coupon->promotion_id === null) {
+        if ($customerIds === []) {
             return 0;
         }
-        $issued = [];
-        foreach ($this->vouchers->ofPromotion($coupon->promotion_id) as $voucher) {
-            if ($voucher->customerId !== null) {
-                $issued[$voucher->customerId] = true;
-            }
-        }
-        $expiresAt = $coupon->ends_at?->getTimestamp();
-        if ($coupon->valid_days !== null) {
-            $expiresAt = min($expiresAt ?? PHP_INT_MAX, $now + $coupon->valid_days * 86_400);
-        }
 
-        $count = 0;
-        foreach (array_values(array_unique($customerIds)) as $customerId) {
-            if (isset($issued[$customerId])) {
-                continue;
+        return DB::transaction(function () use ($coupon, $customerIds, $now): int {
+            $template = Coupon::query()->lockForUpdate()->find($coupon->id);
+            if ($template === null || $template->kind !== Coupon::KIND_TEMPLATE || $template->promotion_id === null) {
+                return 0;
             }
-            $this->vouchers->generate($coupon->promotion_id, (string) $coupon->prefix, 1, 1, $expiresAt, $customerId);
-            $issued[$customerId] = true;
-            $count++;
-        }
+            $expiresAt = $template->ends_at?->getTimestamp();
+            if ($template->valid_days !== null) {
+                $expiresAt = min($expiresAt ?? PHP_INT_MAX, $now + $template->valid_days * 86_400);
+            }
+            $issued = $this->vouchers->issuedCustomerIds($template->promotion_id, $customerIds);
+            $remaining = array_diff(array_unique($customerIds), $issued);
+            foreach ($remaining as $customerId) {
+                $this->vouchers->generate($template->promotion_id, (string) $template->prefix, 1, 1, $expiresAt, $customerId);
+            }
 
-        return $count;
+            return count($remaining);
+        }, 3);
     }
 
     private function sync(Coupon $coupon): int

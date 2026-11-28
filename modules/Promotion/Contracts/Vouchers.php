@@ -33,6 +33,12 @@ interface Vouchers
     public function ofPromotion(int $promotionId): array;
 
     /**
+     * @param list<int> $customerIds
+     * @return list<int> khách trong lô đã có mã của khuyến mãi
+     */
+    public function issuedCustomerIds(int $promotionId, array $customerIds): array;
+
+    /**
      * Mã riêng của khách (mọi trạng thái), mới nhất trước — nơi gọi tự lọc còn hạn/còn lượt để hiển thị.
      *
      * @return list<VoucherData>

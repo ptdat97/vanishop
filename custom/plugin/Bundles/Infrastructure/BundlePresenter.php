@@ -14,9 +14,11 @@ use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
 use Modules\Pricing\Contracts\PriceResolver;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Domain\Money\Money;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Storefront\Contracts\ProductCards;
+use Plugin\Bundles\BundlesServiceProvider;
 use Plugin\Bundles\Domain\BundleConfig;
 use Plugin\Bundles\Domain\BundleMath;
 use Plugin\Bundles\Persistence\Bundle;
@@ -73,6 +75,7 @@ final class BundlePresenter
     /** @return Builder<Bundle> */
     private function running(): Builder
     {
+        app(PageCacheTags::class)->add(BundlesServiceProvider::ID.':offers');
         $now = now()->utc();
 
         return Bundle::query()->with('items')->where('active', true)
@@ -84,6 +87,7 @@ final class BundlePresenter
     /** @return array<string, mixed>|null */
     public function find(int $bundleId, string $locale): ?array
     {
+        app(PageCacheTags::class)->add(BundlesServiceProvider::ID.':offers');
         $bundle = Bundle::query()->with('items')->find($bundleId);
 
         return $bundle === null ? null : ($this->present([$bundle], $locale)[0] ?? null);

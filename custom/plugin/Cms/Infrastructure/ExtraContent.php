@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Contracts\MediaUrls;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Support\StoreClock;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Contracts\PublicPageExpiry;
@@ -116,6 +117,7 @@ final class ExtraContent
      */
     public function forProducts(array $productIds, string $locale): array
     {
+        app(PageCacheTags::class)->add(...array_map(fn (int $id): string => CmsServiceProvider::ID.':product:'.$id, $productIds));
         $extras = ProductExtra::query()->whereIn('product_id', $productIds)->get()->keyBy('product_id');
         $promoBox = $this->promoBox($locale);
         $default = StoreLocale::default();
@@ -162,7 +164,7 @@ final class ExtraContent
         }
         $hide = (bool) ($values['hide_promo_box'] ?? false);
         if ($highlights === [] && ! $hide) {
-            ProductExtra::query()->where('product_id', $productId)->delete();
+            ProductExtra::query()->where('product_id', $productId)->first()?->delete();
 
             return;
         }
@@ -193,6 +195,7 @@ final class ExtraContent
      */
     public function banner(int $categoryId, string $locale): ?array
     {
+        app(PageCacheTags::class)->add(CmsServiceProvider::ID.':banner:'.$categoryId);
         $banner = CategoryBanner::query()->where('category_id', $categoryId)->where('active', true)->first();
         if ($banner === null) {
             return null;

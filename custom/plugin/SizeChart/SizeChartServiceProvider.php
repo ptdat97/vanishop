@@ -29,7 +29,7 @@ final class SizeChartServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         // Dữ liệu hiện trên trang công khai: lưu/xoá → cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
-        $this->pageCacheModels([SizeChart::class]);
+        $this->pageCacheModels([SizeChart::class], fn (): array => [self::ID.':charts']);
         // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
         $this->translations($this->pluginPath('Resources/lang'), 'vani-size-chart');
         $this->permissions(['size_chart.view' => 'vani-size-chart::texts.size_chart_service_provider.view_size_charts', 'size_chart.manage' => 'vani-size-chart::texts.size_chart_service_provider.manage_size_charts'], [PermissionRegistry::PRESET_CONTENT]);

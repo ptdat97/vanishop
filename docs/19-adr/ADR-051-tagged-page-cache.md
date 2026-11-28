@@ -89,7 +89,8 @@ Chưa xử lý (chấp nhận): không hỗ trợ Octane — dự án không dù
 - Ngoài §3: hạn bản cache ngắn lại tới mốc **lịch bảng giá** (`PriceListSchedule::nextChangeAfter`), **khung giờ sản phẩm** (`Catalog\Contracts\PublicationSchedule`) và khung giờ mục menu — sale hẹn giờ hiện đúng lúc, không chờ tới 1 giờ.
 - Render bắt đầu trước một lô xoá mà lưu sau lô thì bỏ (khoá "thế hệ" đổi mỗi lần xoá) — tránh lưu HTML đọc dữ liệu cũ với phiên bản tag mới.
 - Tìm kiếm có từ khoá, quá 4 giá trị lọc: không lưu trong ứng dụng; chế độ `cdn` vẫn cho CDN cache như trước.
-- Plugin `vani.cms`, `vani.lookbook`, `vani.bundles`, `vani.size-chart`: lưu bản ghi thì xoá toàn bộ cache trang (lô kế tiếp) — §6b L67.
+- Lookbook ghi tag danh sách và từng lookbook. Combo và bảng size ghi tag khi tra dữ liệu, kể cả kết quả rỗng. Banner và điểm nổi bật của CMS ghi tag theo danh mục và sản phẩm. Nội dung trang, bài viết và danh mục bài viết CMS vẫn dùng tag toàn cục.
+- Ảnh cắt theo điểm lấy nét mang tag `media:{id}`. Thay đổi hàng đang về phát `AvailabilityChanged` sau commit, kể cả khi chỉ đổi ngày dự kiến.
 - Tag gom trong bộ nhớ, ghi hàng đợi một lần cuối request/lệnh/job: nhập file nghìn sản phẩm chỉ ghi hàng đợi một lần.
 - Đo 2026-11-27 (dữ liệu demo, store `database`, dev): HIT 4 truy vấn bảng `cache`, 2–4 ms; MISS trang chủ 137 truy vấn/180 ms, sản phẩm 66/40 ms ([§6b](../20-roadmap/reference-parity-refactor.md) L68). Sau 0.5.105: MISS trang chủ 123 truy vấn; ngay sau "Xoá cache" 142 (trước 221 — tạo phiên bản tag từng cái một).
 

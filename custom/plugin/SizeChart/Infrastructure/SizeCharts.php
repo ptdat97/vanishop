@@ -12,6 +12,7 @@ use Modules\Shared\Contracts\PageCacheInvalidator;
 use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Support\StoreLocale;
 use Plugin\SizeChart\Persistence\SizeChart;
+use Plugin\SizeChart\SizeChartServiceProvider;
 
 /**
  * Bảng size: lưu (chuẩn hoá khối nội dung và luật gợi ý), gán cho sản phẩm/danh mục/thương hiệu, chọn bảng cho một sản
@@ -94,7 +95,7 @@ final class SizeCharts
     public function assign(string $target, int $targetId, ?int $chartId): void
     {
         // Bảng size hiện trên trang sản phẩm: cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
-        app(PageCacheInvalidator::class)->invalidate(PageCacheTags::EVERYTHING);
+        app(PageCacheInvalidator::class)->invalidate(SizeChartServiceProvider::ID.':'.$target.':'.$targetId);
         if ($chartId === null) {
             DB::table('plg_size_chart_assignments')->where('target_type', $target)->where('target_id', $targetId)->delete();
 
@@ -115,6 +116,10 @@ final class SizeCharts
         if ($brandId !== null) {
             $candidates[] = ['brand', $brandId];
         }
+        app(PageCacheTags::class)->add(SizeChartServiceProvider::ID.':charts', ...array_map(
+            fn (array $target): string => SizeChartServiceProvider::ID.':'.$target[0].':'.$target[1],
+            $candidates,
+        ));
 
         $assigned = DB::table('plg_size_chart_assignments')
             ->join('plg_size_charts', 'plg_size_charts.id', '=', 'plg_size_chart_assignments.chart_id')

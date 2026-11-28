@@ -54,7 +54,8 @@ final class PromotionEvaluator implements PromotionEngine
             return new PromotionResult([], array_map(fn (string $code) => new VoucherRejection($code, 'not_applicable'), $context->voucherCodes));
         }
 
-        $customerUsed = $this->customerUsage($context->customerId);
+        $usageCustomerId = $context->customerId ?? ($context->attributes['promotion_usage_customer_id'] ?? null);
+        $customerUsed = $this->customerUsage(is_int($usageCustomerId) ? $usageCustomerId : null);
         [$voucherByPromotion, $rejected] = $this->vouchers($context, $customerUsed);
 
         /** @var Collection<int, Promotion> $candidates */
@@ -65,7 +66,7 @@ final class PromotionEvaluator implements PromotionEngine
             ->orderByDesc('priority')->orderBy('id')
             ->get()
             ->filter(fn (Promotion $promotion): bool => $promotion->isRunningAt($context->now) && ! $this->exhausted($promotion)
-                && ! $this->customerExhausted($promotion, $context->customerId, $customerUsed));
+                && ! $this->customerExhausted($promotion, $customerUsed));
 
         [$subtotals, $references, $discounted] = $this->lineAmounts($context);
 
@@ -273,7 +274,7 @@ final class PromotionEvaluator implements PromotionEngine
                 $voucher->expires_at !== null && $voucher->expires_at->getTimestamp() <= $context->now => 'expired',
                 $voucher->customer_id !== null && $voucher->customer_id !== $context->customerId => 'not_owner',
                 ($voucher->usage_limit !== null && $voucher->used_count >= $voucher->usage_limit) || $this->exhausted($promotion) => 'exhausted',
-                $this->customerExhausted($promotion, $context->customerId, $customerUsed) => 'customer_limit',
+                $this->customerExhausted($promotion, $customerUsed) => 'customer_limit',
                 isset($byPromotion[$promotion->id]) => 'not_applicable', // một voucher cho mỗi khuyến mãi
                 default => null,
             };
@@ -309,9 +310,9 @@ final class PromotionEvaluator implements PromotionEngine
     /**
      * @param  array<int, int>  $customerUsed
      */
-    private function customerExhausted(Promotion $promotion, ?int $customerId, array $customerUsed): bool
+    private function customerExhausted(Promotion $promotion, array $customerUsed): bool
     {
-        return $customerId !== null && $promotion->usage_limit_per_customer !== null
+        return $promotion->usage_limit_per_customer !== null
             && ($customerUsed[$promotion->id] ?? 0) >= $promotion->usage_limit_per_customer;
     }
 

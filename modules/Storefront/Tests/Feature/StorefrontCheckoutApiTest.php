@@ -145,6 +145,20 @@ it('giỏ có dòng thiếu hàng → 422 cart_not_ready, không tạo đơn (tr
     expect(Order::query()->withoutGlobalScopes()->count())->toBe(0);
 });
 
+it('báo giá theo điện thoại nhận ra mã đã hết lượt của khách vãng lai, số khác vẫn được giảm', function () {
+    $promotion = C::promotion(['usage_limit_per_customer' => 1], ['LAN1' => null]);
+    $customerId = app(\Modules\Customer\Contracts\Customers::class)->resolveForCheckout('0912345678', 'Lan', null);
+    DB::table('promotion_customer_usages')->insert(['promotion_id' => $promotion->id, 'customer_id' => $customerId, 'used_count' => 1]);
+    ($this->add)($this->s, 1);
+    ($this->vouchers)(['LAN1'])->assertOk();
+
+    ($this->quote)(['contact' => ['phone' => '0912 345 678']])->assertOk()
+        ->assertJsonPath('data.rejected_vouchers.0.reason', 'customer_limit')->assertJsonPath('data.discount.amount', 0);
+    ($this->quote)(['contact' => ['phone' => '0912 345 679']])->assertOk()
+        ->assertJsonPath('data.rejected_vouchers', [])->assertJsonPath('data.discount.amount', 30000);
+    $this->assertDatabaseCount('customers', 1);
+});
+
 it('voucher hết lượt sau khi khách xem tổng → bỏ mã, tổng tăng nên 409 checkout.totals_changed, không tạo đơn; đặt lại theo tổng mới → có đơn, mã ở meta.dropped_vouchers', function () {
     C::promotion([], ['CUOI' => 1]);
     ($this->add)($this->s, 1);

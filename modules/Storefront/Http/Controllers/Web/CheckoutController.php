@@ -58,7 +58,7 @@ final class CheckoutController
         // Báo giá theo đúng giá trị đang hiện trên form (cả địa chỉ điền sẵn): phí giao của hãng có thể theo địa chỉ.
         $checkoutQuote = $this->checkout->quote(CheckoutRequestForm::build(Arr::undot($form['values']), $key, (string) $request->attributes->get(ResolveStorefrontContext::SOURCE_ATTRIBUTE, 'web')));
         $quote = $this->presenter->quote($checkoutQuote);
-        $voucherNotice = $request->session()->get('voucher_notice');
+        $voucherNotice = $request->session()->get('voucher_notice') ?? $this->customerLimitNotice($quote['rejected_vouchers']);
         $quote['rejected_vouchers'] = [];
 
         $directory = $this->addresses->directory();
@@ -89,12 +89,14 @@ final class CheckoutController
         if ($request->input('action') === 'quote' && $request->header('X-Vani-Checkout-View') === 'quote') {
             $key = $this->cart->key();
             $quote = $this->presenter->quote($this->checkout->quote($request->toCheckoutRequest($key)));
+            $voucherNotice = $this->customerLimitNotice($quote['rejected_vouchers']);
             $quote['rejected_vouchers'] = [];
 
             return response()->view('theme::partials.checkout-quote', [
                 'quote' => $quote,
                 'values' => Arr::dot($data),
                 'voucherCode' => $this->voucher->code($key) ?? '',
+                'voucherNotice' => $voucherNotice,
             ])->header('Cache-Control', 'private, no-store');
         }
 
@@ -131,6 +133,12 @@ final class CheckoutController
         }
 
         return redirect()->to(LocalizedUrls::route('storefront.order', $order['id']));
+    }
+
+    /** @param list<array{code: string, reason: string, message: string}> $rejections */
+    private function customerLimitNotice(array $rejections): ?string
+    {
+        return collect($rejections)->firstWhere('reason', 'customer_limit')['message'] ?? null;
     }
 
     /**

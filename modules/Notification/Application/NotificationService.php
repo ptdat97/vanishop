@@ -93,9 +93,9 @@ final class NotificationService implements Notifier
 
     private function record(NotificationRequest $request, NotificationChannel $channel, NotificationTemplate $template): ?NotificationLog
     {
-        $skip = $this->consentMissing($request, $channel->code());
+        $skipReason = $this->skipReason($request->category, $channel->code(), $request->recipient->customerId, $request->recipient->email);
         $key = mb_substr("{$request->key}:{$channel->code()}", 0, 160);
-        $variables = $this->variables($request, $channel->code(), $skip);
+        $variables = $this->variables($request, $channel->code(), $skipReason !== null);
         $body = TemplateRenderer::render($template->body, $variables);
         if (isset($variables['unsubscribe_url']) && $body !== null && ! str_contains($body, (string) $variables['unsubscribe_url'])) {
             $body = rtrim($body)."\n\n—\n".__('notification::messages.unsubscribe_footer', ['url' => $variables['unsubscribe_url']], $request->recipient->locale ?? StoreLocale::default());
@@ -112,8 +112,8 @@ final class NotificationService implements Notifier
             'subject' => TemplateRenderer::render($template->subject, $variables),
             'body' => $body,
             'meta' => $template->meta === null ? null : json_encode(TemplateRenderer::renderArray($template->meta, $variables), JSON_UNESCAPED_UNICODE),
-            'status' => $skip ? NotificationLog::SKIPPED : NotificationLog::QUEUED,
-            'error' => $skip ? 'consent.missing' : null,
+            'status' => $skipReason === null ? NotificationLog::QUEUED : NotificationLog::SKIPPED,
+            'error' => $skipReason,
             'correlation_id' => Context::get('correlation_id'),
             'created_at' => now(),
         ]);
@@ -140,14 +140,22 @@ final class NotificationService implements Notifier
     /**
      * Tin marketing: bắt buộc consent theo kênh (mail ↔ consent `email`).
      */
-    private function consentMissing(NotificationRequest $request, string $channel): bool
+    public function skipReason(string $category, string $channel, ?int $customerId, ?string $email): ?string
     {
-        if ($request->category !== NotificationRequest::MARKETING) {
-            return false;
+        if ($category !== NotificationRequest::MARKETING) {
+            return null;
+        }
+        if ($customerId === null || ! $this->customers->hasConsent($customerId, $channel === 'mail' ? 'email' : $channel, 'marketing')) {
+            return 'consent.missing';
+        }
+        if ($channel === 'mail') {
+            $customer = $this->customers->find($customerId);
+            if (! $customer?->emailVerified || $customer->email === null || $email === null || strcasecmp($customer->email, $email) !== 0) {
+                return 'email.unverified';
+            }
         }
 
-        return $request->recipient->customerId === null
-            || ! $this->customers->hasConsent($request->recipient->customerId, $channel === 'mail' ? 'email' : $channel, 'marketing');
+        return null;
     }
 
     private function address(Recipient $recipient, string $channel): string

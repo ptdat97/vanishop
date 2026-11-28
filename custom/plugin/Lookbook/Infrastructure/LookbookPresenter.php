@@ -7,7 +7,9 @@ namespace Plugin\Lookbook\Infrastructure;
 use Illuminate\Support\Str;
 use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Shared\Contracts\PageCacheTags;
 use Modules\Shared\Support\StoreLocale;
+use Plugin\Lookbook\LookbookServiceProvider;
 use Plugin\Lookbook\Persistence\Lookbook;
 use Plugin\Lookbook\Persistence\LookbookImage;
 
@@ -27,6 +29,7 @@ final class LookbookPresenter
      */
     public function summaries(array $lookbooks, string $locale): array
     {
+        app(PageCacheTags::class)->add(LookbookServiceProvider::ID.':listing');
         $covers = $this->media->find(array_values(array_filter(array_map(fn (Lookbook $lookbook): ?int => $this->coverId($lookbook), $lookbooks))));
 
         return array_map(fn (Lookbook $lookbook): array => [
@@ -43,6 +46,7 @@ final class LookbookPresenter
      */
     public function detail(Lookbook $lookbook, string $locale): array
     {
+        app(PageCacheTags::class)->add(LookbookServiceProvider::ID.':book:'.$lookbook->id);
         $ids = [...$lookbook->images->pluck('media_id')->all(), ...($lookbook->cover_media_id === null ? [] : [$lookbook->cover_media_id])];
         $media = $ids === [] ? [] : $this->media->find(array_values(array_unique($ids)));
         $name = (string) $lookbook->text('name', $locale);

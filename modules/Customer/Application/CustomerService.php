@@ -30,6 +30,11 @@ final class CustomerService implements Customers
         return app(ConsentService::class)->allows($customerId, $channel, $purpose);
     }
 
+    public function idByPhone(string $e164): ?int
+    {
+        return $this->activeByPhone($e164)?->id;
+    }
+
     /**
      * Khách vãng lai đặt hàng: đơn gắn hồ sơ theo SĐT liên hệ (kể cả khi SĐT đó đã là tài khoản). SĐT chưa có hồ sơ mà email
      * liên hệ là email **đã xác minh** của một tài khoản → đơn vào lịch sử của tài khoản đó (0.5.12; không ghi SĐT vào tài khoản).

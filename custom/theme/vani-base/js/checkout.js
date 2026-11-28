@@ -100,7 +100,7 @@ export function mountCheckout() {
     });
     ward?.addEventListener('vani:wards-state', syncBusyState);
     form.addEventListener('change', (event) => {
-        if (event.target.matches('[data-ward-select], input[name="shipping_method"], input[name="payment_method"]')) {
+        if (event.target.matches('[data-ward-select], input[name="contact[phone]"], input[name="shipping_method"], input[name="payment_method"]')) {
             void requote();
         } else if (event.target.matches('[data-province-select]') && pending) {
             pending.abort();

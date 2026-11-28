@@ -84,7 +84,7 @@ final class AccountController
         $result = $this->sessions->register($data['email'], $data['password'], $data['full_name'], $data['phone'], (bool) ($data['marketing_email'] ?? false), (string) $request->ip(), 'web');
 
         if ($result['session'] !== null) {
-            return redirect()->to($this->signIn->signIn($request, $result['session']['token'], $result['session']['customer']->id))->with('status', __('storefront::messages.registered'));
+            return redirect()->to($this->signIn->signIn($request, $result['session']['token'], $result['session']['customer']->id))->with('status', __('storefront::messages.registered_verify_email'));
         }
 
         return match ($result['status']) {
@@ -121,7 +121,7 @@ final class AccountController
         }
         $request->session()->forget(self::REGISTER_OTP_PHONE);
 
-        return redirect()->to($this->signIn->signIn($request, $session['token'], $session['customer']->id))->with('status', __('storefront::messages.registered'));
+        return redirect()->to($this->signIn->signIn($request, $session['token'], $session['customer']->id))->with('status', __('storefront::messages.registered_verify_email'));
     }
 
     /**

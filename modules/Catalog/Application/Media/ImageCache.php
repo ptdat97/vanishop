@@ -16,6 +16,7 @@ use Modules\Catalog\Contracts\Data\ImageSize;
 use Modules\Catalog\Contracts\ImageFormat;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Shared\Contracts\PageCacheTags;
 
 /**
  * Ảnh thu nhỏ tạo khi có request đầu tiên và lưu tại public/cache:
@@ -223,6 +224,10 @@ final class ImageCache
 
     private function cachedUrl(Media $media, ImageSize $size, bool $product): string
     {
+        if ($product && $size->crop) {
+            app(PageCacheTags::class)->add('media:'.$media->id);
+        }
+
         return asset('cache/'.self::relativePath($media->checksum, $this->derivativeKey($media, $size, $product), $this->extensionFor($media)));
     }
 

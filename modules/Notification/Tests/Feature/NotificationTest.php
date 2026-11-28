@@ -113,8 +113,16 @@ it('tin marketing chỉ gửi khi có consent theo kênh; không consent → ghi
         ->and(NotificationLog::query()->where('type', 'promo')->sole()->status)->toBe('skipped');
 
     T::seed(fn () => app(ConsentService::class)->set($order->customer_id, 'email', 'marketing', true, 'test'));
-    expect(app(Notifier::class)->notify($request('promo:2')))->toBe(['mail']);
+    expect(app(Notifier::class)->notify($request('promo:2')))->toBe([]);
+    $this->assertDatabaseHas('notification_logs', ['idempotency_key' => 'promo:2:mail', 'error' => 'email.unverified']);
+    $customer = Customer::query()->findOrFail($order->customer_id);
+    $customer->update(['email_verified_at' => now()]);
+    expect(app(Notifier::class)->notify($request('promo:3')))->toBe(['mail']);
     Queue::assertPushed(SendNotificationJob::class);
+    $customer->update(['email' => 'mai@example.com']);
+    $queued = NotificationLog::query()->where('idempotency_key', 'promo:3:mail')->sole();
+    (new SendNotificationJob($queued->id))->handle(app(ChannelRegistry::class));
+    expect($queued->refresh())->status->toBe('skipped')->error->toBe('email.unverified');
 });
 
 it('giao hàng: tin "đang giao" và "đã giao" kèm hãng + mã vận đơn, mỗi vận đơn một lần', function () {

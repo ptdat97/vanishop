@@ -285,6 +285,10 @@ final class CheckoutService implements Checkout, VoucherPreview
 
         // Thuộc tính ngữ cảnh cho khuyến mãi (mã giới thiệu, chiến dịch…) do plugin bổ sung từ request.
         $attributes = Hook::filter('vani.checkout.context', [], $request);
+        $attributes = is_array($attributes) ? array_filter($attributes, 'is_string', ARRAY_FILTER_USE_KEY) : [];
+        if ($customerId === null && ($phone = Phones::parse((string) ($request->contact['phone'] ?? ''))) !== null) {
+            $attributes['promotion_usage_customer_id'] = $this->customers->idByPhone($phone->e164);
+        }
 
         return new TotalsContext(
             customerId: $customerId,
@@ -295,7 +299,7 @@ final class CheckoutService implements Checkout, VoucherPreview
             shippingMethod: $request->shippingMethod,
             shippingAddress: $request->shippingAddress,
             now: now()->getTimestamp(),
-            attributes: is_array($attributes) ? array_filter($attributes, fn (mixed $value, mixed $key): bool => is_string($key), ARRAY_FILTER_USE_BOTH) : [],
+            attributes: $attributes,
         );
     }
 

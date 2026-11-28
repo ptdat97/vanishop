@@ -61,7 +61,12 @@ final class CmsServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         // Dữ liệu hiện trên trang công khai: lưu/xoá → cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
-        $this->pageCacheModels([Category::class, CategoryBanner::class, Content::class, Page::class, Post::class, ProductExtra::class]);
+        $this->pageCacheModels([Category::class, Content::class, Page::class, Post::class]);
+        $this->pageCacheModels([ProductExtra::class], fn (ProductExtra $extra): array => [self::ID.':product:'.$extra->product_id]);
+        $this->pageCacheModels([CategoryBanner::class], fn (CategoryBanner $banner): array => [
+            self::ID.':banner:'.$banner->category_id,
+            self::ID.':banner:'.($banner->getRawOriginal('category_id') ?? $banner->category_id),
+        ]);
         if ($this->app->runningInConsole() && ! $this->app->isProduction()) {
             $this->contribute(DemoContent::TAG, CmsDemoContent::class);
         }

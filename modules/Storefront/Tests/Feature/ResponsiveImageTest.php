@@ -21,6 +21,7 @@ it('sizes theo bố cục: cột cố định px khi màn hình rộng hơn vùn
 });
 
 it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã lưu) + sizes theo lưới; ảnh nhỏ không có bản thu nhỏ thì chỉ src', function () {
+    config(['vanishop.storefront.page_cache.mode' => 'app']);
     Storage::fake('public');
     ['brand' => $brand, 's' => $variant] = C::store();
     $product = $variant->product;
@@ -38,11 +39,14 @@ it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã
         ->and($html)->toContain('srcset="'.e($srcset).'"')
         ->and($html)->toContain('sizes="(min-width: 1152px) 288px, (min-width: 768px) 25vw, 50vw"');
 
+    $this->artisan('vani:page-cache:invalidate')->assertSuccessful();
     $this->getJson('/api/storefront/v1/products')->assertOk()->assertJsonPath('data.0.image_srcset', $srcset);
+    $this->getJson('/api/storefront/v1/products')->assertHeader('X-Vani-Cache', 'HIT');
 
     $this->actingAs(CatalogTestHelpers::staff(['admin.access', 'media.manage']), 'staff')
         ->postJson("/admin/media/items/{$media->id}/focal-point", ['x' => 90, 'y' => 20])->assertOk();
     $focused = $media->refresh()->srcset('product');
+    $this->artisan('vani:page-cache:invalidate')->assertSuccessful();
     expect($focused)->toContain('-f90-20-')->not->toBe($srcset);
     $this->get('/thuong-hieu/'.$brand->slug)->assertSee('srcset="'.e($focused).'"', false);
     $this->get('/san-pham/'.$product->slug)->assertSee('srcset="'.e($focused).'"', false);

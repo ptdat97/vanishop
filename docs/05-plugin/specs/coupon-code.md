@@ -33,7 +33,7 @@ Ngoài phạm vi: mã giảm **phí vận chuyển** (cần action nhắm phí g
 - Danh sách: mã (hoặc "N mã" khi sinh hàng loạt / mã mẫu), ưu đãi ("Giảm 10%, tối đa 50.000đ"), điều kiện tóm tắt, đã dùng / tổng lượt, tổng giảm (`ManagedPromotions::usage`), trạng thái lịch (Sắp chạy / Đang chạy / Đã kết thúc / Tạm ngưng).
 - Form: mã đơn hoặc sinh hàng loạt (tiền tố + số lượng ≤ 5000); giảm % (1–90) hoặc số tiền; giảm tối đa; đơn tối thiểu; phạm vi sản phẩm (sản phẩm / danh mục / bộ sưu tập / thương hiệu, tìm bằng `CatalogLookup`); "không áp cho hàng đang giảm giá"; nhóm khách; tổng lượt; lượt mỗi khách (mặc định 1); bắt đầu/kết thúc; cộng dồn với khuyến mãi khác hay độc quyền; hiện công khai; mô tả cho khách.
 - Lưu → `ManagedPromotions::sync('vani.coupon-code', id, …)` với `requiresVoucher = true`; mã → `Vouchers::issue`. Lỗi validate của Core (`action_config`, `rules.N.*`) hiện tại ô tương ứng.
-- **Mã mẫu → phát mã riêng**: chọn khách / nhóm khách / tag → mỗi khách một mã `TIENTO-XXXXXX`, 1 lượt, hạn = hạn mẫu hoặc N ngày. Phát trên queue khi > 200 khách; audit.
+- **Phát mã riêng từ mã mẫu.** Chọn trực tiếp tối đa 200 khách hoặc gửi nhóm/tag qua queue theo lô 500. Mỗi lô khoá mã mẫu và tra các khách đã nhận bằng `Vouchers::issuedCustomerIds`. Mỗi khách nhận một mã dùng một lần. Hạn mã là mốc sớm hơn giữa ngày hết hạn của mẫu và số ngày hiệu lực kể từ lúc phát.
 - Xoá: mã chưa dùng thì xoá hẳn; đã dùng thì Core chuyển sang tắt (`ManagedPromotions::remove`).
 - Quyền `coupon_code.view`, `coupon_code.manage` (preset Marketing).
 

@@ -31,7 +31,8 @@ final class LookbookServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         // Dữ liệu hiện trên trang công khai: lưu/xoá → cache trang hết hiệu lực trong lô kế tiếp (ADR-051).
-        $this->pageCacheModels([Lookbook::class, LookbookImage::class]);
+        $this->pageCacheModels([Lookbook::class], fn (Lookbook $book): array => [self::ID.':listing', self::ID.':book:'.$book->id]);
+        $this->pageCacheModels([LookbookImage::class], fn (LookbookImage $image): array => [self::ID.':listing', self::ID.':book:'.$image->lookbook_id]);
         $this->translations($this->pluginPath('Resources/lang'), 'vani-lookbook');
         $this->permissions(['lookbook.view' => 'Xem lookbook', 'lookbook.manage' => 'vani-lookbook::texts.lookbook_service_provider.create_edit_delete_lookbooks'], [PermissionRegistry::PRESET_CONTENT]);
         $this->settings([

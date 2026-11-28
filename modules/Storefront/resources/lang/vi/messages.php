@@ -35,6 +35,7 @@ return [
     'cart_line_removed' => 'Đã xoá sản phẩm khỏi giỏ.',
     'signed_in' => 'Đăng nhập thành công.',
     'registered' => 'Đăng ký thành công. Chào mừng bạn!',
+    'registered_verify_email' => 'Đăng ký thành công. Vào Hồ sơ để gửi link xác minh địa chỉ email của bạn.',
     'password_reset_sent' => 'Nếu email này đã đăng ký, chúng tôi đã gửi link đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.',
     'password_reset_done' => 'Đã đặt mật khẩu mới. Vui lòng đăng nhập lại.',
     'order_cancelled' => 'Đã huỷ đơn hàng.',

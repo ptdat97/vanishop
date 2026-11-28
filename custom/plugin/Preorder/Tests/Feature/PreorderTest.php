@@ -74,6 +74,20 @@ it('SKU hết hàng có hàng đang về: bán được tới % đang về; tran
     expect(($this->ats)())->toBe(0);
 });
 
+it('đổi lịch và xoá hàng đang về cập nhật trang sản phẩm đã cache', function () {
+    config(['vanishop.storefront.page_cache.mode' => 'app']);
+    $api = '/api/storefront/v1/products/'.$this->product->slug;
+    $incoming = app(IncomingStock::class);
+    foreach (['2026-11-30', '2026-12-02', null] as $date) {
+        T::seed(fn () => $incoming->set($this->s->id, $date === null ? 0 : 3, $date, 'staff'));
+        $this->artisan('vani:page-cache:invalidate')->assertSuccessful();
+        $response = $this->getJson($api)->assertOk()->assertHeader('X-Vani-Cache', 'MISS');
+        $variants = $response->json('data.extensions')[PreorderServiceProvider::ID]['variants'] ?? [];
+        expect($variants)->toBe($date === null ? [] : [$this->s->id => $date]);
+        $this->getJson($api)->assertHeader('X-Vani-Cache', 'HIT');
+    }
+});
+
 it('đơn đặt trước: thẻ "chờ hàng" trên trang đơn, không đẩy lên hãng được; nhập kho trừ số đang về và mở chốt', function () {
     C::autoConfirmCod();
     T::seed(fn () => app(IncomingStock::class)->set($this->s->id, 3, '2026-11-30', 'staff'));

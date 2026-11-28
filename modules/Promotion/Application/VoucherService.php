@@ -36,6 +36,12 @@ final class VoucherService implements Vouchers
         return Voucher::query()->where('customer_id', $customerId)->orderByDesc('id')->get()->map($this->data(...))->all();
     }
 
+    public function issuedCustomerIds(int $promotionId, array $customerIds): array
+    {
+        return Voucher::query()->where('promotion_id', $promotionId)->whereIn('customer_id', $customerIds)
+            ->distinct()->pluck('customer_id')->map(fn (mixed $id): int => (int) $id)->all();
+    }
+
     public function setActive(int $voucherId, bool $active): void
     {
         $this->promotions->setVoucherStatus(Voucher::query()->findOrFail($voucherId), $active ? 'active' : 'inactive');

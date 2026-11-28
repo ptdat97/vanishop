@@ -84,6 +84,8 @@ it('Vouchers: sinh mã riêng có hạn cho khách, đọc theo khách; xoá mã
         ->and($mine[0]->expiresAt)->toBe($expiresAt)
         ->and($mine[0]->usageLimit)->toBe(1)
         ->and($vouchers->ofPromotion($promotion->id))->toHaveCount(3);
+    expect($vouchers->issuedCustomerIds($promotion->id, [7, 8]))->toBe([7])
+        ->and($vouchers->issuedCustomerIds($promotion->id, [8]))->toBe([]);
 
     $used = $this->engine->evaluate(($this->context)([$codes[0]], 7));
     DB::transaction(fn () => $this->engine->recordUsage(2101, 7, 'VND', $used));

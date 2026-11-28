@@ -112,7 +112,7 @@ Campaign gói **khuyến mãi + bảng giá sale/thành viên** chạy chung m�
 
 ## 5.2 Lượt mỗi khách, mã riêng, giảm tối đa, trần theo giá gốc (Implemented, 0.5.109)
 
-- **Lượt mỗi khách:** `promotions.usage_limit_per_customer`. Bộ đếm `promotion_customer_usages(promotion_id, customer_id, used_count)` luôn được ghi khi đơn có khách (kể cả khuyến mãi chưa giới hạn, để đặt giới hạn về sau tính đúng); tăng bằng `UPDATE … WHERE used_count < limit` trong `recordUsage`, hoàn trong `revertUsage`. Ở giỏ khách vãng lai chưa xác định nên chưa chặn; lúc đặt đơn Checkout đã giải khách theo SĐT nên đánh giá lại sẽ bỏ mã (`customer_limit`, ADR-044 §6), còn hai đơn song song thì đơn sau rollback với `promotion.customer_limit_reached`.
+- **Lượt mỗi khách.** Báo giá checkout của khách vãng lai tra SĐT để kiểm lượt đã dùng. Vượt giới hạn trả `customer_limit`. Khi đặt đơn, `recordUsage` tăng bộ đếm có điều kiện trong transaction để xử lý hai đơn đồng thời. Huỷ đơn hoàn lượt. Gộp hồ sơ chuyển voucher riêng và cộng bộ đếm của hai hồ sơ.
 - **Mã riêng:** `vouchers.customer_id` — chỉ khách đó dùng được; khách khác/chưa đăng nhập nhận `not_owner`. Contract `Vouchers` cho plugin phát mã (mã chào mừng, ví voucher). Admin hiện cột "Khách" (id; tên do plugin hiện).
 - **Giảm tối đa:** `percent_off.max_amount` kẹp tổng giảm của khuyến mãi, chia lại theo tỷ trọng dòng.
 - **Trần theo giá gốc:** `PromotionLine::$compareAt` (giá gạch khi dòng có giá từ bảng giá sale/thành viên hoặc giá gốc nhập tay). Trần của dòng = `max_bp × giá gốc × số lượng`, trừ phần đã giảm bằng giá (giá gốc − giá bán) — flash sale −50% thì không giảm thêm khi trần 50%. Dòng không có giá gạch: như cũ.

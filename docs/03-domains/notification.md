@@ -29,7 +29,7 @@ flowchart LR
 - **Render lúc xếp hàng**: `subject`, `body` và mọi chuỗi trong `meta` (tham số riêng của kênh, vd. ZNS `template_id` + `params`) được render rồi lưu vào nhật ký → mọi lần thử gửi cùng một nội dung.
 - **Idempotent (R18)**: `idempotency_key = <key của sự việc>:<kênh>` unique; listener chạy lại không gửi trùng. Key của Core: `order_placed:<order id>`, `order_cancelled:<order id>`, `shipment_shipped:<shipment id>`, `shipment_delivered:<shipment id>`.
 - **Retry**: `SendResult::retryable` → thử lại (backoff 1m, 5m, 15m, 1h; tối đa 5 lần), `permanent` → `failed`. Exception bất ngờ coi như retryable.
-- **Consent**: tin `marketing` chỉ gửi khi khách có consent `marketing` theo kênh (`mail` ↔ consent `email`); không có → nhật ký `skipped` (`consent.missing`). Tin giao dịch không cần consent ([customer §5](customer.md)).
+- Tin marketing cần consent theo kênh. Email nhận phải khớp email hiện tại đã xác minh của khách. Core kiểm tra khi xếp hàng và trước mỗi lần gửi. Nhật ký ghi `skipped` với `consent.missing` hoặc `email.unverified`. Tin giao dịch dùng thông tin liên hệ trên đơn.
 - **Link huỷ nhận tin (0.5.85):** tin `marketing` gửi qua email có biến `{{ unsubscribe_url }}` (`CustomerAccounts::unsubscribeUrl`). Mẫu không đặt biến này thì Core tự thêm một dòng cuối email (`notification::messages.unsubscribe_footer`), nên tin marketing của Core hay plugin đều không thiếu cách huỷ (Nghị định 91/2020).
 - Lỗi xếp hàng tin không làm hỏng nghiệp vụ (listener bắt lỗi, ghi log).
 
