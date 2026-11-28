@@ -6,6 +6,10 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.119 — 2026-11-28 · Extension API 1.55.0
+
+- `Pricing\Contracts\ListPriceReader` (`forVariants`, `listId`): giá niêm yết theo variant cho plugin tính giá khuyến mãi của bảng giá mình quản lý (`vani.pricing-campaign`); đổi giá niêm yết → `PriceChanged` của bảng `base`. Owner duyệt 2026-11-28.
+
 ## 0.5.118 — 2026-11-28 · Extension API 1.54.0
 
 Đợt 3 B4 — campaign do plugin quản lý:

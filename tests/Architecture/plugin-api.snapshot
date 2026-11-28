@@ -1,4 +1,4 @@
-Extension API 1.54.0
+Extension API 1.55.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -834,6 +834,9 @@ class Modules\Pricing\Contracts\Data\PricingContext
   __construct(int $now, ?int $customerGroupId = NULL, ?int $customerId = NULL)
 class Modules\Pricing\Contracts\Data\ResolvedPrice
   __construct(int $variantId, Modules\Shared\Domain\Money\Money $amount, ?Modules\Shared\Domain\Money\Money $compareAt, ?int $discountPercent, string $priceListCode)
+interface Modules\Pricing\Contracts\ListPriceReader
+  forVariants(array $variantIds): array
+  listId(): ?int
 interface Modules\Pricing\Contracts\ManagedPriceLists
   sync(string $owner, string $key, Modules\Pricing\Contracts\Data\ManagedPriceList $list): int
   remove(string $owner, string $key): void

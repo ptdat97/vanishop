@@ -7,6 +7,7 @@ use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Pricing\Application\PriceListWorkspace;
 use Modules\Pricing\Contracts\Data\ManagedPriceList;
 use Modules\Pricing\Contracts\Data\PricingContext;
+use Modules\Pricing\Contracts\ListPriceReader;
 use Modules\Pricing\Contracts\ManagedPriceLists;
 use Modules\Pricing\Contracts\PriceListSchedule;
 use Modules\Pricing\Contracts\PriceResolver;
@@ -75,4 +76,12 @@ it('lịch lặp khung giờ vàng: giá chỉ có trong khung; mốc đổi gi�
     $this->travelTo(CarbonImmutable::parse('2026-12-01 12:30', 'Asia/Ho_Chi_Minh'));
     expect($price())->toBe(200_000)
         ->and(app(PriceListSchedule::class)->nextChangeAfter(now()->getTimestamp()))->toBe(CarbonImmutable::parse('2026-12-01 14:00', 'Asia/Ho_Chi_Minh')->getTimestamp());
+});
+
+it('ListPriceReader: giá niêm yết theo variant, không lẫn giá sale đang áp', function () {
+    ($this->sync)([$this->s->id => 150_000]);
+    $reader = app(ListPriceReader::class);
+
+    expect($reader->forVariants([$this->s->id, $this->m->id, 999_999]))->toBe([$this->s->id => 300_000, $this->m->id => 200_000])
+        ->and($reader->listId())->toBe(PriceList::query()->where('code', 'base')->value('id'));
 });

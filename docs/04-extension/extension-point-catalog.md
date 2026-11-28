@@ -68,6 +68,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `PriceImporter` | Đặt giá niêm yết (bảng `base`) theo SKU. **Implemented** (0.3.27) | Pricing |
 | `ManagedPriceLists` | Plugin đồng bộ bảng giá sale/thành viên của mình (giá theo variant, lịch, ưu tiên, nhóm khách); kiểm trần giảm; Admin chỉ xem, liên kết sang plugin. **Implemented** (0.5.115) | Pricing |
 | `PriceQuotas` | Suất giá của bảng giá (cả bảng / sản phẩm / variant, giới hạn mỗi khách): định nghĩa, tình trạng, kiểm và trừ khi đặt đơn, hoàn khi huỷ; hết suất → giá về giá thường. **Implemented** (0.5.117) | Pricing |
+| `ListPriceReader` | Giá niêm yết (bảng `base`) theo variant, id bảng niêm yết. **Implemented** (0.5.119) | Pricing |
 | `InventoryReservation` | `reserve`, `release`, `commit` (**Implemented**) | Inventory |
 | `LocationRegistry` | Đọc/tạo/sửa kho (`LocationData`), audit + optimistic lock, mã trùng → ValidationException. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Catalog/Inventory |
 | `StockMovements` | `transferOut`/`transferIn` tại một kho do VaniShop quản lý: khoá dòng tồn, sổ biến động, `AvailabilityChanged`; chạy trong transaction của bên gọi; từ chối → `StockMovementRejected`. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Inventory |

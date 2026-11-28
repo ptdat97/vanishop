@@ -18,6 +18,7 @@ use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderLinesCancelled;
+use Modules\Pricing\Application\BaseListPriceReader;
 use Modules\Pricing\Application\BasePriceImporter;
 use Modules\Pricing\Application\Listeners\CopyDuplicatedPrices;
 use Modules\Pricing\Application\Listeners\ProductListPrices;
@@ -35,6 +36,7 @@ use Modules\Pricing\Application\VariantPriceFields;
 use Modules\Pricing\Console\SyncListPricesCommand;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Contracts\Data\DiscountCap;
+use Modules\Pricing\Contracts\ListPriceReader;
 use Modules\Pricing\Contracts\ManagedPriceLists;
 use Modules\Pricing\Contracts\PriceImporter;
 use Modules\Pricing\Contracts\PriceListSchedule;
@@ -68,6 +70,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
         $this->app->bind(PriceListSchedule::class, PriceListScheduler::class);
         $this->app->bind(ManagedPriceLists::class, ManagedPriceListService::class);
         $this->app->bind(PriceQuotas::class, PriceQuotaService::class);
+        $this->app->bind(ListPriceReader::class, BaseListPriceReader::class);
         $this->app->bindIf(CustomerGroupDirectory::class, NoCustomerGroups::class); // module Customer ghi đè
         $this->app->bind(PriceResolver::class, fn ($app): StrategyPriceResolver => new StrategyPriceResolver(
             $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.pricing.strategy', 'price_list_priority'), $app->make(CustomerGroupDirectory::class),
