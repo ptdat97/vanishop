@@ -59,7 +59,7 @@ final class WishlistServiceProvider extends PluginServiceProvider
 
         // HTML giống nhau với mọi khách (trang cache CDN): JS gửi bằng fetch, token CSRF lấy từ dữ liệu phiên.
         $button = fn (array $product, bool $compact): SlotView => new SlotView('vani-wishlist::button', ['productId' => (int) $product['id'], 'compact' => $compact]);
-        $this->onSlot('vani.storefront.plp.card_badges', fn (array $product): SlotView => $button($product, true));
+        $this->onSlot('vani.storefront.plp.card.actions', fn (array $product): SlotView => $button($product, true));
         $this->onSlot('vani.storefront.pdp.after_add_to_cart', fn (array $product): SlotView => $button($product, false));
         $this->onSlot('vani.storefront.header.actions', fn (): SlotView => new SlotView('vani-wishlist::header'));
         $this->onSlot('vani.storefront.layout.body_end', fn (): SlotView => new SlotView('vani-wishlist::script', [

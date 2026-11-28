@@ -153,6 +153,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         View::composer('theme::partials.breadcrumb', fn (ViewInstance $view) => $view->with('breadcrumb', $this->app->make(Breadcrumbs::class)->trail((array) ($view->getData()['crumbs'] ?? []))));
         View::composer('theme::partials.account-menu', AccountMenuComposer::class);
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
+        Blade::anonymousComponentPath(__DIR__.'/resources/views/components', 'vani');
 
         $settings = $this->app->make(Settings::class);
         $settings->define(new SettingDefinition(

@@ -53,6 +53,17 @@ beforeEach(function () {
 
 afterEach(fn () => File::deleteDirectory($this->assets));
 
+it('thẻ sản phẩm hiện nút tim có nhãn trợ năng trong hook thao tác', function () {
+    $this->get('/tim-kiem?q=dam')->assertOk()->assertSeeInOrder([
+        'class="vani-product-card-link"',
+        'data-slot="vani.storefront.plp.card.actions"',
+        'data-vani-wishlist="'.$this->product->id.'"',
+        'data-vani-wishlist-button',
+        'data-vani-wishlist-label',
+        'Yêu thích',
+    ], false);
+});
+
 it('trang sản phẩm có nút tim + script của plugin; HTML trang cache giống nhau giữa khách vãng lai và khách đăng nhập', function () {
     config(['vanishop.storefront.page_cache.mode' => 'cdn']);
     $guest = $this->get('/san-pham/'.$this->product->slug)->assertOk()

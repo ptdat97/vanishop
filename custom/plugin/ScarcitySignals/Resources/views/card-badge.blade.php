@@ -1,1 +1,1 @@
-<span class="mt-1 inline-block rounded bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent" data-scarcity-badge>{{ __('vani-scarcity-signals::storefront.low_stock') }}</span>
+<x-vani::product-card-label :text="__('vani-scarcity-signals::storefront.low_stock')" class="bg-accent/10 text-accent" data-scarcity-badge />

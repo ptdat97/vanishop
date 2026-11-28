@@ -1,12 +1,14 @@
 <?php
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Hooks\HookManager;
@@ -356,6 +358,24 @@ it('theme slots mở rộng layout, trang chủ, trang thương hiệu và danh 
     $card = substr($listing, strpos($listing, '<article'), strpos($listing, '</article>') - strpos($listing, '<article'));
 
     expect(strpos($card, 'WISHLIST:'.$this->product->slug))->toBeGreaterThan(strpos($card, '</a>'));
+});
+
+it('thẻ sản phẩm hiển thị số màu, nhãn hết hàng và nhãn plugin theo độ ưu tiên của hook', function () {
+    $product = T::product($this->urbanx->id, ['name' => 'Áo khoác thử nhãn', 'slug' => 'ao-khoac-thu-nhan']);
+    $color = T::seed(fn () => OptionValue::factory()->color()->create());
+    T::optionValues($product, $color);
+
+    $hooks = app(HookManager::class);
+    $hooks->onSlot('vani.storefront.plp.card_badges', fn () => new HtmlString(Blade::render(
+        '<x-vani::product-card-label :text="$text" :accent-color="$color" />',
+        ['text' => 'Chỉ bán <online>', 'color' => '#a02245'],
+    )), 20);
+    $hooks->onSlot('vani.storefront.plp.card_badges', fn () => new HtmlString('<span>Nhãn ưu tiên</span>'), 10);
+
+    $this->get('/tim-kiem?q=ao+khoac+thu+nhan')->assertOk()
+        ->assertSeeInOrder(['1 màu', 'data-vani-stock-label="out-of-stock"', 'Hết hàng', 'data-slot="vani.storefront.plp.card_badges"', 'Nhãn ưu tiên', 'Chỉ bán &lt;online&gt;'], false)
+        ->assertSee('style="background-color: #a02245"', false)
+        ->assertDontSee('Chỉ bán <online>', false);
 });
 
 it('theme slots xuất hiện đúng vị trí trên PDP, danh sách rỗng, danh sách thương hiệu và giỏ rỗng', function () {

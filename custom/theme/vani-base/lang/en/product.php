@@ -3,6 +3,7 @@
 return [
     'shop_product' => 'Shop this item',
     'care' => 'Care instructions',
+    'color_count' => '{1} :count color|[2,*] :count colors',
     'add_to_cart' => 'Add to cart',
     'browse_all_products' => 'Browse all products',
     'browse_category' => 'Browse the category',
